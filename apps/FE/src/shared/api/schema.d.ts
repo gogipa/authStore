@@ -8777,7 +8777,7 @@ export interface operations {
             /** @description 이벤트 스트림 */
             200: {
                 headers: {
-                    /** @description no-cache */
+                    /** @description no-cache를 포함한다. NestJS @Sse 기본값 `private, no-cache, no-store, must-revalidate, max-age=0, no-transform`(no-transform은 프록시가 압축·버퍼링하지 않게 한다) */
                     "Cache-Control"?: string;
                     [name: string]: unknown;
                 };
@@ -8786,7 +8786,6 @@ export interface operations {
                 };
             };
             403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
         };

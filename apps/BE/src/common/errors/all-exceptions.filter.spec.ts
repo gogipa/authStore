@@ -14,6 +14,11 @@ function mockHost(url = '/api/v1/x') {
   const res = {
     statusCode: 0,
     body: undefined as unknown,
+    headers: {} as Record<string, string>,
+    setHeader(name: string, value: string) {
+      this.headers[name] = value;
+      return this;
+    },
     status(code: number) {
       this.statusCode = code;
       return this;
@@ -61,6 +66,23 @@ describe('AllExceptionsFilter', () => {
       path: '/api/v1/candidates?x=1',
       fieldErrors: [{ field: 'name', message: 'name must be a string', rejectedValue: 1 }],
       details: { stepCode: 'PRICING' },
+    });
+  });
+
+  it('ApiException의 headers를 응답 헤더로 붙인다(Retry-After)', () => {
+    const { host, res } = mockHost();
+    filter.catch(
+      new ApiException('DAILY_LIMIT_REACHED', {
+        details: { target: 'RAKUTEN_PAGE' },
+        headers: { 'Retry-After': '3600' },
+      }),
+      host,
+    );
+    expect(res.statusCode).toBe(409);
+    expect(res.headers).toEqual({ 'Retry-After': '3600' });
+    expect(res.body).toMatchObject({
+      code: 'DAILY_LIMIT_REACHED',
+      details: { target: 'RAKUTEN_PAGE' },
     });
   });
 

@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { CommonModule } from './common/common.module.js';
 import { AppConfigModule } from './common/config/app-config.module.js';
 import { AppConfigService } from './common/config/app-config.service.js';
 import { FE_DIST_DIR } from './common/config/paths.js';
@@ -26,6 +27,8 @@ import { PrismaModule } from './prisma/prisma.module.js';
     AppConfigModule,
     LoggingModule,
     PrismaModule,
+    // 공통: 진행 알림(SSE)·이미지 파일·감사 기록(전역)
+    CommonModule,
     // 운영에서 FE 빌드(apps/FE/dist)가 있으면 BE가 화면도 내보낸다. /api 밖은 SPA 대체(index.html)
     ServeStaticModule.forRootAsync({
       inject: [AppConfigService],

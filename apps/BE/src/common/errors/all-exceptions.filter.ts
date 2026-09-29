@@ -16,7 +16,7 @@ import { buildErrorResponse, type ErrorResponse } from './error-response.js';
 
 /**
  * 모든 예외를 05-3 오류 봉투로 바꾼다.
- * - ApiException: 코드 그대로
+ * - ApiException: 코드 그대로(headers가 있으면 응답 헤더로, 예: Retry-After)
  * - 없는 경로(Nest 404): ROUTE_NOT_FOUND(Proposed)
  * - JSON 파싱 실패(body-parser → 400): MALFORMED_REQUEST
  * - 본문 크기 초과: PAYLOAD_TOO_LARGE
@@ -36,6 +36,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         { err: exception, code: body.code, path: body.path },
         exception instanceof Error ? exception.message : 'unknown error',
       );
+    }
+    if (exception instanceof ApiException && exception.headers) {
+      for (const [name, value] of Object.entries(exception.headers)) res.setHeader(name, value);
     }
     res.status(body.status).json(body);
   }

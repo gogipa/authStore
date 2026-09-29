@@ -12,5 +12,6 @@ module.exports = {
   },
   globalSetup: '<rootDir>/test/global-setup.cjs',
   setupFiles: ['<rootDir>/test/setup-env.cjs'],
+  setupFilesAfterEnv: ['<rootDir>/test/cleanup-data-dir.cjs'],
   testTimeout: 30000,
 };

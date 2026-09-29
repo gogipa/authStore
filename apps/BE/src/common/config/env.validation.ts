@@ -9,8 +9,8 @@ import {
   Min,
   validateSync,
 } from 'class-validator';
-import { isAbsolute, resolve } from 'node:path';
-import { DEFAULT_APP_DATA_DIR, REPO_ROOT } from './paths.js';
+import { isAbsolute, relative, resolve } from 'node:path';
+import { APPS_DIR, DEFAULT_APP_DATA_DIR, defaultProductionDataDir, REPO_ROOT } from './paths.js';
 
 export const NODE_ENVS = ['development', 'production', 'test'] as const;
 export type NodeEnv = (typeof NODE_ENVS)[number];
@@ -37,9 +37,10 @@ export class EnvironmentVariables {
   @IsNotEmpty()
   DATABASE_URL!: string;
 
+  /** 비우면 개발·테스트는 저장소 루트 .data, 운영은 OS 사용자 데이터 폴더(validateEnv가 채운다) */
   @IsOptional()
   @IsString()
-  APP_DATA_DIR: string = DEFAULT_APP_DATA_DIR;
+  APP_DATA_DIR: string = '';
 
   @IsOptional()
   @IsIn(LOG_LEVELS)
@@ -63,8 +64,28 @@ export function validateEnv(raw: Record<string, unknown>): EnvironmentVariables 
     );
     throw new Error(`환경변수 검증 실패(apps/BE/.env.example 참고)\n${lines.join('\n')}`);
   }
+  if (env.APP_DATA_DIR === '') {
+    env.APP_DATA_DIR =
+      env.NODE_ENV === 'production' ? defaultProductionDataDir(raw) : DEFAULT_APP_DATA_DIR;
+  }
   if (!isAbsolute(env.APP_DATA_DIR)) {
     env.APP_DATA_DIR = resolve(REPO_ROOT, env.APP_DATA_DIR);
   }
+  // F-BS-02: 설정·이미지·로그는 코드 폴더(apps/)에 쓰지 않고, 운영은 설치 폴더(저장소) 밖에만 쓴다
+  if (isInsideOrSame(APPS_DIR, env.APP_DATA_DIR)) {
+    throw new Error(
+      '환경변수 검증 실패(apps/BE/.env.example 참고)\n- APP_DATA_DIR: 코드 폴더(apps/) 안은 쓸 수 없습니다',
+    );
+  }
+  if (env.NODE_ENV === 'production' && isInsideOrSame(REPO_ROOT, env.APP_DATA_DIR)) {
+    throw new Error(
+      '환경변수 검증 실패(apps/BE/.env.example 참고)\n- APP_DATA_DIR: 운영에서는 설치 폴더 밖이어야 합니다',
+    );
+  }
   return env;
+}
+
+function isInsideOrSame(parent: string, child: string): boolean {
+  const rel = relative(resolve(parent), resolve(child));
+  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
 }

@@ -1,0 +1,126 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { BE_ROOT } from '../../../common/config/paths.js';
+import {
+  assertIsolatedCliInvocation,
+  checkIsolatedCliInvocation,
+  CliIsolationError,
+  type CliInvocation,
+} from './cli-isolation.js';
+
+describe('assertIsolatedCliInvocation(F-BS-07)', () => {
+  let emptyDir: string;
+  let filledDir: string;
+
+  beforeEach(() => {
+    emptyDir = mkdtempSync(join(tmpdir(), 'autostore-ai-test-'));
+    filledDir = mkdtempSync(join(tmpdir(), 'autostore-ai-test-'));
+    writeFileSync(join(filledDir, 'CLAUDE.md'), '# 사용자 설정');
+  });
+
+  afterEach(() => {
+    rmSync(emptyDir, { recursive: true, force: true });
+    rmSync(filledDir, { recursive: true, force: true });
+  });
+
+  const claude = (over: Partial<CliInvocation> = {}): CliInvocation => ({
+    bin: '/usr/local/bin/claude',
+    args: [
+      '-p',
+      'OK라고만 답해',
+      '--model',
+      'sonnet',
+      '--output-format',
+      'json',
+      '--json-schema',
+      '{"type":"object"}',
+      '--tools',
+      '',
+      '--no-session-persistence',
+      '--safe-mode',
+    ],
+    cwd: emptyDir,
+    env: { PATH: '/usr/bin:/bin', HOME: '/Users/someone', DISABLE_AUTOUPDATER: '1' },
+    shell: false,
+    ...over,
+  });
+
+  it('올바른 claude 호출은 통과한다', () => {
+    expect(() => assertIsolatedCliInvocation(claude())).not.toThrow();
+  });
+
+  it('--setting-sources + --strict-mcp-config 조합도 전역 설정 차단으로 본다', () => {
+    const args = claude()
+      .args.filter((a) => a !== '--safe-mode')
+      .concat(['--setting-sources', 'project', '--strict-mcp-config']);
+    expect(checkIsolatedCliInvocation(claude({ args }))).toEqual([]);
+  });
+
+  it('올바른 agy·codex 호출은 통과한다(전역 설정 옵션은 claude만 본다)', () => {
+    expect(
+      checkIsolatedCliInvocation({
+        ...claude(),
+        bin: 'agy',
+        args: ['-p', 'x', '--model', 'gemini-3.8-flash-medium', '--print-timeout', '120s'],
+      }),
+    ).toEqual([]);
+    expect(
+      checkIsolatedCliInvocation({
+        ...claude(),
+        bin: 'codex',
+        args: ['exec', 'x', '--model=gpt-5', '--sandbox', 'read-only', '--ephemeral'],
+      }),
+    ).toEqual([]);
+  });
+
+  it('파일이 든 cwd는 실패', () => {
+    expect(() => assertIsolatedCliInvocation(claude({ cwd: filledDir }))).toThrow(
+      /cwd가 비어 있지 않다/,
+    );
+  });
+
+  it('저장소 안 cwd는 실패(상위 .claude·CLAUDE.md)', () => {
+    expect(checkIsolatedCliInvocation(claude({ cwd: BE_ROOT }))).toEqual(
+      expect.arrayContaining([expect.stringMatching(/저장소 안/)]),
+    );
+  });
+
+  it('shell: true는 실패', () => {
+    expect(() => assertIsolatedCliInvocation(claude({ shell: true }))).toThrow(/shell: false/);
+    expect(checkIsolatedCliInvocation(claude({ shell: '/bin/zsh' }))).toContain(
+      'shell: false여야 한다',
+    );
+  });
+
+  it('--model이 없으면 실패', () => {
+    const args = claude().args.filter((a) => a !== '--model' && a !== 'sonnet');
+    expect(() => assertIsolatedCliInvocation(claude({ args }))).toThrow(/--model/);
+    expect(checkIsolatedCliInvocation(claude({ args: [...args, '--model'] }))).toContain(
+      '--model을 적어야 한다',
+    );
+  });
+
+  it.each(['ANTHROPIC_API_KEY', 'OPENAI_API_KEY'])('env에 %s가 있으면 실패', (key) => {
+    const inv = claude({ env: { ...claude().env, [key]: 'placeholder' } });
+    expect(() => assertIsolatedCliInvocation(inv)).toThrow(CliIsolationError);
+    expect(checkIsolatedCliInvocation(inv)).toContain(`env에 ${key}를 넘기면 안 된다`);
+  });
+
+  it('허용 목록 밖 환경변수는 실패', () => {
+    expect(
+      checkIsolatedCliInvocation(claude({ env: { PATH: '/usr/bin', NODE_OPTIONS: '--x' } })),
+    ).toContain('env NODE_OPTIONS는 허용 목록에 없다');
+  });
+
+  it('claude에 전역 설정 차단 옵션이 없으면 실패', () => {
+    const args = claude().args.filter((a) => a !== '--safe-mode');
+    expect(() => assertIsolatedCliInvocation(claude({ args }))).toThrow(/전역 설정 차단/);
+  });
+
+  it('허용하지 않은 실행 파일(래퍼·다른 CLI)은 실패', () => {
+    expect(checkIsolatedCliInvocation(claude({ bin: 'agy-image' }))).toEqual(
+      expect.arrayContaining([expect.stringMatching(/실행 파일은/)]),
+    );
+  });
+});

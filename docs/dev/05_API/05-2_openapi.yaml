@@ -1162,7 +1162,7 @@ paths:
       - F-KW-01
       - F-KW-04
       - F-CW-23
-      x-decision: §7.1-3 이벤트 재전송 버퍼는 두지 않는다. Last-Event-ID는 받기만 하고 놓친 이벤트를 다시 보내지 않으며, 재연결 뒤 FE가 조회 API로 다시 읽는다.
+      x-decision: §7.1-3 이벤트 재전송 버퍼는 두지 않는다. Last-Event-ID는 받기만 하고 놓친 이벤트를 다시 보내지 않으며, 재연결 뒤 FE가 조회 API로 다시 읽는다. §7.1 P1-01(Proposed) — candidateId는 1 이상 정수만(아니면 422 INVALID_QUERY_PARAMETER)이고 후보가 있는지는 보지 않는다(없는 후보면 전역 이벤트만 온다). 그래서 404 응답은 두지 않는다. 연결 유지용 SSE 주석 줄(keep-alive)을 25초마다 보낸다(EventSource는 무시한다).
       parameters:
       - name: candidateId
         in: query
@@ -1180,7 +1180,7 @@ paths:
           description: 이벤트 스트림
           headers:
             Cache-Control:
-              description: no-cache
+              description: no-cache를 포함한다. NestJS @Sse 기본값 `private, no-cache, no-store, must-revalidate, max-age=0, no-transform`(no-transform은 프록시가 압축·버퍼링하지 않게 한다)
               schema:
                 type: string
           content:
@@ -1189,8 +1189,6 @@ paths:
                 $ref: '#/components/schemas/ProgressEventFrame'
         '403':
           $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/Unprocessable'
         '500':

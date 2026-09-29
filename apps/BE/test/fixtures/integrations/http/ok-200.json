@@ -1,0 +1,8 @@
+{
+  "returnCode": 0,
+  "range": "2026.08.27. ~ 2026.09.27.",
+  "ranks": [
+    { "rank": 1, "keyword": "운동화", "linkId": "fixture-1" },
+    { "rank": 2, "keyword": "러닝화", "linkId": "fixture-2" }
+  ]
+}
