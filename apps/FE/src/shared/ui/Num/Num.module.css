@@ -1,0 +1,14 @@
+.num {
+  font: var(--type-num);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.right {
+  display: block;
+  text-align: right;
+}
+
+.inline {
+  display: inline;
+}

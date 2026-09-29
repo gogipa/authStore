@@ -37,7 +37,7 @@ RouterProvider
 
 | layout | 공유 요소 | 데이터 | 규칙 |
 |---|---|---|---|
-| `AppLayout`(+ `AppNav`) | 왼쪽 내비(순서·아이콘·라벨은 공통부품 §A), 내비 아래 상태 상자, 본문 여백(`24px 32px`, gap 24) | `getRegistrationSwitch` · `getCallUsage` · SSE 연결 1개 | 현재 항목은 `NavLink`가 `aria-current="page"`. 아래 §5 |
+| `AppLayout`(+ `AppNav`) | 왼쪽 내비(순서·아이콘·라벨은 공통부품 §A), 내비 아래 상태 상자, 본문 여백(`24px 32px`, gap 24) | `getRegistrationSwitch`(P4-03) · `getCallUsage`(P1-02 연결: '오늘 페이지 조회 38/110', 실패·받는 중 `—`) · SSE 연결 1개(`app/providers.tsx`) | 현재 항목은 `NavLink`가 `aria-current="page"`. 아래 §5 |
 | `CandidateLayout` | 후보 머리(§F: 상품명·앵커 키·게이트·페이지 받은 시각), 단계 레일(§G), 레일 아래 '재실행 필요 단계 모두 실행' | `getCandidate` · `listCandidateSteps` · `listCandidateGates` · SSE(해당 후보) | 레일 현재 행 `aria-current="step"`. 404면 "후보를 찾을 수 없습니다" + '후보 목록' |
 | (단계 화면 각자) | 단계 본문 맨 위 상태 줄(§H) | `listCandidateStepRuns` · `getCandidateStepStaleDiff` | layout이 아니라 공통 부품 `StepStatusBar`로 각 화면이 둔다. ③④·⑧⑨처럼 한 화면에 단계가 둘이면 상태 줄도 둘이다 |
 
@@ -57,7 +57,7 @@ RouterProvider
 | 옵션 | 내용 | 장점 | 단점 |
 |---|---|---|---|
 | A | 루트 route(`/`)에 `ErrorBoundary` | 한 곳 | 오류 때 내비까지 사라진다(루트 element가 바뀐다) |
-| **B (Proposed)** | `AppLayout` 아래 경로 없는 layout route 하나에 `ErrorBoundary`를 두고 화면들을 그 자식으로 | 오류가 나도 내비가 남는다. 경로는 그대로 | route 객체가 한 층 늘어난다(URL 변화 없음) |
+| **B (적용, P1-02)** | `AppLayout` 아래 경로 없는 layout route 하나에 `ErrorBoundary`(`app/RouteErrorBoundary.tsx`)를 두고 화면들을 그 자식으로 | 오류가 나도 내비가 남는다. 경로는 그대로 | route 객체가 한 층 늘어난다(URL 변화 없음) |
 
 ### 4-3. AI 엔진(SCR-13)의 하단 저장 바
 

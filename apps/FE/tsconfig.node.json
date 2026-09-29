@@ -15,5 +15,13 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["vite.config.ts", "vitest.config.ts"]
+  // 설정 파일 + Node 환경 테스트(// @vitest-environment node, tsconfig.app.json에서 뺀 것)
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "src/app/eslint-boundaries.test.ts",
+    "src/app/source-rules.test.ts",
+    "src/shared/ui/structure.test.ts",
+    "src/shared/ui/tokens-only.test.ts"
+  ]
 }

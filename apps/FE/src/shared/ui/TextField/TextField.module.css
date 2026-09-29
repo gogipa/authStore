@@ -1,0 +1,66 @@
+/* 입력칸 높이 36px: 디자인 README "주요 버튼·입력칸 36px". 토큰 없음(04-2 §5). */
+.box {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 6px; /* 값과 단위 사이: Judgement 보드. 토큰 없음. */
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.box:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.input {
+  flex-grow: 1;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.input:focus-visible {
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-ink-faint);
+}
+
+.numeric {
+  font: var(--type-num);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.unit {
+  flex-shrink: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.locked {
+  border-color: var(--color-line);
+  background: var(--color-surface-sunk);
+}
+
+.locked .input {
+  color: var(--color-ink-muted);
+}
+
+/* 잠긴 칸 바탕(surface-sunk) 위 캡션은 ink-faint를 쓰지 않는다(tokens.json usage). */
+.locked .unit {
+  color: var(--color-ink-muted);
+}
+
+.invalid {
+  border-color: var(--color-failed);
+}

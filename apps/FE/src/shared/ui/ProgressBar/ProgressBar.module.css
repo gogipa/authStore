@@ -1,0 +1,16 @@
+/* 높이 6px, 모서리 3px: Keywords 보드 수집 진행률. 토큰 없음(04-2 §5). */
+.track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-surface-sunk);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  background: var(--color-running);
+}
+
+.complete {
+  background: var(--color-done);
+}

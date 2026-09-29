@@ -1,0 +1,41 @@
+/* 높이 22px: 공통부품 §C. 토큰 없음(04-2 §5). */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font: var(--type-label);
+  white-space: nowrap;
+}
+
+.done {
+  background: var(--color-done-soft);
+  color: var(--color-done);
+}
+
+.running {
+  background: var(--color-accent-soft);
+  color: var(--color-running);
+}
+
+.waiting {
+  background: var(--color-waiting-soft);
+  color: var(--color-waiting);
+}
+
+.rerun {
+  background: var(--color-rerun-soft);
+  color: var(--color-rerun);
+}
+
+.failed {
+  background: var(--color-failed-soft);
+  color: var(--color-failed);
+}
+
+.idle {
+  background: var(--color-surface-sunk);
+  color: var(--color-idle);
+}

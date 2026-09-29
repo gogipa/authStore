@@ -1,0 +1,73 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+/* 한 줄 상자 36px(안쪽 왼 12·오른 4): AiEngine 보드. 토큰 없음. */
+.box {
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+.box .line {
+  height: 34px;
+}
+
+/* 여러 줄: 위아래 4px, 줄 28px(AiEngine 보드 codex 설치·로그인). */
+.multi {
+  padding-top: var(--space-1);
+  padding-bottom: var(--space-1);
+}
+
+.multi .line {
+  height: 28px;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* 명령 글자 13px mono: 글자 토큰에 13px 없음(04-5). */
+.command {
+  font: var(--type-num);
+  font-size: 13px;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note {
+  flex-grow: 1;
+  min-width: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+  white-space: nowrap;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,0 +1,27 @@
+/* 2열 격자(라벨 폭 | 값), 열 사이 12px · 줄 사이 8px: AiEngine 보드. */
+.list {
+  display: grid;
+  grid-template-columns: var(--dl-label-width, 76px) minmax(0, 1fr);
+  column-gap: var(--space-3);
+  row-gap: var(--space-2);
+  align-items: center;
+  font: var(--type-body);
+}
+
+/* dt·dd 한 쌍을 div로 묶되 격자는 부모 것을 쓴다(dl 안 div 묶음은 HTML 허용). */
+.row {
+  display: contents;
+}
+
+.term {
+  color: var(--color-ink-muted);
+}
+
+.detail {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-ink);
+}

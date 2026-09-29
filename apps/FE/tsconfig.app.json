@@ -18,5 +18,12 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Node 환경에서 도는 테스트(파일·ESLint API를 쓴다)는 tsconfig.node.json이 검사한다.
+  "exclude": [
+    "src/app/eslint-boundaries.test.ts",
+    "src/app/source-rules.test.ts",
+    "src/shared/ui/structure.test.ts",
+    "src/shared/ui/tokens-only.test.ts"
+  ]
 }

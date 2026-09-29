@@ -1,0 +1,58 @@
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.label {
+  flex-grow: 1;
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+}
+
+/* 40×22 트랙, 14px 손잡이, 안쪽 3px: Settings·System 보드. 토큰 없음(04-2 §5). */
+.track {
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 3px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 11px;
+  background: var(--color-surface-sunk);
+  cursor: pointer;
+}
+
+.knob {
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--color-idle);
+}
+
+/* 켜짐: 보드에 없어 accent 채움 + on-accent 손잡이로 정했다(Proposed, 04-3). */
+.on {
+  justify-content: flex-end;
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.on .knob {
+  background: var(--color-on-accent);
+}
+
+.track:disabled {
+  border-color: var(--color-line);
+  cursor: not-allowed;
+}
+
+.track:disabled .knob {
+  background: var(--color-line-strong);
+}
+
+.state {
+  font: var(--type-body-strong);
+  color: var(--color-ink-muted);
+}

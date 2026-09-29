@@ -1,5 +1,8 @@
-import type { ReactNode } from 'react';
 import { NavLink } from 'react-router';
+import { findCallUsage, formatUsageCount, useCallUsageQuery } from '@/features/integrations';
+import { cx } from '@/shared/lib/cx';
+import { EMPTY_VALUE } from '@/shared/lib/format';
+import { Icon, type IconName } from '@/shared/ui';
 import styles from './AppNav.module.css';
 
 interface NavItem {
@@ -9,97 +12,36 @@ interface NavItem {
   end?: boolean;
   /** '설정' 아래 하위 항목(아이콘 없음). */
   sub?: boolean;
-  icon?: ReactNode;
+  icon?: IconName;
 }
 
-function Icon({ children }: { children: ReactNode }) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {children}
-    </svg>
-  );
-}
-
-// 순서·라벨·아이콘은 docs/design/spec/공통부품_마크업.md §A 그대로다.
+// 순서·라벨·아이콘은 docs/design/spec/공통부품_마크업.md §A 그대로다(아이콘 모양은 shared/ui/Icon/icons.ts).
 // 후보 작업(/candidates)은 end가 없어 단계 화면(/candidates/:id/...)에서도 현재 항목이다.
 const NAV_ITEMS: readonly NavItem[] = [
-  {
-    to: '/',
-    label: '대시보드',
-    end: true,
-    icon: (
-      <Icon>
-        <rect x="3.5" y="3.5" width="7" height="7" rx="1" />
-        <rect x="13.5" y="3.5" width="7" height="7" rx="1" />
-        <rect x="3.5" y="13.5" width="7" height="7" rx="1" />
-        <rect x="13.5" y="13.5" width="7" height="7" rx="1" />
-      </Icon>
-    ),
-  },
-  {
-    to: '/keywords',
-    label: '키워드',
-    icon: (
-      <Icon>
-        <circle cx="11" cy="11" r="6.5" />
-        <path d="M20 20l-4.3-4.3" />
-      </Icon>
-    ),
-  },
-  {
-    to: '/candidates',
-    label: '후보 작업',
-    icon: (
-      <Icon>
-        <path d="M9 6h11M9 12h11M9 18h11" />
-        <path d="M4 6h.01M4 12h.01M4 18h.01" />
-      </Icon>
-    ),
-  },
-  {
-    to: '/products',
-    label: '등록 상품',
-    icon: (
-      <Icon>
-        <path d="M3.5 7.5L12 3.5l8.5 4-8.5 4-8.5-4z" />
-        <path d="M3.5 7.5v9l8.5 4 8.5-4v-9" />
-        <path d="M12 11.5v9" />
-      </Icon>
-    ),
-  },
-  {
-    to: '/settings',
-    label: '설정',
-    end: true,
-    icon: (
-      <Icon>
-        <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
-        <circle cx="15" cy="7" r="2" />
-        <circle cx="9" cy="17" r="2" />
-      </Icon>
-    ),
-  },
+  { to: '/', label: '대시보드', end: true, icon: 'grid' },
+  { to: '/keywords', label: '키워드', icon: 'search' },
+  { to: '/candidates', label: '후보 작업', icon: 'list' },
+  { to: '/products', label: '등록 상품', icon: 'package' },
+  { to: '/settings', label: '설정', end: true, icon: 'sliders' },
   { to: '/settings/ai-engine', label: 'AI 엔진', sub: true },
-  {
-    to: '/system',
-    label: '시스템 상태',
-    icon: (
-      <Icon>
-        <path d="M3 12h4l3-7 4 14 3-7h4" />
-      </Icon>
-    ),
-  },
+  { to: '/system', label: '시스템 상태', icon: 'activity' },
 ];
+
+/**
+ * '오늘 페이지 조회 38/110'(공통부품 §A 글자 그대로). RAKUTEN_PAGE 항목의 count/dailyLimit이다.
+ * 받는 중이거나 조회에 실패하면 빈 값 표시 '—'(Proposed, P1-02 규칙 12).
+ * SSE `call-usage.changed`가 오면 쿼리가 무효화되어 다시 읽는다.
+ */
+function PageFetchUsage() {
+  const { data, isError } = useCallUsageQuery();
+  const usage = isError ? undefined : findCallUsage(data, 'RAKUTEN_PAGE');
+  return (
+    <span className={styles.caption}>
+      오늘 페이지 조회{' '}
+      <span className={styles.mono}>{usage ? formatUsageCount(usage) : EMPTY_VALUE}</span>
+    </span>
+  );
+}
 
 /** 왼쪽 주 메뉴. NavLink가 현재 항목에 aria-current="page"를 단다. */
 export function AppNav() {
@@ -115,21 +57,17 @@ export function AppNav() {
           to={item.to}
           end={item.end}
           className={({ isActive }) =>
-            [styles.item, item.sub ? styles.sub : null, isActive ? styles.active : null]
-              .filter(Boolean)
-              .join(' ')
+            cx(styles.item, item.sub && styles.sub, isActive && styles.active)
           }
         >
-          {item.icon}
+          {item.icon ? <Icon name={item.icon} size={18} /> : null}
           {item.label}
         </NavLink>
       ))}
-      {/* 안전장치 상태 상자: 설정·시스템 API를 붙이는 단계에서 실제 값으로 바꾼다. */}
+      {/* 안전장치 상태 상자. 등록 API 차단 칩은 getRegistrationSwitch(P4-03)를 붙일 때 실제 값으로 바꾼다. */}
       <div className={styles.statusBox}>
         <span className={styles.statusChip}>등록 API 차단 · 확인 전</span>
-        <span className={styles.caption}>
-          오늘 페이지 조회 <span className={styles.mono}>—</span>
-        </span>
+        <PageFetchUsage />
       </div>
     </nav>
   );

@@ -1,0 +1,50 @@
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px; /* 아이콘과 글 사이: 화면시안_명세 §3 안내 띠. 토큰 없음. */
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.body {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.info {
+  background: var(--color-accent-soft);
+}
+
+.info .icon {
+  color: var(--color-accent);
+}
+
+.warning {
+  background: var(--color-waiting-soft);
+}
+
+.warning .icon {
+  color: var(--color-waiting);
+}
+
+.blocked {
+  background: var(--color-failed-soft);
+}
+
+.blocked .icon {
+  color: var(--color-failed);
+}

@@ -1,0 +1,41 @@
+.item {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px; /* 상자와 글 사이: Keywords 보드. 토큰 없음. */
+}
+
+/* 16px 상자, 글 첫 줄(22px)에 맞춰 3px 내린다: CandidateWork 보드. 토큰 없음. */
+.control {
+  width: 16px;
+  height: 16px;
+  margin: 3px 0 0;
+  flex-shrink: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.control:disabled {
+  cursor: not-allowed;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.label {
+  font: var(--type-body);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.control:disabled + .text .label {
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
+
+.description {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}

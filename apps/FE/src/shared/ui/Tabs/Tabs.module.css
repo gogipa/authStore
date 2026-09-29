@@ -1,0 +1,60 @@
+.tablist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px; /* 탭 사이: Settings 보드. 토큰 없음. */
+  padding: var(--space-2);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+/* 모서리 6px: Settings 보드 탭(단계 레일 행과 같다). 토큰 없음. */
+.tab {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 6px var(--space-3);
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-ink-muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tab:hover {
+  background: var(--color-bg);
+}
+
+.selected,
+.selected:hover {
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.tab:disabled {
+  color: var(--color-ink-faint);
+  cursor: not-allowed;
+}
+
+.label {
+  font: var(--type-body);
+}
+
+.selected .label {
+  font: var(--type-body-strong);
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+/* 고른 탭(accent-soft 바탕) 위 캡션은 ink-faint 대신 accent(tokens.json accent-soft usage). */
+.selected .caption {
+  color: var(--color-accent);
+}

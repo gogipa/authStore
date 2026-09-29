@@ -1,0 +1,11 @@
+.reason {
+  font: var(--type-caption);
+}
+
+.waiting {
+  color: var(--color-waiting);
+}
+
+.muted {
+  color: var(--color-ink-muted);
+}

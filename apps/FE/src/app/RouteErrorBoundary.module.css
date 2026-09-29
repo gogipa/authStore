@@ -1,0 +1,9 @@
+.message {
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.code {
+  font: var(--type-id);
+  color: var(--color-ink-muted);
+}
