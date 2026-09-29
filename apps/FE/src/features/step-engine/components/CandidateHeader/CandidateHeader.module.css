@@ -58,3 +58,31 @@
   gap: var(--space-2);
   flex-shrink: 0;
 }
+
+/* 앵커 키 ID 칩(공통부품 §F): 22px, mono 12px, surface-sunk 바탕. 높이 토큰 없음. */
+.idChip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunk);
+  color: var(--color-ink);
+  font: var(--type-id);
+  white-space: nowrap;
+}
+
+.meta {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  color: var(--color-ink-muted);
+}
+
+.recheck {
+  color: var(--color-waiting);
+}

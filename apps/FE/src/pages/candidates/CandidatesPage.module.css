@@ -1,0 +1,164 @@
+/* SCR-12 후보 작업 목록(CandidateWork.dc.html). 왼쪽 목록 320px · 오른쪽 후보 머리·단계. 폭은 보드 값. */
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.listPanel {
+  width: 320px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.listHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.sectionTitle {
+  margin: 0;
+  font: var(--type-heading);
+  color: var(--color-ink);
+}
+
+.count {
+  font: var(--type-num);
+  color: var(--color-ink-muted);
+}
+
+.urlCreate {
+  flex-shrink: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px; /* 보드 값. 토큰 없음. */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 10px; /* 보드 값. 토큰 없음. */
+  border-radius: var(--radius-sm);
+}
+
+.itemSelected {
+  background: var(--color-accent-soft);
+}
+
+.itemName {
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.itemNameSelected {
+  color: var(--color-accent);
+}
+
+.statusLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-height: 22px;
+}
+
+.statusText {
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+.badges {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* 보드 값. 토큰 없음. */
+}
+
+.detail {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.stepsHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.hint {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--color-ink-muted);
+}
+
+.link {
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pickList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pickItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 40px;
+  border-top: 1px solid var(--color-line);
+}
+
+.pickItem:first-child {
+  border-top: none;
+}
+
+.pickName {
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}

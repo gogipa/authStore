@@ -39,6 +39,59 @@ describe('error-codes', () => {
     ).toBe('안전 기준은 느슨하게 바꿀 수 없습니다(판정 유효 시간 늘리기).');
   });
 
+  it('P1-04 후보 코드 12개는 05-3 §5.1 문구·상태 그대로다', () => {
+    const expected: Record<string, { status: number; message: string }> = {
+      CANDIDATE_NOT_FOUND: { status: 404, message: '후보를 찾을 수 없습니다.' },
+      CANDIDATE_DUPLICATE: {
+        status: 409,
+        message: '같은 상품·색상으로 진행 중인 후보가 있습니다. 그 후보를 열어 주세요.',
+      },
+      CANDIDATE_LOCKED: {
+        status: 409,
+        message: '등록을 진행 중이거나 끝난 후보라 바꿀 수 없습니다.',
+      },
+      CANDIDATE_EXCLUDED: {
+        status: 409,
+        message: "제외된 후보입니다. '다시 작업'을 먼저 눌러 주세요.",
+      },
+      CANDIDATE_STATUS_INVALID: {
+        status: 409,
+        message: '지금 후보 상태({상태})에서는 할 수 없습니다.',
+      },
+      ANCHOR_KEY_MISMATCH: {
+        status: 409,
+        message: '이 후보의 기준 모델·색상과 다릅니다. 다른 모델·색상은 새 후보로 만들어 주세요.',
+      },
+      STEP_LOCKED_BY_RUNNING_STEP: {
+        status: 409,
+        message: '{단계}가 실행 중이라 지금은 할 수 없습니다. 끝난 뒤 다시 해 주세요.',
+      },
+      KEYWORD_NOT_FOUND: { status: 404, message: '키워드를 찾을 수 없습니다.' },
+      KEYWORD_NOT_SELECTED: {
+        status: 409,
+        message: '키워드 화면에서 고른 키워드만 후보로 만들 수 있습니다.',
+      },
+      KEYWORD_EXCLUDED: { status: 409, message: '아동화로 빠진 키워드는 고를 수 없습니다.' },
+      RAKUTEN_QUERY_INVALID: {
+        status: 422,
+        message: '라쿠텐 검색어 형식이 맞지 않습니다(반각 128자 이내, 너무 짧은 단어 없이).',
+      },
+      RAKUTEN_ITEM_NOT_FOUND: { status: 404, message: '읽어 온 라쿠텐 상품을 찾을 수 없습니다.' },
+    };
+    for (const [code, def] of Object.entries(expected)) {
+      expect(ERROR_CODES[code as keyof typeof ERROR_CODES]).toEqual(def);
+    }
+    expect(formatErrorMessage('STEP_LOCKED_BY_RUNNING_STEP', { 단계: '③ 판정' })).toBe(
+      '③ 판정이 실행 중이라 지금은 할 수 없습니다. 끝난 뒤 다시 해 주세요.',
+    );
+    expect(formatErrorMessage('STEP_LOCKED_BY_RUNNING_STEP', { 단계: '⑥-2 원산지·소재' })).toMatch(
+      /^⑥-2 원산지·소재가 실행 중이라/,
+    );
+    expect(formatErrorMessage('CANDIDATE_STATUS_INVALID', { 상태: '검증완료' })).toBe(
+      '지금 후보 상태(검증완료)에서는 할 수 없습니다.',
+    );
+  });
+
   it('formatErrorMessage는 {…} 자리를 채우고 모르는 자리는 그대로 둔다', () => {
     expect(formatErrorMessage('DAILY_LIMIT_REACHED', { 대상: '라쿠텐 상품 페이지', n: 110 })).toBe(
       '오늘 라쿠텐 상품 페이지 조회 한도(110건)를 다 썼습니다. 내일 0시(한국 시간)에 다시 됩니다.',

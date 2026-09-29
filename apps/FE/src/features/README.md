@@ -4,4 +4,4 @@
 - `api/`: Query 훅. queryKey는 `qk(태그, operationId, 파라미터?)`(`@/shared/api/queryKeys`), 호출은 `request(() => api.GET(...))`.
 - SSE 알림으로 다시 읽을 쿼리는 `shared/api/events.ts`의 `EVENT_INVALIDATIONS` 표에 이벤트 → queryKey를 더한다.
 
-지금 있는 feature: `integrations`(P1-02, 오늘 외부 조회 현황), `settings`(P1-03, 현재 설정·설정 파일 검사·다시 읽기).
+지금 있는 feature: `integrations`(P1-02, 오늘 외부 조회 현황), `settings`(P1-03, 현재 설정·설정 파일 검사·다시 읽기), `step-engine`(P1-04, 후보 목록·상세·이어서 할 곳·재실행 필요 모아 보기·제외·다시 작업·성별, 후보 머리·단계 점).

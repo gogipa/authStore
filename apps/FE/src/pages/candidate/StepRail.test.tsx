@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { describe, expect, it } from 'vitest';
-import { CandidateHeader } from './CandidateHeader';
+import { CandidateHeader } from '@/features/step-engine';
 import { StepRail, type StepRailProps } from './StepRail';
 import { Button, DisabledReason } from '@/shared/ui';
 

@@ -1,0 +1,74 @@
+/* 단계 점(Main.dc.html '진행 중 후보'): 22px 네모, radius 4, 상태 soft 바탕 + 상태 색 아이콘. 크기 토큰 없음(04-2 §5). */
+.row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dot {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+.done {
+  background: var(--color-done-soft);
+  color: var(--color-done);
+}
+
+.running {
+  background: var(--color-accent-soft);
+  color: var(--color-running);
+}
+
+.waiting {
+  background: var(--color-waiting-soft);
+  color: var(--color-waiting);
+}
+
+.rerun {
+  background: var(--color-rerun-soft);
+  color: var(--color-rerun);
+}
+
+.failed {
+  background: var(--color-failed-soft);
+  color: var(--color-failed);
+}
+
+.idle {
+  background: var(--color-surface-sunk);
+  color: var(--color-idle);
+}
+
+/* 범례: 16px 네모 + 글(캡션) */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px; /* 보드 값. 토큰 없음. */
+}
+
+.legendMark {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

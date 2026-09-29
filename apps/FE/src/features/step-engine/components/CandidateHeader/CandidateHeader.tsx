@@ -1,12 +1,7 @@
 import type { ReactNode } from 'react';
-import type { GateCode } from '@/shared/lib/steps';
-import { GateBadge, Icon, type GateState } from '@/shared/ui';
+import { GateBadge, Icon } from '@/shared/ui';
+import type { CandidateGateView } from '../../model/gateViews';
 import styles from './CandidateHeader.module.css';
-
-export interface CandidateGateView {
-  gate: GateCode;
-  state: GateState;
-}
 
 export interface CandidateHeaderProps {
   /** 상품명(16px 600). 예: '아식스 젤카야노 14 · 크림/블랙'. */

@@ -61,6 +61,55 @@ export const ERROR_CODES = {
     status: 422,
     message: '안전 기준은 느슨하게 바꿀 수 없습니다({항목}).',
   },
+  // ── step-engine 후보(P1-04, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 후보 id 없음 */
+  CANDIDATE_NOT_FOUND: { status: 404, message: '후보를 찾을 수 없습니다.' },
+  /** 05-3 §5.1: 진행 중 후보에 같은 itemCode+색상(uq_candidate_active_item_color, details.existingCandidateId) */
+  CANDIDATE_DUPLICATE: {
+    status: 409,
+    message: '같은 상품·색상으로 진행 중인 후보가 있습니다. 그 후보를 열어 주세요.',
+  },
+  /** 05-3 §5.1: 등록요청중·결과확인필요·등록됨(F-CW-07, details.status) */
+  CANDIDATE_LOCKED: {
+    status: 409,
+    message: '등록을 진행 중이거나 끝난 후보라 바꿀 수 없습니다.',
+  },
+  /** 05-3 §5.1: 후보 상태 EXCLUDED */
+  CANDIDATE_EXCLUDED: {
+    status: 409,
+    message: "제외된 후보입니다. '다시 작업'을 먼저 눌러 주세요.",
+  },
+  /** 05-3 §5.1: 그 동작에 맞지 않는 상태(details.allowed[]) */
+  CANDIDATE_STATUS_INVALID: {
+    status: 409,
+    message: '지금 후보 상태({상태})에서는 할 수 없습니다.',
+  },
+  /** 05-3 §5.1: 이 단계가 읽거나 이 단계를 읽는 단계가 실행 중(F-CW-18), 실행 중 제외·성별 변경(details.stepCode) */
+  STEP_LOCKED_BY_RUNNING_STEP: {
+    status: 409,
+    message: '{단계}가 실행 중이라 지금은 할 수 없습니다. 끝난 뒤 다시 해 주세요.',
+  },
+  /** 05-3 §5.1: 확정된 앵커 키와 다른 앵커·행·② 버전(F-CW-03) */
+  ANCHOR_KEY_MISMATCH: {
+    status: 409,
+    message: '이 후보의 기준 모델·색상과 다릅니다. 다른 모델·색상은 새 후보로 만들어 주세요.',
+  },
+  /** 05-3 §5.1: 키워드 id 없음 */
+  KEYWORD_NOT_FOUND: { status: 404, message: '키워드를 찾을 수 없습니다.' },
+  /** 05-3 §5.1: keyword.selected_at 없음 */
+  KEYWORD_NOT_SELECTED: {
+    status: 409,
+    message: '키워드 화면에서 고른 키워드만 후보로 만들 수 있습니다.',
+  },
+  /** 05-3 §5.1: keyword.excluded_reason 있음 */
+  KEYWORD_EXCLUDED: { status: 409, message: '아동화로 빠진 키워드는 고를 수 없습니다.' },
+  /** 05-3 §5.1: 검색어 규칙 위반(fieldErrors에 규칙) */
+  RAKUTEN_QUERY_INVALID: {
+    status: 422,
+    message: '라쿠텐 검색어 형식이 맞지 않습니다(반각 128자 이내, 너무 짧은 단어 없이).',
+  },
+  /** 05-3 §5.1: rakutenItemId 없음 */
+  RAKUTEN_ITEM_NOT_FOUND: { status: 404, message: '읽어 온 라쿠텐 상품을 찾을 수 없습니다.' },
   INTERNAL_ERROR: {
     status: 500,
     message: '앱 안에서 오류가 났습니다. 다시 해 보고, 계속되면 로그를 확인해 주세요.',

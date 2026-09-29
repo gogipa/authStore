@@ -4,13 +4,14 @@ import { Num } from '../Num/Num';
 import type { NumUnit, NumValue } from '../Num/formatNum';
 import styles from './DataTable.module.css';
 
-export type DataTableAlign = 'left' | 'right';
+/** left(기본) · right(숫자) · center(대시보드 단계 점 칸처럼 가운데 둔 작은 표시). */
+export type DataTableAlign = 'left' | 'right' | 'center';
 
 interface DataTableColumnBase {
   /** 열 이름(React key). */
   key: string;
   header: ReactNode;
-  /** left(기본) · right. 숫자 열(`num`)은 늘 right. */
+  /** left(기본) · right · center. 숫자 열(`num`)은 늘 right. */
   align?: DataTableAlign;
   /** 열 폭(예: 64, '20%'). 비우면 남은 폭을 나눈다. */
   width?: number | string;
@@ -50,6 +51,12 @@ function columnAlign<Row>(column: DataTableColumn<Row>): DataTableAlign {
   return column.num !== undefined ? 'right' : (column.align ?? 'left');
 }
 
+function alignClass(align: DataTableAlign): string | undefined {
+  if (align === 'right') return styles.right;
+  if (align === 'center') return styles.center;
+  return undefined;
+}
+
 /** 표(화면시안_명세 §3): 머리 행 36px(surface-sunk), 행 40px, 셀 좌우 12px, 선택 행 accent-soft. */
 export function DataTable<Row>({
   columns,
@@ -78,7 +85,7 @@ export function DataTable<Row>({
               <th
                 key={column.key}
                 scope="col"
-                className={cx(styles.th, columnAlign(column) === 'right' && styles.right)}
+                className={cx(styles.th, alignClass(columnAlign(column)))}
               >
                 {column.header}
               </th>
@@ -99,10 +106,7 @@ export function DataTable<Row>({
                 className={isRowSelected?.(row) ? styles.selected : undefined}
               >
                 {columns.map((column) => (
-                  <td
-                    key={column.key}
-                    className={cx(styles.td, columnAlign(column) === 'right' && styles.right)}
-                  >
+                  <td key={column.key} className={cx(styles.td, alignClass(columnAlign(column)))}>
                     {column.num !== undefined ? (
                       <Num value={column.value(row)} unit={column.num} />
                     ) : (

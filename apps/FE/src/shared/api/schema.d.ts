@@ -19,7 +19,7 @@ export interface paths {
         put?: never;
         /**
          * 후보 만들기
-         * @description creationPath 4종(표 D)으로 후보를 만든다. candidate + candidate_step 10행(NOT_RUN) + 상태 이력(CREATED)을 한 트랜잭션으로 쓴다. RAKUTEN_URL은 ② URL_CREATE 버전(비교 안 함, 앵커 = URL 상품)까지 같은 트랜잭션. 오류 — 404 RAKUTEN_ITEM_NOT_FOUND·KEYWORD_NOT_FOUND, 409 KEYWORD_NOT_SELECTED·KEYWORD_EXCLUDED·CANDIDATE_DUPLICATE(details.existingCandidateId), 422 RAKUTEN_QUERY_INVALID·RAKUTEN_ITEM_EXCLUDED_WORD·VALIDATION_FAILED. 키워드·검색어 경로는 만들 때 itemCode가 없어 중복 검사는 ② 소싱 선택 때 걸린다.
+         * @description creationPath 4종(표 D)으로 후보를 만든다. candidate + candidate_step 10행(NOT_RUN) + 상태 이력(CREATED)을 한 트랜잭션으로 쓴다. RAKUTEN_URL은 ② URL_CREATE 버전(비교 안 함, 앵커 = URL 상품)까지 같은 트랜잭션. 오류 — 404 RAKUTEN_ITEM_NOT_FOUND·KEYWORD_NOT_FOUND, 409 KEYWORD_NOT_SELECTED·KEYWORD_EXCLUDED·CANDIDATE_DUPLICATE(details.existingCandidateId), 422 RAKUTEN_QUERY_INVALID·RAKUTEN_ITEM_EXCLUDED_WORD·VALIDATION_FAILED. 키워드·검색어 경로는 만들 때 itemCode가 없어 중복 검사는 ② 소싱 선택 때 걸린다. M1에서는 DIRECT_INPUT(M2 임시 후보)을 만들지 않고 422 VALIDATION_FAILED(fieldErrors creationPath)로 답한다(P1-04 Proposed — 연결 API가 M2라 임시 후보가 남기만 한다).
          */
         post: operations["createCandidate"];
         delete?: never;
@@ -360,7 +360,7 @@ export interface paths {
         put?: never;
         /**
          * 후보 제외
-         * @description 후보를 직접 '제외'로 돌린다(도메인 액션). candidate_status_history(OWNER_EXCLUDED)를 남긴다. 이미 OWNER_EXCLUDED면 같은 응답을 준다. 등록 진행 후보는 409 CANDIDATE_LOCKED, 실행 중 단계가 있으면 409 STEP_LOCKED_BY_RUNNING_STEP.
+         * @description 후보를 직접 '제외'로 돌린다(도메인 액션). candidate_status_history(OWNER_EXCLUDED)를 남긴다. 이미 OWNER_EXCLUDED면 같은 응답을 준다. 다른 사유(앵커 일치 없음·재고 부족·판매 후보 아님)로 이미 제외된 후보도 새 이력 없이 200으로 지금 상태(사유 그대로)를 준다(P1-04 Proposed). 등록 진행 후보는 409 CANDIDATE_LOCKED, 실행 중 단계가 있으면 409 STEP_LOCKED_BY_RUNNING_STEP.
          */
         post: operations["excludeCandidate"];
         delete?: never;
@@ -382,7 +382,7 @@ export interface paths {
         put?: never;
         /**
          * 제외된 후보 다시 작업
-         * @description 제외된 후보를 '작업중'으로 되돌린다(사유 REOPENED, excluded_reason = NULL). 이미 WORKING이면 같은 응답. 진행 중 후보에 같은 itemCode+색상이 있으면 409 CANDIDATE_DUPLICATE(uq_candidate_active_item_color, details.existingCandidateId), 앵커 키만 같으면 경고 ANCHOR_KEY_DUPLICATE. 제외 상태가 아니면 409 CANDIDATE_STATUS_INVALID.
+         * @description 제외된 후보를 '작업중'으로 되돌린다(사유 REOPENED, excluded_reason = NULL). 이미 WORKING이면 같은 응답. 진행 중 후보에 같은 itemCode+색상이 있으면 409 CANDIDATE_DUPLICATE(uq_candidate_active_item_color, details.existingCandidateId), 앵커 키만 같으면 경고 ANCHOR_KEY_DUPLICATE. 등록 진행 후보(REGISTERING·RESULT_CHECK_REQUIRED·REGISTERED)는 409 CANDIDATE_LOCKED, 그 밖에 제외 상태가 아니면 409 CANDIDATE_STATUS_INVALID.
          */
         post: operations["reopenCandidate"];
         delete?: never;
@@ -444,7 +444,7 @@ export interface paths {
         };
         /**
          * 재실행 필요·멈춘 후보 단계 모아 보기
-         * @description 대시보드 '재실행 필요·멈춘 후보'(단계 단위, 페이징). ix_candidate_step_attention 부분 인덱스. status를 주지 않으면 RERUN_REQUIRED·FAILED·WAITING_INPUT. sort 허용 필드는 staleSince·updatedAt, 기본 updatedAt,desc.
+         * @description 대시보드 '재실행 필요·멈춘 후보'(단계 단위, 페이징). ix_candidate_step_attention 부분 인덱스. status를 주지 않으면 RERUN_REQUIRED·FAILED·WAITING_INPUT. 진행 중 후보(EXCLUDED·REGISTERED가 아닌 후보)의 단계만 준다(P1-04 Proposed). sort 허용 필드는 staleSince·updatedAt, 기본 updatedAt,desc.
          */
         get: operations["listAttentionCandidateSteps"];
         put?: never;
@@ -3335,6 +3335,8 @@ export interface components {
             approvedAt: string | null;
             /** @description 열린 연속 실행(ix_step_chain_open). 없으면 null */
             openContinuousRun: components["schemas"]["ContinuousRunSummary"] | null;
+            /** @description 이어 할 단계(목록 CandidateSummary.resumeStepCode와 같은 계산 — 흐름상 첫 입력대기·미실행·실패·재실행 필요 단계). 없으면 null */
+            resumeStepCode: components["schemas"]["StepCode"] | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */

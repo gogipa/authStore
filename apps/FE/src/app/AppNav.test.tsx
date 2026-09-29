@@ -19,6 +19,16 @@ function mainNav() {
   return screen.getByRole('navigation', { name: '주 메뉴' });
 }
 
+/**
+ * 가짜 API가 받은 요청 중 내비 상태 상자가 부른 `/call-usage`만 `'<METHOD> <경로>'`로 돌려준다.
+ * '/'(대시보드, lazy 청크)도 후보·설정 API를 부르므로 전체 요청 수를 세면 화면 청크가 언제 붙는지에 따라 흔들린다.
+ */
+function callUsageRequests(requests: readonly Request[]) {
+  return requests
+    .map((r) => `${r.method} ${new URL(r.url).pathname}`)
+    .filter((key) => key.endsWith('/call-usage'));
+}
+
 /** 내비 상태 상자의 '오늘 페이지 조회 …' 줄(글이 여러 요소로 나뉘어 textContent로 찾는다). */
 function pageFetchLine(text: string) {
   return within(mainNav()).getByText(
@@ -76,9 +86,7 @@ describe('내비 상태 상자(오늘 페이지 조회)', () => {
     const api = stubApi({ 'GET /call-usage': () => jsonResponse(callUsageList(38)) });
     renderRoute('/');
     await waitFor(() => expect(pageFetchLine('오늘 페이지 조회 38/110')).toBeInTheDocument());
-    expect(api.requests.map((r) => `${r.method} ${new URL(r.url).pathname}`)).toEqual([
-      'GET /api/v1/call-usage',
-    ]);
+    expect(callUsageRequests(api.requests)).toEqual(['GET /api/v1/call-usage']);
     // 등록 차단 칩은 getRegistrationSwitch(P4-03)를 붙일 때까지 지금 문구를 둔다.
     expect(within(mainNav()).getByText('등록 API 차단 · 확인 전')).toBeInTheDocument();
   });
@@ -95,7 +103,10 @@ describe('내비 상태 상자(오늘 페이지 조회)', () => {
     act(() => FakeEventSource.latest().emit('call-usage.changed', callUsageChanged(39)));
 
     await waitFor(() => expect(pageFetchLine('오늘 페이지 조회 39/110')).toBeInTheDocument());
-    expect(api.requests).toHaveLength(2);
+    expect(callUsageRequests(api.requests)).toEqual([
+      'GET /api/v1/call-usage',
+      'GET /api/v1/call-usage',
+    ]);
   });
 
   it('API가 실패하면 "—"를 보인다', async () => {
@@ -103,7 +114,7 @@ describe('내비 상태 상자(오늘 페이지 조회)', () => {
       'GET /call-usage': () => errorResponse(500, 'INTERNAL_ERROR', '서버 오류가 났습니다.'),
     });
     renderRoute('/');
-    await waitFor(() => expect(api.requests).toHaveLength(1));
+    await waitFor(() => expect(callUsageRequests(api.requests)).toHaveLength(1));
     await waitFor(() => expect(pageFetchLine('오늘 페이지 조회 —')).toBeInTheDocument());
   });
 

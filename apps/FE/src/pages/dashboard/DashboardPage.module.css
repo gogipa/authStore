@@ -1,0 +1,112 @@
+/* SCR-01 대시보드(Main.dc.html). 2열: 왼쪽 표 두 개 · 오른쪽 360px(시스템 경고). 폭은 보드 값. */
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.main {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.side {
+  width: 360px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.resumeText {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+  white-space: nowrap;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.sectionTitle {
+  margin: 0;
+  font: var(--type-heading);
+  color: var(--color-ink);
+}
+
+.count {
+  font: var(--type-num);
+  color: var(--color-ink-muted);
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.strong {
+  font-weight: var(--type-body-strong-weight);
+}
+
+.link {
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.candidateLink {
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+/* 통과·오류 칩(22px, 공통부품 §C). 토큰 없음(04-2 §5). */
+.passChip,
+.failChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font: var(--type-label);
+  white-space: nowrap;
+}
+
+.passChip {
+  background: var(--color-done-soft);
+  color: var(--color-done);
+}
+
+.failChip {
+  background: var(--color-failed-soft);
+  color: var(--color-failed);
+}

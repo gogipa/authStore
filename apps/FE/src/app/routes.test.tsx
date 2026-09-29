@@ -1,6 +1,8 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { routes } from './routes';
+import { jsonResponse, stubApi } from '@/test/apiStub';
+import { candidateDetail } from '@/test/fixtures/stepEngine';
 import { renderRoute } from '@/test/renderRoute';
 
 describe('경로', () => {
@@ -32,7 +34,11 @@ describe('경로', () => {
     expect(screen.getByText(screenId)).toBeInTheDocument();
   });
 
-  it('/candidates/:candidateId는 현재 단계(기본 ② 소싱)로 보낸다', async () => {
+  it('/candidates/:candidateId는 이어 할 단계 화면으로 보낸다(resumeStepCode, P1-04)', async () => {
+    stubApi({
+      'GET /candidates/7': () =>
+        jsonResponse(candidateDetail({ id: 7, resumeStepCode: 'SOURCING' })),
+    });
     const { router } = renderRoute('/candidates/7');
     expect(
       await screen.findByRole('heading', { level: 1, name: '라쿠텐 후보 비교' }),

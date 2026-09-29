@@ -69,10 +69,28 @@ export type EventInvalidations = {
  * - P1-02: `call-usage.changed`
  * - P1-03: `settings.reloaded` → settings 태그 전체(`GET /settings` 등). 다시 읽기가 실패해도 오므로
  *   (settingsSnapshotId null) 화면의 검사 결과가 바로 바뀐다.
+ * - P1-04: `candidate.status-changed` → 후보 목록·그 후보 상세·상태별 수·이어서 할 곳·그 후보 상태 이력·재실행 필요 모아 보기
+ *   (제외되면 그 후보의 단계가 모아 보기에서 빠진다). `candidate-step.changed` → 후보 목록(단계 점)·그 후보 상세·
+ *   이어서 할 곳·재실행 필요 모아 보기. 키는 features/step-engine의 `stepEngineKeys`와 같은 모양이다
+ *   (shared는 features를 부르지 않아 여기서 qk로 만든다).
  */
 export const EVENT_INVALIDATIONS: EventInvalidations = {
   'call-usage.changed': () => [qk('integrations', 'getCallUsage')],
   'settings.reloaded': () => [['settings']],
+  'candidate.status-changed': ({ candidateId }) => [
+    qk('step-engine', 'listCandidates'),
+    qk('step-engine', 'getCandidate', { candidateId }),
+    qk('step-engine', 'getCandidateStatusCounts'),
+    qk('step-engine', 'getCandidateResumeTarget'),
+    qk('step-engine', 'listCandidateStatusHistory', { candidateId }),
+    qk('step-engine', 'listAttentionCandidateSteps'),
+  ],
+  'candidate-step.changed': ({ candidateId }) => [
+    qk('step-engine', 'listCandidates'),
+    qk('step-engine', 'getCandidate', { candidateId }),
+    qk('step-engine', 'getCandidateResumeTarget'),
+    qk('step-engine', 'listAttentionCandidateSteps'),
+  ],
 };
 
 export const PROGRESS_EVENTS_URL = `${API_BASE_URL}/events`;

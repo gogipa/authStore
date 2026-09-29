@@ -43,8 +43,13 @@ describe('진행 알림 이름', () => {
     >();
   });
 
-  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03)', () => {
-    expect(Object.keys(EVENT_INVALIDATIONS)).toEqual(['call-usage.changed', 'settings.reloaded']);
+  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 후보 이벤트 2개(P1-04)', () => {
+    expect(Object.keys(EVENT_INVALIDATIONS)).toEqual([
+      'call-usage.changed',
+      'settings.reloaded',
+      'candidate.status-changed',
+      'candidate-step.changed',
+    ]);
     expect(EVENT_INVALIDATIONS['call-usage.changed']?.(callUsageChanged())).toEqual([
       ['integrations', 'getCallUsage'],
     ]);
@@ -60,6 +65,39 @@ describe('진행 알림 이름', () => {
         }),
       ).toEqual([['settings']]);
     }
+    // candidate.status-changed → 목록·그 후보 상세·상태별 수·이어서 할 곳·그 후보 이력·재실행 필요 모아 보기
+    expect(
+      EVENT_INVALIDATIONS['candidate.status-changed']?.({
+        candidateId: 12,
+        fromStatus: 'WORKING',
+        toStatus: 'EXCLUDED',
+        reason: 'OWNER_EXCLUDED',
+        excludedReason: 'OWNER_EXCLUDED',
+        changedAt: '2026-09-28T00:00:00.000Z',
+      }),
+    ).toEqual([
+      ['step-engine', 'listCandidates'],
+      ['step-engine', 'getCandidate', { candidateId: 12 }],
+      ['step-engine', 'getCandidateStatusCounts'],
+      ['step-engine', 'getCandidateResumeTarget'],
+      ['step-engine', 'listCandidateStatusHistory', { candidateId: 12 }],
+      ['step-engine', 'listAttentionCandidateSteps'],
+    ]);
+    expect(
+      EVENT_INVALIDATIONS['candidate-step.changed']?.({
+        candidateId: 12,
+        stepCode: 'PRICING',
+        status: 'RERUN_REQUIRED',
+        currentStepRunId: 4,
+        staleInputs: ['candidate.gender'],
+        staleSince: '2026-09-28T00:00:00.000Z',
+      }),
+    ).toEqual([
+      ['step-engine', 'listCandidates'],
+      ['step-engine', 'getCandidate', { candidateId: 12 }],
+      ['step-engine', 'getCandidateResumeTarget'],
+      ['step-engine', 'listAttentionCandidateSteps'],
+    ]);
   });
 });
 
