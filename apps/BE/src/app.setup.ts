@@ -1,0 +1,44 @@
+import { Logger as NestLogger } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import type { Request, Response } from 'express';
+import { Logger } from 'nestjs-pino';
+import { AppConfigService } from './common/config/app-config.service.js';
+import { AllExceptionsFilter } from './common/errors/all-exceptions.filter.js';
+import { ERROR_CODES } from './common/errors/error-codes.js';
+import { buildErrorResponse } from './common/errors/error-response.js';
+import { AppValidationPipe } from './common/errors/app-validation.pipe.js';
+import { localSecurityMiddleware } from './common/security/local-security.js';
+
+export const API_PREFIX = 'api/v1';
+
+/**
+ * main.ts와 e2e 테스트가 같이 쓰는 앱 설정. listen 전에 부른다.
+ * 요청 순서: 로컬 보안 → 본문 파싱 → Nest 라우트(/api/v1) → 정적 화면(운영) → 404 봉투
+ */
+export async function configureApp(app: NestExpressApplication): Promise<void> {
+  const config = app.get(AppConfigService);
+  app.useLogger(app.get(Logger));
+  app.disable('x-powered-by');
+  // 로컬 보안은 본문 파싱·라우팅·정적 파일보다 먼저(모든 요청). CORS는 켜지 않는다.
+  const securityLog = new NestLogger('LocalSecurity');
+  app.use(
+    localSecurityMiddleware({
+      extraAllowedOrigins: config.devFeOrigins,
+      onBlocked: ({ code, method, path }) => securityLog.warn(`${code} ${method} ${path}`),
+    }),
+  );
+  app.setGlobalPrefix(API_PREFIX);
+  app.useGlobalPipes(new AppValidationPipe());
+  app.useGlobalFilters(new AllExceptionsFilter());
+  app.enableShutdownHooks();
+  await app.init();
+  // Nest의 404 처리는 /api/v1 아래만 맡는다. 그 밖(/api/v2, 화면이 없을 때의 /)도 같은 봉투로 답한다.
+  app.use((req: Request, res: Response) => {
+    const { status, message } = ERROR_CODES.ROUTE_NOT_FOUND;
+    res
+      .status(status)
+      .json(
+        buildErrorResponse({ code: 'ROUTE_NOT_FOUND', message, status, path: req.originalUrl }),
+      );
+  });
+}

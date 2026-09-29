@@ -1,0 +1,27 @@
+# 의존성·빌드 산출물
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+apps/BE/src/generated/
+
+# 환경변수·비밀정보(커밋 금지). 키 목록은 .env.example에만 둔다
+.env
+.env.*
+!.env.example
+
+# 앱 로컬 데이터(설정 JSON, 이미지, 로그)
+.data/
+*.log
+logs/
+
+# 테스트 산출물
+playwright-report/
+test-results/
+
+# OS·편집기
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

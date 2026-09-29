@@ -1,0 +1,52 @@
+/*
+ * 전역 기본값. 색·글자·간격은 tokens.css의 변수만 쓴다(라이트 테마만, D-13).
+ * 글꼴은 외부에서 받지 않는다: --font-sans 목록에서 이 PC에 있는 글꼴을 쓴다.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--color-ink);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* 포커스 링: accent 2px 실선, 요소에서 2px 떨어뜨린다(디자인 시스템 README 접근성). */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+code,
+kbd,
+samp {
+  font: var(--type-id);
+}

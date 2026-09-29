@@ -1,0 +1,19 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.lead {
+  font: var(--type-body);
+  color: var(--color-ink-muted);
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}

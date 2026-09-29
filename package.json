@@ -1,0 +1,38 @@
+{
+  "name": "autostore",
+  "private": true,
+  "description": "라쿠텐 신발을 네이버 스마트스토어에 등록하는 로컬 웹앱",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=24.15.0",
+    "pnpm": ">=9.15.0"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm --filter @autostore/fe build && pnpm --filter @autostore/be build",
+    "start": "pnpm --filter @autostore/be start:prod",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @autostore/be test:e2e",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "secretlint": "secretlint \"**/*\"",
+    "db:migrate": "pnpm --filter @autostore/be db:migrate",
+    "api:gen": "pnpm --filter @autostore/fe api:gen"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "@secretlint/secretlint-rule-preset-recommend": "13.0.6",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0",
+    "prettier": "3.9.9",
+    "secretlint": "13.0.6",
+    "typescript": "5.9.3"
+  },
+  "scarfSettings": {
+    "enabled": false
+  }
+}

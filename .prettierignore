@@ -1,0 +1,8 @@
+docs/
+pnpm-lock.yaml
+dist/
+coverage/
+apps/BE/prisma/migrations/
+apps/BE/src/generated/
+apps/FE/src/shared/api/schema.d.ts
+.claude/

@@ -1,0 +1,25 @@
+{
+  "v": 3,
+  "layout": "files",
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-09-27T06:13:36Z"
+  },
+  "title": "신발 자동등록 디자인 시스템",
+  "namespace": "ShoeDesk",
+  "libraries": [],
+  "sections": {},
+  "groups": [],
+  "assetGroups": {},
+  "blobs": {},
+  "docs": {
+    "readme": "project/README.md",
+    "sections": []
+  },
+  "lastChange": {
+    "by": "Claude",
+    "at": "2026-09-27T08:45:00Z",
+    "via": "Claude Code",
+    "note": "'AI 생성' 칩을 붙이는 대상을 분명히 함(템플릿·규칙 값 제외)"
+  }
+}
