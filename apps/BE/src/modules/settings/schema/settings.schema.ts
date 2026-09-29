@@ -1,0 +1,327 @@
+import { Ajv, type JSONSchemaType, type ValidateFunction } from 'ajv';
+import { AI_ENGINE_CODES } from '../../integrations/ai-engine/ai-engine.port.js';
+import { DEFAULT_SETTINGS } from '../defaults/default-settings.js';
+import {
+  type AiEngineModelPair,
+  type AppSettings,
+  DUTY_HS_HEADINGS,
+  NOTICE_BLOCK_CONDITIONS,
+  type NoticeBlock,
+  NPAY_FEE_GRADES,
+  PRICE_RULE_METHODS,
+  type SettingsSchemaVersion,
+  type SizeRangeMm,
+  VAT_MODES,
+} from './settings.types.js';
+
+/**
+ * 설정 JSON Schema(F-ST-01). draft-07(Ajv 8 기본, Proposed). `JSONSchemaType<AppSettings>`라 TS 타입과 어긋나면
+ * 컴파일이 깨진다.
+ * - 모든 객체에 `additionalProperties: false`: 모르는 키·비밀 키(API 키·시크릿·토큰)는 오류다(NFR-02, Proposed).
+ * - 모든 키에 기본 템플릿 값이 `default`로 붙는다(아래 applyDefaults). 파일에서 키가 빠지면 기본값으로 채워
+ *   검사한다(`useDefaults`) — 뒤 실행 문서가 키를 더해도 이미 있는 설정 파일이 깨지지 않게(Proposed).
+ * - 안전 기준 하한(235mm·6시간·내장 목록)은 스키마가 아니라 safety-floor.validator.ts가 본다
+ *   (어기면 422 SAFETY_SETTING_RELAXATION_REJECTED로 따로 알리기 위해).
+ */
+export const SETTINGS_SCHEMA_VERSION: SettingsSchemaVersion = '1';
+
+const pct = { type: 'number', minimum: 0, maximum: 100, multipleOf: 0.001 } as const;
+const krw = { type: 'integer', minimum: 0, maximum: 100_000_000 } as const;
+const yen = { type: 'integer', minimum: 0, maximum: 100_000_000 } as const;
+const positiveCm = { type: 'number', exclusiveMinimum: 0, maximum: 1000 } as const;
+const shortText = { type: 'string', minLength: 1, maxLength: 100 } as const;
+const wordList = {
+  type: 'array',
+  items: shortText,
+  maxItems: 1000,
+} as const;
+
+const sizeRange: JSONSchemaType<SizeRangeMm> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['min', 'max'],
+  properties: {
+    min: { type: 'integer', minimum: 100, maximum: 400 },
+    max: { type: 'integer', minimum: 100, maximum: 400 },
+  },
+};
+
+/**
+ * 필수이면서 null이 되는 속성(`T | null`). Ajv의 JSONSchemaType은 `nullable: true`를 선택 속성(`?:`)에만 허락해서
+ * 이런 속성은 형 검사를 통과하지 못한다. 스키마 뜻(draft-07 + Ajv `nullable`)은 그대로 두고 형만 여기서 한 번 푼다.
+ * 대신 이 속성들의 값은 settings-file.loader.spec.ts가 null·범위 밖 값으로 따로 확인한다.
+ */
+function nullable(schema: Record<string, unknown>): never {
+  return { ...schema, nullable: true } as never;
+}
+
+const modelName = nullable({ type: 'string', minLength: 1, maxLength: 100 });
+const modelPair: JSONSchemaType<AiEngineModelPair> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['text', 'vision'],
+  properties: { text: modelName, vision: modelName },
+};
+
+const noticeBlock: JSONSchemaType<NoticeBlock> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['id', 'when', 'text'],
+  properties: {
+    id: { type: 'string', pattern: '^[A-Z][A-Z0-9_]{0,39}$' },
+    when: nullable({
+      type: 'string',
+      enum: [...NOTICE_BLOCK_CONDITIONS, null],
+    }),
+    text: { type: 'string', minLength: 1, maxLength: 1000 },
+  },
+};
+
+const schema: JSONSchemaType<AppSettings> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['schemaVersion', 'costs', 'pricing', 'sourcing', 'keywords', 'safety', 'notice', 'ai'],
+  properties: {
+    schemaVersion: { type: 'string', const: SETTINGS_SCHEMA_VERSION },
+    costs: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'cardSurchargePct',
+        'saleFeePct',
+        'saleFeeAdInflowPct',
+        'saleFeeIncludesShipping',
+        'npayFeeGrade',
+        'npayFeePctByGrade',
+        'miscCostKrw',
+        'targetMarginPct',
+        'minProfitKrw',
+        'judgementMarginPct',
+        'roundingUnitKrw',
+        'pointValueFactorForMargin',
+        'vatMode',
+        'sellerlifeCoupon',
+      ],
+      properties: {
+        cardSurchargePct: pct,
+        saleFeePct: pct,
+        saleFeeAdInflowPct: pct,
+        saleFeeIncludesShipping: { type: 'boolean' },
+        npayFeeGrade: { type: 'string', enum: NPAY_FEE_GRADES },
+        npayFeePctByGrade: {
+          type: 'object',
+          additionalProperties: false,
+          required: [...NPAY_FEE_GRADES],
+          properties: {
+            MICRO: pct,
+            SMALL_1: pct,
+            SMALL_2: pct,
+            SMALL_3: pct,
+            GENERAL: pct,
+          },
+        },
+        miscCostKrw: krw,
+        targetMarginPct: { ...pct, exclusiveMaximum: 100 },
+        minProfitKrw: krw,
+        judgementMarginPct: pct,
+        roundingUnitKrw: { type: 'integer', minimum: 1, maximum: 100_000 },
+        pointValueFactorForMargin: { type: 'number', minimum: 0, maximum: 1 },
+        vatMode: { type: 'string', enum: VAT_MODES },
+        sellerlifeCoupon: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['enabled', 'amountKrw', 'monthlyLimit'],
+          properties: {
+            enabled: { type: 'boolean' },
+            amountKrw: { type: 'integer', minimum: 0, maximum: 1_000_000 },
+            monthlyLimit: { type: 'integer', minimum: 0, maximum: 10_000 },
+          },
+        },
+      },
+    },
+    pricing: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'dutyFreeLimitUsd',
+        'dutyFreeBufferUsd',
+        'defaultForwarderFeeKrw',
+        'shoeBox',
+        'dutyRatePctByHsHeading',
+        'applyFtaRates',
+        'simplifiedDuty',
+        'priceRule',
+        'sellTaxableSizes',
+      ],
+      properties: {
+        dutyFreeLimitUsd: { type: 'number', minimum: 0, maximum: 10_000 },
+        dutyFreeBufferUsd: { type: 'number', minimum: 0, maximum: 10_000 },
+        defaultForwarderFeeKrw: krw,
+        shoeBox: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['lengthCm', 'widthCm', 'heightCm', 'weightKg'],
+          properties: {
+            lengthCm: positiveCm,
+            widthCm: positiveCm,
+            heightCm: positiveCm,
+            weightKg: { type: 'number', exclusiveMinimum: 0, maximum: 100 },
+          },
+        },
+        dutyRatePctByHsHeading: {
+          type: 'object',
+          additionalProperties: false,
+          required: [...DUTY_HS_HEADINGS],
+          properties: { '6401': pct, '6402': pct, '6403': pct, '6404': pct, '6405': pct },
+        },
+        applyFtaRates: { type: 'boolean' },
+        simplifiedDuty: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['enabled', 'ratePct'],
+          properties: { enabled: { type: 'boolean' }, ratePct: pct },
+        },
+        priceRule: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['method', 'refDiscountPct'],
+          properties: {
+            method: { type: 'string', enum: PRICE_RULE_METHODS },
+            refDiscountPct: pct,
+          },
+        },
+        sellTaxableSizes: { type: 'boolean' },
+      },
+    },
+    sourcing: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'genreId',
+        'minPriceYen',
+        'ngKeywords',
+        'pageFetchTargetCandidates',
+        'pageFetchMaxPages',
+        'targetSizeMm',
+        'minSizeCount',
+        'defaultWidth',
+        'excludeBackOrder',
+        'defaultShippingYen',
+        'pageFetchDailyLimit',
+      ],
+      properties: {
+        genreId: { type: 'integer', minimum: 1, maximum: 2_147_483_647 },
+        minPriceYen: yen,
+        ngKeywords: { ...wordList, items: { type: 'string', minLength: 1, maxLength: 50 } },
+        pageFetchTargetCandidates: { type: 'integer', minimum: 1, maximum: 50 },
+        pageFetchMaxPages: { type: 'integer', minimum: 1, maximum: 50 },
+        targetSizeMm: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['MALE', 'FEMALE'],
+          properties: { MALE: sizeRange, FEMALE: sizeRange },
+        },
+        minSizeCount: { type: 'integer', minimum: 1, maximum: 30 },
+        defaultWidth: { type: 'string', minLength: 1, maxLength: 50 },
+        excludeBackOrder: { type: 'boolean' },
+        defaultShippingYen: yen,
+        pageFetchDailyLimit: { type: 'integer', minimum: 0, maximum: 1000 },
+      },
+    },
+    keywords: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['datalabDailyLimit'],
+      properties: {
+        datalabDailyLimit: { type: 'integer', minimum: 0, maximum: 1000 },
+      },
+    },
+    safety: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'childShoeMaxSizeMm',
+        'judgementValidityHours',
+        'childKeywords',
+        'personBlockWords',
+      ],
+      properties: {
+        childShoeMaxSizeMm: { type: 'integer', minimum: 0, maximum: 400 },
+        judgementValidityHours: { type: 'number', exclusiveMinimum: 0 },
+        childKeywords: wordList,
+        personBlockWords: wordList,
+      },
+    },
+    notice: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['basisDate', 'blocks', 'values'],
+      properties: {
+        basisDate: { type: 'string', pattern: '^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$' },
+        blocks: { type: 'array', items: noticeBlock, minItems: 1, maxItems: 100 },
+        values: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['deliveryDaysMin', 'deliveryDaysMax', 'exchangePolicy'],
+          properties: {
+            deliveryDaysMin: nullable({ type: 'integer', minimum: 1, maximum: 180 }),
+            deliveryDaysMax: nullable({ type: 'integer', minimum: 1, maximum: 180 }),
+            exchangePolicy: { type: 'string', minLength: 1, maxLength: 500 },
+          },
+        },
+      },
+    },
+    ai: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['engine', 'models'],
+      properties: {
+        engine: { type: 'string', enum: AI_ENGINE_CODES },
+        models: {
+          type: 'object',
+          additionalProperties: false,
+          required: [...AI_ENGINE_CODES],
+          properties: { CLAUDE: modelPair, AGY: modelPair, CODEX: modelPair },
+        },
+      },
+    },
+  },
+};
+
+interface SchemaNode {
+  type?: unknown;
+  properties?: Record<string, SchemaNode>;
+  default?: unknown;
+}
+
+/** 기본 템플릿 값을 각 속성의 `default`로 붙인다(속성 아래로만, 배열 항목 안은 붙이지 않는다) */
+function applyDefaults(node: SchemaNode, defaults: unknown): void {
+  if (!node.properties || !defaults || typeof defaults !== 'object' || Array.isArray(defaults)) {
+    return;
+  }
+  const values = defaults as Record<string, unknown>;
+  for (const [key, child] of Object.entries(node.properties)) {
+    if (!(key in values)) continue;
+    // 속성 스키마를 나눠 쓰는 곳(pct, MALE·FEMALE의 sizeRange, 엔진별 modelPair)이 있어 복사해 붙인다.
+    // properties도 새로 만든다: 같은 properties를 나눠 쓰면 뒤 형제의 기본값(FEMALE 220~260)이 앞 형제(MALE)를 덮는다.
+    const copy: SchemaNode = { ...child, default: structuredClone(values[key]) };
+    if (child.properties) copy.properties = { ...child.properties };
+    node.properties[key] = copy;
+    applyDefaults(copy, values[key]);
+  }
+}
+
+applyDefaults(schema as unknown as SchemaNode, DEFAULT_SETTINGS);
+
+/** 설정 JSON Schema(기본값 포함). 문서·테스트가 읽는다 */
+export const SETTINGS_JSON_SCHEMA: JSONSchemaType<AppSettings> = schema;
+
+/**
+ * 검사기. allErrors(오류를 모두 모은다), useDefaults(빠진 키는 기본값), 비율 소수 셋째 자리까지(multipleOf 0.001을
+ * 부동소수 오차 없이 보려고 multipleOfPrecision 9).
+ * 주의: 검사가 데이터를 바꾼다(기본값 채움). 원본을 지키려면 복사본을 넘긴다.
+ */
+export function compileSettingsValidator(): ValidateFunction<AppSettings> {
+  const ajv = new Ajv({ allErrors: true, useDefaults: true, strict: true, multipleOfPrecision: 9 });
+  return ajv.compile(SETTINGS_JSON_SCHEMA);
+}

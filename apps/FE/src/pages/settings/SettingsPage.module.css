@@ -1,0 +1,194 @@
+/* SCR-10 설정(Settings.dc.html). 3열: 왼쪽 탭·카드(200px) · 가운데 탭 본문 · 오른쪽 요약(340px). 폭은 보드 값. */
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.side {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.tabPanel {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.summary {
+  width: 340px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* 왼쪽 작은 카드('AI 엔진'·'설정 파일 검사'): 안쪽 12, 사이 8 */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.cardTitle {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+.cardText {
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.cardAction {
+  align-self: flex-start;
+}
+
+.strong {
+  font-weight: var(--type-body-strong-weight);
+}
+
+.mono {
+  font: var(--type-id);
+  color: var(--color-ink-muted);
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.muted {
+  font: var(--type-body);
+  color: var(--color-ink-muted);
+}
+
+.alertText {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}
+
+/* 검사 결과 칩(높이 22px: 공통부품 §C 칩과 같다) */
+.badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font: var(--type-label);
+  white-space: nowrap;
+}
+
+.badgeOk {
+  background: var(--color-done-soft);
+  color: var(--color-done);
+}
+
+.badgeError {
+  background: var(--color-failed-soft);
+  color: var(--color-failed);
+}
+
+.errorList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.errorItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font: var(--type-caption);
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+
+.field {
+  font: var(--type-id);
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+
+/* 오른쪽 '적용 중인 기본값': 안쪽 16, 묶음 사이 16 */
+.summaryCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.summaryTitle {
+  font: var(--type-heading);
+  color: var(--color-ink);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.divided {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+
+.groupTitle {
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+}
+
+/* 라벨 | 값(오른쪽 정렬) 2열, 열 사이 12 · 줄 사이 6(보드) */
+.values {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-3);
+  row-gap: 6px;
+  margin: 0;
+  font: var(--type-body);
+}
+
+.valueRow {
+  display: contents;
+}
+
+.term {
+  color: var(--color-ink-muted);
+}
+
+.detail {
+  margin: 0;
+  text-align: right;
+  color: var(--color-ink);
+}
+
+.switchRow {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.switchLabel {
+  flex-grow: 1;
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+}

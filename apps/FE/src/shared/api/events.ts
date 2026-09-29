@@ -66,10 +66,13 @@ export type EventInvalidations = {
 
 /**
  * 이벤트 → 무효화할 queryKey 표. 도메인 훅을 만드는 실행 문서가 자기 이벤트를 이 표에 더한다.
- * (P1-02는 `call-usage.changed` 하나만 넣는다.)
+ * - P1-02: `call-usage.changed`
+ * - P1-03: `settings.reloaded` → settings 태그 전체(`GET /settings` 등). 다시 읽기가 실패해도 오므로
+ *   (settingsSnapshotId null) 화면의 검사 결과가 바로 바뀐다.
  */
 export const EVENT_INVALIDATIONS: EventInvalidations = {
   'call-usage.changed': () => [qk('integrations', 'getCallUsage')],
+  'settings.reloaded': () => [['settings']],
 };
 
 export const PROGRESS_EVENTS_URL = `${API_BASE_URL}/events`;

@@ -32,6 +32,15 @@ describe('숫자·시각 표기(공통부품 §J)', () => {
     expect(formatPct(3.63)).toBe('3.6%');
   });
 
+  it('비율 자리 수를 정할 수 있다(설정 요율: 3.0% · 3.63% · 2.5%)', () => {
+    const rate = { minFractionDigits: 1, maxFractionDigits: 2 };
+    expect(formatPct(3, rate)).toBe('3.0%');
+    expect(formatPct(3.63, rate)).toBe('3.63%');
+    expect(formatPct(2.5, rate)).toBe('2.5%');
+    expect(formatPct(1.947, rate)).toBe('1.95%');
+    expect(formatPct(10, { maxFractionDigits: 0 })).toBe('10%');
+  });
+
   it('시각: Asia/Seoul 기준 HH:mm', () => {
     expect(formatKstTime('2026-09-27T05:02:00Z')).toBe('14:02');
     expect(formatKstTime('2026-09-27T14:02:11+09:00')).toBe('14:02');

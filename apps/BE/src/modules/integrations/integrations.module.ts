@@ -1,9 +1,14 @@
 import { Module } from '@nestjs/common';
+import { SettingsModule } from '../settings/settings.module.js';
+import { SettingsService } from '../settings/settings.service.js';
 import { CallUsageController } from './call-usage/call-usage.controller.js';
 import { CallUsageService } from './call-usage/call-usage.service.js';
 import { CallLogService } from './http/call-log.service.js';
 import { CLOCK, systemClock } from './http/clock.token.js';
-import { createDailyLimitProvider, DAILY_LIMIT_PROVIDER } from './http/daily-limit.provider.js';
+import {
+  createSettingsDailyLimitProvider,
+  DAILY_LIMIT_PROVIDER,
+} from './http/daily-limit.provider.js';
 import { ExternalHttpGateway } from './http/external-http.gateway.js';
 import { defaultHttpFetch, HTTP_FETCH } from './http/http-fetch.token.js';
 
@@ -13,11 +18,17 @@ import { defaultHttpFetch, HTTP_FETCH } from './http/http-fetch.token.js';
  * 테스트는 HTTP_FETCH·CLOCK·DAILY_LIMIT_PROVIDER를 overrideProvider로 바꿔 끼운다(03-ADR-003).
  */
 @Module({
+  // 하루 조회 상한의 원본이 설정 파일이다(P1-03)
+  imports: [SettingsModule],
   controllers: [CallUsageController],
   providers: [
     { provide: HTTP_FETCH, useValue: defaultHttpFetch },
     { provide: CLOCK, useValue: systemClock },
-    { provide: DAILY_LIMIT_PROVIDER, useFactory: () => createDailyLimitProvider() },
+    {
+      provide: DAILY_LIMIT_PROVIDER,
+      inject: [SettingsService],
+      useFactory: (settings: SettingsService) => createSettingsDailyLimitProvider(settings),
+    },
     CallLogService,
     CallUsageService,
     ExternalHttpGateway,

@@ -72,6 +72,13 @@ export const ICONS = {
   'chevron-up': [path('M6 15l6-6 6 6')],
   /** 정보(안내 띠) */
   info: [{ tag: 'circle', cx: 12, cy: 12, r: 8.5 }, path('M12 11v5.5M12 7.5v.5')],
+  /** 이동(Settings 보드 'AI 엔진 설정' 링크) */
+  'arrow-right': [path('M5 12h14M13 6l6 6-6 6')],
+  /** 잠금(Settings 보드 '더할 수만 있고 뺄 수 없습니다' 안내 띠) */
+  lock: [
+    { tag: 'rect', x: 5, y: 10.5, width: 14, height: 10, rx: 2 },
+    path('M8 10.5V7.5a4 4 0 0 1 8 0v3'),
+  ],
   /** 신발(후보 머리 썸네일 자리, 공통부품 §F) */
   shoe: [
     path('M3 16.5V13l3-1 3.5-4 2 .5 1 2.5 5 1.5c2 .6 3.5 1.8 3.5 3.5v.5H3z'),

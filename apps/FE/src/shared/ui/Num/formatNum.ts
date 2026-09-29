@@ -1,5 +1,6 @@
 import {
   EMPTY_VALUE,
+  type FractionDigits,
   formatCount,
   formatKrw,
   formatKstTime,
@@ -16,8 +17,11 @@ export type NumUnit = 'krw' | 'yen' | 'mm' | 'pct' | 'time' | 'count';
 
 export type NumValue = number | string | Date | null | undefined;
 
-/** 값 하나를 단위 표기로 바꾼다. 값이 없거나 읽을 수 없으면 '—'. */
-export function formatNum(value: NumValue, unit: NumUnit): string {
+/**
+ * 값 하나를 단위 표기로 바꾼다. 값이 없거나 읽을 수 없으면 '—'.
+ * `digits`는 pct에만 쓴다(요율 `3.0%`·`3.63%`처럼 자리를 맞출 때).
+ */
+export function formatNum(value: NumValue, unit: NumUnit, digits?: FractionDigits): string {
   if (value === null || value === undefined || value === '') return EMPTY_VALUE;
   if (unit === 'time') return formatKstTime(value instanceof Date ? value : String(value));
   const n = typeof value === 'number' ? value : Number(value);
@@ -30,7 +34,7 @@ export function formatNum(value: NumValue, unit: NumUnit): string {
     case 'mm':
       return formatMm(n);
     case 'pct':
-      return formatPct(n);
+      return formatPct(n, digits);
     case 'count':
       return formatCount(n);
   }

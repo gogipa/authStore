@@ -1,8 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { BE_ROOT } from '../../../common/config/paths.js';
+import { APP_VERSION } from '../../../common/config/app-version.js';
 import { ApiException } from '../../../common/errors/api.exception.js';
 import { formatErrorMessage } from '../../../common/errors/error-codes.js';
 import { formatKstDateTime, secondsUntilNextKstMidnight } from '../../../common/time/kst.js';
@@ -19,23 +17,12 @@ import {
 } from './external-targets.js';
 import { HTTP_FETCH, type HttpFetch } from './http-fetch.token.js';
 
-function readAppVersion(): string {
-  try {
-    const pkg = JSON.parse(readFileSync(join(BE_ROOT, 'package.json'), 'utf8')) as {
-      version?: unknown;
-    };
-    return typeof pkg.version === 'string' ? pkg.version : '0.0.0';
-  } catch {
-    return '0.0.0';
-  }
-}
-
 /**
  * 모든 외부 요청에 붙이는 앱 고유 UA(F-BS-08, CON-04). 브라우저로 위장하지 않는다.
  * 형식은 Proposed(06-2 §9): `autoStore/<앱 버전> (local single-seller tool)`.
  * 위장을 막으려고 설정으로 바꿀 수 없게 코드 상수로 둔다.
  */
-export const APP_USER_AGENT = `autoStore/${readAppVersion()} (local single-seller tool)`;
+export const APP_USER_AGENT = `autoStore/${APP_VERSION} (local single-seller tool)`;
 
 /** 기본 응답 대기 시간(Proposed). 넘으면 끊고 TIMEOUT으로 기록한다 */
 export const DEFAULT_EXTERNAL_TIMEOUT_MS = 30_000;

@@ -43,11 +43,23 @@ describe('진행 알림 이름', () => {
     >();
   });
 
-  it('무효화 표에는 이 문서(P1-02)에서 call-usage.changed 하나만 있다', () => {
-    expect(Object.keys(EVENT_INVALIDATIONS)).toEqual(['call-usage.changed']);
+  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03)', () => {
+    expect(Object.keys(EVENT_INVALIDATIONS)).toEqual(['call-usage.changed', 'settings.reloaded']);
     expect(EVENT_INVALIDATIONS['call-usage.changed']?.(callUsageChanged())).toEqual([
       ['integrations', 'getCallUsage'],
     ]);
+    // 다시 읽기 실패(settingsSnapshotId null)에도 settings 태그 전체를 다시 읽는다
+    for (const valid of [true, false]) {
+      expect(
+        EVENT_INVALIDATIONS['settings.reloaded']?.({
+          settingsSnapshotId: valid ? 3 : null,
+          changedKeys: valid ? ['costs.targetMarginPct'] : [],
+          valid,
+          errors: valid ? [] : ['/costs/cardSurchargePct: 숫자여야 합니다.'],
+          rerunRequiredStepCount: 0,
+        }),
+      ).toEqual([['settings']]);
+    }
   });
 });
 

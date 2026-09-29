@@ -2322,7 +2322,8 @@ export interface paths {
         /**
          * 설정 파일 다시 읽기·검사
          * @description 오너가 설정 파일을 직접 고친 뒤 재시작 없이 반영한다. 앱 시작 때와 같은 JSON Schema 검사·안전 기준 완화 거부를 거친다(F-BS-05).
-         *     새 내용이면 201 + 새 `settings_snapshot`, 같은 내용이면 200 + 기존 스냅샷(`lastLoadedAt`만 갱신). `changedKeys[]`·`rerunRequiredStepCount`는 재실행 필요 전파의 근거다. SSE `settings.reloaded`.
+         *     새 내용이면 201 + 새 `settings_snapshot`, 같은 내용이면 200 + 기존 스냅샷(`lastLoadedAt`만 갱신). `changedKeys[]`·`rerunRequiredStepCount`는 재실행 필요 전파의 근거다(`ai` 섹션 키는 changedKeys에 넣되 전파하지 않는다). SSE `settings.reloaded`.
+         *     실패(422)하면 현재 스냅샷은 그대로 두고 GET /settings의 `valid`·`errors`만 바뀐다. 이때도 SSE `settings.reloaded`(`settingsSnapshotId` null, `valid` false)를 보낸다(P1-03 Proposed). 안전 기준 완화는 `details.violations[]`(`item`·`field`·`message`)에 어긴 항목을 담는다. `ai` 섹션을 파일에서 직접 바꾼 다시 읽기도 받아들인다(05-1 §7.5-51 P1-03 Proposed).
          */
         post: operations["createSettingsSnapshot"];
         delete?: never;
@@ -4349,13 +4350,13 @@ export interface components {
             itemCount: number | null;
             errorMessage: string | null;
         };
-        /** @description settings.reloaded — 설정 파일을 다시 읽었거나(M2) 화면에서 저장했을 때 */
+        /** @description settings.reloaded — 설정 파일을 다시 읽었거나(POST /settings-snapshots, 실패 포함) 화면에서 저장했을 때(AI 엔진 저장 포함). 다시 읽기가 실패하면 settingsSnapshotId null·valid false·errors에 검사 오류(P1-03 Proposed) */
         SettingsReloadedEvent: {
             /** @description 검증에 실패해 새 스냅샷이 없으면 null */
             settingsSnapshotId: number | null;
             changedKeys: string[];
             valid: boolean;
-            /** @description 검사 오류 문구 */
+            /** @description 검사 오류 문구(`{JSON 경로}: {문구}`, 예 `/costs/cardSurchargePct: 숫자여야 합니다.`) */
             errors: string[];
             rerunRequiredStepCount: number;
         };
@@ -6968,7 +6969,7 @@ export interface components {
             contentSha256: string;
             schemaVersion: string;
             appVersion: string;
-            /** @description 파일별 이름·SHA-256·크기(jsonb, 파일 구성 미정 ERD §7.4-1). 경로는 담지 않는다 */
+            /** @description 파일별 이름·SHA-256·크기(jsonb). 경로는 담지 않는다. P1-03(ERD §7.4-1 Proposed)은 파일 하나라 `[{ name: settings.json, sha256, sizeBytes }]` */
             fileManifest: unknown;
             /** @description 검증을 통과한 설정 전체(요율·템플릿·사전·금지어·기준일 등) */
             content: {

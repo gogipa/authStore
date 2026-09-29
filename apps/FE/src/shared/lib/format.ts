@@ -38,12 +38,28 @@ export function formatMm(value: number): string {
   return withSign(value, (abs) => `${oneDecimalFormat.format(abs)}mm`);
 }
 
+/** 소수 자리 수(비율 표기). 주지 않으면 0~1자리. */
+export interface FractionDigits {
+  minFractionDigits?: number;
+  maxFractionDigits?: number;
+}
+
 /**
- * 비율: 10 → `10%`. 값은 **퍼센트 수**다(0.1이 아니라 10). 소수는 한 자리까지.
- * (Proposed, 06-3 §9 — API의 비율 표기가 정해지면(P1-03, 05-1 §7.1-4) 호출하는 쪽이 맞춰 넘긴다.)
+ * 비율: 10 → `10%`. 값은 **퍼센트 수**다(0.1이 아니라 10). 소수는 기본 한 자리까지.
+ * 설정의 비율도 퍼센트 수다(P1-03, 06-4 §2.2 — `costs.cardSurchargePct` 2.5 = 2.5%).
+ * 요율처럼 자리를 맞춰 보일 때는 자리 수를 준다: `formatPct(3, { minFractionDigits: 1, maxFractionDigits: 2 })` → `3.0%`,
+ * `formatPct(3.63, …)` → `3.63%`(Settings 보드 '적용 중인 기본값').
  */
-export function formatPct(value: number): string {
-  return withSign(value, (abs) => `${oneDecimalFormat.format(abs)}%`);
+export function formatPct(value: number, digits: FractionDigits = {}): string {
+  const { minFractionDigits = 0, maxFractionDigits = Math.max(1, minFractionDigits) } = digits;
+  const format =
+    minFractionDigits === 0 && maxFractionDigits === 1
+      ? oneDecimalFormat
+      : new Intl.NumberFormat('ko-KR', {
+          minimumFractionDigits: minFractionDigits,
+          maximumFractionDigits: maxFractionDigits,
+        });
+  return withSign(value, (abs) => `${format.format(abs)}%`);
 }
 
 /** 개수: 1358 → `1,358`. */

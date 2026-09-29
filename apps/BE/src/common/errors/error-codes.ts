@@ -48,6 +48,19 @@ export const ERROR_CODES = {
   IMAGE_ASSET_NOT_FOUND: { status: 404, message: '이미지를 찾을 수 없습니다.' },
   /** 05-3 §5.1: DB 행은 있으나 파일 없음 */
   IMAGE_FILE_MISSING: { status: 404, message: '이미지 파일이 데이터 폴더에 없습니다.' },
+  /** 05-3 §5.1: 시작 검증 실패로 로드된 설정 스냅샷이 없음(fieldErrors에 검사 오류) */
+  SETTINGS_INVALID: {
+    status: 503,
+    message:
+      '설정 파일에 오류가 있어 설정을 읽지 못했습니다. 설정 화면의 검사 결과를 확인해 주세요.',
+  },
+  /** 05-3 §5.1: JSON Schema 위반(fieldErrors에 JSON 경로) */
+  SETTINGS_SCHEMA_INVALID: { status: 422, message: '설정 형식이 맞지 않습니다: {위치}.' },
+  /** 05-3 §5.1: 차단어·아동 단어 삭제, 필수 고지 삭제, 판정 유효시간 6시간 초과 등(F-BS-05). details.violations */
+  SAFETY_SETTING_RELAXATION_REJECTED: {
+    status: 422,
+    message: '안전 기준은 느슨하게 바꿀 수 없습니다({항목}).',
+  },
   INTERNAL_ERROR: {
     status: 500,
     message: '앱 안에서 오류가 났습니다. 다시 해 보고, 계속되면 로그를 확인해 주세요.',

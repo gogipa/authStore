@@ -6,3 +6,6 @@ apps/BE/prisma/migrations/
 apps/BE/src/generated/
 apps/FE/src/shared/api/schema.d.ts
 .claude/
+
+# 일부러 문법이 틀린 JSON fixture(P1-03 설정 파일 검사)
+apps/BE/test/fixtures/settings/broken.json

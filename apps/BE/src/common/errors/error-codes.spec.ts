@@ -20,6 +20,25 @@ describe('error-codes', () => {
     });
   });
 
+  it('P1-03 설정 코드 세 개는 05-3 §5.1 문구·상태 그대로다', () => {
+    expect(ERROR_CODES.SETTINGS_INVALID).toEqual({
+      status: 503,
+      message:
+        '설정 파일에 오류가 있어 설정을 읽지 못했습니다. 설정 화면의 검사 결과를 확인해 주세요.',
+    });
+    expect(ERROR_CODES.SETTINGS_SCHEMA_INVALID).toEqual({
+      status: 422,
+      message: '설정 형식이 맞지 않습니다: {위치}.',
+    });
+    expect(ERROR_CODES.SAFETY_SETTING_RELAXATION_REJECTED).toEqual({
+      status: 422,
+      message: '안전 기준은 느슨하게 바꿀 수 없습니다({항목}).',
+    });
+    expect(
+      formatErrorMessage('SAFETY_SETTING_RELAXATION_REJECTED', { 항목: '판정 유효 시간 늘리기' }),
+    ).toBe('안전 기준은 느슨하게 바꿀 수 없습니다(판정 유효 시간 늘리기).');
+  });
+
   it('formatErrorMessage는 {…} 자리를 채우고 모르는 자리는 그대로 둔다', () => {
     expect(formatErrorMessage('DAILY_LIMIT_REACHED', { 대상: '라쿠텐 상품 페이지', n: 110 })).toBe(
       '오늘 라쿠텐 상품 페이지 조회 한도(110건)를 다 썼습니다. 내일 0시(한국 시간)에 다시 됩니다.',

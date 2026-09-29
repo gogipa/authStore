@@ -1,0 +1,218 @@
+{
+  "schemaVersion": "1",
+  "costs": {
+    "cardSurchargePct": 2.5,
+    "saleFeePct": 3,
+    "saleFeeAdInflowPct": 1,
+    "saleFeeIncludesShipping": true,
+    "npayFeeGrade": "GENERAL",
+    "npayFeePctByGrade": {
+      "MICRO": 1.947,
+      "SMALL_1": 2.563,
+      "SMALL_2": 2.728,
+      "SMALL_3": 3.003,
+      "GENERAL": 3.63
+    },
+    "miscCostKrw": 3000,
+    "targetMarginPct": 10,
+    "minProfitKrw": 5000,
+    "judgementMarginPct": 1,
+    "roundingUnitKrw": 100,
+    "pointValueFactorForMargin": 0,
+    "vatMode": "A",
+    "sellerlifeCoupon": {
+      "enabled": false,
+      "amountKrw": 2000,
+      "monthlyLimit": 0
+    }
+  },
+  "pricing": {
+    "dutyFreeLimitUsd": 150,
+    "dutyFreeBufferUsd": 5,
+    "defaultForwarderFeeKrw": 15000,
+    "shoeBox": {
+      "lengthCm": 33,
+      "widthCm": 22,
+      "heightCm": 12,
+      "weightKg": 1.2
+    },
+    "dutyRatePctByHsHeading": {
+      "6401": 8,
+      "6402": 13,
+      "6403": 13,
+      "6404": 13,
+      "6405": 13
+    },
+    "applyFtaRates": false,
+    "simplifiedDuty": {
+      "enabled": false,
+      "ratePct": 18
+    },
+    "priceRule": {
+      "method": "REF_DISCOUNT",
+      "refDiscountPct": 1
+    },
+    "sellTaxableSizes": false
+  },
+  "sourcing": {
+    "genreId": 558885,
+    "minPriceYen": 3000,
+    "ngKeywords": [
+      "中古",
+      "インソール",
+      "靴紐",
+      "シューレース",
+      "箱のみ",
+      "キッズ",
+      "ジュニア",
+      "ベビー"
+    ],
+    "pageFetchTargetCandidates": 3,
+    "pageFetchMaxPages": 10,
+    "targetSizeMm": {
+      "MALE": {
+        "min": 250,
+        "max": 290
+      },
+      "FEMALE": {
+        "min": 220,
+        "max": 260
+      }
+    },
+    "minSizeCount": 3,
+    "defaultWidth": "2E (標準)",
+    "excludeBackOrder": true,
+    "defaultShippingYen": 800,
+    "pageFetchDailyLimit": 110
+  },
+  "keywords": {
+    "datalabDailyLimit": 100
+  },
+  "safety": {
+    "childShoeMaxSizeMm": 235,
+    "judgementValidityHours": 6,
+    "childKeywords": ["키즈", "주니어", "아동", "キッズ", "ジュニア", "ベビー"],
+    "personBlockWords": [
+      "방탄소년단",
+      "BTS",
+      "블랙핑크",
+      "BLACKPINK",
+      "트와이스",
+      "세븐틴",
+      "스트레이 키즈",
+      "Stray Kids",
+      "에스파",
+      "aespa",
+      "뉴진스",
+      "NewJeans",
+      "르세라핌",
+      "LE SSERAFIM",
+      "아이브",
+      "엔하이픈",
+      "ENHYPEN",
+      "에이티즈",
+      "ATEEZ",
+      "ITZY",
+      "차은우",
+      "장원영",
+      "카리나"
+    ]
+  },
+  "notice": {
+    "basisDate": "2026-09-24",
+    "blocks": [
+      {
+        "id": "HEADER",
+        "when": null,
+        "text": "[해외구매대행 상품 안내]"
+      },
+      {
+        "id": "AGENCY",
+        "when": null,
+        "text": "· 이 상품은 {상호}가 일본 판매처에서 구매해 고객님께 보내 드리는 해외구매대행 상품입니다."
+      },
+      {
+        "id": "DELIVERY",
+        "when": null,
+        "text": "· 배송: 주문 후 약 {배송기간_최소}~{배송기간_최대}영업일이 걸립니다(현지 사정·통관에 따라 늦어질 수 있습니다)."
+      },
+      {
+        "id": "CUSTOMS_DUTY",
+        "when": null,
+        "text": "· 관부가세: 판매가에 예상 관부가세가 포함되어 있습니다. 목록통관 면세 기준(미화 150달러, 미국 발송 200달러)을 넘어 부과되는 관부가세는 판매자가 부담합니다."
+      },
+      {
+        "id": "COMBINED_TAX",
+        "when": null,
+        "text": "· 여러 켤레를 한 번에 주문하시거나 같은 날 여러 번 주문하시면 합산 과세될 수 있어, 주문당 구매 수량을 {최대수량}켤레로 제한합니다."
+      },
+      {
+        "id": "PERSONAL_CUSTOMS_CODE",
+        "when": null,
+        "text": "· 개인통관고유부호: 통관을 위해 주문 시 수령인의 개인통관고유부호가 필요합니다. 2026년부터 매년 갱신해야 하며, 수령인 이름·연락처·우편번호가 관세청 등록 정보와 같아야 합니다."
+      },
+      {
+        "id": "WITHDRAWAL",
+        "when": null,
+        "text": "· 취소·반품: 상품을 받은 날부터 8일 이내에 반품(청약철회)을 요청할 수 있습니다. 단순 변심일 때는 실제 드는 반송비(약 {반품비}원)를 고객님이 부담하고, 상품 하자·오배송일 때는 판매자가 부담합니다."
+      },
+      {
+        "id": "EXCHANGE",
+        "when": null,
+        "text": "· 교환: {교환정책}."
+      },
+      {
+        "id": "ORIGIN",
+        "when": null,
+        "text": "· 원산지: 제조국은 판매처 국가(일본)와 다를 수 있습니다. 아래 상품 사양과 상품정보제공고시를 확인해 주세요."
+      },
+      {
+        "id": "AFTER_SERVICE",
+        "when": null,
+        "text": "· A/S: {A/S 안내}"
+      },
+      {
+        "id": "LEATHER_SAFETY",
+        "when": "LEATHER_OR_UNKNOWN_MATERIAL",
+        "text": "· 이 상품은 구매대행으로 유통되는 제품이며, 「전기용품 및 생활용품 안전관리법」상 안전관리대상제품(안전기준준수대상)에 해당할 수 있습니다."
+      },
+      {
+        "id": "AI_IMAGE",
+        "when": "AI_IMAGE_LABEL",
+        "text": "· 대표이미지는 AI를 기반으로 생성된 가상인물이 포함된 이미지입니다."
+      },
+      {
+        "id": "PRICE_BREAKDOWN",
+        "when": "MODE_A_PRICE_BREAKDOWN",
+        "text": "· 판매가 구성: 물품대금 {물품대금}원 / 해외 배송비 {해외배송비}원 / 관부가세(예상) {관부가세}원 / 구매대행 수수료 {구매대행수수료}원"
+      },
+      {
+        "id": "BASIS_DATE",
+        "when": null,
+        "text": "(기준일: {템플릿_기준일})"
+      }
+    ],
+    "values": {
+      "deliveryDaysMin": null,
+      "deliveryDaysMax": null,
+      "exchangePolicy": "해외 구매 특성상 사이즈 교환은 반품 후 재주문으로 처리됩니다"
+    }
+  },
+  "ai": {
+    "engine": "CLAUDE",
+    "models": {
+      "CLAUDE": {
+        "text": "sonnet",
+        "vision": "sonnet"
+      },
+      "AGY": {
+        "text": null,
+        "vision": null
+      },
+      "CODEX": {
+        "text": null,
+        "vision": null
+      }
+    }
+  }
+}
