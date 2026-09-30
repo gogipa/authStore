@@ -38,4 +38,9 @@ export const stepEngineKeys = {
   staleDiffAll: qk('step-engine', 'getCandidateStepStaleDiff'),
   staleDiff: (candidateId: number, stepCode: StepCode) =>
     qk('step-engine', 'getCandidateStepStaleDiff', { candidateId, stepCode }),
+  // ── 연속 실행·게이트(P1-06) ──
+  candidateGatesAll: qk('step-engine', 'listCandidateGates'),
+  candidateGates: (candidateId: number) => qk('step-engine', 'listCandidateGates', { candidateId }),
+  continuousRunAll: qk('step-engine', 'getContinuousRun'),
+  continuousRun: (stepChainId: number) => qk('step-engine', 'getContinuousRun', { stepChainId }),
 };

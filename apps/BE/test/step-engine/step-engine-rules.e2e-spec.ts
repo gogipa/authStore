@@ -24,6 +24,7 @@ import {
 } from '../fixtures/step-engine/candidate.factory.js';
 import { FakeStepRunnersModule } from '../fixtures/step-engine/fake-runners.module.js';
 import { FakeStepWorld } from '../fixtures/step-engine/fake-runners.js';
+import { FakeGateBasisModule, recordGatePass } from '../fixtures/step-engine/gate-basis.fakes.js';
 import { insertStepRun } from '../fixtures/step-engine/step-run.factory.js';
 import { truncateStepEngine } from '../fixtures/step-engine/truncate.js';
 import { createTestApp, TEST_START_MS, type TestApp } from '../helpers/test-app.js';
@@ -65,23 +66,13 @@ describe('단계 실행 엔진 규칙(P1-05) e2e — 전파·끝 지문·오너 
   };
   const newCandidate = async (patch: Parameters<typeof createCandidate>[1] = {}) =>
     (await createCandidate(t.prisma, { gender: 'MALE', ...patch })).candidate;
-  /** G3 통과 기록(P1-06 전: 최신 통과 기록이 있으면 유효) */
+  /** G3 통과 기록(P1-06: 지금 값으로 계산한 지문 — 가짜 게이트 공급자) */
   const passG3 = async (candidateId: number) => {
-    const thumb = (await stepRow(candidateId, 'THUMBNAIL')).currentStepRunId!;
-    await t.prisma.gatePass.create({
-      data: {
-        candidateId,
-        gate: 'G3',
-        fingerprint: 'c'.repeat(64),
-        fingerprintBasis: {},
-        basisStepRunId: thumb,
-        basisStepCode: 'THUMBNAIL',
-      },
-    });
+    await recordGatePass(t.app, t.prisma, candidateId, 'G3');
   };
 
   beforeAll(async () => {
-    t = await createTestApp({ imports: [FakeStepRunnersModule] });
+    t = await createTestApp({ imports: [FakeStepRunnersModule, FakeGateBasisModule] });
     world = t.app.get(FakeStepWorld);
     const sub = t.app
       .get(ProgressEventsService)

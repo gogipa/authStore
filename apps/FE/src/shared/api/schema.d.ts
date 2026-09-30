@@ -3177,7 +3177,7 @@ export interface components {
          */
         StepChainKind: "FROM_HERE" | "RERUN_STALE";
         /**
-         * @description 연속 실행 멈춘 이유(ERD step_chain.stop_reason). AWAIT_G2=③ 국내 기준가·G2, AWAIT_G3=G3(⑧ 앞), AWAIT_G4=G4(끝), NO_RUNNABLE_STEP=더 실행할 단계 없음, APP_RESTART=앱 종료로 중단
+         * @description 연속 실행 멈춘 이유(ERD step_chain.stop_reason). AWAIT_G2=③ 국내 기준가·G2, AWAIT_G3=G3(⑧ 앞), AWAIT_G4=G4(끝), NO_RUNNABLE_STEP=더 실행할 단계 없음, APP_RESTART=앱 종료로 중단. 함께 쓰는 stop_step_code(P1-06 Proposed) — AWAIT_G2=PRICING(② 입력 대기면 SOURCING), AWAIT_G3=THUMBNAIL(G3을 고르는 ⑤), AWAIT_G4=REGISTER, NO_RUNNABLE_STEP=흐름 순서로 첫 '완료가 아닌' 필수 단계(막힌 곳), APP_RESTART=묶음의 마지막 실행 단계(없으면 null)
          * @enum {string}
          */
         StepChainStopReason: "AWAIT_G2" | "AWAIT_G3" | "AWAIT_G4" | "NO_RUNNABLE_STEP" | "APP_RESTART";
@@ -8257,10 +8257,19 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            /** @description CONTINUOUS_RUN_ALREADY_OPEN·CONTINUOUS_RUN_BEFORE_G2·NO_RERUN_REQUIRED_STEPS·STEP_ALREADY_RUNNING·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED · AI_ENGINE_UNAVAILABLE(D-16, details.engineCode·reason·settingsPath) */
+            /** @description CONTINUOUS_RUN_ALREADY_OPEN·CONTINUOUS_RUN_BEFORE_G2·NO_RERUN_REQUIRED_STEPS·STEP_ALREADY_RUNNING·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED · AI_ENGINE_UNAVAILABLE(D-16, details.engineCode·reason·settingsPath) · 고른 단계의 막힌 이유(STEP_START_CONDITION_UNMET·STEP_LOCKED_BY_RUNNING_STEP·GATE_NOT_PASSED, P1-06 Proposed) */
             409: components["responses"]["Conflict"];
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
+            /** @description SETTINGS_INVALID — 로드된 설정 스냅샷이 없음(첫 실행의 settings_snapshot_id, P1-06) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     getContinuousRun: {

@@ -1,0 +1,5 @@
+/* '여기부터 연속 실행' 요청 오류 글. 토큰 변수만 쓴다. */
+.error {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}

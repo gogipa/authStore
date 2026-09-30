@@ -150,6 +150,37 @@ export const ERROR_CODES = {
     message:
       '소싱 확정(G2) 전에는 ②·③부터만 연속 실행할 수 있습니다. 다른 단계는 하나씩 실행해 주세요.',
   },
+  // ── step-engine 연속 실행·게이트(P1-06, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: step_chain id 없음 */
+  CONTINUOUS_RUN_NOT_FOUND: { status: 404, message: '연속 실행 기록을 찾을 수 없습니다.' },
+  /** 05-3 §5.1: 후보에 열린 step_chain(details.stepChainId) */
+  CONTINUOUS_RUN_ALREADY_OPEN: {
+    status: 409,
+    message: '이 후보의 연속 실행이 이미 진행 중입니다.',
+  },
+  /** 05-3 §5.1: RERUN_STALE인데 재실행 필요 단계 없음 */
+  NO_RERUN_REQUIRED_STEPS: { status: 409, message: '다시 실행할 단계가 없습니다.' },
+  /** 05-3 §5.1: G2·G3 외 게이트 통과 요청(공급자가 없는 게이트도, P1-06 Proposed) */
+  INVALID_GATE_CODE: {
+    status: 422,
+    message: '여기서는 G2·G3만 통과할 수 있습니다. 최종 승인은 승인 화면에서 해 주세요.',
+  },
+  /** 05-3 §5.1: G2 조건 — ③ 판정 결과가 판매 후보 아님 */
+  NOT_SALE_CANDIDATE: {
+    status: 409,
+    message: "판정 결과가 '판매 후보 아님'이라 소싱 확정을 할 수 없습니다.",
+  },
+  /** 05-3 §5.1: G2 조건 — 비교하지 않은 URL 후보인데 '비교 없이 확정' 없음(F-PJ-02) */
+  NO_COMPARISON_NOT_CONFIRMED: {
+    status: 409,
+    message: "비교하지 않은 URL 후보입니다. '비교 없이 확정'을 체크해 주세요.",
+  },
+  /** 05-3 §5.1: AI 엔진을 쓰는 단계·연속 실행 시작 때 선택 엔진을 쓸 수 없음(details.engineCode·reason·settingsPath, P1-10 훅) */
+  AI_ENGINE_UNAVAILABLE: {
+    status: 409,
+    message:
+      "선택한 AI 엔진({엔진})을 지금 쓸 수 없습니다({사유}). 'AI 엔진' 설정에서 확인해 주세요.",
+  },
   /** 05-3 §5.1: 키워드 id 없음 */
   KEYWORD_NOT_FOUND: { status: 404, message: '키워드를 찾을 수 없습니다.' },
   /** 05-3 §5.1: keyword.selected_at 없음 */

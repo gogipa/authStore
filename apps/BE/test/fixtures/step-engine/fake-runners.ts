@@ -31,7 +31,15 @@ import type { StepCode } from '../../../src/modules/step-engine/domain/steps.js'
  *   설정은 현재 설정에서 읽는다.
  * - 산출물: 완료되면 이 단계가 내는 입력 키(`outputKeysOf`)의 지금 값(`values`, 없으면 '<키>@1')을 그 실행의 산출물로 남긴다.
  * - 대본: COMPLETE(기본)·WAIT(입력 대기)·FAIL(실패)·THROW(예외)·HOLD(풀어 줄 때까지 대기).
+ * - P1-06: ② `refetch`(재조회 모드)는 호출 기록에 `refetch: true`를 남기고 `run`과 같은 대본을 따른다. ③ 판정 페이지 수집
+ *   시각(`judgementPageCollectedAt`)은 ③이 돌 때의 `world.get(후보, JUDGEMENT_PAGE_AT)` 값이고, ②가 완료되면
+ *   `world.get(후보, PAGE_FETCHED_AT)`(있으면)으로 그 값을 바꾼다(② 재조회 → ③ 재판정 흉내).
  */
+
+/** 후보별 값 키: 다음 ③ 실행이 판정에 쓸 라쿠텐 페이지 수집 시각(Date) */
+export const JUDGEMENT_PAGE_AT = 'fake.judgementPageCollectedAt';
+/** 후보별 값 키: ②가 완료될 때 새로 받은 페이지 수집 시각(Date) — 있으면 JUDGEMENT_PAGE_AT을 이 값으로 바꾼다 */
+export const PAGE_FETCHED_AT = 'fake.pageFetchedAt';
 
 export type FakeScript =
   | { kind: 'COMPLETE'; candidateEffects?: CandidateEffects }
@@ -48,6 +56,8 @@ export type FakeScript =
 export interface FakeRunCall {
   stepCode: StepCode;
   ctx: StepRunContext;
+  /** ② 재조회 모드로 불렸는가(P1-06) */
+  refetch: boolean;
 }
 
 /** AI를 쓰는 가짜 단계(PRE_G2_AI_COST) */
@@ -64,6 +74,8 @@ export class FakeStepWorld {
   readonly ownerInputsByRun = new Map<number, Record<string, unknown>>();
   /** ② 실행별 앵커 키 */
   readonly anchors = new Map<number, AnchorKeyInput>();
+  /** ③ 실행별 판정에 쓴 페이지 수집 시각(P1-06 6시간 규칙) */
+  readonly judgementPageAt = new Map<number, Date>();
   readonly calls: FakeRunCall[] = [];
   /** ⑨ 재시작 훅이 돌려줄 후보 전이(P4-03 흉내) */
   registerInterruptEffect: CandidateStatusEffect | null = null;
@@ -72,12 +84,15 @@ export class FakeStepWorld {
   private readonly holds: { stepCode: StepCode; release: () => void }[] = [];
   private readonly pendingOwnerInputs = new Map<number, Record<string, unknown>>();
   private readonly pendingAnchors = new Map<number, AnchorKeyInput>();
+  private readonly pendingPageAt = new Map<number, Date>();
 
   reset(): void {
     this.values.clear();
     this.outputs.clear();
     this.ownerInputsByRun.clear();
     this.anchors.clear();
+    this.judgementPageAt.clear();
+    this.pendingPageAt.clear();
     this.calls.length = 0;
     this.scripts.clear();
     this.registerInterruptEffect = null;
@@ -139,9 +154,20 @@ export class FakeStepWorld {
     return this.calls.filter((c) => c.stepCode === stepCode).map((c) => c.ctx);
   }
 
-  rememberRun(stepRunId: number, ownerInputs: Record<string, unknown>, anchor?: AnchorKeyInput) {
+  rememberRun(
+    stepRunId: number,
+    ownerInputs: Record<string, unknown>,
+    anchor?: AnchorKeyInput,
+    pageAt?: Date,
+  ) {
     this.pendingOwnerInputs.set(stepRunId, ownerInputs);
     if (anchor) this.pendingAnchors.set(stepRunId, anchor);
+    if (pageAt) this.pendingPageAt.set(stepRunId, pageAt);
+  }
+
+  /** 이 단계의 재조회 모드 호출 수 */
+  refetchCallsOf(stepCode: StepCode): number {
+    return this.calls.filter((c) => c.stepCode === stepCode && c.refetch).length;
   }
 
   commitRun(stepRunId: number, output: Record<string, unknown> | null): void {
@@ -150,6 +176,8 @@ export class FakeStepWorld {
     if (owner) this.ownerInputsByRun.set(stepRunId, owner);
     const anchor = this.pendingAnchors.get(stepRunId);
     if (anchor) this.anchors.set(stepRunId, anchor);
+    const pageAt = this.pendingPageAt.get(stepRunId);
+    if (pageAt && output) this.judgementPageAt.set(stepRunId, pageAt);
   }
 }
 
@@ -235,8 +263,22 @@ export class FakeStepRunner implements StepRunner {
     }
   }
 
-  async run(ctx: StepRunContext): Promise<StepOutcome> {
-    this.world.calls.push({ stepCode: this.stepCode, ctx });
+  run(ctx: StepRunContext): Promise<StepOutcome> {
+    return this.play(ctx, false);
+  }
+
+  /** ② 재조회 모드(P1-06). 대본은 `run`과 같다 */
+  refetch(ctx: StepRunContext): Promise<StepOutcome> {
+    return this.play(ctx, true);
+  }
+
+  /** ③ 판정에 쓴 페이지 수집 시각(P1-06 6시간 규칙) */
+  judgementPageCollectedAt(_db: Tx, stepRunId: number): Promise<Date | null> {
+    return Promise.resolve(this.world.judgementPageAt.get(stepRunId) ?? null);
+  }
+
+  private async play(ctx: StepRunContext, refetch: boolean): Promise<StepOutcome> {
+    this.world.calls.push({ stepCode: this.stepCode, ctx, refetch });
     let script = this.world.nextScript(this.stepCode);
     while (script.kind === 'HOLD') {
       const held = this.world.hold(this.stepCode);
@@ -252,7 +294,11 @@ export class FakeStepRunner implements StepRunner {
     }
     const anchorValue = this.world.get(ctx.candidateId, 'fake.anchor') as
       AnchorKeyInput | undefined;
-    this.world.rememberRun(ctx.stepRunId, ownerInputs, anchorValue);
+    const pageAt =
+      this.stepCode === 'PRICING'
+        ? (this.world.get(ctx.candidateId, JUDGEMENT_PAGE_AT) as Date | undefined)
+        : undefined;
+    this.world.rememberRun(ctx.stepRunId, ownerInputs, anchorValue, pageAt);
     switch (script.kind) {
       case 'THROW':
         throw script.error;
@@ -274,6 +320,10 @@ export class FakeStepRunner implements StepRunner {
         for (const key of outputKeysOf(this.stepCode)) {
           output[key] = this.world.get(ctx.candidateId, key) ?? `${key}@1`;
         }
+        const fetchedAt = this.world.get(ctx.candidateId, PAGE_FETCHED_AT);
+        if (this.stepCode === 'SOURCING' && fetchedAt) {
+          this.world.set(ctx.candidateId, JUDGEMENT_PAGE_AT, fetchedAt);
+        }
         return { kind: 'COMPLETED', output, candidateEffects: script.candidateEffects };
       }
     }
@@ -294,6 +344,8 @@ export class FakeStepRunner implements StepRunner {
     if (owner) this.world.ownerInputsByRun.set(toStepRunId, { ...owner });
     const anchor = this.world.anchors.get(fromStepRunId);
     if (anchor) this.world.anchors.set(toStepRunId, anchor);
+    const pageAt = this.world.judgementPageAt.get(fromStepRunId);
+    if (pageAt) this.world.judgementPageAt.set(toStepRunId, pageAt);
     return Promise.resolve();
   }
 

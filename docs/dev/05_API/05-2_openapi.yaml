@@ -513,7 +513,7 @@ paths:
       - F-CW-16
       - F-BS-75
       - F-BS-76
-      x-decision: §7.2-17 연속 실행 취소(중지) API는 두지 않는다(기능 목록에 없음). 멈춤은 서버 규칙(G2·G3·G4, 입력 대기, 더 실행할 단계 없음)으로만 일어난다. D-16(오너 결정, 세부는 추천안 D-11) — 선택 엔진을 쓸 수 없으면 시작을 409 AI_ENGINE_UNAVAILABLE로 막는다(R10, 다른 엔진으로 넘어가지 않는다).
+      x-decision: '§7.2-17 연속 실행 취소(중지) API는 두지 않는다(기능 목록에 없음). 멈춤은 서버 규칙(G2·G3·G4, 입력 대기, 더 실행할 단계 없음)으로만 일어난다. D-16(오너 결정, 세부는 추천안 D-11) — 선택 엔진을 쓸 수 없으면 시작을 409 AI_ENGINE_UNAVAILABLE로 막는다(R10, 다른 엔진으로 넘어가지 않는다). P1-06 Proposed(05-1 §7.2 P1-06 구현 결정) — (1) FROM_HERE의 고른 단계는 지금 실행할 수 있어야 한다(아니면 단계 실행 API와 같은 409·422·503: STEP_START_CONDITION_UNMET·STEP_LOCKED_BY_RUNNING_STEP·GATE_NOT_PASSED·SETTINGS_INVALID 등). (2) 202는 늘 곧바로 시작한 실행 하나를 준다(첫 행동이 멈춤이면 묶음을 만들지 않고 409 — RERUN_STALE은 첫 재실행 필요 단계의 막힌 이유, G2 전 ②·③ 밖만 남았으면 CONTINUOUS_RUN_BEFORE_G2). (3) RERUN_STALE은 한 묶음에서 단계마다 1번만 실행한다(끝없는 반복 방지). startStepCode는 쓰지 않는다. (4) 고른 단계가 ③이고 판정 페이지가 6시간을 넘었으면 ② 재조회부터 시작한다(202의 stepCode = SOURCING).'
       parameters:
       - $ref: '#/components/parameters/ClientHeader'
       requestBody:
@@ -542,11 +542,17 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
-          description: CONTINUOUS_RUN_ALREADY_OPEN·CONTINUOUS_RUN_BEFORE_G2·NO_RERUN_REQUIRED_STEPS·STEP_ALREADY_RUNNING·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED · AI_ENGINE_UNAVAILABLE(D-16, details.engineCode·reason·settingsPath)
+          description: CONTINUOUS_RUN_ALREADY_OPEN·CONTINUOUS_RUN_BEFORE_G2·NO_RERUN_REQUIRED_STEPS·STEP_ALREADY_RUNNING·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED · AI_ENGINE_UNAVAILABLE(D-16, details.engineCode·reason·settingsPath) · 고른 단계의 막힌 이유(STEP_START_CONDITION_UNMET·STEP_LOCKED_BY_RUNNING_STEP·GATE_NOT_PASSED, P1-06 Proposed)
         '422':
           $ref: '#/components/responses/Unprocessable'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          description: SETTINGS_INVALID — 로드된 설정 스냅샷이 없음(첫 실행의 settings_snapshot_id, P1-06)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /continuous-runs/{stepChainId}:
     parameters:
     - name: stepChainId
@@ -711,7 +717,7 @@ paths:
       - F-TH-16
       - F-TH-17
       - F-PJ-26
-      x-decision: §7.2-12 제안대로 지문이 최신 통과와 같으면 새 gate_pass 행 없이 200 + 기존 기록을 준다. §7.4-30 G3 체크리스트 키 이름은 표 C 제안(shoeRatioOver70 외 6개)대로 쓴다.
+      x-decision: '§7.2-12 제안대로 지문이 최신 통과와 같으면 새 gate_pass 행 없이 200 + 기존 기록을 준다. §7.4-30 G3 체크리스트 키 이름은 표 C 제안(shoeRatioOver70 외 6개)대로 쓴다. P1-06 Proposed — 검사 순서는 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → STEP_LOCKED_BY_RUNNING_STEP(근거 단계가 읽는 ②가 실행 중) → VERSION_NOT_CURRENT → STEP_NOT_COMPLETED → 게이트 조건(공급자). 통과할 수 있는 근거 버전은 G2 = ③ COMPLETED, G3 = ⑤ WAITING_INPUT(첫 선택으로 완료)·COMPLETED(다시 고름). 게이트 공급자(G2 P2-05·G3 P3-02)가 아직 없으면 422 INVALID_GATE_CODE(details.reason=NO_PROVIDER, 문구 ''이 게이트는 아직 준비 중이라 통과할 수 없습니다.''). 200(같은 지문)의 thumbnailSelectionId·thumbnailStepRunId는 null.'
       parameters:
       - $ref: '#/components/parameters/ClientHeader'
       requestBody:
@@ -760,6 +766,7 @@ paths:
       tags:
       - step-engine
       x-milestone: M1
+      x-decision: 'P1-06 Proposed — (1) G1은 키워드 경로 후보만 거친다. 검색어·URL로 만든 후보의 G1은 passed=false·passedAt=null·blockedReasons=[](화면은 G1을 그리지 않는다). (2) G2·G3 지문은 근거 단계 현재 버전(산출물이 있는 COMPLETED·RERUN_REQUIRED)으로 다시 계산한다. 현재 버전이 실행 중·입력 대기·실패·미실행이면 fingerprintValid=false·changedBasisKeys=[]. 통과 기록이 없으면 fingerprintValid=false. (3) changedBasisKeys는 fingerprint_basis의 잎 경로(예 salePrices.250, anchorKey.colorCode). (4) blockedReasons는 통과 API와 같은 순서·코드로 본문과 관계없는 이유만(VERSION_NOT_CURRENT 제외). G4의 blockedReasons는 사전 검증(P4-02)이 채운다(지금은 빈 배열).'
       x-features:
       - F-CW-02
       - F-CW-11
@@ -6995,7 +7002,7 @@ components:
       - RERUN_STALE
     StepChainStopReason:
       type: string
-      description: 연속 실행 멈춘 이유(ERD step_chain.stop_reason). AWAIT_G2=③ 국내 기준가·G2, AWAIT_G3=G3(⑧ 앞), AWAIT_G4=G4(끝), NO_RUNNABLE_STEP=더 실행할 단계 없음, APP_RESTART=앱 종료로 중단
+      description: 연속 실행 멈춘 이유(ERD step_chain.stop_reason). AWAIT_G2=③ 국내 기준가·G2, AWAIT_G3=G3(⑧ 앞), AWAIT_G4=G4(끝), NO_RUNNABLE_STEP=더 실행할 단계 없음, APP_RESTART=앱 종료로 중단. 함께 쓰는 stop_step_code(P1-06 Proposed) — AWAIT_G2=PRICING(② 입력 대기면 SOURCING), AWAIT_G3=THUMBNAIL(G3을 고르는 ⑤), AWAIT_G4=REGISTER, NO_RUNNABLE_STEP=흐름 순서로 첫 '완료가 아닌' 필수 단계(막힌 곳), APP_RESTART=묶음의 마지막 실행 단계(없으면 null)
       enum:
       - AWAIT_G2
       - AWAIT_G3

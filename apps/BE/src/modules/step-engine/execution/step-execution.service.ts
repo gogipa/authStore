@@ -65,11 +65,28 @@ export interface StartStepOptions {
   throughStepCode?: 'NOTICE_HTML' | null;
 }
 
+/** 연속 실행 묶음 안의 실행이 끝났다(입력 대기·완료·실패·재실행 필요로 닫힘, P1-06). 연속 실행 서비스가 다음 행동을 정한다 */
+export type ChainRunSettledListener = (input: {
+  stepChainId: number;
+  stepRunId: number;
+  candidateId: number;
+}) => Promise<void>;
+
 export interface StartStepResult {
   run: StepRun;
   /** 이번 요청으로 곧바로 만든 실행(⑥ 묶음도 첫 실행만) */
   stepRunIds: number[];
   warnings: CandidateWarning[];
+}
+
+/** 시작 트랜잭션에 넘기는 것 */
+interface StartInput {
+  runner: StepRunner;
+  mode: StartMode;
+  stepChainId: number | null;
+  ownerInputs: Readonly<Record<string, unknown>>;
+  chainRemaining: StepCode[];
+  refetch: boolean;
 }
 
 /** 단계별 실행 중 오너 입력 칸(05-2 StepRunOwnerInputs, 표 A). 단계에 맞지 않는 칸은 422 VALIDATION_FAILED */
@@ -109,6 +126,8 @@ interface PreparedRun {
   aiEngine: AiEngineFix | null;
   /** ⑥ 묶음에서 이 실행 뒤에 이어 갈 단계 */
   chainRemaining: StepCode[];
+  /** 6시간 규칙의 ② 재조회(실행기 `refetch`가 있으면 그것을, 없으면 `run`을 부른다, P1-06) */
+  refetch: boolean;
 }
 
 /** 새 실행 행을 여는 데 필요한 값 */
@@ -178,6 +197,7 @@ function checkOutcome(outcome: unknown): StepOutcome {
 @Injectable()
 export class StepExecutionService {
   private readonly logger = new Logger(StepExecutionService.name);
+  private chainListener: ChainRunSettledListener | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -196,6 +216,11 @@ export class StepExecutionService {
   ) {}
 
   // ── 시작 ────────────────────────────────────────────────────────────────
+
+  /** 연속 실행 묶음 이어 가기 훅(P1-06 ContinuousRunService가 onModuleInit에서 끼운다) */
+  onChainRunSettled(listener: ChainRunSettledListener): void {
+    this.chainListener = listener;
+  }
 
   /** 단일 진입점(규칙 1). 다음 단계를 자동으로 시작하지 않는다(⑥ 묶음만 예외) */
   async start(
@@ -231,6 +256,7 @@ export class StepExecutionService {
       stepChainId: options.stepChainId ?? null,
       ownerInputs,
       chainRemaining,
+      refetch: false,
     });
   }
 
@@ -361,6 +387,7 @@ export class StepExecutionService {
       ownerEdit: input.ownerEdit,
       aiEngine: null,
       chainRemaining: [],
+      refetch: false,
     });
   }
 
@@ -386,7 +413,8 @@ export class StepExecutionService {
     };
     let outcome: StepOutcome;
     try {
-      outcome = checkOutcome(await runner.run(ctx));
+      const result = prepared.refetch && runner.refetch ? runner.refetch(ctx) : runner.run(ctx);
+      outcome = checkOutcome(await result);
     } catch (error) {
       if (!(error instanceof ApiException)) {
         this.logger.error({ err: error }, `실행기 예외(${run.stepCode}#${run.id})`);
@@ -396,6 +424,17 @@ export class StepExecutionService {
     await this.finish(run.id, outcome);
     if (prepared.chainRemaining.length > 0) {
       await this.continueChain(run.candidateId, prepared.chainRemaining);
+    }
+    if (run.stepChainId !== null && this.chainListener) {
+      try {
+        await this.chainListener({
+          stepChainId: run.stepChainId,
+          stepRunId: run.id,
+          candidateId: run.candidateId,
+        });
+      } catch (error) {
+        this.logger.error({ err: error }, `연속 실행 #${run.stepChainId}을 이어 가지 못했습니다`);
+      }
     }
   }
 
@@ -428,6 +467,7 @@ export class StepExecutionService {
       stepChainId: null,
       ownerInputs: {},
       chainRemaining: [...rest],
+      refetch: false,
     });
   }
 
@@ -438,74 +478,112 @@ export class StepExecutionService {
   private async startInternal(
     candidateId: number,
     stepCode: StepCode,
-    input: {
-      runner: StepRunner;
-      mode: StartMode;
-      stepChainId: number | null;
-      ownerInputs: Readonly<Record<string, unknown>>;
-      chainRemaining: StepCode[];
-    },
+    input: StartInput,
   ): Promise<StartStepResult> {
-    const { runner } = input;
-    const aiEngine = runner.usesAi ? await this.resolveAiEngine({ candidateId, stepCode }) : null;
+    const aiEngine = input.runner.usesAi
+      ? await this.resolveAiEngine({ candidateId, stepCode })
+      : null;
     try {
-      return await this.transactions.run(async (scope) => {
-        const candidate = await this.guard.lockForUpdate(scope.tx, candidateId);
-        const rows = await loadStepRows(scope.tx, candidateId);
-        const steps = stepStatusMapOf(rows);
-        const gates = toGateFlags(await this.gateValidity.evaluate(scope.tx, candidateId));
-        const block = checkStepRunnable(stepCode, asStartCandidate(candidate), steps, gates, {
-          mode: 'run',
-          hasRunner: true,
-          settingsLoaded: this.settings.currentOrNull() !== null,
-        });
-        if (block) throw toApiException(block);
-        const settings = this.settings.current();
-        const inputs = await readResolvedInputs(
-          runner,
-          inputContextOf(scope.tx, candidate, settings, rows),
-        );
-        const missing = missingRequiredInputs(inputs);
-        if (missing.length > 0) {
-          throw toApiException({
-            code: 'STEP_START_CONDITION_UNMET',
-            stepCode,
-            missingInputs: missing,
-          });
-        }
-        const previous = await this.previousOf(scope, runner, candidateId, stepCode);
-        const run = await this.openRun(scope, {
-          candidate,
-          stepCode,
-          runner,
-          rows,
-          executionMode: input.mode,
-          stepChainId: input.stepChainId,
-          settingsSnapshotId: this.settings.currentSnapshotId(),
-          aiEngine,
-          inputs,
-        });
-        await this.status.reevaluate(scope, candidateId, { stepRunId: run.id });
-        this.submitAfterCommit(scope, {
-          run,
-          runner,
-          settings,
-          inputs,
-          ownerInputs: input.ownerInputs,
-          previous,
-          resume: null,
-          ownerEdit: null,
-          aiEngine,
-          chainRemaining: input.chainRemaining,
-        });
-        return { run, stepRunIds: [run.id], warnings: stepWarnings(stepCode, steps, gates) };
-      });
+      return await this.transactions.run((scope) =>
+        this.openInScope(scope, candidateId, stepCode, input, aiEngine),
+      );
     } catch (error) {
       if (isOneOpenRunViolation(error)) {
         throw toApiException({ code: 'STEP_ALREADY_RUNNING', stepCode, status: 'RUNNING' });
       }
       throw error;
     }
+  }
+
+  /**
+   * 연속 실행 묶음 안의 실행 시작(P1-06): 호출자(연속 실행 서비스)의 트랜잭션 안에서 `execution_mode=CHAIN` +
+   * `step_chain_id`로 새 실행을 연다(묶음 행과 같은 트랜잭션 — 첫 실행이 막히면 묶음도 남지 않는다). AI 단계는 이 단계가
+   * 시작할 때의 선택 엔진을 고정한다(P1-10 훅, 쓸 수 없으면 409 AI_ENGINE_UNAVAILABLE). `refetch`면 실행기 `refetch`를 부른다.
+   * 호출자가 후보 행을 잠근다. uq_step_run_one_open 위반은 호출자가 409로 바꾼다.
+   */
+  async startChainRun(
+    scope: StepEngineTx,
+    candidateId: number,
+    stepCode: StepCode,
+    options: { stepChainId: number; refetch?: boolean },
+  ): Promise<StartStepResult> {
+    const runner = this.assertRunnableCode(stepCode);
+    const aiEngine = runner.usesAi ? await this.resolveAiEngine({ candidateId, stepCode }) : null;
+    return this.openInScope(
+      scope,
+      candidateId,
+      stepCode,
+      {
+        runner,
+        mode: 'CHAIN',
+        stepChainId: options.stepChainId,
+        ownerInputs: {},
+        chainRemaining: [],
+        refetch: options.refetch ?? false,
+      },
+      aiEngine,
+    );
+  }
+
+  /** 시작 트랜잭션 본체(호출자 트랜잭션 안) */
+  private async openInScope(
+    scope: StepEngineTx,
+    candidateId: number,
+    stepCode: StepCode,
+    input: StartInput,
+    aiEngine: AiEngineFix | null,
+  ): Promise<StartStepResult> {
+    const { runner } = input;
+    const candidate = await this.guard.lockForUpdate(scope.tx, candidateId);
+    const rows = await loadStepRows(scope.tx, candidateId);
+    const steps = stepStatusMapOf(rows);
+    const gates = toGateFlags(await this.gateValidity.evaluate(scope.tx, candidateId));
+    const block = checkStepRunnable(stepCode, asStartCandidate(candidate), steps, gates, {
+      mode: 'run',
+      hasRunner: true,
+      settingsLoaded: this.settings.currentOrNull() !== null,
+    });
+    if (block) throw toApiException(block);
+    const settings = this.settings.current();
+    const inputs = await readResolvedInputs(
+      runner,
+      inputContextOf(scope.tx, candidate, settings, rows),
+    );
+    const missing = missingRequiredInputs(inputs);
+    if (missing.length > 0) {
+      throw toApiException({
+        code: 'STEP_START_CONDITION_UNMET',
+        stepCode,
+        missingInputs: missing,
+      });
+    }
+    const previous = await this.previousOf(scope, runner, candidateId, stepCode);
+    const run = await this.openRun(scope, {
+      candidate,
+      stepCode,
+      runner,
+      rows,
+      executionMode: input.mode,
+      stepChainId: input.stepChainId,
+      settingsSnapshotId: this.settings.currentSnapshotId(),
+      aiEngine,
+      inputs,
+    });
+    await this.status.reevaluate(scope, candidateId, { stepRunId: run.id });
+    this.submitAfterCommit(scope, {
+      run,
+      runner,
+      settings,
+      inputs,
+      ownerInputs: input.ownerInputs,
+      previous,
+      resume: null,
+      ownerEdit: null,
+      aiEngine,
+      chainRemaining: input.chainRemaining,
+      refetch: input.refetch,
+    });
+    return { run, stepRunIds: [run.id], warnings: stepWarnings(stepCode, steps, gates) };
   }
 
   // ── 끝 ──────────────────────────────────────────────────────────────────
@@ -579,6 +657,11 @@ export class StepExecutionService {
     const now = scope.now;
     const stepCode = run.stepCode as StepCode;
     const waitAdd = run.status === 'WAITING_INPUT' ? waitedSeconds(run.waitingSince, now) : 0;
+    // 게이트 무효 감지(P1-06 규칙 9): 완료로 산출물·후보 값이 바뀌기 전 지문 상태
+    const gatesBefore =
+      outcome.kind === 'COMPLETED'
+        ? await this.gateValidity.snapshot?.(scope.tx, run.candidateId)
+        : undefined;
     await runner.persist(scope.tx, run.id, outcome);
     const stepRow = await scope.tx.candidateStep.findUniqueOrThrow({
       where: { candidateId_stepCode: { candidateId: run.candidateId, stepCode } },
@@ -682,6 +765,9 @@ export class StepExecutionService {
       stepRunId: run.id,
       exclusion: effects?.exclusion ?? null,
     });
+    if (gatesBefore) {
+      await this.gateValidity.detectInvalidation?.(scope, run.candidateId, gatesBefore);
+    }
     publishAfterCommit(scope, this.events, { run: { row: updated }, steps: row ? [row] : [] });
     return updated;
   }
@@ -800,6 +886,7 @@ export class StepExecutionService {
         ownerEdit: null,
         aiEngine: null,
         chainRemaining: [],
+        refetch: false,
       });
       return updated;
     });

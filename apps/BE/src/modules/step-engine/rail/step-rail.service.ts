@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ApiException } from '../../../common/errors/api.exception.js';
+import { formatErrorMessage } from '../../../common/errors/error-codes.js';
 import {
   parsePageRequest,
   toPage,
@@ -27,25 +28,40 @@ import {
 } from '../execution/step-blocks.js';
 import { loadStepRows, stepStatusMapOf } from '../execution/step-run-store.js';
 import { stepWarnings } from '../execution/step-warnings.js';
+import { BEFORE_G2_CHAIN_STARTS } from '../continuous/chain-planner.js';
 import { GATE_VALIDITY, toGateFlags, type GateValidityPort } from '../ports/gate-validity.port.js';
 import { StepRunnerRegistry } from '../runner/step-runner.registry.js';
 import { toInputItem, toStepRunSummary } from './step-run-view.js';
 
-/** G2 전에 연속 실행을 시작할 수 있는 단계(F-CW-15) */
-const BEFORE_G2_CHAIN_STARTS: readonly StepCode[] = ['SOURCING', 'PRICING'];
+/** 연속 실행만의 막힌 이유(연속 실행 API의 409와 같은 코드·문구, P1-06) */
+type ChainOnlyBlock =
+  | { code: 'CONTINUOUS_RUN_BEFORE_G2' }
+  | { code: 'CONTINUOUS_RUN_ALREADY_OPEN'; stepChainId: number };
+
+/** 후보 자체가 막힌 이유(연속 실행 API가 열린 묶음·G2보다 먼저 검사한다) */
+const CANDIDATE_BLOCK_CODES: readonly string[] = [
+  'INVALID_STEP_CODE',
+  'CANDIDATE_LOCKED',
+  'CANDIDATE_EXCLUDED',
+  'TEMP_CANDIDATE_NOT_ALLOWED',
+];
 
 /** 막힌 이유 → 버튼 상태 */
-export function actionState(
-  block: StepBlock | { code: 'CONTINUOUS_RUN_BEFORE_G2' } | null,
-): StepActionStateDto {
+export function actionState(block: StepBlock | ChainOnlyBlock | null): StepActionStateDto {
   if (!block) return { enabled: true, disabledReason: null };
   if (block.code === 'CONTINUOUS_RUN_BEFORE_G2') {
     return {
       enabled: false,
+      disabledReason: { code: block.code, message: formatErrorMessage(block.code) },
+    };
+  }
+  if (block.code === 'CONTINUOUS_RUN_ALREADY_OPEN') {
+    return {
+      enabled: false,
       disabledReason: {
         code: block.code,
-        message:
-          '소싱 확정(G2) 전에는 ②·③부터만 연속 실행할 수 있습니다. 다른 단계는 하나씩 실행해 주세요.',
+        message: formatErrorMessage(block.code),
+        details: { stepChainId: block.stepChainId },
       },
     };
   }
@@ -62,26 +78,30 @@ export function actionState(
 
 /**
  * 레일 버튼 세 개(F-CW-11·13·18). `run`의 꺼진 이유는 단계 실행 API의 409·422 코드와 같은 함수(checkStepRunnable)로
- * 계산한다. `continuousRun`은 같은 검사 + G2 전에는 ②·③에서만(F-CW-15, 연속 실행 API는 P1-06). `edit`은 오너 수정
- * API(EDIT)와 같은 함수(checkStepEditable).
+ * 계산한다. `continuousRun`은 연속 실행 API(P1-06)와 같은 순서: 후보(잠금·제외·단계 코드) → 열린 묶음(409
+ * CONTINUOUS_RUN_ALREADY_OPEN, 규칙 7) → G2 전에는 ②·③에서만(409 CONTINUOUS_RUN_BEFORE_G2, 규칙 4) → 고른 단계를
+ * 지금 실행할 수 있는가. `edit`은 오너 수정 API(EDIT)와 같은 함수(checkStepEditable).
  */
 export function stepActions(
   stepCode: StepCode,
   candidate: StartConditionCandidate,
   steps: StepStatusMap,
   gates: GateFlags,
-  options: { hasRunner: boolean; settingsLoaded: boolean },
+  options: { hasRunner: boolean; settingsLoaded: boolean; openStepChainId?: number | null },
 ): CandidateStepRailItemDto['actions'] {
   const runBlock = checkStepRunnable(stepCode, candidate, steps, gates, {
     mode: 'run',
     hasRunner: options.hasRunner,
     settingsLoaded: options.settingsLoaded,
   });
-  const chainBlock =
-    runBlock ??
-    (!gates.G2 && !BEFORE_G2_CHAIN_STARTS.includes(stepCode)
-      ? ({ code: 'CONTINUOUS_RUN_BEFORE_G2' } as const)
-      : null);
+  const chainBlock: StepBlock | ChainOnlyBlock | null =
+    runBlock && CANDIDATE_BLOCK_CODES.includes(runBlock.code)
+      ? runBlock
+      : options.openStepChainId != null
+        ? { code: 'CONTINUOUS_RUN_ALREADY_OPEN', stepChainId: options.openStepChainId }
+        : !gates.G2 && !BEFORE_G2_CHAIN_STARTS.includes(stepCode)
+          ? { code: 'CONTINUOUS_RUN_BEFORE_G2' }
+          : runBlock;
   return {
     run: actionState(runBlock),
     continuousRun: actionState(chainBlock),
@@ -120,6 +140,10 @@ export class StepRailService {
     const runById = new Map(runs.map((run) => [run.id, run]));
     const settingsLoaded = this.settings.currentOrNull() !== null;
     const start = asStartCandidate(candidate);
+    const openChain = await this.prisma.stepChain.findFirst({
+      where: { candidateId, endedAt: null },
+      select: { id: true },
+    });
 
     const items = STEP_FLOW.map((stepCode): CandidateStepRailItemDto => {
       const row = rows.find((r) => r.stepCode === stepCode);
@@ -138,6 +162,7 @@ export class StepRailService {
         actions: stepActions(stepCode, start, steps, gates, {
           hasRunner: this.registry.has(stepCode),
           settingsLoaded,
+          openStepChainId: openChain?.id ?? null,
         }),
         warnings: stepWarnings(stepCode, steps, gates),
       };

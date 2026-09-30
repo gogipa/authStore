@@ -43,13 +43,16 @@ describe('진행 알림 이름', () => {
     >();
   });
 
-  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 후보 이벤트 2개(P1-04), 단계 실행(P1-05)', () => {
+  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 후보 이벤트 2개(P1-04), 단계 실행(P1-05), 연속 실행·게이트(P1-06)', () => {
     expect(Object.keys(EVENT_INVALIDATIONS)).toEqual([
       'call-usage.changed',
       'settings.reloaded',
       'candidate.status-changed',
       'candidate-step.changed',
       'step-run.status-changed',
+      'continuous-run.stopped',
+      'gate.passed',
+      'gate.invalidated',
     ]);
     expect(EVENT_INVALIDATIONS['call-usage.changed']?.(callUsageChanged())).toEqual([
       ['integrations', 'getCallUsage'],
@@ -134,7 +137,55 @@ describe('진행 알림 이름', () => {
       ['step-engine', 'getCandidateResumeTarget'],
       ['step-engine', 'listAttentionCandidateSteps'],
       ['step-engine', 'getStepRun', { stepRunId: 40 }],
+      ['step-engine', 'listCandidateGates', { candidateId: 12 }],
     ]);
+    // 연속 실행 묶음 안의 실행이면 그 묶음도(P1-06 연속 실행 띠)
+    expect(
+      EVENT_INVALIDATIONS['step-run.status-changed']?.({
+        stepRunId: 41,
+        candidateId: 12,
+        stepCode: 'PRICING',
+        version: 1,
+        executionMode: 'CHAIN',
+        stepChainId: 7,
+        status: 'RUNNING',
+        occurredAt: '2026-09-28T00:00:00.000Z',
+      }),
+    ).toContainEqual(['step-engine', 'getContinuousRun', { stepChainId: 7 }]);
+    // continuous-run.stopped·gate.passed·gate.invalidated → 게이트 목록·상세·레일·목록·이어서 할 곳(P1-06)
+    const gateKeys = [
+      ['step-engine', 'listCandidateGates', { candidateId: 12 }],
+      ['step-engine', 'getCandidate', { candidateId: 12 }],
+      ['step-engine', 'listCandidateSteps', { candidateId: 12 }],
+      ['step-engine', 'listCandidates'],
+      ['step-engine', 'getCandidateResumeTarget'],
+    ];
+    expect(
+      EVENT_INVALIDATIONS['continuous-run.stopped']?.({
+        stepChainId: 7,
+        candidateId: 12,
+        kind: 'FROM_HERE',
+        stopReason: 'AWAIT_G2',
+        stopStepCode: 'PRICING',
+        endedAt: '2026-09-28T00:00:00.000Z',
+      }),
+    ).toEqual([['step-engine', 'getContinuousRun', { stepChainId: 7 }], ...gateKeys]);
+    expect(
+      EVENT_INVALIDATIONS['gate.passed']?.({
+        candidateId: 12,
+        gate: 'G2',
+        gatePassId: 3,
+        passedAt: '2026-09-28T00:00:00.000Z',
+      }),
+    ).toEqual(gateKeys);
+    expect(
+      EVENT_INVALIDATIONS['gate.invalidated']?.({
+        candidateId: 12,
+        gate: 'G2',
+        previousGatePassId: 3,
+        changedBasisKeys: ['salePrices.250'],
+      }),
+    ).toEqual(gateKeys);
   });
 });
 

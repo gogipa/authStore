@@ -4,6 +4,7 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 import { CandidateGuardService } from '../candidates/candidate-guard.service.js';
 import { CandidateStatusService } from '../candidates/candidate-status.service.js';
 import { StepEngineTransactions } from '../candidates/step-engine-tx.js';
+import { ContinuousRunService } from '../continuous/continuous-run.service.js';
 import { endTimeFor } from '../domain/run-time.js';
 import type { StepCode } from '../domain/steps.js';
 import { publishAfterCommit } from '../execution/step-events.js';
@@ -19,6 +20,8 @@ export const INTERRUPTED_ERROR = {
 export interface RecoveryResult {
   interruptedStepRunIds: number[];
   candidateTransitions: { candidateId: number; toStatus: string; reason: string }[];
+  /** APP_RESTART로 닫은 연속 실행 묶음(P1-06) */
+  closedStepChainIds: number[];
 }
 
 /**
@@ -28,6 +31,8 @@ export interface RecoveryResult {
  * - WAITING_INPUT은 그대로 둔다(오너 입력을 이어서 받는다).
  * - ⑨ REGISTER였으면 실행기 훅(`onInterrupted`, P4-03)이 등록 기록으로 후보 상태를 정한다(등록요청중 → 결과확인필요
  *   APP_RESTART, 기록 전·차단 스위치 켬 → 승인대기 RESTART_REVERTED). 여기서는 registration을 읽거나 쓰지 않는다.
+ * - 열린 연속 실행 묶음(ended_at NULL)은 stop_reason APP_RESTART로 닫고 다시 이어 가지 않는다(P1-06 규칙 7). 멈춘 단계는
+ *   그 묶음의 마지막 실행 단계(중단된 단계, 없으면 null — Proposed). 커밋 뒤 SSE `continuous-run.stopped`.
  * 실행 한 건마다 트랜잭션 하나(한 건이 깨져도 나머지는 정리한다).
  */
 @Injectable()
@@ -41,6 +46,7 @@ export class RestartRecoveryService implements OnApplicationBootstrap {
     private readonly status: CandidateStatusService,
     private readonly registry: StepRunnerRegistry,
     private readonly events: ProgressEventsService,
+    private readonly chains: ContinuousRunService,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -49,6 +55,11 @@ export class RestartRecoveryService implements OnApplicationBootstrap {
       if (result.interruptedStepRunIds.length > 0) {
         this.logger.warn(
           `앱 재시작: 실행 중이던 단계 ${result.interruptedStepRunIds.length}건을 '실패(중단됨)'으로 바꿨습니다`,
+        );
+      }
+      if (result.closedStepChainIds.length > 0) {
+        this.logger.warn(
+          `앱 재시작: 진행 중이던 연속 실행 ${result.closedStepChainIds.length}건을 닫았습니다(APP_RESTART)`,
         );
       }
     } catch (error) {
@@ -63,7 +74,11 @@ export class RestartRecoveryService implements OnApplicationBootstrap {
       orderBy: { id: 'asc' },
       select: { id: true },
     });
-    const result: RecoveryResult = { interruptedStepRunIds: [], candidateTransitions: [] };
+    const result: RecoveryResult = {
+      interruptedStepRunIds: [],
+      candidateTransitions: [],
+      closedStepChainIds: [],
+    };
     for (const { id } of running) {
       try {
         await this.transactions.run(async (scope) => {
@@ -126,6 +141,36 @@ export class RestartRecoveryService implements OnApplicationBootstrap {
         this.logger.error({ err: error }, `실행 #${id}을 '실패(중단됨)'으로 바꾸지 못했습니다`);
       }
     }
+    await this.closeOpenChains(result);
     return result;
+  }
+
+  /** 열린 연속 실행 묶음을 APP_RESTART로 닫는다(묶음마다 트랜잭션 하나) */
+  private async closeOpenChains(result: RecoveryResult): Promise<void> {
+    const open = await this.prisma.stepChain.findMany({
+      where: { endedAt: null },
+      orderBy: { id: 'asc' },
+    });
+    for (const chain of open) {
+      try {
+        await this.transactions.run(async (scope) => {
+          await this.guard.lockForUpdate(scope.tx, chain.candidateId);
+          const last = await scope.tx.stepRun.findFirst({
+            where: { stepChainId: chain.id },
+            orderBy: [{ startedAt: 'desc' }, { id: 'desc' }],
+            select: { stepCode: true },
+          });
+          const closed = await this.chains.close(
+            scope,
+            chain,
+            'APP_RESTART',
+            (last?.stepCode as StepCode | undefined) ?? null,
+          );
+          if (closed) result.closedStepChainIds.push(chain.id);
+        });
+      } catch (error) {
+        this.logger.error({ err: error }, `연속 실행 #${chain.id}을 닫지 못했습니다`);
+      }
+    }
   }
 }

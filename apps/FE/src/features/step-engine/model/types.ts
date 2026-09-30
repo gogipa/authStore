@@ -51,3 +51,14 @@ export type StepOwnerEditResult = components['schemas']['StepOwnerEditResult'];
 export type ListStepRunsParams = NonNullable<
   operations['listCandidateStepRuns']['parameters']['query']
 >;
+
+// ── 연속 실행·게이트(P1-06) ─────────────────────────────────────────────────
+export type ContinuousRunStartRequest = components['schemas']['ContinuousRunStartRequest'];
+export type ContinuousRunAccepted = components['schemas']['ContinuousRunAccepted'];
+export type ContinuousRunSummary = components['schemas']['ContinuousRunSummary'];
+export type ContinuousRunDetail = components['schemas']['ContinuousRunDetail'];
+export type StepChainStopReason = components['schemas']['StepChainStopReason'];
+export type CandidateGateState = components['schemas']['CandidateGateState'];
+export type CandidateGateList = components['schemas']['CandidateGateList'];
+export type GatePassRequest = components['schemas']['GatePassRequest'];
+export type GatePassResult = components['schemas']['GatePassResult'];

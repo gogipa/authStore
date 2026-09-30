@@ -80,6 +80,7 @@ describe('후보 작업 틀(/candidates/:candidateId, P1-04)', () => {
     expect(rail.getByRole('link', { name: /상세 콘텐츠/ })).toHaveTextContent('미실행');
     expect(rail.getByText('수동')).toBeInTheDocument();
     expect(rail.getByText('비교 안 함')).toBeInTheDocument();
-    expect(rail.getByRole('button', { name: '재실행 필요 단계 모두 실행' })).toBeDisabled();
+    // 재실행 필요 단계(⑤)가 있으면 레일 아래 '재실행 필요 단계 모두 실행'(RERUN_STALE, P1-06)이 켜진다
+    expect(rail.getByRole('button', { name: '재실행 필요 단계 모두 실행' })).toBeEnabled();
   });
 });

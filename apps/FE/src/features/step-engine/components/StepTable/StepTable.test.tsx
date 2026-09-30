@@ -7,10 +7,13 @@ import { callUsageList } from '@/test/fixtures/callUsage';
 import {
   candidateDetail,
   candidateSummary,
+  continuousRun,
   disabled,
+  gateList,
   page,
   statusCounts,
   stepRail,
+  stepRunSummary,
   versionItem,
 } from '@/test/fixtures/stepEngine';
 import { renderRoute } from '@/test/renderRoute';
@@ -68,6 +71,7 @@ function stub() {
         }),
       ),
     [`GET /candidates/${ID}/steps`]: () => jsonResponse(rail()),
+    [`GET /candidates/${ID}/gates`]: () => jsonResponse(gateList()),
     [`GET /candidates/${ID}/steps/SOURCING/runs`]: () =>
       jsonResponse(
         page([versionItem({ id: 100, version: 1, stepCode: 'SOURCING', isCurrent: true })]),
@@ -167,16 +171,63 @@ describe('StepTable — SCR-12 단계 표(P1-05)', () => {
     );
   });
 
-  it('꺼진 버튼 옆에 API disabledReason.message를 그대로 보인다', async () => {
-    stub();
+  it('꺼진 버튼 옆 이유: ⑧(G3 전)·⑨는 시안 글, 그 밖은 API disabledReason.message 그대로', async () => {
+    const api = stub();
+    api.on(`GET /candidates/${ID}/steps`, () =>
+      jsonResponse(
+        stepRail({
+          ...rail().items.reduce((acc, item) => ({ ...acc, [item.stepCode]: item }), {}),
+          UPLOAD: {
+            actions: {
+              run: {
+                enabled: false,
+                disabledReason: {
+                  code: 'GATE_NOT_PASSED',
+                  message: UPLOAD_WHY,
+                  details: { stepCode: 'UPLOAD', gate: 'G3' },
+                },
+              },
+              continuousRun: disabled('GATE_NOT_PASSED', UPLOAD_WHY),
+              edit: disabled('INVALID_STEP_CODE', 'x'),
+            },
+          },
+          REGISTER: {
+            actions: {
+              run: {
+                enabled: false,
+                disabledReason: {
+                  code: 'INVALID_STEP_CODE',
+                  message: '최종 승인(G4)에서만 등록합니다.',
+                  details: { stepCode: 'REGISTER', reason: 'NOT_RUNNABLE' },
+                },
+              },
+              continuousRun: disabled('INVALID_STEP_CODE', 'x'),
+              edit: disabled('INVALID_STEP_CODE', 'x'),
+            },
+          },
+          CATEGORY: {
+            actions: {
+              run: disabled(
+                'STEP_START_CONDITION_UNMET',
+                '시작에 필요한 값이 없습니다: ② 장르·상품유형.',
+              ),
+              continuousRun: disabled('CONTINUOUS_RUN_BEFORE_G2', 'G2 전'),
+              edit: disabled('INVALID_STEP_CODE', 'x'),
+            },
+          },
+        }),
+      ),
+    );
     const { table } = await renderTable();
     const upload = row(table, '이미지 업로드').getByRole('button', { name: '실행' });
     expect(upload).toBeDisabled();
-    expect(upload).toHaveAccessibleDescription(UPLOAD_WHY);
+    expect(upload).toHaveAccessibleDescription('썸네일 선택(G3)이 필요합니다');
     const register = row(table, '등록').getByRole('button', { name: '실행' });
     expect(register).toBeDisabled();
-    expect(register).toHaveAccessibleDescription('최종 승인(G4)에서만 등록합니다.');
-    expect(row(table, '카테고리').getByRole('button', { name: '실행' })).toBeEnabled();
+    expect(register).toHaveAccessibleDescription('최종 승인(G4)에서만 등록합니다');
+    const category = row(table, '카테고리').getByRole('button', { name: '실행' });
+    expect(category).toHaveAccessibleDescription('시작에 필요한 값이 없습니다: ② 장르·상품유형.');
+    expect(row(table, '소싱').getByRole('button', { name: '다시 실행' })).toBeEnabled();
   });
 
   it("버전 펼침: '현재 버전'·'이전 버전이 없습니다'", async () => {
@@ -269,5 +320,209 @@ describe('StepTable — SCR-12 단계 표(P1-05)', () => {
       expect(body).toEqual({ ownerAction: 'RESTORE_VERSION', baseStepRunId: 100 }),
     );
     expect(table.queryByText('이전 버전이 없습니다')).toBeNull();
+  });
+});
+
+describe('StepTable — 연속 실행·게이트(P1-06)', () => {
+  const BEFORE_G2 =
+    '판정(G2)을 통과해야 ④부터 연속 실행할 수 있습니다. 그 전에는 단계를 하나씩 실행합니다.';
+  const beforeG2 = disabled(
+    'CONTINUOUS_RUN_BEFORE_G2',
+    '소싱 확정(G2) 전에는 ②·③부터만 연속 실행할 수 있습니다. 다른 단계는 하나씩 실행해 주세요.',
+  );
+
+  /** G2 전 레일: ②·③만 연속 실행이 켜지고 ④ 이후는 CONTINUOUS_RUN_BEFORE_G2 */
+  function preG2Rail(extra: Parameters<typeof stepRail>[0] = {}) {
+    const actions = { run: { enabled: true, disabledReason: null }, continuousRun: beforeG2 };
+    return stepRail({
+      SOURCING: { status: 'COMPLETED' },
+      PRICING: { status: 'COMPLETED' },
+      CATEGORY: { actions: { ...actions, edit: disabled('INVALID_STEP_CODE', 'x') } },
+      THUMBNAIL: { actions: { ...actions, edit: disabled('INVALID_STEP_CODE', 'x') } },
+      COPY: { actions: { ...actions, edit: disabled('STEP_NOT_COMPLETED', 'x') } },
+      TAGS: { actions: { ...actions, edit: disabled('STEP_NOT_COMPLETED', 'x') } },
+      ...extra,
+    });
+  }
+
+  function stubChain(
+    patch: { detail?: Parameters<typeof candidateDetail>[0]; rail?: unknown } = {},
+  ) {
+    const api = stub();
+    api.on(`GET /candidates/${ID}`, () =>
+      jsonResponse(candidateDetail({ id: ID, creationPath: 'KEYWORD', ...patch.detail })),
+    );
+    api.on(`GET /candidates/${ID}/steps`, () => jsonResponse(patch.rail ?? preG2Rail()));
+    return api;
+  }
+
+  it("G2 전: ②·③ 줄의 '여기부터 연속 실행'만 켜지고, ④ 줄은 꺼짐 + 시안 문구(G2 줄 설명)", async () => {
+    stubChain();
+    const { table } = await renderTable();
+    const chain = (name: string) =>
+      row(table, name).getByRole('button', { name: `${name} 여기부터 연속 실행` });
+    expect(chain('소싱')).toBeEnabled();
+    expect(chain('판정')).toBeEnabled();
+    expect(chain('카테고리')).toBeDisabled();
+    expect(chain('카테고리')).toHaveAccessibleDescription(BEFORE_G2);
+    expect(chain('썸네일')).toBeDisabled();
+    expect(
+      table.getByRole('button', { name: '⑥ 상세 콘텐츠 여기부터 연속 실행' }),
+    ).toHaveAccessibleDescription(BEFORE_G2);
+    // ⑧·⑨는 '실행'만(시안)
+    expect(
+      row(table, '이미지 업로드').queryByRole('button', { name: /여기부터 연속 실행/ }),
+    ).toBeNull();
+    expect(table.getByText(BEFORE_G2)).toBeInTheDocument();
+  });
+
+  it("'여기부터 연속 실행'을 누르면 FROM_HERE + startStepCode로 POST 한 번, 받은 묶음의 진행을 띠로 보인다", async () => {
+    const api = stubChain();
+    let body: unknown = null;
+    api.on(`POST /candidates/${ID}/continuous-runs`, async (req) => {
+      body = await req.json();
+      return jsonResponse(
+        {
+          stepChainId: 9,
+          candidateId: ID,
+          kind: 'FROM_HERE',
+          startStepCode: 'SOURCING',
+          startedAt: '2026-09-28T05:00:00.000Z',
+          status: 'RUNNING',
+          stepRunId: 500,
+          stepCode: 'SOURCING',
+        },
+        202,
+      );
+    });
+    api.on('GET /continuous-runs/9', () =>
+      jsonResponse(
+        continuousRun({
+          id: 9,
+          candidateId: ID,
+          stepRuns: [
+            stepRunSummary({ id: 500, stepCode: 'SOURCING', status: 'RUNNING', stepChainId: 9 }),
+          ],
+        }),
+      ),
+    );
+    const { table } = await renderTable();
+    await userEvent.click(
+      row(table, '소싱').getByRole('button', { name: '소싱 여기부터 연속 실행' }),
+    );
+    await waitFor(() => expect(body).toEqual({ kind: 'FROM_HERE', startStepCode: 'SOURCING' }));
+    expect(api.requests.find((r) => r.method === 'POST')!.headers.get('X-AutoStore-Client')).toBe(
+      '1',
+    );
+    const banner = await screen.findByText('연속 실행 중입니다');
+    expect(banner.closest('[role="status"]')).toHaveTextContent(
+      '실행한 단계: ② 소싱 · 지금 ② 소싱 실행 중',
+    );
+  });
+
+  it("재실행 필요 단계가 없으면 '재실행 필요 단계 모두 실행'은 꺼짐 + '재실행 필요 단계가 없습니다'. 있으면 RERUN_STALE로 POST", async () => {
+    const api = stubChain();
+    const { unmount } = await renderTable();
+    const button = screen.getAllByRole('button', { name: '재실행 필요 단계 모두 실행' })[0]!;
+    expect(button).toBeDisabled();
+    expect(button).toHaveAccessibleDescription('재실행 필요 단계가 없습니다');
+    unmount();
+
+    api.on(`GET /candidates/${ID}/steps`, () =>
+      jsonResponse(
+        preG2Rail({ SOURCING: { status: 'RERUN_REQUIRED', staleInputs: ['settings.costs'] } }),
+      ),
+    );
+    let body: unknown = null;
+    api.on(`POST /candidates/${ID}/continuous-runs`, async (req) => {
+      body = await req.json();
+      return jsonResponse({ stepChainId: 10, stepRunId: 501, stepCode: 'SOURCING' }, 202);
+    });
+    api.on('GET /continuous-runs/10', () =>
+      jsonResponse(continuousRun({ id: 10, kind: 'RERUN_STALE' })),
+    );
+    await renderTable();
+    const enabled = screen.getAllByRole('button', { name: '재실행 필요 단계 모두 실행' })[0]!;
+    await waitFor(() => expect(enabled).toBeEnabled());
+    await userEvent.click(enabled);
+    await waitFor(() => expect(body).toEqual({ kind: 'RERUN_STALE' }));
+  });
+
+  it("게이트 줄 배지: 'G2 판정 확정 · 확인 필요'·'G3 썸네일 선택 · 잠김', 통과 뒤 '· 통과'(게이트 목록으로 그린다)", async () => {
+    const api = stubChain();
+    const { table, unmount } = await renderTable();
+    expect(await table.findByText('G2 판정 확정 · 확인 필요')).toBeInTheDocument();
+    expect(table.getByText('G3 썸네일 선택 · 잠김')).toBeInTheDocument();
+    unmount();
+
+    // 후보 상세의 gates는 무효인 채여도 게이트 목록(지문 비교)이 통과면 통과로 그린다
+    api.on(`GET /candidates/${ID}/gates`, () => jsonResponse(gateList({ G2: true })));
+    const again = await renderTable();
+    expect(await again.table.findByText('G2 판정 확정 · 통과')).toBeInTheDocument();
+    expect(again.table.getByText('G3 썸네일 선택 · 확인 필요')).toBeInTheDocument();
+    expect(again.table.getByText('G4 최종 승인 · 잠김')).toBeInTheDocument();
+  });
+
+  it('continuous-run.stopped 이벤트 뒤 띠를 다시 읽어 멈춘 이유를 보인다', async () => {
+    const api = stubChain({
+      detail: {
+        id: ID,
+        openContinuousRun: {
+          id: 7,
+          candidateId: ID,
+          kind: 'FROM_HERE',
+          startStepCode: 'SOURCING',
+          startedAt: '2026-09-28T05:00:00.000Z',
+          endedAt: null,
+          stopReason: null,
+          stopStepCode: null,
+        },
+      },
+    });
+    let stopped = false;
+    api.on('GET /continuous-runs/7', () =>
+      jsonResponse(
+        continuousRun({
+          id: 7,
+          candidateId: ID,
+          stepRuns: [
+            stepRunSummary({ id: 500, stepCode: 'SOURCING', status: 'COMPLETED', stepChainId: 7 }),
+            stepRunSummary({
+              id: 501,
+              stepCode: 'PRICING',
+              status: stopped ? 'WAITING_INPUT' : 'RUNNING',
+              stepChainId: 7,
+            }),
+          ],
+          ...(stopped
+            ? {
+                endedAt: '2026-09-28T05:10:00.000Z',
+                stopReason: 'AWAIT_G2' as const,
+                stopStepCode: 'PRICING' as const,
+              }
+            : {}),
+        }),
+      ),
+    );
+    await renderTable();
+    expect(await screen.findByText('연속 실행 중입니다')).toBeInTheDocument();
+    const before = count(api, 'GET /continuous-runs/7');
+    stopped = true;
+    FakeEventSource.latest().emit('continuous-run.stopped', {
+      stepChainId: 7,
+      candidateId: ID,
+      kind: 'FROM_HERE',
+      stopReason: 'AWAIT_G2',
+      stopStepCode: 'PRICING',
+      endedAt: '2026-09-28T05:10:00.000Z',
+    });
+    expect(await screen.findByText('연속 실행이 멈췄습니다')).toBeInTheDocument();
+    expect(count(api, 'GET /continuous-runs/7')).toBeGreaterThan(before);
+    expect(
+      screen.getByText(
+        '판정(G2) 앞에서 멈췄습니다. ③ 판정 화면에서 국내 기준가를 넣고 판정을 확정해 주세요.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText('실행한 단계: ② 소싱 → ③ 판정')).toBeInTheDocument();
   });
 });

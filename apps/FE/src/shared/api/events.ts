@@ -76,6 +76,9 @@ export type EventInvalidations = {
  * - P1-05: `step-run.status-changed`·`candidate-step.changed` → 그 후보의 단계 레일·버전 이력·바뀐 입력, 실행 한 건,
  *   그 후보 상세·목록·재실행 필요 모아 보기(+ 이어서 할 곳). `settings.reloaded`가 재실행 필요 단계를 만들었으면
  *   (`rerunRequiredStepCount` > 0) step-engine 태그 전체도 다시 읽는다(설정 변경 전파).
+ * - P1-06: `continuous-run.stopped`·`gate.passed`·`gate.invalidated` → 그 후보의 게이트 목록·상세·단계 레일, 후보 목록·
+ *   이어서 할 곳(+ 멈춘 묶음 `getContinuousRun`). 묶음 안 실행의 `step-run.status-changed`(stepChainId)는 그 묶음도
+ *   다시 읽는다(연속 실행 띠의 진행).
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -86,6 +89,16 @@ function stepEngineStepKeys(candidateId: number): QueryKey[] {
     qk('step-engine', 'listCandidates'),
     qk('step-engine', 'getCandidateResumeTarget'),
     qk('step-engine', 'listAttentionCandidateSteps'),
+  ];
+}
+
+function gateKeys(candidateId: number): QueryKey[] {
+  return [
+    qk('step-engine', 'listCandidateGates', { candidateId }),
+    qk('step-engine', 'getCandidate', { candidateId }),
+    qk('step-engine', 'listCandidateSteps', { candidateId }),
+    qk('step-engine', 'listCandidates'),
+    qk('step-engine', 'getCandidateResumeTarget'),
   ];
 }
 
@@ -105,10 +118,18 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     ...stepEngineStepKeys(candidateId),
     qk('step-engine', 'getStepRun'),
   ],
-  'step-run.status-changed': ({ candidateId, stepRunId }) => [
+  'step-run.status-changed': ({ candidateId, stepRunId, stepChainId }) => [
     ...stepEngineStepKeys(candidateId),
     qk('step-engine', 'getStepRun', { stepRunId }),
+    ...(stepChainId != null ? [qk('step-engine', 'getContinuousRun', { stepChainId })] : []),
+    qk('step-engine', 'listCandidateGates', { candidateId }),
   ],
+  'continuous-run.stopped': ({ candidateId, stepChainId }) => [
+    qk('step-engine', 'getContinuousRun', { stepChainId }),
+    ...gateKeys(candidateId),
+  ],
+  'gate.passed': ({ candidateId }) => gateKeys(candidateId),
+  'gate.invalidated': ({ candidateId }) => gateKeys(candidateId),
 };
 
 export const PROGRESS_EVENTS_URL = `${API_BASE_URL}/events`;

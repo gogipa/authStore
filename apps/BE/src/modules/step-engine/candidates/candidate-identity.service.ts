@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ApiException } from '../../../common/errors/api.exception.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { NOT_IN_PROGRESS_STATUSES } from '../domain/steps.js';
 import { anchorKeyDuplicateWarning, type CandidateWarning } from '../domain/warnings.js';
+import { GATE_VALIDITY, type GateValidityPort } from '../ports/gate-validity.port.js';
 import { CandidateGuardService } from './candidate-guard.service.js';
 import { CandidateStatusService } from './candidate-status.service.js';
 import type { Db, StepEngineTx } from './step-engine-tx.js';
@@ -98,6 +99,7 @@ export class CandidateIdentityService {
     private readonly prisma: PrismaService,
     private readonly guard: CandidateGuardService,
     private readonly status: CandidateStatusService,
+    @Inject(GATE_VALIDITY) private readonly gates: GateValidityPort,
   ) {}
 
   /** 진행 중 후보 중 같은 itemCode+색상(자기 자신 제외)의 id */
@@ -195,11 +197,14 @@ export class CandidateIdentityService {
       return { changed: false, warnings };
     }
     await this.assertNoDuplicate(scope.tx, input, candidateId);
+    // G2 지문은 소싱 선택(itemCode·색상)을 담는다 → 바꾸기 전 지문 상태를 보고, 바꾼 뒤 무효 감지(P1-06 규칙 9)
+    const gatesBefore = await this.gates.snapshot?.(scope.tx, candidateId);
     await scope.tx.candidate.update({
       where: { id: candidateId },
       data: { itemCode: input.itemCode, selectedColor: input.selectedColor },
     });
     await this.status.reevaluate(scope, candidateId);
+    if (gatesBefore) await this.gates.detectInvalidation?.(scope, candidateId, gatesBefore);
     return { changed: true, warnings };
   }
 

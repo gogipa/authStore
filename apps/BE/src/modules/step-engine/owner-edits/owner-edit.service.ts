@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { UserActionLogService } from '../../../common/audit/user-action-log.service.js';
 import { ApiException } from '../../../common/errors/api.exception.js';
 import type { FieldError } from '../../../common/errors/error-response.js';
@@ -27,6 +27,7 @@ import {
   readResolvedInputs,
   stepStatusMapOf,
 } from '../execution/step-run-store.js';
+import { GATE_VALIDITY, type GateValidityPort } from '../ports/gate-validity.port.js';
 import { PropagationService } from '../propagation/propagation.service.js';
 import { StepRunnerRegistry } from '../runner/step-runner.registry.js';
 
@@ -264,6 +265,7 @@ export class OwnerEditService {
     private readonly propagation: PropagationService,
     private readonly audit: UserActionLogService,
     private readonly events: ProgressEventsService,
+    @Inject(GATE_VALIDITY) private readonly gates: GateValidityPort,
   ) {}
 
   async create(
@@ -354,6 +356,8 @@ export class OwnerEditService {
       }
 
       const keep = edit.ownerAction === 'KEEP_AS_IS';
+      // 게이트 무효 감지(P1-06 규칙 9): ③·⑤ 버전을 바꾸는 오너 수정(이전 버전 다시 고르기 등) 전 지문 상태
+      const gatesBefore = await this.gates.snapshot?.(scope.tx, candidateId);
       const baseInputs = keep ? null : await loadInputRows(scope.tx, base.id);
       const changed = baseInputs ? changedInputKeys(hashesOf(baseInputs), currentHashes) : [];
       const runStatus = changed.length > 0 ? 'RERUN_REQUIRED' : 'COMPLETED';
@@ -415,6 +419,7 @@ export class OwnerEditService {
           ? await this.propagation.propagateFromStep(scope, candidateId, stepCode)
           : [];
       await this.status.reevaluate(scope, candidateId, { stepRunId: run.id });
+      if (gatesBefore) await this.gates.detectInvalidation?.(scope, candidateId, gatesBefore);
       publishAfterCommit(scope, this.events, { run: { row: run }, steps: [stepRow] });
       return {
         kind: 'CREATED',

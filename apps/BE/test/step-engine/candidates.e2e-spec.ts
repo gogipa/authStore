@@ -16,6 +16,7 @@ import {
   createRakutenItem,
   SAMPLE,
 } from '../fixtures/step-engine/candidate.factory.js';
+import { FakeGateBasisModule, recordGatePass } from '../fixtures/step-engine/gate-basis.fakes.js';
 import { createKeyword } from '../fixtures/step-engine/keyword.factory.js';
 import { truncateStepEngine } from '../fixtures/step-engine/truncate.js';
 import { createTestApp, TEST_START_MS, type TestApp } from '../helpers/test-app.js';
@@ -100,7 +101,7 @@ describe('후보 API(step-engine, P1-04) e2e — autostore_test', () => {
     t.prisma.candidateStatusHistory.count({ where: { candidateId } });
 
   beforeAll(async () => {
-    t = await createTestApp();
+    t = await createTestApp({ imports: [FakeGateBasisModule] });
     const sub = t.app
       .get(ProgressEventsService)
       .stream()
@@ -1003,27 +1004,10 @@ describe('후보 API(step-engine, P1-04) e2e — autostore_test', () => {
   // ── 자동 전환(서비스, 같은 트랜잭션) ────────────────────────────────────
 
   describe('후보 상태 자동 전환(F-CW-05)', () => {
-    const passGates = async (candidateId: number, runs: Partial<Record<string, number>>) => {
-      await t.prisma.gatePass.create({
-        data: {
-          candidateId,
-          gate: 'G2',
-          fingerprint: 'b'.repeat(64),
-          fingerprintBasis: {},
-          basisStepRunId: runs.PRICING!,
-          basisStepCode: 'PRICING',
-        },
-      });
-      await t.prisma.gatePass.create({
-        data: {
-          candidateId,
-          gate: 'G3',
-          fingerprint: 'c'.repeat(64),
-          fingerprintBasis: {},
-          basisStepRunId: runs.THUMBNAIL!,
-          basisStepCode: 'THUMBNAIL',
-        },
-      });
+    /** G2·G3 통과 기록(P1-06: 지금 값으로 계산한 지문 — 가짜 게이트 공급자) */
+    const passGates = async (candidateId: number) => {
+      await recordGatePass(t.app, t.prisma, candidateId, 'G2');
+      await recordGatePass(t.app, t.prisma, candidateId, 'G3');
     };
 
     it('작업중 + 필수 9단계 완료 + G2·G3 통과 → 승인대기(READY_FOR_APPROVAL), 커밋 뒤 SSE', async () => {
@@ -1034,7 +1018,7 @@ describe('후보 API(step-engine, P1-04) e2e — autostore_test', () => {
         gender: 'MALE',
         leafCategoryId: SAMPLE.leafCategoryId,
       });
-      await passGates(fx.candidate.id, fx.stepRunIds);
+      await passGates(fx.candidate.id);
       const status = t.app.get(CandidateStatusService);
       const record = await t.app
         .get(StepEngineTransactions)
@@ -1065,7 +1049,7 @@ describe('후보 API(step-engine, P1-04) e2e — autostore_test', () => {
         gender: 'MALE',
         leafCategoryId: null,
       });
-      await passGates(fx.candidate.id, fx.stepRunIds);
+      await passGates(fx.candidate.id);
       const status = t.app.get(CandidateStatusService);
       const record = await t.app
         .get(StepEngineTransactions)

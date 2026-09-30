@@ -14,13 +14,19 @@ import {
   type GateState,
   type StepFailureKind,
 } from '@/shared/ui';
+import { useCandidateGates } from '../../api/useContinuousRunQueries';
 import {
   useCandidateSteps,
   useOwnerEdit,
   useStartStepRun,
   useStepRuns,
 } from '../../api/useStepRunQueries';
-import { candidateGateViews } from '../../model/gateViews';
+import {
+  NO_CONTINUOUS_STEPS,
+  REGISTER_ONLY_G4_TEXT,
+  UPLOAD_NEEDS_G3_TEXT,
+} from '../../model/continuousRun';
+import { gateStateMap, gateViewsFromList } from '../../model/gateViews';
 import { FAILURE_KIND_LABEL } from '../../model/labels';
 import {
   CONTENT_GROUP_CODES,
@@ -34,6 +40,10 @@ import {
   STEP_TABLE_ROWS,
 } from '../../model/stepTable';
 import type { CandidateDetail, CandidateStepRailItem, StepActionState } from '../../model/types';
+import type { ChainStartStepCode } from '../ContinuousRunButton/ContinuousRunButton';
+import { ContinuousRunBanner } from '../ContinuousRunBanner/ContinuousRunBanner';
+import { ContinuousRunButton } from '../ContinuousRunButton/ContinuousRunButton';
+import { RerunAllButton } from '../RerunAllButton/RerunAllButton';
 import { StaleInputs } from '../StaleInputs/StaleInputs';
 import styles from './StepTable.module.css';
 
@@ -43,11 +53,39 @@ export interface StepTableProps {
 }
 
 const COLUMN_COUNT = 6;
-const CONTINUOUS_WHY_ID = 'continuous-run-why';
-/** 연속 실행 API는 P1-06이 붙인다. 그 전에는 버튼만 두고 끈다(P1-05) */
-const CONTINUOUS_PENDING = '여기부터 연속 실행은 아직 준비 중입니다';
-/** 연속 실행 버튼을 두지 않는 단계(⑧·⑨는 보드에 '실행'만 있다) */
-const NO_CONTINUOUS: readonly StepCode[] = ['UPLOAD', 'REGISTER'];
+/** G2 줄 설명 id: G2 전 ④ 이후 '여기부터 연속 실행'이 꺼진 이유(시안은 줄마다가 아니라 G2 줄에 한 번 적는다) */
+const G2_CHAIN_WHY_ID = 'g2-chain-why';
+
+/**
+ * '실행' 꺼진 이유 글. ⑧(G3 전)·⑨는 시안 글, 그 밖은 API disabledReason.message 그대로.
+ */
+function runReasonText(action: StepActionState | undefined): string | null {
+  const reason = action && !action.enabled ? action.disabledReason : null;
+  if (!reason) return null;
+  if (reason.code === 'GATE_NOT_PASSED' && reason.details?.gate === 'G3') {
+    return UPLOAD_NEEDS_G3_TEXT;
+  }
+  if (reason.code === 'INVALID_STEP_CODE' && reason.details?.reason === 'NOT_RUNNABLE') {
+    return REGISTER_ONLY_G4_TEXT;
+  }
+  return reason.message;
+}
+
+/**
+ * '여기부터 연속 실행'이 꺼졌을 때 가리킬 이유 글 id. G2 전이면 G2 줄 설명, '실행'과 같은 이유면 그 옆 글, 아니면 없음(버튼 옆에
+ * 글을 그린다).
+ */
+function chainReasonId(
+  item: CandidateStepRailItem | undefined,
+  runReasonId: string,
+): string | undefined {
+  const chain = item?.actions.continuousRun;
+  if (!chain || chain.enabled || !chain.disabledReason) return undefined;
+  if (chain.disabledReason.code === 'CONTINUOUS_RUN_BEFORE_G2') return G2_CHAIN_WHY_ID;
+  const run = item.actions.run;
+  if (!run.enabled && run.disabledReason?.code === chain.disabledReason.code) return runReasonId;
+  return undefined;
+}
 
 function timeText(at: string | null): string {
   return at ? formatKstTime(at) : '—';
@@ -88,7 +126,7 @@ function RunButton({
   onRun: () => void;
   ariaLabel?: string;
 }) {
-  const reason = action && !action.enabled ? (action.disabledReason?.message ?? null) : null;
+  const reason = runReasonText(action);
   const disabled = !action || !action.enabled || pending;
   return (
     <>
@@ -103,14 +141,6 @@ function RunButton({
       </Button>
       {reason ? <DisabledReason id={id}>{reason}</DisabledReason> : null}
     </>
-  );
-}
-
-function ContinuousButton() {
-  return (
-    <Button size="sm" disabled aria-describedby={CONTINUOUS_WHY_ID}>
-      여기부터 연속 실행
-    </Button>
   );
 }
 
@@ -235,18 +265,27 @@ function StepNotes({
  * - '실행'·'다시 실행'은 POST 한 번. 결과는 폴링하지 않고 SSE 뒤 표를 다시 읽는다. 다음 단계는 자동으로 시작하지 않는다.
  * - ⑥ 묶음 '실행'은 ⑥-1 → ⑥-2 → ⑥-3(COPY + throughStepCode=NOTICE_HTML). 펼치면 ⑥-1~⑥-3 줄.
  * - ② 페이지 데이터가 판정 유효 시간을 넘으면 '오래됨'(재실행 필요로 바꾸지 않는다). ⑤·⑥-1·⑥-2는 G2 전 AI 비용 경고.
+ * - 연속 실행(P1-06): 표 위 '재실행 필요 단계 모두 실행'(RERUN_STALE), 줄마다 '여기부터 연속 실행'(FROM_HERE, 켜짐·꺼진
+ *   이유는 레일 `actions.continuousRun`). G2 전 ④ 이후는 G2 줄 설명이 꺼진 이유다. 열린 묶음·방금 시작한 묶음은
+ *   `ContinuousRunBanner`로 진행·건너뛴 단계·멈춘 이유를 보인다. 게이트 줄 배지는 `listCandidateGates`로 그린다.
  */
 export function StepTable({ detail }: StepTableProps) {
   const candidateId = detail.id;
   const rail = useCandidateSteps(candidateId);
+  const gateList = useCandidateGates(candidateId);
   const start = useStartStepRun();
+  // 따라갈 연속 실행: 열린 묶음이 보이면 그것, 아니면 이 화면에서 방금 시작한 묶음(멈춘 뒤에도 이유를 보인다)
+  const openChainId = detail.openContinuousRun?.id ?? null;
+  const [chainId, setChainId] = useState<number | null>(openChainId);
+  if (openChainId !== null && openChainId !== chainId) setChainId(openChainId);
   const [openHistory, setOpenHistory] = useState<StepCode | null>(null);
   /** ⑥ 하위 줄 펼침. null이면 자동(하위 단계에 입력 대기·실패·재실행 필요가 있으면 펼친다) */
   const [groupOpenChoice, setGroupOpen] = useState<boolean | null>(null);
   const items = railByCode(rail.data?.items);
-  const gateState = Object.fromEntries(
-    candidateGateViews(detail).map((view) => [view.gate, view.state]),
-  ) as Record<'G2' | 'G3' | 'G4', GateState>;
+  const gateState = gateStateMap(gateViewsFromList(gateList.data?.items, detail)) as Record<
+    'G2' | 'G3' | 'G4',
+    GateState
+  >;
   const rerunCount = (rail.data?.items ?? []).filter((i) => i.status === 'RERUN_REQUIRED').length;
   const pending = start.isPending;
 
@@ -291,16 +330,26 @@ export function StepTable({ detail }: StepTableProps) {
         </ButtonLink>
       );
     }
+    const runReasonId = `run-why-${code}`;
     return (
       <span className={styles.actions}>
         <RunButton
-          id={`run-why-${code}`}
+          id={runReasonId}
           label={runButtonLabel(item?.status ?? 'NOT_RUN')}
           action={item?.actions.run}
           pending={pending}
           onRun={() => run(code)}
         />
-        {options.continuous ? <ContinuousButton /> : null}
+        {options.continuous ? (
+          <ContinuousRunButton
+            candidateId={candidateId}
+            stepCode={code as ChainStartStepCode}
+            action={item?.actions.continuousRun}
+            describedBy={chainReasonId(item, runReasonId)}
+            ariaLabel={`${label} 여기부터 연속 실행`}
+            onStarted={(accepted) => setChainId(accepted.stepChainId)}
+          />
+        ) : null}
       </span>
     );
   };
@@ -393,17 +442,22 @@ export function StepTable({ detail }: StepTableProps) {
           </span>
         </div>
         <div className={styles.headActions}>
-          <DisabledReason id="rerun-all-why" tone="muted">
-            {rerunCount === 0 ? '재실행 필요 단계가 없습니다' : '연속 실행은 아직 준비 중입니다'}
-          </DisabledReason>
-          <Button disabled aria-describedby="rerun-all-why">
-            재실행 필요 단계 모두 실행
-          </Button>
+          <RerunAllButton
+            id="rerun-all-why"
+            candidateId={candidateId}
+            rerunCount={rerunCount}
+            chainOpen={openChainId !== null}
+            locked={detail.locked || detail.status === 'EXCLUDED'}
+            onStarted={(accepted) => setChainId(accepted.stepChainId)}
+          />
         </div>
       </div>
-      <DisabledReason id={CONTINUOUS_WHY_ID} tone="muted" className={styles.continuousWhy}>
-        {CONTINUOUS_PENDING}
-      </DisabledReason>
+      {chainId !== null ? (
+        <ContinuousRunBanner
+          stepChainId={chainId}
+          onClose={openChainId === null ? () => setChainId(null) : undefined}
+        />
+      ) : null}
       {start.error ? (
         <div role="alert" className={styles.alert}>
           {isApiRequestError(start.error) ? start.error.message : '실행을 요청하지 못했습니다.'}
@@ -449,7 +503,12 @@ export function StepTable({ detail }: StepTableProps) {
                   <FullRow key={row.gate} className={styles.gateRow}>
                     <span className={styles.gateLine}>
                       <GateBadge gate={row.gate} state={gateState[row.gate]} />
-                      <span className={styles.caption}>{row.text}</span>
+                      <span
+                        className={styles.caption}
+                        id={row.gate === 'G2' ? G2_CHAIN_WHY_ID : undefined}
+                      >
+                        {row.text}
+                      </span>
                     </span>
                   </FullRow>
                 );
@@ -458,7 +517,7 @@ export function StepTable({ detail }: StepTableProps) {
                 const source =
                   row.code === 'SOURCING' ? sourcingSourceText(detail.creationPath) : row.source;
                 return stepRows(row.code, row.no, row.label, source, {
-                  continuous: !NO_CONTINUOUS.includes(row.code),
+                  continuous: !NO_CONTINUOUS_STEPS.includes(row.code),
                 });
               }
               const anyRun = groupChildren.some((i) => i && i.status !== 'NOT_RUN');
@@ -500,7 +559,14 @@ export function StepTable({ detail }: StepTableProps) {
                           pending={pending}
                           onRun={() => run('COPY', true)}
                         />
-                        <ContinuousButton />
+                        <ContinuousRunButton
+                          candidateId={candidateId}
+                          stepCode="COPY"
+                          action={copyItem?.actions.continuousRun}
+                          describedBy={chainReasonId(copyItem, 'run-why-CONTENT')}
+                          ariaLabel="⑥ 상세 콘텐츠 여기부터 연속 실행"
+                          onStarted={(accepted) => setChainId(accepted.stepChainId)}
+                        />
                       </span>
                     </td>
                   </tr>

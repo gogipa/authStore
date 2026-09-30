@@ -3,7 +3,9 @@
  * P1-04: 후보 목록·상세·상태별 수·이어서 할 곳·재실행 필요 모아 보기·상태 이력, 만들기·제외·다시 작업·성별,
  * 후보 머리·단계 점.
  * P1-05: 단계 레일·버전 이력·실행 한 건·바뀐 입력 조회, 단계 실행·오너 수정 훅, 단계 표(StepTable)·상태 줄
- * (StepStatusBar)·바뀐 입력(StaleInputs), 입력 키 화면 이름. 게이트 훅은 P1-06이 더한다.
+ * (StepStatusBar)·바뀐 입력(StaleInputs), 입력 키 화면 이름.
+ * P1-06: 연속 실행 시작·조회, 게이트 목록·통과 훅, '여기부터 연속 실행'·'재실행 필요 단계 모두 실행' 버튼, 연속 실행 띠,
+ * 게이트 목록으로 그리는 게이트 배지.
  */
 export {
   useAttentionSteps,
@@ -57,7 +59,35 @@ export type * from './model/types';
 export { CandidateHeader } from './components/CandidateHeader/CandidateHeader';
 export type { CandidateHeaderProps } from './components/CandidateHeader/CandidateHeader';
 export { CandidateDetailHeader } from './components/CandidateHeader/CandidateDetailHeader';
-export { candidateGateViews } from './model/gateViews';
+export {
+  useCandidateGates,
+  useContinuousRun,
+  usePassGate,
+  useStartContinuousRun,
+} from './api/useContinuousRunQueries';
+export { candidateGateViews, gateStateMap, gateViewsFromList } from './model/gateViews';
+export {
+  BEFORE_G2_CHAIN_TEXT,
+  chainStepsText,
+  CONTINUOUS_RUN_LABEL,
+  continuousRunTitle,
+  NO_CONTINUOUS_STEPS,
+  NO_RERUN_TEXT,
+  REGISTER_ONLY_G4_TEXT,
+  RERUN_ALL_LABEL,
+  skippedStepsText,
+  stopReasonText,
+  UPLOAD_NEEDS_G3_TEXT,
+} from './model/continuousRun';
+export { ContinuousRunButton } from './components/ContinuousRunButton/ContinuousRunButton';
+export type {
+  ChainStartStepCode,
+  ContinuousRunButtonProps,
+} from './components/ContinuousRunButton/ContinuousRunButton';
+export { RerunAllButton } from './components/RerunAllButton/RerunAllButton';
+export type { RerunAllButtonProps } from './components/RerunAllButton/RerunAllButton';
+export { ContinuousRunBanner } from './components/ContinuousRunBanner/ContinuousRunBanner';
+export type { ContinuousRunBannerProps } from './components/ContinuousRunBanner/ContinuousRunBanner';
 export type { CandidateGateView } from './model/gateViews';
 export { parseCandidateId } from './model/candidateId';
 export { CandidateStatusChip } from './components/CandidateStatusChip/CandidateStatusChip';

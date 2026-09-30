@@ -2,24 +2,19 @@ import { Outlet, useMatch, useParams } from 'react-router';
 import {
   CandidateDetailHeader,
   CandidateHeader,
-  candidateGateViews,
   CONTENT_GROUP_CODES,
   contentGroupStatus,
+  gateStateMap,
+  gateViewsFromList,
   parseCandidateId,
   railByCode,
+  RerunAllButton,
   useCandidate,
+  useCandidateGates,
   useCandidateSteps,
 } from '@/features/step-engine';
-import { isStepScreen, type GateCode, type StepCode } from '@/shared/lib/steps';
-import {
-  Banner,
-  Button,
-  ButtonLink,
-  Chip,
-  DisabledReason,
-  PageHeader,
-  type GateState,
-} from '@/shared/ui';
+import { isStepScreen, type StepCode } from '@/shared/lib/steps';
+import { Banner, ButtonLink, Chip, PageHeader } from '@/shared/ui';
 import { StepRail, type RailStepStatus } from './StepRail';
 import styles from './CandidateLayout.module.css';
 
@@ -33,13 +28,15 @@ function BackToList() {
  * 후보 머리는 `getCandidate`로 채운다(P1-04). 없는 후보(404 CANDIDATE_NOT_FOUND·정수 아닌 id)는 틀 안에
  * '후보를 찾을 수 없습니다' + '후보 목록'(05-1 route맵 §3-3).
  * 레일(P1-05): 단계 상태·실패(중단됨)·재실행 사유는 `listCandidateSteps`, ⑥ 줄은 하위 단계 묶음 규칙, URL 후보는
- * '수동'·'비교 안 함' 배지. 게이트는 후보 머리와 같은 표시(P1-06 `listCandidateGates`가 오면 바꾼다).
+ * '수동'·'비교 안 함' 배지. 게이트는 후보 머리와 같은 표시(`listCandidateGates`, P1-06). 레일 아래
+ * '재실행 필요 단계 모두 실행'은 RERUN_STALE 연속 실행(P1-06)이다.
  */
 export function CandidateLayout() {
   const { candidateId: rawId = '' } = useParams();
   const candidateId = parseCandidateId(rawId);
   const candidate = useCandidate(candidateId);
   const rail = useCandidateSteps(candidateId);
+  const gateList = useCandidateGates(candidateId);
   const match = useMatch('/candidates/:candidateId/:screen');
   const screen = match?.params.screen;
   const currentScreen = isStepScreen(screen) ? screen : undefined;
@@ -70,9 +67,7 @@ export function CandidateLayout() {
     ? { content: { status: contentGroupStatus(CONTENT_GROUP_CODES.map((c) => byCode[c])) } }
     : undefined;
   const gates = candidate.data
-    ? (Object.fromEntries(
-        candidateGateViews(candidate.data).map((view) => [view.gate, view.state]),
-      ) as Partial<Record<GateCode, GateState>>)
+    ? gateStateMap(gateViewsFromList(gateList.data?.items, candidate.data))
     : undefined;
   const rerunCount = items.filter((item) => item.status === 'RERUN_REQUIRED').length;
 
@@ -105,16 +100,15 @@ export function CandidateLayout() {
             ) : undefined
           }
           footer={
-            <>
-              <Button size="sm" disabled aria-describedby="rail-rerun-why">
-                재실행 필요 단계 모두 실행
-              </Button>
-              <DisabledReason id="rail-rerun-why" tone="muted">
-                {rerunCount === 0
-                  ? '재실행 필요 단계가 없습니다'
-                  : '연속 실행은 아직 준비 중입니다'}
-              </DisabledReason>
-            </>
+            <RerunAllButton
+              id="rail-rerun-why"
+              size="sm"
+              reasonPosition="after"
+              candidateId={candidateId}
+              rerunCount={rerunCount}
+              chainOpen={!!candidate.data?.openContinuousRun}
+              locked={!!candidate.data?.locked || candidate.data?.status === 'EXCLUDED'}
+            />
           }
         />
         <div className={styles.stepBody}>

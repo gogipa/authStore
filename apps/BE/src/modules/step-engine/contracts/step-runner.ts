@@ -170,6 +170,18 @@ export interface StepRunner {
   anchorKeyOf?(db: Tx, stepRunId: number): Promise<AnchorKeyInput | null>;
   /** 재시작 정리(⑨, P4-03): 중단된 실행의 후보 상태 전이. null이면 후보는 그대로 */
   onInterrupted?(tx: Tx, run: StepRunRow): Promise<CandidateStatusEffect | null>;
+  /**
+   * ② 재조회 모드(선택, P2-02, P1-06 6시간 규칙): 연속 실행이 판정에 쓴 라쿠텐 페이지가 판정 유효 시간(기본 6시간)을
+   * 넘은 것을 보고 ③을 다시 판정하기 전에 ②를 다시 조회할 때 `run` 대신 부른다(검색 없이 선택 상품 페이지만 다시 받는 등).
+   * 없으면 `run`을 부른다. 라쿠텐 페이지 하루 상한·24시간 쉼은 외부 호출 관문이 그대로 막는다(실패로 끝나면 ②를 읽는
+   * 단계만 멈춘다). 규약은 `run`과 같다(트랜잭션 밖, 결과를 돌려준다)
+   */
+  refetch?(ctx: StepRunContext): Promise<StepOutcome>;
+  /**
+   * ③ 판정에 쓴 라쿠텐 페이지 수집 시각(선택, P2-05, P1-06 6시간 규칙). `stepRunId` = ③ 현재 버전. 없으면(판정 없음·
+   * 실행기가 모름) null — 연속 실행은 6시간 규칙을 쓰지 않는다. RG-08 '판정 유효 시간'도 같은 시각을 본다
+   */
+  judgementPageCollectedAt?(db: Tx, stepRunId: number): Promise<Date | null>;
 }
 
 /** 실행기 표시 메타데이터 키 */

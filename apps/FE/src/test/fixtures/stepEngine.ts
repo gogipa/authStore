@@ -239,3 +239,56 @@ export function versionItem(
 ): StepRunVersionItem {
   return { ...stepRunSummary(patch), isCurrent: false, ...patch };
 }
+
+// ── 연속 실행·게이트(P1-06) ────────────────────────────────────────────────
+type GateStateItem = components['schemas']['CandidateGateState'];
+type ContinuousRunDetail = components['schemas']['ContinuousRunDetail'];
+
+/** 게이트 하나(05-2 CandidateGateState). 주지 않은 칸은 통과 안 함 */
+export function gateState(patch: Partial<GateStateItem> & { gate: GateStateItem['gate'] }) {
+  const g2g3 = patch.gate === 'G2' || patch.gate === 'G3';
+  return {
+    passed: false,
+    gatePassId: null,
+    passedAt: null,
+    basisStepRunId: null,
+    registrationId: null,
+    fingerprintValid: g2g3 ? false : null,
+    changedBasisKeys: [],
+    blockedReasons: [],
+    warnings: [],
+    ...patch,
+  } satisfies GateStateItem;
+}
+
+/** 게이트 목록 G1~G4(05-2 CandidateGateList). passed에 준 게이트만 통과 */
+export function gateList(passed: Partial<Record<GateStateItem['gate'], boolean>> = {}) {
+  return {
+    items: (['G1', 'G2', 'G3', 'G4'] as const).map((gate) =>
+      gateState({
+        gate,
+        passed: passed[gate] ?? false,
+        ...(gate === 'G2' || gate === 'G3' ? { fingerprintValid: passed[gate] ?? false } : {}),
+        ...(passed[gate] ? { passedAt: AT } : {}),
+      }),
+    ),
+  };
+}
+
+/** 연속 실행 한 번(05-2 ContinuousRunDetail). 기본은 진행 중 */
+export function continuousRun(
+  patch: Partial<ContinuousRunDetail> & { id: number },
+): ContinuousRunDetail {
+  return {
+    candidateId: 13,
+    kind: 'FROM_HERE',
+    startStepCode: 'SOURCING',
+    startedAt: AT,
+    endedAt: null,
+    stopReason: null,
+    stopStepCode: null,
+    stepRuns: [],
+    skippedStepCodes: [],
+    ...patch,
+  };
+}

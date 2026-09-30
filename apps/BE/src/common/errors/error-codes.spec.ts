@@ -140,6 +140,37 @@ describe('error-codes', () => {
     }
   });
 
+  it('P1-06 연속 실행·게이트 코드는 05-3 §5.1 문구·상태 그대로다', () => {
+    const expected: Record<string, { status: number; message: string }> = {
+      CONTINUOUS_RUN_NOT_FOUND: { status: 404, message: '연속 실행 기록을 찾을 수 없습니다.' },
+      CONTINUOUS_RUN_ALREADY_OPEN: {
+        status: 409,
+        message: '이 후보의 연속 실행이 이미 진행 중입니다.',
+      },
+      NO_RERUN_REQUIRED_STEPS: { status: 409, message: '다시 실행할 단계가 없습니다.' },
+      INVALID_GATE_CODE: {
+        status: 422,
+        message: '여기서는 G2·G3만 통과할 수 있습니다. 최종 승인은 승인 화면에서 해 주세요.',
+      },
+      NOT_SALE_CANDIDATE: {
+        status: 409,
+        message: "판정 결과가 '판매 후보 아님'이라 소싱 확정을 할 수 없습니다.",
+      },
+      NO_COMPARISON_NOT_CONFIRMED: {
+        status: 409,
+        message: "비교하지 않은 URL 후보입니다. '비교 없이 확정'을 체크해 주세요.",
+      },
+      AI_ENGINE_UNAVAILABLE: {
+        status: 409,
+        message:
+          "선택한 AI 엔진({엔진})을 지금 쓸 수 없습니다({사유}). 'AI 엔진' 설정에서 확인해 주세요.",
+      },
+    };
+    for (const [code, def] of Object.entries(expected)) {
+      expect(ERROR_CODES[code as keyof typeof ERROR_CODES]).toEqual(def);
+    }
+  });
+
   it("조사 '을/를'·'은/는'도 받침에 맞춘다(한글이 아니면 문구 그대로)", () => {
     expect(formatErrorMessage('GATE_NOT_PASSED', { 게이트: 'G3 썸네일 선택' })).toBe(
       'G3 썸네일 선택을 먼저 통과해 주세요.',
