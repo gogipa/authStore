@@ -7,6 +7,7 @@
  * P1-06: 연속 실행 시작·조회, 게이트 목록·통과 훅, '여기부터 연속 실행'·'재실행 필요 단계 모두 실행' 버튼, 연속 실행 띠,
  * 게이트 목록으로 그리는 게이트 배지.
  * P1-10: 'AI 엔진 설정으로' 링크(선택 AI 엔진을 쓸 수 없을 때, F-BS-76). StepStatusBar의 'AI 생성 · 엔진' 칩과 `error`.
+ * P2-02: 고른 상품 재조회(`useRefetchCandidate`), 단계 표 ② 줄의 '재조회'(하루 조회 상한이면 끈다).
  */
 export {
   useAttentionSteps,
@@ -26,6 +27,7 @@ export { STEP_ENGINE_TAG_KEY, stepEngineKeys } from './api/queryKeys';
 export {
   useCandidateSteps,
   useOwnerEdit,
+  useRefetchCandidate,
   useStaleDiff,
   useStartStepRun,
   useStepRun,

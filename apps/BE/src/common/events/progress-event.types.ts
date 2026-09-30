@@ -229,7 +229,8 @@ export interface SourcingPageFetchFinishedEvent {
   sourcingComparisonId: number;
   fetchedCount: number;
   passedCount: number;
-  stopReason: 'ENOUGH_CANDIDATES' | 'PAGE_CAP' | 'DAILY_LIMIT' | 'BLOCKED';
+  /** NO_MORE_ROWS = 앵커 일치 행을 다 읽음(P2-02 Proposed — 05-2에 더함) */
+  stopReason: 'ENOUGH_CANDIDATES' | 'PAGE_CAP' | 'DAILY_LIMIT' | 'BLOCKED' | 'NO_MORE_ROWS';
 }
 
 /** call-usage.changed(05-2 CallUsageChangedEvent) */

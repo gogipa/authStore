@@ -1,6 +1,10 @@
 import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { DiscoveryService, Reflector } from '@nestjs/core';
-import { STEP_RUNNER_META, type StepRunner } from '../contracts/step-runner.js';
+import {
+  STEP_RUNNER_META,
+  STEP_RUNNER_TEST_DOUBLE_META,
+  type StepRunner,
+} from '../contracts/step-runner.js';
 import { isStepCode, STEP_FLOW, type StepCode } from '../domain/steps.js';
 
 /** 실행기 등록이 잘못됨(한 단계에 둘, 모르는 단계 코드, 표시와 stepCode 불일치). 앱 시작을 멈춘다 */
@@ -22,6 +26,7 @@ export class StepRunnerRegistry implements OnModuleInit {
 
   onModuleInit(): void {
     this.runners.clear();
+    const doubles: { code: unknown; instance: StepRunner; name: string }[] = [];
     for (const wrapper of this.discovery.getProviders()) {
       const metatype = wrapper.metatype as (new (...args: never[]) => unknown) | null | undefined;
       if (!metatype || typeof metatype !== 'function') continue;
@@ -29,7 +34,20 @@ export class StepRunnerRegistry implements OnModuleInit {
       if (code === undefined) continue;
       const instance = wrapper.instance as StepRunner | undefined;
       if (!instance) continue;
+      if (this.reflector.get<unknown>(STEP_RUNNER_TEST_DOUBLE_META, metatype) === true) {
+        doubles.push({ code, instance, name: metatype.name });
+        continue;
+      }
       this.register(code, instance, metatype.name);
+    }
+    // 테스트 대역(P2-02): 운영 실행기를 바꿔 낀다. 같은 단계의 대역 둘은 register가 막는다
+    const replaced = new Set<unknown>();
+    for (const d of doubles) {
+      if (this.runners.has(d.code as StepCode) && !replaced.has(d.code)) {
+        this.runners.delete(d.code as StepCode);
+      }
+      replaced.add(d.code);
+      this.register(d.code, d.instance, d.name);
     }
     const missing = STEP_FLOW.filter((code) => !this.runners.has(code));
     if (missing.length > 0) {

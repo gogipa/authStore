@@ -1,0 +1,37 @@
+{
+  "description": "IchibaGenre Search 응답(formatVersion=2, 합성). 키 = 물은 genreId. 없는 장르는 404.",
+  "responses": {
+    "558885": {
+      "parents": [],
+      "current": { "genreId": 558885, "genreName": "靴", "genreLevel": 1 },
+      "children": [
+        { "genreId": 110983, "genreName": "メンズ靴", "genreLevel": 2 },
+        { "genreId": 100480, "genreName": "レディース靴", "genreLevel": 2 },
+        { "genreId": 208026, "genreName": "キッズ・ベビー靴", "genreLevel": 2 }
+      ]
+    },
+    "110983": {
+      "parents": [{ "genreId": 558885, "genreName": "靴", "genreLevel": 1 }],
+      "current": { "genreId": 110983, "genreName": "メンズ靴", "genreLevel": 2 },
+      "children": [{ "genreId": 208025, "genreName": "スニーカー", "genreLevel": 3 }]
+    },
+    "208025": {
+      "parents": [
+        { "genreId": 558885, "genreName": "靴", "genreLevel": 1 },
+        { "genreId": 110983, "genreName": "メンズ靴", "genreLevel": 2 }
+      ],
+      "current": { "genreId": 208025, "genreName": "スニーカー", "genreLevel": 3 },
+      "children": []
+    },
+    "100480": {
+      "parents": [{ "genreId": 558885, "genreName": "靴", "genreLevel": 1 }],
+      "current": { "genreId": 100480, "genreName": "レディース靴", "genreLevel": 2 },
+      "children": []
+    },
+    "101070": {
+      "parents": [],
+      "current": { "genreId": 101070, "genreName": "スポーツ・アウトドア", "genreLevel": 1 },
+      "children": []
+    }
+  }
+}

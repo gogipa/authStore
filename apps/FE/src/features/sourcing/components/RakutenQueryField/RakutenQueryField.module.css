@@ -1,0 +1,43 @@
+/* 라쿠텐 검색어 칸(Sourcing.dc.html 검색 조건): 라벨 줄(라벨 | 반각 n/128자 · 형식 맞음), 칸 36px, 아래 위반 문구. */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+.status {
+  font: var(--type-label);
+  color: var(--color-ink-faint);
+}
+
+.ok {
+  color: var(--color-done);
+}
+
+.bad {
+  color: var(--color-failed);
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-weight: var(--type-num-weight);
+}
+
+.error {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}

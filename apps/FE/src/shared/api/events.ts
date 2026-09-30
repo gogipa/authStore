@@ -90,6 +90,9 @@ export type EventInvalidations = {
  * - P2-01: `keyword-collection.progress` → 그 묶음·묶음 안 키워드(페이지마다 줄이 늘어난다). `.completed`·`.aborted` →
  *   묶음 목록·그 묶음·묶음 안 키워드·수집 상태. `settings.reloaded`의 changedKeys에 `safety.childKeywords`가 있으면
  *   아동 단어 목록(`listChildKeywordTerms`)도. 진행률 숫자(페이지 수)는 캐시가 아니라 `onProgressEvent` 구독으로 받는다.
+ * - P2-02: `sourcing.search-completed` → 그 후보의 ② 비교표(`getSourcingComparison`). `sourcing.row-updated`·
+ *   `sourcing.page-fetch-finished`(data에 후보 id가 없다) → 비교표 전체. `step-run.status-changed`가 ②(SOURCING)면 그 후보의
+ *   비교표도 다시 읽는다(URL로 만들기·재조회·성인용 확인 뒤 ②가 끝날 때 머리 행이 바뀐다).
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -149,11 +152,12 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     ...stepEngineStepKeys(candidateId),
     qk('step-engine', 'getStepRun'),
   ],
-  'step-run.status-changed': ({ candidateId, stepRunId, stepChainId }) => [
+  'step-run.status-changed': ({ candidateId, stepRunId, stepChainId, stepCode }) => [
     ...stepEngineStepKeys(candidateId),
     qk('step-engine', 'getStepRun', { stepRunId }),
     ...(stepChainId != null ? [qk('step-engine', 'getContinuousRun', { stepChainId })] : []),
     qk('step-engine', 'listCandidateGates', { candidateId }),
+    ...(stepCode === 'SOURCING' ? [qk('sourcing', 'getSourcingComparison', { candidateId })] : []),
   ],
   'continuous-run.stopped': ({ candidateId, stepChainId }) => [
     qk('step-engine', 'getContinuousRun', { stepChainId }),
@@ -168,6 +172,11 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     ...(engineCode === 'AGY' ? [qk('settings', 'getAiEngineSettings')] : []),
   ],
   'keyword-collection.progress': ({ keywordSnapshotId }) => keywordSnapshotKeys(keywordSnapshotId),
+  'sourcing.search-completed': ({ candidateId }) => [
+    qk('sourcing', 'getSourcingComparison', { candidateId }),
+  ],
+  'sourcing.row-updated': () => [qk('sourcing', 'getSourcingComparison')],
+  'sourcing.page-fetch-finished': () => [qk('sourcing', 'getSourcingComparison')],
   'keyword-collection.completed': ({ keywordSnapshotId }) =>
     keywordCollectionEndKeys(keywordSnapshotId),
   'keyword-collection.aborted': ({ keywordSnapshotId }) =>

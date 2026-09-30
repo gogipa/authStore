@@ -9,3 +9,6 @@ apps/FE/src/shared/api/schema.d.ts
 
 # 일부러 문법이 틀린 JSON fixture(P1-03 설정 파일 검사)
 apps/BE/test/fixtures/settings/broken.json
+
+# 라쿠텐 상품 페이지 fixture(P2-02): EUC-JP 바이트 그대로 둔다(src 원본과 build-pages.sh로 짝을 맞춘다)
+apps/BE/test/fixtures/rakuten/pages/

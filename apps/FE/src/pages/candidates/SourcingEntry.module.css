@@ -1,0 +1,12 @@
+/* SCR-12 입력 고르기 — '검색어로 시작'·'URL로 바로 후보 만들기'(P2-02 Proposed). */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.caption {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}

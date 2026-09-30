@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "errorCode": 403,
+    "errorMessage": "CLIENT_IP_NOT_ALLOWED"
+  }
+}

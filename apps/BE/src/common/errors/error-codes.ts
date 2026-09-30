@@ -268,6 +268,33 @@ export const ERROR_CODES = {
   },
   /** 05-3 §5.1: rakutenItemId 없음 */
   RAKUTEN_ITEM_NOT_FOUND: { status: 404, message: '읽어 온 라쿠텐 상품을 찾을 수 없습니다.' },
+  // ── sourcing ② 라쿠텐 연동(P2-02, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: URL 형식·도메인 불일치(허용 형식은 P2-02 Proposed — https://item.rakuten.co.jp/{샵}/{상품}/) */
+  RAKUTEN_URL_INVALID: { status: 422, message: '라쿠텐 상품 주소가 아닙니다.' },
+  /** 05-3 §5.1: 상품명에 제외어(中古·インソール·キッズ 등). details.excludedWords */
+  RAKUTEN_ITEM_EXCLUDED_WORD: {
+    status: 422,
+    message: '상품명에 제외어({단어})가 있어 쓸 수 없습니다.',
+  },
+  /**
+   * Proposed(P2-02, 05-3·05-2에 더함): 페이지 JSON에 itemCode가 없고 Item Search 보완(F-BS-37: 샵 코드 + 型番·상품명,
+   * itemUrl 일치)으로도 찾지 못함. 후보·스냅샷을 만들지 않는다(RG-12 중복 검사를 건너뛰지 않는다)
+   */
+  RAKUTEN_ITEM_CODE_UNRESOLVED: {
+    status: 422,
+    message: '이 상품의 라쿠텐 상품 코드(itemCode)를 찾지 못해 쓸 수 없습니다.',
+  },
+  /** 05-3 §5.1: 성인용 확인 없이 선택 */
+  ADULT_CONFIRMATION_REQUIRED: {
+    status: 409,
+    message: "아동화로 의심되거나 대상 밖 장르인 상품입니다. '성인용 상품 확인'을 체크해 주세요.",
+  },
+  /** 05-3 §5.1: 아동화 의심이 아닌데 성인용 확인, 비교한 후보인데 '비교 없이 확정' */
+  CONFIRMATION_NOT_APPLICABLE: { status: 409, message: '이 후보에는 필요 없는 확인입니다.' },
+  /** 05-3 §5.1: 경로의 비교표 id 없음 */
+  SOURCING_COMPARISON_NOT_FOUND: { status: 404, message: '비교표를 찾을 수 없습니다.' },
+  /** 05-3 §5.1: 소싱 선택(itemCode) 없음 */
+  SOURCING_SELECTION_REQUIRED: { status: 409, message: '② 소싱에서 상품을 먼저 골라 주세요.' },
   INTERNAL_ERROR: {
     status: 500,
     message: '앱 안에서 오류가 났습니다. 다시 해 보고, 계속되면 로그를 확인해 주세요.',

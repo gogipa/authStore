@@ -279,6 +279,81 @@ export class StepExecutionService {
     });
   }
 
+  /**
+   * ② 재조회(05-2 refetchCandidate, P2-02 규칙 15, PRD §5.3 '② 소싱의 세 동작'): SOURCING 새 버전을 재조회 모드(실행기
+   * `refetch` — 고른 상품 페이지 1건만 새로 읽음)로 연다. ③을 실행한 적이 있으면(버전이 하나라도 있으면) ②가 끝난 뒤
+   * ③을 지문과 관계없이 이어서 시작한다(execution_mode=STEP — 05-2 x-decision §7.2-15, ⑥ 묶음과 같은 이어 가기).
+   * ②가 실패·입력 대기로 끝나면 ③은 시작 조건에 걸려 시작하지 않는다. 막힌 이유는 실행 API와 같다(실행기 `beforeStart`의
+   * 409 SOURCING_SELECTION_REQUIRED·DAILY_LIMIT_REACHED·EXTERNAL_CALL_COOLDOWN 포함).
+   */
+  async startRefetch(candidateId: number): Promise<StartStepResult> {
+    const runner = this.assertRunnableCode('SOURCING');
+    await this.guard.findOr404(this.prisma, candidateId);
+    const pricingRuns = await this.prisma.stepRun.count({
+      where: { candidateId, stepCode: 'PRICING' },
+    });
+    return this.startInternal(candidateId, 'SOURCING', {
+      runner,
+      mode: 'STEP',
+      stepChainId: null,
+      ownerInputs: {},
+      chainRemaining: pricingRuns > 0 ? ['PRICING'] : [],
+      refetch: true,
+    });
+  }
+
+  /**
+   * 호출자 트랜잭션 안에서 단계 버전 하나를 열고(`openRun`) 곧바로 결과로 닫는다(`closeRun`) — 외부 호출 없이 결과를 정할 수
+   * 있는 경우만(P2-02: 'URL로 만들기' 후보의 ② URL_CREATE 버전을 후보 만들기와 같은 트랜잭션에 쓴다, 05-2 createCandidate).
+   * 시작 조건·잠금 검사는 실행 API와 같다. AI 단계는 쓸 수 없다(엔진 고정을 트랜잭션 밖에서 해야 한다).
+   */
+  async recordInlineRun(
+    scope: StepEngineTx,
+    candidateId: number,
+    stepCode: StepCode,
+    outcomeFor: (run: StepRun) => Promise<StepOutcome>,
+  ): Promise<StepRun> {
+    const runner = this.assertRunnableCode(stepCode);
+    if (runner.usesAi) throw new Error(`AI 단계(${stepCode})는 트랜잭션 안에서 실행할 수 없습니다`);
+    const candidate = await this.guard.lockForUpdate(scope.tx, candidateId);
+    const rows = await loadStepRows(scope.tx, candidateId);
+    const steps = stepStatusMapOf(rows);
+    const gates = toGateFlags(await this.gateValidity.evaluate(scope.tx, candidateId));
+    const block = checkStepRunnable(stepCode, asStartCandidate(candidate), steps, gates, {
+      mode: 'run',
+      hasRunner: true,
+      settingsLoaded: this.settings.currentOrNull() !== null,
+    });
+    if (block) throw toApiException(block);
+    const settings = this.settings.current();
+    const inputs = await readResolvedInputs(
+      runner,
+      inputContextOf(scope.tx, candidate, settings, rows),
+    );
+    const missing = missingRequiredInputs(inputs);
+    if (missing.length > 0) {
+      throw toApiException({
+        code: 'STEP_START_CONDITION_UNMET',
+        stepCode,
+        missingInputs: missing,
+      });
+    }
+    const run = await this.openRun(scope, {
+      candidate,
+      stepCode,
+      runner,
+      rows,
+      executionMode: 'STEP',
+      stepChainId: null,
+      settingsSnapshotId: this.settings.currentSnapshotId(),
+      aiEngine: null,
+      inputs,
+    });
+    await this.status.reevaluate(scope, candidateId, { stepRunId: run.id });
+    const outcome = checkOutcome(await outcomeFor(run));
+    return this.closeRun(scope, run, runner, outcome);
+  }
+
   /** 단계 코드가 실행할 수 있는 코드인지(REGISTER·실행기 없음 → 422 INVALID_STEP_CODE) */
   assertRunnableCode(stepCode: StepCode): StepRunner {
     if (stepCode === 'REGISTER') {
@@ -596,6 +671,15 @@ export class StepExecutionService {
         missingInputs: missing,
       });
     }
+    // 단계별 시작 전 검사(P2-02 Proposed): 던지면 step_run을 만들지 않고 그 오류가 응답이 된다
+    await runner.beforeStart?.({
+      db: scope.tx,
+      candidate,
+      settings,
+      ownerInputs: input.ownerInputs,
+      refetch: input.refetch,
+      executionMode: input.mode,
+    });
     // AI 엔진 고정(P1-10 규칙 10·11): 쓸 수 없으면 409 AI_ENGINE_UNAVAILABLE — step_run을 만들지 않는다
     const ai = runner.usesAi ? await this.pinFor(runner, aiPreparation) : null;
     const previous = await this.previousOf(scope, runner, candidateId, stepCode);
@@ -704,7 +788,9 @@ export class StepExecutionService {
       outcome.kind === 'COMPLETED'
         ? await this.gateValidity.snapshot?.(scope.tx, run.candidateId)
         : undefined;
-    await runner.persist(scope.tx, run.id, outcome);
+    await runner.persist(scope.tx, run.id, outcome, {
+      afterCommit: (fn) => scope.afterCommit(fn),
+    });
     const stepRow = await scope.tx.candidateStep.findUniqueOrThrow({
       where: { candidateId_stepCode: { candidateId: run.candidateId, stepCode } },
     });

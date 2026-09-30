@@ -6,6 +6,12 @@ import { StepEngineTransactions, type Db, type StepEngineTx } from './candidates
 import type { StepOutcome } from './contracts/step-runner.js';
 import type { StepCode } from './domain/steps.js';
 import { StepExecutionService } from './execution/step-execution.service.js';
+import type { CandidateCreationExtension } from './ports/candidate-creation.extension.js';
+import type {
+  SourcingSelectionReader,
+  SourcingSelectionView,
+} from './ports/sourcing-selection.port.js';
+import { StepModulePorts } from './ports/step-module-ports.js';
 import { PropagationService } from './propagation/propagation.service.js';
 
 /** 입력 대기 실행 이어 가기(다시 run) 또는 끝내기(결과를 줌) */
@@ -21,6 +27,11 @@ export type ResumeWaitingInput =
  * - `ownerInputChanged(candidateId, inputKey, scope?)`: 완료 뒤 오너 입력 새 행(③ 국내 기준가·⑤ 레퍼런스 선택·URL 후보 쿠폰)
  *   → 그 키를 읽는 단계의 재실행 필요(규칙 7). 바뀐 단계를 돌려준다
  * - `currentCompletedRun(candidateId, stepCode, db?)`: 현재 버전이 COMPLETED면 그 실행, 아니면 null(앞 단계 산출물 읽기)
+ * P2-02:
+ * - `recordInlineRun(scope, candidateId, stepCode, outcomeFor)`: 호출자 트랜잭션 안에서 버전 하나를 열고 곧바로 닫는다
+ *   (② 'URL로 만들기' URL_CREATE — 후보 만들기와 같은 트랜잭션). 외부 호출 없이 결과를 정할 때만
+ * - `registerCandidateCreationExtension(ext)`·`registerSourcingSelectionReader(reader)`: 단계 모듈이 앱 시작 때 끼운다
+ * - `readSourcingSelection(sourcingStepRunId, db?)`: ② 버전의 소싱 선택(③·⑤·⑥이 쓴다). 등록 전·선택 없음이면 null
  */
 @Injectable()
 export class StepEngineApi {
@@ -30,7 +41,33 @@ export class StepEngineApi {
     private readonly executions: StepExecutionService,
     private readonly propagation: PropagationService,
     private readonly status: CandidateStatusService,
+    private readonly ports: StepModulePorts,
   ) {}
+
+  recordInlineRun(
+    scope: StepEngineTx,
+    candidateId: number,
+    stepCode: StepCode,
+    outcomeFor: (run: StepRun) => Promise<StepOutcome>,
+  ): Promise<StepRun> {
+    return this.executions.recordInlineRun(scope, candidateId, stepCode, outcomeFor);
+  }
+
+  registerCandidateCreationExtension(extension: CandidateCreationExtension): void {
+    this.ports.registerCandidateCreationExtension(extension);
+  }
+
+  registerSourcingSelectionReader(reader: SourcingSelectionReader): void {
+    this.ports.registerSourcingSelectionReader(reader);
+  }
+
+  async readSourcingSelection(
+    sourcingStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<SourcingSelectionView | null> {
+    const reader = this.ports.sourcingSelectionReader;
+    return reader ? reader.read(db, sourcingStepRunId) : null;
+  }
 
   resumeWaiting(stepRunId: number, input: ResumeWaitingInput = {}): Promise<StepRun> {
     if (input.outcome) {

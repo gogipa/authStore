@@ -68,7 +68,15 @@
     "defaultWidth": "2E (標準)",
     "excludeBackOrder": true,
     "defaultShippingYen": 800,
-    "pageFetchDailyLimit": 110
+    "pageFetchDailyLimit": 110,
+    "rakutenApi": {
+      "itemSearchUrl": "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701",
+      "genreSearchUrl": "https://openapi.rakuten.co.jp/ichibagt/api/IchibaGenre/Search/20170711",
+      "hits": 30,
+      "searchCacheHours": 6,
+      "maxRetries": 3,
+      "genreCacheDays": 30
+    }
   },
   "keywords": {
     "datalabDailyLimit": 100,

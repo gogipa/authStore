@@ -57,10 +57,31 @@ describe('진행 알림 이름', () => {
       'auth.failed',
       'ai-cli-check.completed',
       'keyword-collection.progress',
+      'sourcing.search-completed',
+      'sourcing.row-updated',
+      'sourcing.page-fetch-finished',
       'keyword-collection.completed',
       'keyword-collection.aborted',
       'commerce-meta-sync.completed',
     ]);
+    // ② 검색이 끝나면 그 후보의 비교표, 행·페이지 조회 이벤트는 비교표 전체(data에 후보 id가 없다, P2-02)
+    expect(
+      EVENT_INVALIDATIONS['sourcing.search-completed']?.({
+        candidateId: 12,
+        sourcingComparisonId: 3,
+        stepRunId: 40,
+        rowCount: 28,
+        exploreMode: true,
+      }),
+    ).toEqual([['sourcing', 'getSourcingComparison', { candidateId: 12 }]]);
+    expect(
+      EVENT_INVALIDATIONS['sourcing.page-fetch-finished']?.({
+        sourcingComparisonId: 3,
+        fetchedCount: 4,
+        passedCount: 3,
+        stopReason: 'NO_MORE_ROWS',
+      }),
+    ).toEqual([['sourcing', 'getSourcingComparison']]);
     // 데이터랩 수집(P2-01): 페이지마다 그 묶음·키워드, 끝나면 목록·수집 상태까지
     expect(
       EVENT_INVALIDATIONS['keyword-collection.progress']?.({
@@ -240,6 +261,8 @@ describe('진행 알림 이름', () => {
       ['step-engine', 'listAttentionCandidateSteps'],
       ['step-engine', 'getStepRun', { stepRunId: 40 }],
       ['step-engine', 'listCandidateGates', { candidateId: 12 }],
+      // ② 실행이면 그 후보의 비교표도(P2-02)
+      ['sourcing', 'getSourcingComparison', { candidateId: 12 }],
     ]);
     // 연속 실행 묶음 안의 실행이면 그 묶음도(P1-06 연속 실행 띠)
     expect(
@@ -333,8 +356,8 @@ describe('connectProgressEvents', () => {
     const source = FakeEventSource.latest();
 
     source.emit('unknown.event', { x: 1 });
-    // 표에 없는 M1 이벤트(P2-01이 keyword-collection.*를 표에 더해 소싱 이벤트로 본다)
-    source.emit('sourcing.search-completed', { candidateId: 1 });
+    // 표에 없는 M1 이벤트(P2-02가 sourcing.*를 표에 더해 환율 이벤트로 본다)
+    source.emit('fx-rate.updated', { fxRateId: 1 });
     source.emitRaw('call-usage.changed', '{not json');
 
     expect(invalidate).not.toHaveBeenCalled();

@@ -30,6 +30,8 @@ import { CANDIDATE_CREATION_EXTENSION } from './ports/candidate-creation.extensi
 import { GATE_VALIDITY } from './ports/gate-validity.port.js';
 import { GENDER_INPUT_LISTENERS } from './ports/gender-input.port.js';
 import { PAGE_DATA, SourcingSelectionPageData } from './ports/page-data.port.js';
+import { delegatingCreationExtension, StepModulePorts } from './ports/step-module-ports.js';
+import { CandidateRefetchController } from './candidates/candidate-refetch.controller.js';
 import { PropagationService } from './propagation/propagation.service.js';
 import { StaleDiffService } from './rail/stale-diff.service.js';
 import { StepRailService } from './rail/step-rail.service.js';
@@ -74,6 +76,12 @@ import { StepRunsController } from './step-runs.controller.js';
  * step_run.ai_engine·ai_model(주 작업 `aiModelKind`의 모델)·ai_cli_version을 쓴다. 실행 문맥 `pinnedAi`(PinnedAiContext)로
  * 단계 모듈이 `AiExecutor.run`을 부른다. AI 실행 오류(`AiExecutionError`)는 FAILED(AI·코드)로 닫는다. `ai.*` 설정 키는
  * 입력 지문·재실행 전파에 넣지 않는다(R9).
+ *
+ * P2-02(② 라쿠텐 연동): 단계 모듈 확장 자리 `StepModulePorts` — sourcing이 앱 시작 때 `StepEngineApi.register…`로
+ * 'URL로 만들기' ② URL_CREATE(`CANDIDATE_CREATION_EXTENSION`)와 소싱 선택 읽기를 끼운다. `StepEngineApi.recordInlineRun`
+ * (호출자 트랜잭션 안에서 버전 하나를 열고 곧바로 닫기)·`readSourcingSelection`. 재조회 `POST /candidates/{id}/refetch`
+ * (`StepExecutionService.startRefetch`: ② 재조회 모드 → ③ 이력이 있으면 이어서 ③, execution_mode=STEP). 실행기 규약에
+ * 선택 메서드 `beforeStart`(시작 전 단계별 409·422)와 `persist`의 커밋 뒤 훅, 입력 대기 중간 산출물(`output`)을 더했다.
  */
 @Module({
   imports: [SettingsModule, IntegrationsModule, SystemModule, DiscoveryModule],
@@ -85,8 +93,10 @@ import { StepRunsController } from './step-runs.controller.js';
     GatesController,
     CandidateContinuousRunsController,
     ContinuousRunsController,
+    CandidateRefetchController,
   ],
   providers: [
+    StepModulePorts,
     StepEngineTransactions,
     CandidateGuardService,
     CandidateStatusService,
@@ -107,7 +117,11 @@ import { StepRunsController } from './step-runs.controller.js';
     GateService,
     ContinuousRunService,
     { provide: GATE_VALIDITY, useExisting: GateValidityService },
-    { provide: CANDIDATE_CREATION_EXTENSION, useValue: null },
+    {
+      provide: CANDIDATE_CREATION_EXTENSION,
+      inject: [StepModulePorts],
+      useFactory: delegatingCreationExtension,
+    },
     { provide: GENDER_INPUT_LISTENERS, useValue: [] },
     { provide: AI_ENGINE_RESOLVER, useClass: SelectedAiEngineResolver },
     { provide: PAGE_DATA, useClass: SourcingSelectionPageData },

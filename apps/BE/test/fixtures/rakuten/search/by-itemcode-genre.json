@@ -1,0 +1,51 @@
+{
+  "count": 1,
+  "page": 1,
+  "first": 1,
+  "last": 1,
+  "hits": 1,
+  "carrier": 0,
+  "pageCount": 1,
+  "GenreInformation": [],
+  "TagInformation": [],
+  "Items": [
+    {
+      "itemName": "アシックス ゲルカヤノ 14 1201A019-108 メンズ(ジャンル未掲載ページ)",
+      "catchcopy": "",
+      "itemCode": "shop-g:10000777",
+      "itemPrice": 12200,
+      "itemPriceBaseField": "item_price_min3",
+      "itemPriceMin1": 12200,
+      "itemPriceMin2": 12200,
+      "itemPriceMin3": 12200,
+      "itemPriceMax1": 12200,
+      "itemPriceMax2": 12200,
+      "itemPriceMax3": 12200,
+      "itemUrl": "https://item.rakuten.co.jp/shop-g/no-genre-item/",
+      "shopUrl": "https://www.rakuten.co.jp/shop-g/",
+      "mediumImageUrls": [
+        "https://thumbnail.image.rakuten.co.jp/@0_mall/shop-g/cabinet/no-genre-item_1.jpg?_ex=128x128"
+      ],
+      "availability": 1,
+      "taxFlag": 0,
+      "postageFlag": 1,
+      "creditCardFlag": 1,
+      "shopOfTheYearFlag": 0,
+      "shipOverseasFlag": 0,
+      "asurakuFlag": 0,
+      "affiliateRate": 4.0,
+      "startTime": "",
+      "endTime": "",
+      "reviewCount": 0,
+      "reviewAverage": 0.0,
+      "pointRate": 1,
+      "pointRateStartTime": "",
+      "pointRateEndTime": "",
+      "giftFlag": 0,
+      "shopName": "ショップG",
+      "shopCode": "shop-g",
+      "genreId": 208025,
+      "tagIds": []
+    }
+  ]
+}

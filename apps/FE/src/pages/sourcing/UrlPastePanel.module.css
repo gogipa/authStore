@@ -1,0 +1,7 @@
+/* SCR-03 '라쿠텐 URL 붙여넣기' 패널(Sourcing.dc.html): 흰 바탕, line 테두리, radius 8, 안쪽 16. */
+.panel {
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}

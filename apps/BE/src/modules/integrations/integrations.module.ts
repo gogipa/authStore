@@ -33,6 +33,15 @@ import {
 import { ExternalHttpGateway } from './http/external-http.gateway.js';
 import { defaultHttpFetch, HTTP_FETCH } from './http/http-fetch.token.js';
 import { CommerceApiClient } from './naver-commerce/commerce-api.client.js';
+import { RakutenGenreHttpAdapter } from './rakuten/rakuten-genre.http-adapter.js';
+import { RAKUTEN_GENRE_PORT } from './rakuten/rakuten-genre.port.js';
+import { RakutenGenreRepository } from './rakuten/rakuten-genre.repository.js';
+import { RakutenGenreService } from './rakuten/rakuten-genre.service.js';
+import { RakutenPageHttpAdapter } from './rakuten/rakuten-page.http-adapter.js';
+import { RAKUTEN_PAGE_PORT } from './rakuten/rakuten-page.port.js';
+import { RakutenSearchCacheRepository } from './rakuten/rakuten-search-cache.repository.js';
+import { RakutenSearchHttpAdapter } from './rakuten/rakuten-search.http-adapter.js';
+import { RAKUTEN_SEARCH_PORT } from './rakuten/rakuten-search.port.js';
 import { CommerceTokenService } from './naver-commerce/commerce-token.service.js';
 import {
   COMMERCE_TRANSPORT,
@@ -53,6 +62,10 @@ import {
  * datalab(P2-01): 순위 요청 포트 `DATALAB_RANK_PORT`(→ `DatalabRankHttpAdapter`, 관문 target=DATALAB)를 export한다.
  *   keywords 모듈이 이 포트로만 데이터랩을 부른다(응답 해석은 keywords). 테스트는 이 토큰을 가짜 포트로 바꾸거나
  *   가짜 fetch(HTTP_FETCH) 뒤에 가짜 데이터랩을 둔다.
+ * rakuten(P2-02): 포트 3개 — `RAKUTEN_SEARCH_PORT`(Item Search, 관문 RAKUTEN_API·6시간 캐시 `rakuten_search_cache`·429·503
+ *   백오프 3회), `RAKUTEN_PAGE_PORT`(상품 페이지, 관문 RAKUTEN_PAGE 직렬 큐 하나·3초·하루 상한·24시간 쉼, 캐시 없음),
+ *   `RAKUTEN_GENRE_PORT`(IchibaGenre) + 장르 경로 캐시 `RakutenGenreService`(rakuten_genre). 외부 응답 캐시는 integrations
+ *   소유(ERD 결정 ⑭). 키는 키체인(SECRET_STORE)에서만 읽는다. sourcing 모듈이 이 포트로만 라쿠텐을 부른다.
  */
 @Module({
   // 하루 조회 상한의 원본이 설정 파일이다(P1-03). settings도 프로필 검증에 CommerceMetaCacheService를 쓰므로(P1-09)
@@ -97,6 +110,12 @@ import {
     AiExecutor,
     AgyModelsProvider,
     { provide: DATALAB_RANK_PORT, useClass: DatalabRankHttpAdapter },
+    RakutenSearchCacheRepository,
+    { provide: RAKUTEN_SEARCH_PORT, useClass: RakutenSearchHttpAdapter },
+    { provide: RAKUTEN_PAGE_PORT, useClass: RakutenPageHttpAdapter },
+    { provide: RAKUTEN_GENRE_PORT, useClass: RakutenGenreHttpAdapter },
+    RakutenGenreRepository,
+    RakutenGenreService,
   ],
   exports: [
     HTTP_FETCH,
@@ -113,6 +132,10 @@ import {
     IsolatedCliRunner,
     AgyModelsProvider,
     DATALAB_RANK_PORT,
+    RAKUTEN_SEARCH_PORT,
+    RAKUTEN_PAGE_PORT,
+    RAKUTEN_GENRE_PORT,
+    RakutenGenreService,
   ],
 })
 export class IntegrationsModule {}

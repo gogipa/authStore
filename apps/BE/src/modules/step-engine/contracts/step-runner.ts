@@ -135,7 +135,16 @@ export interface CandidateEffects {
 /** 실행 결과 */
 export type StepOutcome =
   | { kind: 'COMPLETED'; output: unknown; candidateEffects?: CandidateEffects }
-  | { kind: 'WAITING_INPUT'; waitingReasonCode: string; pendingInputs: string[] }
+  | {
+      kind: 'WAITING_INPUT';
+      waitingReasonCode: string;
+      pendingInputs: string[];
+      /**
+       * 입력 대기 중 중간 산출물(선택, P2-02 Proposed — C4 §3.1). 엔진은 해석하지 않고 `persist`에 그대로 넘긴다
+       * (예: ② 검색 결과 비교표 행을 앵커 입력 대기 동안 보이려고 쓴다)
+       */
+      output?: unknown;
+    }
   | {
       kind: 'FAILED';
       failureKind: 'EXTERNAL_API' | 'AI' | 'INPUT_VALIDATION';
@@ -149,6 +158,28 @@ export interface CandidateStatusEffect {
   toStatus: CandidateStatus;
   reason: CandidateStatusReason;
   registrationId?: number | null;
+}
+
+/**
+ * 시작 전 단계별 검사에 넘기는 것(P2-02 Proposed — C4 §3.1). 시작 트랜잭션 안, 엔진의 잠금·시작 조건 검사 **뒤**,
+ * step_run INSERT **전**에 부른다. 던지면 실행을 만들지 않고 그 오류가 HTTP 응답이 된다(예: ② 422 RAKUTEN_QUERY_INVALID·
+ * 409 SECRET_NOT_CONFIGURED·DAILY_LIMIT_REACHED·EXTERNAL_CALL_COOLDOWN·SOURCING_SELECTION_REQUIRED). DB 읽기와 키체인·call_log
+ * 확인만 한다(외부 호출 금지)
+ */
+export interface StepStartContext {
+  db: Tx;
+  candidate: Readonly<Candidate>;
+  settings: Readonly<AppSettings>;
+  /** 요청의 실행 중 오너 입력 */
+  ownerInputs: Readonly<Record<string, unknown>>;
+  /** ② 재조회 모드로 시작하는가(재조회 API·연속 실행 6시간 규칙) */
+  refetch: boolean;
+  executionMode: 'STEP' | 'CHAIN';
+}
+
+/** `persist`에서 커밋 뒤 할 일(SSE 등)을 거는 자리(P2-02 Proposed). 롤백되면 부르지 않는다 */
+export interface StepPersistHooks {
+  afterCommit(fn: () => void): void;
 }
 
 /** AI 단계의 주 작업 종류(P1-10 Proposed): step_run.ai_model에 텍스트·비전 중 어느 모델을 남길지 정한다 */
@@ -170,8 +201,13 @@ export interface StepRunner {
   readInputs(ctx: StepInputContext): Promise<StepInput[]>;
   /** 실행(트랜잭션 밖). 외부·AI 호출은 여기서만 */
   run(ctx: StepRunContext): Promise<StepOutcome>;
-  /** 끝 트랜잭션 안에서 산출물을 쓴다(모든 결과 종류에서 불린다. 입력 대기 중 중간 산출물도 여기서) */
-  persist(tx: Tx, stepRunId: number, outcome: StepOutcome): Promise<void>;
+  /**
+   * 끝 트랜잭션 안에서 산출물을 쓴다(모든 결과 종류에서 불린다. 입력 대기 중 중간 산출물도 여기서). 입력 대기를 끝내며 다시
+   * 불릴 수 있다(같은 실행에 두 번) — 이미 쓴 산출물은 다시 쓰지 않게 한다. `hooks.afterCommit`으로 커밋 뒤 SSE를 건다
+   */
+  persist(tx: Tx, stepRunId: number, outcome: StepOutcome, hooks?: StepPersistHooks): Promise<void>;
+  /** 시작 전 단계별 검사(선택, P2-02). 던지면 실행을 만들지 않는다 — `StepStartContext` */
+  beforeStart?(ctx: StepStartContext): Promise<void>;
   /**
    * 오너 수정·그대로 유지·이전 버전 다시 고르기: `fromStepRunId`의 산출물을 `toStepRunId`로 복사한다(버전에 딸린 오너
    * 입력 행 포함). `edit`은 EDIT의 body(fields 또는 add·remove) — 필드별 규칙(FIELD_NOT_EDITABLE 등)은 실행기가 던진다.
@@ -208,3 +244,12 @@ export const STEP_RUNNER_META = 'autostore:step-runner';
 
 /** 실행기 클래스 표시: `@StepRunnerFor('PRICING') @Injectable() export class PricingRunner implements StepRunner` */
 export const StepRunnerFor = (code: StepCode) => SetMetadata(STEP_RUNNER_META, code);
+
+/** 테스트 대역 실행기 표시 키 */
+export const STEP_RUNNER_TEST_DOUBLE_META = 'autostore:step-runner-test-double';
+
+/**
+ * 테스트 대역 실행기 표시(P2-02 Proposed — 테스트 전용). 같은 단계에 운영 실행기(예: sourcing의 SOURCING)와 이 표시를 단
+ * 가짜 실행기가 함께 있으면 가짜를 쓴다. 운영 코드는 쓰지 않는다(운영 실행기 둘은 여전히 앱 시작을 멈춘다).
+ */
+export const StepRunnerTestDouble = () => SetMetadata(STEP_RUNNER_TEST_DOUBLE_META, true);

@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "errorCode": 400,
+    "errorMessage": "applicationId/accessKey must be present"
+  }
+}

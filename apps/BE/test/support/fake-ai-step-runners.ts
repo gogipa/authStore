@@ -4,6 +4,7 @@ import { AiExecutor } from '../../src/modules/integrations/ai-engine/ai-executor
 import { IntegrationsModule } from '../../src/modules/integrations/integrations.module.js';
 import {
   StepRunnerFor,
+  StepRunnerTestDouble,
   type StepAiModelKind,
   type StepOutcome,
   type StepRunContext,
@@ -73,6 +74,7 @@ export class FakeAiStepWorld {
  */
 function aiRunnerClass(code: StepCode, kind: StepAiModelKind): Type<FakeStepRunner> {
   @StepRunnerFor(code)
+  @StepRunnerTestDouble()
   @Injectable()
   class FakeAiRunner extends FakeStepRunner {
     override readonly usesAi = true;
@@ -109,6 +111,7 @@ function aiRunnerClass(code: StepCode, kind: StepAiModelKind): Type<FakeStepRunn
 /** AI를 쓰지 않는 가짜 실행기 */
 function plainRunnerClass(code: StepCode): Type<FakeStepRunner> {
   @StepRunnerFor(code)
+  @StepRunnerTestDouble()
   @Injectable()
   class FakePlainRunner extends FakeStepRunner {
     override readonly usesAi = false;

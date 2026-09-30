@@ -25,6 +25,7 @@ import { isStepCode, stepPath, type StepCode } from '@/shared/lib/steps';
 import {
   Banner,
   Button,
+  ButtonLink,
   Chip,
   DisabledReason,
   FilterToggleGroup,
@@ -34,6 +35,7 @@ import {
   StatusChip,
   type FilterToggleItem,
 } from '@/shared/ui';
+import { RAKUTEN_URL_PANEL_ID, SOURCING_ENTRY_PATH, SourcingEntry } from './SourcingEntry';
 import styles from './CandidatesPage.module.css';
 
 /** 목록 필터(CandidateWork.dc.html '후보 거르기'): 전체(진행 중) · 작업중 · 승인대기 · 제외 */
@@ -125,25 +127,28 @@ function InputPicker({ stepCode }: { stepCode: StepCode }) {
   const runnable = useCandidates({ runnableStep: stepCode, size: LIST_SIZE });
   const rows = runnable.data?.content ?? [];
   return (
-    <Panel title="입력 고르기" caption={`${STEP_NAME[stepCode]} 화면에서 작업할 후보를 고릅니다`}>
-      {runnable.isError ? <Banner tone="warning">{runnable.error.message}</Banner> : null}
-      {rows.length === 0 && !runnable.isPending ? (
-        <p className={styles.hint}>
-          지금 {STEP_NAME[stepCode]} 단계를 실행할 수 있는 후보가 없습니다.
-        </p>
-      ) : (
-        <ul className={styles.pickList} aria-label="실행할 수 있는 후보">
-          {rows.map((candidate) => (
-            <li key={candidate.id} className={styles.pickItem}>
-              <span className={styles.pickName}>{candidateDisplayName(candidate)}</span>
-              <Link to={stepPath(candidate.id, stepCode)} className={styles.link}>
-                {STEP_NAME[stepCode]} 열기
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Panel>
+    <>
+      {stepCode === 'SOURCING' ? <SourcingEntry /> : null}
+      <Panel title="입력 고르기" caption={`${STEP_NAME[stepCode]} 화면에서 작업할 후보를 고릅니다`}>
+        {runnable.isError ? <Banner tone="warning">{runnable.error.message}</Banner> : null}
+        {rows.length === 0 && !runnable.isPending ? (
+          <p className={styles.hint}>
+            지금 {STEP_NAME[stepCode]} 단계를 실행할 수 있는 후보가 없습니다.
+          </p>
+        ) : (
+          <ul className={styles.pickList} aria-label="실행할 수 있는 후보">
+            {rows.map((candidate) => (
+              <li key={candidate.id} className={styles.pickItem}>
+                <span className={styles.pickName}>{candidateDisplayName(candidate)}</span>
+                <Link to={stepPath(candidate.id, stepCode)} className={styles.link}>
+                  {STEP_NAME[stepCode]} 열기
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+    </>
   );
 }
 
@@ -238,8 +243,9 @@ function CandidateActions({
 /**
  * SCR-12 후보 작업 목록(CandidateWork.dc.html)의 M1 부분.
  * - 왼쪽: '후보' 목록과 필터(전체·작업중·승인대기·제외 + 수, URL `?status=`). 줄마다 표시명·상태·이어 할 단계와 그 상태 칩,
- *   URL 후보는 '수동'·'비교 안 함'. 'URL로 만들기'는 자리만(P2-02가 잇는다).
+ *   URL 후보는 '수동'·'비교 안 함'. 'URL로 만들기'는 '입력 고르기'(② 소싱)의 URL 붙여넣기로 간다(P2-02).
  * - 오른쪽: `?candidateId=`의 후보 머리(후보 제외·다시 작업)와 단계 표(StepTable, P1-05), `?runnableStep=`이면 '입력 고르기'.
+ *   ② 소싱이면 그 위에 '검색어로 시작'·'URL로 바로 후보 만들기'(키워드 없이 시작, P2-02 Proposed).
  * 임시 후보 줄·여러 후보 같은 단계 실행은 M2라 만들지 않는다.
  */
 export function CandidatesPage() {
@@ -298,14 +304,11 @@ export function CandidatesPage() {
               ) : null}
             </div>
             <div className={styles.urlCreate}>
-              <Button disabled aria-describedby="url-create-reason">
+              <ButtonLink to={`${SOURCING_ENTRY_PATH}#${RAKUTEN_URL_PANEL_ID}`}>
                 URL로 만들기
-              </Button>
+              </ButtonLink>
             </div>
           </div>
-          <DisabledReason id="url-create-reason" tone="muted">
-            라쿠텐 URL로 만들기는 아직 준비 중입니다
-          </DisabledReason>
           <FilterToggleGroup
             aria-label="후보 거르기"
             look="soft"

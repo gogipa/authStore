@@ -188,6 +188,15 @@ export class ExternalHttpGateway {
     return this.runSerial(target, () => this.send(target, url, headers, req, ctx));
   }
 
+  /**
+   * 보내지 않고 지금 부를 수 있는지만 본다(P2-02: 202로 받기 전에 409를 먼저 알리려고 — 재조회). 쉼이면 409
+   * EXTERNAL_CALL_COOLDOWN, 하루 상한이면 409 DAILY_LIMIT_REACHED(Retry-After). 요청도 call_log 행도 만들지 않는다.
+   * 실제로 보낼 때(request) 다시 본다(판단 원본은 늘 call_log).
+   */
+  assertCallable(target: CallLogTarget): Promise<void> {
+    return this.assertCanCall(target, this.clock.now());
+  }
+
   /** call_log 결과 건수를 나중에 채운다(한 번만) */
   recordItemCount(callLogId: number, itemCount: number): Promise<boolean> {
     return this.callLogs.recordItemCount(callLogId, itemCount);

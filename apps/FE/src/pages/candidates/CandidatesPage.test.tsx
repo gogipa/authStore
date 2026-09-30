@@ -12,6 +12,12 @@ import {
   stepBriefs,
 } from '@/test/fixtures/stepEngine';
 import { renderRoute } from '@/test/renderRoute';
+import {
+  queryValidation,
+  RAKUTEN_ITEM_ID,
+  rakutenItemFetchResult,
+  rakutenItemSnapshot,
+} from '@/test/fixtures/sourcing';
 
 const NB530 = 13;
 const CORTEZ = 16;
@@ -133,8 +139,11 @@ describe('후보 작업 목록(SCR-12, P1-04)', () => {
     );
     expect(kayano.getByText('승인대기')).toBeInTheDocument();
     expect(kayano.getByText('G4 최종 승인 · 확인 필요')).toBeInTheDocument();
-    // 'URL로 만들기'는 자리만(P2-02)
-    expect(screen.getByRole('button', { name: 'URL로 만들기' })).toBeDisabled();
+    // 'URL로 만들기'는 '입력 고르기'(② 소싱)의 URL 붙여넣기로 간다(P2-02)
+    expect(screen.getByRole('link', { name: 'URL로 만들기' })).toHaveAttribute(
+      'href',
+      '/candidates?runnableStep=SOURCING#rakuten-url',
+    );
   });
 
   it("?candidateId= 후보 머리: 표시명·앵커 키·성별·소싱·게이트·출처 키워드와 '후보 제외'", async () => {
@@ -214,5 +223,65 @@ describe('후보 작업 목록(SCR-12, P1-04)', () => {
     const link = await picker.findByRole('link', { name: '③ 판정 열기' });
     expect(link).toHaveAttribute('href', `/candidates/${NB530}/judgement`);
     expect(picker.getByText('뉴발란스 530 · 화이트/실버')).toBeInTheDocument();
+  });
+
+  it("?runnableStep=SOURCING(키워드 없이 시작, P2-02): '검색어로 시작' → 후보 만들기(SEARCH_QUERY) → ② 실행 → ② 화면", async () => {
+    const api = stubCandidates();
+    api.on('POST /rakuten-query-validations', async (req) => {
+      const { rakutenQuery } = (await req.json()) as { rakutenQuery: string };
+      return jsonResponse(queryValidation(rakutenQuery, { halfWidthLength: 21 }));
+    });
+    api.on('POST /candidates', () => jsonResponse(candidateDetail({ id: 21 }), 201));
+    api.on('POST /candidates/21/steps/SOURCING/runs', () =>
+      jsonResponse({ stepRunId: 300, candidateId: 21 }, 202),
+    );
+    const { router } = await renderCandidates('/candidates?runnableStep=SOURCING');
+    const panel = within(await screen.findByRole('region', { name: '검색어로 시작' }));
+    const start = panel.getByRole('button', { name: '검색어로 시작' });
+    expect(start).toBeDisabled();
+    expect(start).toHaveAccessibleDescription('라쿠텐 검색어를 넣으면 켜집니다.');
+    await userEvent.type(panel.getByLabelText('라쿠텐 검색어'), 'アシックス ゲルカヤノ');
+    expect(await panel.findByText(/형식 맞음/)).toBeInTheDocument();
+    await waitFor(() => expect(start).toBeEnabled());
+    await userEvent.click(start);
+    await waitFor(() => expect(router.state.location.pathname).toBe('/candidates/21/sourcing'));
+    const created = api.requests.filter(
+      (r) => r.method === 'POST' && new URL(r.url).pathname === '/api/v1/candidates',
+    );
+    expect(await created[0]!.clone().json()).toEqual({
+      creationPath: 'SEARCH_QUERY',
+      rakutenQuery: 'アシックス ゲルカヤノ',
+    });
+  });
+
+  it("?runnableStep=SOURCING: 'URL로 바로 후보 만들기' → 페이지 1건 읽기 → 색상 → RAKUTEN_URL 후보 → ② 화면", async () => {
+    const api = stubCandidates();
+    api.on('POST /rakuten-items', () =>
+      jsonResponse(
+        rakutenItemFetchResult({ childSizeSuspect: true, adultConfirmationRequired: true }),
+        201,
+      ),
+    );
+    api.on(`GET /rakuten-items/${RAKUTEN_ITEM_ID}`, () => jsonResponse(rakutenItemSnapshot()));
+    api.on('POST /candidates', () =>
+      jsonResponse(candidateDetail({ id: 22, creationPath: 'RAKUTEN_URL' }), 201),
+    );
+    const { router } = await renderCandidates('/candidates?runnableStep=SOURCING');
+    const panel = within(await screen.findByRole('region', { name: 'URL로 바로 후보 만들기' }));
+    expect(panel.queryByRole('radiogroup')).toBeNull();
+    await userEvent.type(
+      panel.getByLabelText('라쿠텐 URL'),
+      'item.rakuten.co.jp/shop-a/asics-1201a019-108/',
+    );
+    await userEvent.click(panel.getByRole('button', { name: '넣기' }));
+    // 아동화 의심은 막지 않고 알린다(후보를 만든 뒤 ②가 성인용 확인 입력 대기)
+    expect(
+      await panel.findByText(
+        "아동화 의심(사이즈) 상품입니다. 후보를 만든 뒤 '성인용 상품 확인'을 체크해야 ②가 끝납니다.",
+      ),
+    ).toBeInTheDocument();
+    await userEvent.selectOptions(await panel.findByLabelText('색상'), 'クリーム×ブラック(108)');
+    await userEvent.click(panel.getByRole('button', { name: '이 색상으로 후보 만들기' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/candidates/22/sourcing'));
   });
 });

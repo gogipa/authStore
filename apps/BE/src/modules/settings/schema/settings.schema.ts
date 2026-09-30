@@ -82,6 +82,9 @@ const noticeBlock: JSONSchemaType<NoticeBlock> = {
 /** 데이터랩 순위 요청 주소 모양(P2-01): https + 관문 허용 목록의 데이터랩 호스트 + 경로(호스트는 바꿀 수 없다) */
 export const DATALAB_RANK_URL_PATTERN = `^https://${EXTERNAL_TARGETS.DATALAB.hosts[0]!.replace(/\./g, '\\.')}/[A-Za-z0-9/._-]+$`;
 
+/** 라쿠텐 API 주소 모양(P2-02): https + 관문 허용 목록의 라쿠텐 API 호스트 + 경로(호스트는 바꿀 수 없다) */
+export const RAKUTEN_API_URL_PATTERN = `^https://${EXTERNAL_TARGETS.RAKUTEN_API.hosts[0]!.replace(/\./g, '\\.')}/[A-Za-z0-9/._-]+$`;
+
 /** 발송 택배사 코드 모양(P1-09 Proposed): 영문·숫자·`_`·`-`·`.` 40자까지(profile.dispatch_delivery_company_code varchar(40)) */
 export const DISPATCH_COMPANY_CODE_PATTERN = '^[A-Za-z0-9_.-]{1,40}$';
 
@@ -237,6 +240,7 @@ const schema: JSONSchemaType<AppSettings> = {
         'excludeBackOrder',
         'defaultShippingYen',
         'pageFetchDailyLimit',
+        'rakutenApi',
       ],
       properties: {
         genreId: { type: 'integer', minimum: 1, maximum: 2_147_483_647 },
@@ -255,6 +259,28 @@ const schema: JSONSchemaType<AppSettings> = {
         excludeBackOrder: { type: 'boolean' },
         defaultShippingYen: yen,
         pageFetchDailyLimit: { type: 'integer', minimum: 0, maximum: 1000 },
+        rakutenApi: {
+          type: 'object',
+          additionalProperties: false,
+          required: [
+            'itemSearchUrl',
+            'genreSearchUrl',
+            'hits',
+            'searchCacheHours',
+            'maxRetries',
+            'genreCacheDays',
+          ],
+          properties: {
+            // 호스트는 외부 호출 관문 허용 목록의 라쿠텐 API 호스트만(구 도메인 app.rakuten.co.jp 금지, PRD §8.2)
+            itemSearchUrl: { type: 'string', pattern: RAKUTEN_API_URL_PATTERN, maxLength: 500 },
+            genreSearchUrl: { type: 'string', pattern: RAKUTEN_API_URL_PATTERN, maxLength: 500 },
+            hits: { type: 'integer', minimum: 1, maximum: 30 },
+            searchCacheHours: { type: 'integer', minimum: 1, maximum: 24 },
+            // 429·503 다시 보내기: 3회보다 많이 할 수 없다(PRD §8.2 '최대 3회')
+            maxRetries: { type: 'integer', minimum: 0, maximum: 3 },
+            genreCacheDays: { type: 'integer', minimum: 1, maximum: 365 },
+          },
+        },
       },
     },
     keywords: {

@@ -171,6 +171,29 @@ describe('StepTable — SCR-12 단계 표(P1-05)', () => {
     );
   });
 
+  it("② 오래됨 줄 '재조회'(P2-02): '재조회는 페이지 1건 · 오늘 38/110', 누르면 POST …/refetch 한 번. 하루 한도면 꺼지고 이유", async () => {
+    const api = stub();
+    api.on(`POST /candidates/${ID}/refetch`, () =>
+      jsonResponse({ stepRunId: 201, candidateId: ID, stepCode: 'SOURCING' }, 202),
+    );
+    const { table } = await renderTable();
+    expect(await table.findByText('38/110')).toBeInTheDocument();
+    expect(table.getByText(/재조회는 페이지 1건 · 오늘/)).toBeInTheDocument();
+    await userEvent.click(table.getByRole('button', { name: '재조회' }));
+    await waitFor(() => expect(count(api, `POST /candidates/${ID}/refetch`)).toBe(1));
+  });
+
+  it("② '재조회'는 하루 페이지 조회 한도에 닿으면 꺼지고 이유를 보인다(P2-02)", async () => {
+    const api = stub();
+    api.on('GET /call-usage', () => jsonResponse(callUsageList(110)));
+    const { table } = await renderTable();
+    const button = table.getByRole('button', { name: '재조회' });
+    await waitFor(() => expect(button).toBeDisabled());
+    expect(button).toHaveAccessibleDescription(
+      '오늘 페이지 조회 한도(110건)를 다 썼습니다. 내일 0시(한국 시간)에 다시 됩니다.',
+    );
+  });
+
   it('꺼진 버튼 옆 이유: ⑧(G3 전)·⑨는 시안 글, 그 밖은 API disabledReason.message 그대로', async () => {
     const api = stub();
     api.on(`GET /candidates/${ID}/steps`, () =>

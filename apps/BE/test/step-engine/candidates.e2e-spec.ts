@@ -201,7 +201,7 @@ describe('후보 API(step-engine, P1-04) e2e — autostore_test', () => {
       const missing = await post('/candidates', {
         creationPath: 'KEYWORD',
         sourceKeywordId: 999999,
-        rakutenQuery: 'x',
+        rakutenQuery: 'asics',
       });
       expect(missing.status).toBe(404);
       expect(errorOf(missing)).toMatchObject({
@@ -213,7 +213,7 @@ describe('후보 API(step-engine, P1-04) e2e — autostore_test', () => {
       const r1 = await post('/candidates', {
         creationPath: 'KEYWORD',
         sourceKeywordId: notSelected.id,
-        rakutenQuery: 'x',
+        rakutenQuery: 'asics',
       });
       expect(r1.status).toBe(409);
       expect(errorOf(r1).code).toBe('KEYWORD_NOT_SELECTED');
@@ -222,7 +222,7 @@ describe('후보 API(step-engine, P1-04) e2e — autostore_test', () => {
       const r2 = await post('/candidates', {
         creationPath: 'KEYWORD',
         sourceKeywordId: child.id,
-        rakutenQuery: 'x',
+        rakutenQuery: 'asics',
       });
       expect(r2.status).toBe(409);
       expect(errorOf(r2).code).toBe('KEYWORD_EXCLUDED');

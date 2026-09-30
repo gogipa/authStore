@@ -858,6 +858,7 @@ export interface paths {
          * 라쿠텐 검색어 형식 검사
          * @description 반각 128자·단어별 최소 길이(반각 2자 또는 전각 1자, 히라가나·가타카나·기호는 2자) 검사와, 아동화 필터로 검색에 붙는 장르·제외어를 돌려준다. 저장 없는 계산이다.
          *     규칙 위반은 오류가 아니라 200 `valid=false`와 `violations[]`로 준다(화면 '32/128자 · 형식 맞음'). 본문 전달용 POST라 가드 헤더를 붙인다.
+         *     P2-02 구현 결정(Proposed, 05-1 §7.3) — 반각 환산: 전각(East Asian Wide·Fullwidth) 1자 = 반각 2자, 반각 가타카나 = 1자. 단어는 반각·전각 공백으로 나눈다. 앞뒤 공백은 떼고 검사하고(`rakutenQuery`는 뗀 값), 공백만이면 `valid=false`·위반 없음. `genreId`·`ngKeywords`는 현재 설정(`sourcing.genreId`·`sourcing.ngKeywords`)이고, 설정 스냅샷이 없으면 503 `SETTINGS_INVALID`. 후보 만들기·② 시작은 같은 규칙으로 422 `RAKUTEN_QUERY_INVALID`.
          */
         post: operations["validateRakutenQuery"];
         delete?: never;
@@ -879,6 +880,7 @@ export interface paths {
          * 라쿠텐 URL 상품 페이지 한 건 읽기
          * @description URL 입구. 붙여 넣은 상품 페이지를 한 번 읽어 `rakuten_item`(entry_source=MANUAL, fetch_reason=URL_ENTRY) + `rakuten_sku` 스냅샷을 만든다. 읽을 때마다 새 스냅샷이고 하루 페이지 상한 1건을 쓴다.
          *     `itemCode`는 URL 조각이 아니라 페이지 JSON에서 얻어 `샵코드:상품ID`로 맞춘다. 제외어·장르·아동화 의심은 `checks`로 알리고, 후보·비교표 행을 만들 때 다시 검사한다.
+         *     P2-02 구현 결정(Proposed, 05-1 §7.3) — 받는 주소는 https 스킴의 `item.rakuten.co.jp/{샵}/{상품}/`뿐이다(http는 https로, 끝 `/`·쿼리 무시, 모바일·검색·단축 URL은 422 `RAKUTEN_URL_INVALID` — 요청·`call_log` 없음). 페이지 JSON에 itemCode가 없으면(또는 M0 S2가 두 경로 키가 다르다고 확인하면) URL의 샵 코드 + 型番(없으면 상품명 앞 단어)으로 Item Search를 불러 `itemUrl`이 같은 항목의 itemCode를 쓰고, 못 찾으면 422 `RAKUTEN_ITEM_CODE_UNRESOLVED`(스냅샷 없음). 이 보완 조회에 라쿠텐 키가 없으면 409 `SECRET_NOT_CONFIGURED`, 라쿠텐 API가 실패하면 502 `EXTERNAL_API_ERROR`(details.target=RAKUTEN_API). 장르는 페이지 JSON → 없으면 itemCode로 Item Search(`genreSource=ITEM_SEARCH`), 그래도 없거나 키가 없으면 `NOT_FOUND`(막지 않고 성인용 확인을 받는다). 하위 판정은 IchibaGenre 캐시(`rakuten_genre.id_path`). `checks.excludedWords`는 설정 제외어(`sourcing.ngKeywords`)와 아동 단어(P2-01 공통 규칙)를 모두 본다. 원본 바이트는 데이터 폴더 `rakuten/pages/<sha 앞 2자>/<sha>.html`에 받은 그대로 두고 응답에는 넣지 않는다.
          */
         post: operations["fetchRakutenItem"];
         delete?: never;
@@ -1024,6 +1026,7 @@ export interface paths {
          * 성인용 상품 확인 체크
          * @description 웹 화면 전용 기록. `sourcing_comparison.adult_product_confirmed_at`(ERD 결정 ⑨) + `user_action_log`(OWNER_CONFIRMED). ④ 'KC 면제 성인용 확인'과 따로 기록한다.
          *     체크하면 멈춘 ②가 이어진다. 이미 체크했으면 기존 시각을 그대로 준다. 본문은 없다.
+         *     P2-02 구현 결정(Proposed, 05-1 §7.3) — 검사 순서: 404 → 409 `CONFIRMATION_NOT_APPLICABLE`(child_size_suspect=false이고 genre_scope=IN_SCOPE) → 이미 체크했으면 200(기존 시각, 기록 없음) → 409 `STEP_RUN_NOT_WAITING_INPUT`. URL로 만들기(URL_CREATE)·재조회(REFETCH) 버전은 이 확인만 기다리므로 ②를 완료로 닫고(앵커 확정·② 자동 성별, `stepStatus=COMPLETED`), 검색·비교 버전은 확인만 남기고 선택을 계속 기다린다(`stepStatus=WAITING_INPUT`, P2-03). `user_action_log` detail `{confirmation: ADULT_PRODUCT, sourcingComparisonId}`.
          */
         put: operations["confirmSourcingAdultProduct"];
         post?: never;
@@ -4290,8 +4293,11 @@ export interface components {
             sourcingComparisonId: number;
             fetchedCount: number;
             passedCount: number;
-            /** @enum {string} */
-            stopReason: "ENOUGH_CANDIDATES" | "PAGE_CAP" | "DAILY_LIMIT" | "BLOCKED";
+            /**
+             * @description ENOUGH_CANDIDATES = 재고 통과 K(설정 3)개, PAGE_CAP = M(설정 10)페이지를 읽음, DAILY_LIMIT = 하루 페이지 상한, BLOCKED = 403·418·429 뒤 24시간 쉼, NO_MORE_ROWS = 앵커 일치 행을 다 읽음(P2-02 Proposed — 05-1 §7.3 P2-02 구현 결정)
+             * @enum {string}
+             */
+            stopReason: "ENOUGH_CANDIDATES" | "PAGE_CAP" | "DAILY_LIMIT" | "BLOCKED" | "NO_MORE_ROWS";
         };
         /** @description call-usage.changed — 외부 조회 수가 늘거나, 하루 상한에 닿거나, 403·418·429로 24시간 쉼이 시작될 때, KST 0시 초기화 */
         CallUsageChangedEvent: {
@@ -9454,6 +9460,15 @@ export interface operations {
             /** @description `VALIDATION_FAILED` — rakutenQuery 없음 */
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
+            /** @description SETTINGS_INVALID — 로드된 설정 스냅샷이 없어 검색에 붙는 장르·제외어를 읽을 수 없음(P2-02) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     fetchRakutenItem: {
@@ -9485,13 +9500,22 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
-            /** @description `DAILY_LIMIT_REACHED`(details.target=RAKUTEN_PAGE, Retry-After) — 하루 페이지 상한. `EXTERNAL_CALL_COOLDOWN` — 403·418·429 뒤 24시간 쉼 */
+            /** @description `DAILY_LIMIT_REACHED`(details.target=RAKUTEN_PAGE, Retry-After) — 하루 페이지 상한. `EXTERNAL_CALL_COOLDOWN` — 403·418·429 뒤 24시간 쉼. `SECRET_NOT_CONFIGURED` — itemCode 보완 조회(F-BS-37)가 필요한데 라쿠텐 키가 없음(P2-02 Proposed) */
             409: components["responses"]["Conflict"];
-            /** @description `RAKUTEN_URL_INVALID` — 라쿠텐 상품 주소가 아님. `VALIDATION_FAILED` */
+            /** @description `RAKUTEN_URL_INVALID` — 라쿠텐 상품 주소가 아님. `RAKUTEN_ITEM_CODE_UNRESOLVED` — itemCode를 찾지 못함(P2-02 Proposed, F-BS-37). `VALIDATION_FAILED` */
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
-            /** @description `EXTERNAL_API_ERROR`(details.target=RAKUTEN_PAGE) — 점검·삭제 페이지, 응답 없음 */
+            /** @description `EXTERNAL_API_ERROR`(details.target=RAKUTEN_PAGE, reason=MAINTENANCE_PAGE·PARSE_FAILED·HTTP_<상태>) — 점검·삭제 페이지, 읽을 수 없는 페이지, 응답 없음. itemCode 보완 조회의 라쿠텐 API 실패는 details.target=RAKUTEN_API(reason=라쿠텐 오류 코드) */
             502: components["responses"]["BadGateway"];
+            /** @description SETTINGS_INVALID — 로드된 설정 스냅샷이 없어 제외어·아동화 기준을 읽을 수 없음(P2-02). KEYCHAIN_UNAVAILABLE — itemCode 보완 조회에 키체인을 열 수 없음 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     getRakutenItem: {

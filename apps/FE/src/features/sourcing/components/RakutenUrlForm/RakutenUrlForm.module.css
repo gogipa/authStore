@@ -1,0 +1,128 @@
+/*
+ * 라쿠텐 URL 붙여넣기(Sourcing.dc.html 아래 패널): [URL 칸(라벨 줄: 제목 | 캡션) | 넣는 방법 라디오 | 넣기],
+ * 읽은 상품(이름·샵·itemCode, 검사 안내, 색상 + 후보 만들기), 아래 줄 [안내 글 | 성인용 상품 확인 220px].
+ */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.inputRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+.urlField {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.headingLabel {
+  font: var(--type-heading);
+  color: var(--color-ink);
+}
+
+.fieldLabel {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.modes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.modeOptions {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  white-space: nowrap;
+}
+
+.error {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}
+
+.notice {
+  font: var(--type-caption);
+  color: var(--color-waiting);
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
+}
+
+.itemLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.itemName {
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+}
+
+.itemMeta {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.mono {
+  font: var(--type-id);
+}
+
+.createRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.color {
+  min-width: 200px;
+}
+
+.bottomRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.note {
+  flex-grow: 1;
+  min-width: 0;
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.aside {
+  width: 220px;
+  flex-shrink: 0;
+}

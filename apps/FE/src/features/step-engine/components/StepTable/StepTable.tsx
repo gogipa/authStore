@@ -1,5 +1,11 @@
 import { Fragment, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
+import {
+  findCallUsage,
+  formatUsageCount,
+  pageReadBlockedReason,
+  useCallUsageQuery,
+} from '@/features/integrations';
 import { isCommerceKeyErrorCode, SystemKeyLink } from '@/features/system';
 import { isApiRequestError } from '@/shared/api/errors';
 import { formatKstTime } from '@/shared/lib/format';
@@ -19,6 +25,7 @@ import { useCandidateGates } from '../../api/useContinuousRunQueries';
 import {
   useCandidateSteps,
   useOwnerEdit,
+  useRefetchCandidate,
   useStartStepRun,
   useStepRuns,
 } from '../../api/useStepRunQueries';
@@ -283,6 +290,9 @@ export function StepTable({ detail }: StepTableProps) {
   const rail = useCandidateSteps(candidateId);
   const gateList = useCandidateGates(candidateId);
   const start = useStartStepRun();
+  const refetch = useRefetchCandidate();
+  const pageUsage = findCallUsage(useCallUsageQuery().data, 'RAKUTEN_PAGE');
+  const refetchBlocked = pageReadBlockedReason(pageUsage);
   // 따라갈 연속 실행: 열린 묶음이 보이면 그것, 아니면 이 화면에서 방금 시작한 묶음(멈춘 뒤에도 이유를 보인다)
   const openChainId = detail.openContinuousRun?.id ?? null;
   const [chainId, setChainId] = useState<number | null>(openChainId);
@@ -296,9 +306,10 @@ export function StepTable({ detail }: StepTableProps) {
     GateState
   >;
   const rerunCount = (rail.data?.items ?? []).filter((i) => i.status === 'RERUN_REQUIRED').length;
-  const pending = start.isPending;
+  const pending = start.isPending || refetch.isPending;
 
   const run = (stepCode: StepCode, throughNoticeHtml = false) => {
+    refetch.reset();
     start.reset();
     start.mutate({
       candidateId,
@@ -408,12 +419,27 @@ export function StepTable({ detail }: StepTableProps) {
               </span>
               {detail.pageDataStale ? (
                 <>
-                  <Button size="sm" disabled aria-describedby="refetch-why">
+                  {pageUsage ? (
+                    <span className={styles.caption}>
+                      재조회는 페이지 1건 · 오늘{' '}
+                      <span className={styles.monoMuted}>{formatUsageCount(pageUsage)}</span>
+                    </span>
+                  ) : null}
+                  <Button
+                    size="sm"
+                    disabled={pending || refetchBlocked !== null || detail.locked}
+                    aria-describedby={refetchBlocked ? 'refetch-why' : undefined}
+                    onClick={() => {
+                      start.reset();
+                      refetch.reset();
+                      refetch.mutate(candidateId);
+                    }}
+                  >
                     재조회
                   </Button>
-                  <DisabledReason id="refetch-why" tone="muted">
-                    재조회는 아직 준비 중입니다
-                  </DisabledReason>
+                  {refetchBlocked ? (
+                    <DisabledReason id="refetch-why">{refetchBlocked}</DisabledReason>
+                  ) : null}
                 </>
               ) : null}
             </span>
@@ -471,6 +497,13 @@ export function StepTable({ detail }: StepTableProps) {
         <div role="alert" className={styles.alert}>
           {isApiRequestError(start.error) ? start.error.message : '실행을 요청하지 못했습니다.'}{' '}
           <AiEngineSettingsLinkForError error={start.error} />
+        </div>
+      ) : null}
+      {refetch.error ? (
+        <div role="alert" className={styles.alert}>
+          {isApiRequestError(refetch.error)
+            ? refetch.error.message
+            : '재조회를 요청하지 못했습니다.'}
         </div>
       ) : null}
       {rail.isError ? <div className={styles.alert}>{rail.error.message}</div> : null}

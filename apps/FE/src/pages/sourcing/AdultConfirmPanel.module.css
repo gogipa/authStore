@@ -1,0 +1,16 @@
+/* '성인용 상품 확인'(Sourcing.dc.html URL 패널 오른쪽): 체크 상자 + 설명, 확인 시각·오류 캡션. */
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.error {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}

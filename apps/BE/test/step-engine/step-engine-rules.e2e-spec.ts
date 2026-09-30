@@ -613,16 +613,17 @@ describe('앱 시작: 재시작 정리는 요청 전에 · 실행기가 없는 �
     });
   });
 
+  // ② SOURCING은 P2-02부터 운영 실행기가 있다. 아직 실행기가 없는 ③ PRICING(P2-05)으로 본다
   it('실행 요청은 422 INVALID_STEP_CODE(NO_RUNNER), 레일 run도 같은 코드로 꺼진다', async () => {
     await truncateStepEngine(t.prisma);
     const c = (await createCandidate(t.prisma, { gender: 'MALE' })).candidate;
     const res = await request(t.app.getHttpServer())
-      .post(`/api/v1/candidates/${c.id}/steps/SOURCING/runs`)
+      .post(`/api/v1/candidates/${c.id}/steps/PRICING/runs`)
       .set('X-AutoStore-Client', '1');
     expect(res.status).toBe(422);
     expect(res.body).toMatchObject({
       code: 'INVALID_STEP_CODE',
-      details: { stepCode: 'SOURCING', reason: 'NO_RUNNER' },
+      details: { stepCode: 'PRICING', reason: 'NO_RUNNER' },
     });
     const rail = await request(t.app.getHttpServer()).get(`/api/v1/candidates/${c.id}/steps`);
     const items = (
@@ -630,7 +631,7 @@ describe('앱 시작: 재시작 정리는 요청 전에 · 실행기가 없는 �
         items: { actions: { run: { disabledReason: { code: string; message: string } } } }[];
       }
     ).items;
-    expect(items[0]!.actions.run.disabledReason).toMatchObject({
+    expect(items[1]!.actions.run.disabledReason).toMatchObject({
       code: 'INVALID_STEP_CODE',
       message: (res.body as { message: string }).message,
     });

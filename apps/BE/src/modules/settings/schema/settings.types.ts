@@ -169,6 +169,29 @@ export interface SourcingSettings {
   defaultShippingYen: number;
   /** 라쿠텐 상품 페이지 하루 조회 상한(RAKUTEN_PAGE, KST 0시 초기화). 110 */
   pageFetchDailyLimit: number;
+  /** 라쿠텐 API(Item Search·IchibaGenre) 호출 값(P2-02 Proposed — 06-4 §2.2) */
+  rakutenApi: RakutenApiSettings;
+}
+
+/**
+ * 라쿠텐 API 호출 값(PRD §8.2 RK-01, F-BS-34·35, P2-02 Proposed — 06-4 §2.2).
+ * 호출 간격(Item Search 1.5초·상품 페이지 3초)·24시간 쉼·앱 UA는 여기 두지 않는다: 외부 호출 관문 상수다(P1-01 Proposed —
+ * 느슨하게 풀 수 없게). URL 입구 제외어는 따로 두지 않고 `ngKeywords`를 그대로 쓴다(PRD §5.3 '검색 경로의 NGKeyword를
+ * 상품명에 적용'). 키(applicationId·accessKey)는 키체인에만 둔다.
+ */
+export interface RakutenApiSettings {
+  /** Item Search 주소(버전 20260701). 호스트는 관문 허용 목록(openapi.rakuten.co.jp)만 */
+  itemSearchUrl: string;
+  /** IchibaGenre Search 주소(경로 M0 S2에서 확정). 호스트는 같다 */
+  genreSearchUrl: string;
+  /** 한 페이지 건수(hits). 30 */
+  hits: number;
+  /** 같은 검색의 캐시 시간(시간). 6 */
+  searchCacheHours: number;
+  /** 429·503 다시 보내기 최대 횟수(지수 백오프). 3 */
+  maxRetries: number;
+  /** 장르 캐시를 다시 받는 주기(일). 30 */
+  genreCacheDays: number;
 }
 
 /**

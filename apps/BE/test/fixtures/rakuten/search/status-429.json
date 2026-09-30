@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "errorCode": 429,
+    "errorMessage": "Too many requests. Please try again later."
+  }
+}

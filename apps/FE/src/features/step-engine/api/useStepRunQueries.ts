@@ -144,3 +144,20 @@ export function useOwnerEdit() {
     onSuccess: (_data, variables) => invalidate(variables.candidateId),
   });
 }
+
+/**
+ * 고른 상품 재조회(`POST /candidates/{candidateId}/refetch`, 202 StepRunAccepted — P2-02, F-SO-17). ② 새 버전(고른 상품
+ * 페이지 1건만 새로, 하루 조회 1건 차감)을 만들고 ③을 실행한 적이 있으면 이어서 다시 판정한다. 결과는 폴링하지 않고 SSE
+ * `step-run.status-changed`가 레일·이력·후보를 무효화하면 다시 읽는다. 409 SOURCING_SELECTION_REQUIRED·DAILY_LIMIT_REACHED·
+ * EXTERNAL_CALL_COOLDOWN·STEP_ALREADY_RUNNING 등은 `ApiRequestError`(message를 그대로 보인다).
+ */
+export function useRefetchCandidate() {
+  const invalidate = useInvalidateCandidateSteps();
+  return useMutation({
+    mutationFn: (candidateId: number) =>
+      request(() =>
+        api.POST('/candidates/{candidateId}/refetch', { params: { path: { candidateId } } }),
+      ),
+    onSuccess: (_data, candidateId) => invalidate(candidateId),
+  });
+}
