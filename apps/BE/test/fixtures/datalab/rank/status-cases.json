@@ -1,0 +1,18 @@
+{
+  "404": {
+    "contentType": "text/html;charset=UTF-8",
+    "body": "<html><body>Not Found</body></html>"
+  },
+  "403": {
+    "contentType": "text/html;charset=UTF-8",
+    "body": "<html><body>Forbidden</body></html>"
+  },
+  "418": {
+    "contentType": "text/html;charset=UTF-8",
+    "body": "<html><body>I'm a teapot</body></html>"
+  },
+  "429": {
+    "contentType": "text/html;charset=UTF-8",
+    "body": "<html><body>Too Many Requests</body></html>"
+  }
+}

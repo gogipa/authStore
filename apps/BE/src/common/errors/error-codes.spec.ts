@@ -272,6 +272,34 @@ describe('error-codes', () => {
     );
   });
 
+  it('P2-01 키워드 코드 8개는 05-3 §5.1 문구·상태 그대로다', () => {
+    const expected: Record<string, { status: number; message: string }> = {
+      KEYWORD_NOT_FOUND: { status: 404, message: '키워드를 찾을 수 없습니다.' },
+      KEYWORD_SNAPSHOT_NOT_FOUND: { status: 404, message: '키워드 수집 결과를 찾을 수 없습니다.' },
+      KEYWORD_NOT_SELECTED: {
+        status: 409,
+        message: '키워드 화면에서 고른 키워드만 후보로 만들 수 있습니다.',
+      },
+      KEYWORD_EXCLUDED: { status: 409, message: '아동화로 빠진 키워드는 고를 수 없습니다.' },
+      KEYWORD_IN_USE: {
+        status: 409,
+        message: '이 키워드로 만든 후보가 있어 선택을 취소할 수 없습니다.',
+      },
+      CHILD_TERM_ALREADY_EXISTS: { status: 409, message: '이미 있는 아동 단어입니다.' },
+      IMPORT_PARSE_FAILED: {
+        status: 422,
+        message: '파일(또는 붙여 넣은 글)에서 필요한 열이나 형식을 찾지 못했습니다.',
+      },
+      IMPORT_EMPTY: { status: 422, message: '읽을 수 있는 줄이 없습니다.' },
+    };
+    for (const [code, value] of Object.entries(expected)) {
+      expect(ERROR_CODES[code as keyof typeof ERROR_CODES]).toEqual(value);
+    }
+    expect(formatErrorMessage('ALREADY_IN_PROGRESS', { 작업: '데이터랩 수집' })).toBe(
+      '데이터랩 수집이 이미 진행 중입니다. 끝난 뒤 다시 해 주세요.',
+    );
+  });
+
   it('formatErrorMessage는 {…} 자리를 채우고 모르는 자리는 그대로 둔다', () => {
     expect(formatErrorMessage('DAILY_LIMIT_REACHED', { 대상: '라쿠텐 상품 페이지', n: 110 })).toBe(
       '오늘 라쿠텐 상품 페이지 조회 한도(110건)를 다 썼습니다. 내일 0시(한국 시간)에 다시 됩니다.',

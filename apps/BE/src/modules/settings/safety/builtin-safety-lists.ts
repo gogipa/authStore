@@ -3,23 +3,31 @@
  * 내장 항목을 빼거나 아래 하한·상한을 넘게 풀면 앱이 그 파일을 거부한다(safety-floor.validator.ts).
  * 목록을 늘리는 것은 앱 업데이트(코드)로만 한다.
  */
+import {
+  BUILTIN_CHILD_TERMS,
+  BUILTIN_SENIOR_SHOE_WORDS as COMMON_SENIOR_SHOE_WORDS,
+  BUILTIN_WHEELED_SHOE_WORDS as COMMON_WHEELED_SHOE_WORDS,
+  CHILD_SHOE_SIZE_FLOOR_MM,
+} from '../../../common/child-shoe/child-shoe.rules.js';
 import type { NoticeBlockCondition } from '../schema/settings.types.js';
 
-/** 아동화 의심 사이즈 기준의 하한(mm). 235는 통과, 234 이하는 거부 */
-export const CHILD_SHOE_MAX_MM_FLOOR = 235;
+/**
+ * 아동화 의심 사이즈 기준의 하한(mm). 235는 통과, 234 이하는 거부.
+ * P2-01: 아동화 공통 판별 규칙(`common/child-shoe`)과 같은 값 하나를 쓴다.
+ */
+export const CHILD_SHOE_MAX_MM_FLOOR = CHILD_SHOE_SIZE_FLOOR_MM;
 
 /** 판정 유효 시간의 상한(시간). 6은 통과, 6보다 길면 거부 */
 export const JUDGEMENT_VALIDITY_HOURS_CEIL = 6;
 
-/** KW-01 아동 키워드(PRD §8.1). `safety.childKeywords`에 모두 있어야 한다 */
-export const BUILTIN_CHILD_KEYWORDS: readonly string[] = [
-  '키즈',
-  '주니어',
-  '아동',
-  'キッズ',
-  'ジュニア',
-  'ベビー',
-];
+/** KW-01 아동 키워드(PRD §8.1). `safety.childKeywords`에 모두 있어야 한다(원본은 common/child-shoe, P2-01) */
+export const BUILTIN_CHILD_KEYWORDS: readonly string[] = BUILTIN_CHILD_TERMS;
+
+/** 바퀴 달린 운동화 단어(F-BS-12, P2-01 Proposed). `safety.wheeledShoeWords`에 모두 있어야 한다 */
+export const BUILTIN_WHEELED_SHOE_WORDS: readonly string[] = COMMON_WHEELED_SHOE_WORDS;
+
+/** 고령자용 신발 단어(F-BS-12, P2-01 Proposed). `safety.seniorShoeWords`에 모두 있어야 한다 */
+export const BUILTIN_SENIOR_SHOE_WORDS: readonly string[] = COMMON_SENIOR_SHOE_WORDS;
 
 /** 라쿠텐 검색 NGKeyword의 아동 단어(PRD §8.2). `sourcing.ngKeywords`에 모두 있어야 한다 */
 export const BUILTIN_NG_KEYWORD_CHILD_WORDS: readonly string[] = ['キッズ', 'ジュニア', 'ベビー'];

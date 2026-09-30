@@ -1,0 +1,32 @@
+/* SCR-02 '라쿠텐 검색어 확인'(Keywords.dc.html 아래 줄 오른쪽 위). */
+.keywordRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.keyword {
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+}
+
+.meta {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.num {
+  font-family: var(--font-mono);
+}
+
+.caption {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}

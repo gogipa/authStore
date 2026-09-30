@@ -4,6 +4,8 @@ import {
   BUILTIN_CHILD_KEYWORDS,
   BUILTIN_NG_KEYWORD_CHILD_WORDS,
   BUILTIN_PERSON_BLOCK_WORDS,
+  BUILTIN_SENIOR_SHOE_WORDS,
+  BUILTIN_WHEELED_SHOE_WORDS,
   CHILD_SHOE_MAX_MM_FLOOR,
   JUDGEMENT_VALIDITY_HOURS_CEIL,
   REQUIRED_NOTICE_BLOCKS,
@@ -14,6 +16,8 @@ import {
  */
 export const SAFETY_ITEMS = {
   CHILD_KEYWORD_REMOVED: '아동 키워드 빼기',
+  WHEELED_SHOE_WORD_REMOVED: '바퀴 신발 단어 빼기',
+  SENIOR_SHOE_WORD_REMOVED: '고령자 신발 단어 빼기',
   NG_KEYWORD_CHILD_WORD_REMOVED: '제외어(NGKeyword) 아동 단어 빼기',
   PERSON_BLOCK_WORD_REMOVED: '실존 인물 차단어 빼기',
   NOTICE_REQUIRED_BLOCK_REMOVED: '고지 필수 블록 빼기',
@@ -57,6 +61,20 @@ export function validateSafetyFloor(settings: AppSettings): SafetyViolation[] {
       item: 'CHILD_KEYWORD_REMOVED',
       field: '/safety/childKeywords',
       message: `내장 아동 키워드 '${word}'는 뺄 수 없습니다. 더하기만 됩니다.`,
+    });
+  }
+  for (const word of missingWords(BUILTIN_WHEELED_SHOE_WORDS, settings.safety.wheeledShoeWords)) {
+    out.push({
+      item: 'WHEELED_SHOE_WORD_REMOVED',
+      field: '/safety/wheeledShoeWords',
+      message: `내장 바퀴 신발 단어 '${word}'는 뺄 수 없습니다. 더하기만 됩니다.`,
+    });
+  }
+  for (const word of missingWords(BUILTIN_SENIOR_SHOE_WORDS, settings.safety.seniorShoeWords)) {
+    out.push({
+      item: 'SENIOR_SHOE_WORD_REMOVED',
+      field: '/safety/seniorShoeWords',
+      message: `내장 고령자 신발 단어 '${word}'는 뺄 수 없습니다. 더하기만 됩니다.`,
     });
   }
   for (const word of missingWords(BUILTIN_NG_KEYWORD_CHILD_WORDS, settings.sourcing.ngKeywords)) {

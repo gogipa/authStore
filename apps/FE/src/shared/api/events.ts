@@ -87,6 +87,9 @@ export type EventInvalidations = {
  * - P1-11: `ai-cli-check.completed` → AI 엔진 최신 점검(`getLatestAiCliChecks`)·점검 이력(`listAiCliChecks` 전체). 엔진마다 1건
  *   온다. AGY면 AI 엔진 설정(`getAiEngineSettings`)도 다시 읽는다(감지 때 `agy models` 목록을 다시 받는다). AI 엔진 저장의
  *   `settings.reloaded`는 위 settings 태그 무효화에 들어 있다.
+ * - P2-01: `keyword-collection.progress` → 그 묶음·묶음 안 키워드(페이지마다 줄이 늘어난다). `.completed`·`.aborted` →
+ *   묶음 목록·그 묶음·묶음 안 키워드·수집 상태. `settings.reloaded`의 changedKeys에 `safety.childKeywords`가 있으면
+ *   아동 단어 목록(`listChildKeywordTerms`)도. 진행률 숫자(페이지 수)는 캐시가 아니라 `onProgressEvent` 구독으로 받는다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -97,6 +100,21 @@ function stepEngineStepKeys(candidateId: number): QueryKey[] {
     qk('step-engine', 'listCandidates'),
     qk('step-engine', 'getCandidateResumeTarget'),
     qk('step-engine', 'listAttentionCandidateSteps'),
+  ];
+}
+
+function keywordSnapshotKeys(keywordSnapshotId: number): QueryKey[] {
+  return [
+    qk('keywords', 'getKeywordSnapshot', { keywordSnapshotId }),
+    qk('keywords', 'listSnapshotKeywords', { keywordSnapshotId }),
+  ];
+}
+
+function keywordCollectionEndKeys(keywordSnapshotId: number): QueryKey[] {
+  return [
+    qk('keywords', 'listKeywordSnapshots'),
+    ...keywordSnapshotKeys(keywordSnapshotId),
+    qk('keywords', 'getKeywordCollectionStatus'),
   ];
 }
 
@@ -112,8 +130,13 @@ function gateKeys(candidateId: number): QueryKey[] {
 
 export const EVENT_INVALIDATIONS: EventInvalidations = {
   'call-usage.changed': () => [qk('integrations', 'getCallUsage')],
-  'settings.reloaded': ({ rerunRequiredStepCount }) =>
-    rerunRequiredStepCount > 0 ? [['settings'], ['step-engine']] : [['settings']],
+  'settings.reloaded': ({ rerunRequiredStepCount, changedKeys }) => [
+    ['settings'],
+    ...(rerunRequiredStepCount > 0 ? [['step-engine']] : []),
+    ...(changedKeys.includes('safety.childKeywords')
+      ? [qk('keywords', 'listChildKeywordTerms')]
+      : []),
+  ],
   'candidate.status-changed': ({ candidateId }) => [
     qk('step-engine', 'listCandidates'),
     qk('step-engine', 'getCandidate', { candidateId }),
@@ -144,6 +167,11 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     qk('system', 'listAiCliChecks'),
     ...(engineCode === 'AGY' ? [qk('settings', 'getAiEngineSettings')] : []),
   ],
+  'keyword-collection.progress': ({ keywordSnapshotId }) => keywordSnapshotKeys(keywordSnapshotId),
+  'keyword-collection.completed': ({ keywordSnapshotId }) =>
+    keywordCollectionEndKeys(keywordSnapshotId),
+  'keyword-collection.aborted': ({ keywordSnapshotId }) =>
+    keywordCollectionEndKeys(keywordSnapshotId),
   'commerce-meta-sync.completed': () => [
     qk('integrations', 'getLatestCommerceMetaSyncRuns'),
     qk('integrations', 'listCommerceAddressbooks'),
@@ -196,9 +224,32 @@ function eachClient(connection: SharedConnection, fn: (client: QueryClient) => v
   for (const client of connection.clients.keys()) fn(client);
 }
 
+/** 이벤트 data를 받는 구독자(진행률처럼 캐시에 두지 않는 값을 화면 상태로 받을 때, P2-01) */
+type ProgressEventListener = (data: unknown) => void;
+const dataListeners = new Map<ProgressEventName, Set<ProgressEventListener>>();
+
+/**
+ * 진행 알림 한 종류의 data를 받는다(P2-01 Proposed, 06-3 §9). 연결은 `connectProgressEvents`가 연 하나를 같이 쓴다
+ * (이 함수는 연결을 열지 않는다). 무효화 표(EVENT_INVALIDATIONS)가 끝난 뒤 부른다. 돌려준 함수로 구독을 푼다.
+ * 서버 값을 캐시에 쓰는 데 쓰지 않는다(그건 조회 API 재조회로 받는다) — 진행률처럼 조회 API가 없는 값에만 쓴다.
+ */
+export function onProgressEvent<N extends ProgressEventName>(
+  name: N,
+  listener: (data: ProgressEventData<N>) => void,
+): () => void {
+  const set = dataListeners.get(name) ?? new Set<ProgressEventListener>();
+  dataListeners.set(name, set);
+  const wrapped: ProgressEventListener = (data) => listener(data as ProgressEventData<N>);
+  set.add(wrapped);
+  return () => {
+    set.delete(wrapped);
+  };
+}
+
 function handleProgressEvent(connection: SharedConnection, name: ProgressEventName, event: Event) {
   const resolve = EVENT_INVALIDATIONS[name] as ((data: unknown) => QueryKey[]) | undefined;
-  if (!resolve) return;
+  const listeners = dataListeners.get(name);
+  if (!resolve && (!listeners || listeners.size === 0)) return;
   let data: unknown;
   try {
     data = JSON.parse(String((event as MessageEvent).data));
@@ -206,10 +257,19 @@ function handleProgressEvent(connection: SharedConnection, name: ProgressEventNa
     console.warn(`진행 알림 ${name}의 data를 읽지 못해 건너뜁니다.`);
     return;
   }
-  const keys = resolve(data);
-  eachClient(connection, (client) => {
-    for (const queryKey of keys) void client.invalidateQueries({ queryKey });
-  });
+  if (resolve) {
+    const keys = resolve(data);
+    eachClient(connection, (client) => {
+      for (const queryKey of keys) void client.invalidateQueries({ queryKey });
+    });
+  }
+  for (const listener of listeners ?? []) {
+    try {
+      listener(data);
+    } catch (error) {
+      console.warn(`진행 알림 ${name} 구독자가 실패했습니다.`, error);
+    }
+  }
 }
 
 function openSource(connection: SharedConnection) {

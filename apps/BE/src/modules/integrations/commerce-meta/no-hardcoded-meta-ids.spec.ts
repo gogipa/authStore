@@ -20,6 +20,13 @@ function sourceFiles(dir: string): string[] {
 const CATEGORY_ID_LIKE = /(?<![0-9])50[0-9]{6}(?![0-9])/;
 const ORIGIN_CODE_LIKE = /['"`]02[0-9]{5}['"`]/;
 
+/**
+ * 예외(이유를 적는다): 데이터랩 인기검색어 수집 cid(P2-01, PRD §8.1 — 여성신발 50000173·남성신발 50000174).
+ * 등록에 쓰는 커머스API 리프 카테고리가 아니라 데이터랩 수집 대상 분야(2단계)이고, PRD가 값을 정했다.
+ * 원본은 설정 `keywords.datalab.defaultCids`이고 keywords 상수·설명에 같은 값이 나온다.
+ */
+const DATALAB_COLLECTION_CIDS = /(?<![0-9])5000017[34](?![0-9])/g;
+
 describe('카테고리·원산지 ID를 코드·설정에 박지 않는다(규칙 2)', () => {
   const files = sourceFiles(SRC_DIR);
 
@@ -29,7 +36,7 @@ describe('카테고리·원산지 ID를 코드·설정에 박지 않는다(규�
   });
 
   it.each(files.map((f) => [relative(SRC_DIR, f), f]))('%s', (_name, file) => {
-    const text = readFileSync(file, 'utf8');
+    const text = readFileSync(file, 'utf8').replace(DATALAB_COLLECTION_CIDS, '');
     expect(text).not.toMatch(CATEGORY_ID_LIKE);
     expect(text).not.toMatch(ORIGIN_CODE_LIKE);
   });

@@ -12,6 +12,12 @@ import { localSecurityMiddleware } from './common/security/local-security.js';
 export const API_PREFIX = 'api/v1';
 
 /**
+ * JSON 본문 상한(Proposed, P2-01 06-2 §9). Express 기본 100kb로는 붙여넣기 글 100,000자(한글이면 약 300KB)를 받지 못한다.
+ * 글자 수 상한(413 PAYLOAD_TOO_LARGE)은 API가 따로 본다. 이 값을 넘는 본문도 413 PAYLOAD_TOO_LARGE다.
+ */
+export const JSON_BODY_LIMIT = '1mb';
+
+/**
  * main.ts와 e2e 테스트가 같이 쓰는 앱 설정. listen 전에 부른다.
  * 요청 순서: 로컬 보안 → 본문 파싱 → Nest 라우트(/api/v1) → 정적 화면(운영) → 404 봉투
  */
@@ -27,6 +33,7 @@ export async function configureApp(app: NestExpressApplication): Promise<void> {
       onBlocked: ({ code, method, path }) => securityLog.warn(`${code} ${method} ${path}`),
     }),
   );
+  app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
   app.setGlobalPrefix(API_PREFIX);
   app.useGlobalPipes(new AppValidationPipe());
   app.useGlobalFilters(new AllExceptionsFilter());

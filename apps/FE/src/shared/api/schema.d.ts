@@ -632,7 +632,9 @@ export interface paths {
          * @description - `method=BUTTON`: 데이터랩 버튼 수집. 여성·남성 cid를 차례로 모은다(100위 = cid당 5페이지, 500위 = cid당 25페이지). 약 20~100초라 202와 묶음 id를 돌려주고, 진행·끝은 SSE `keyword-collection.progress`·`keyword-collection.completed`·`keyword-collection.aborted`로 알린다.
          *     - `method=PASTE`: 데이터랩 화면에서 복사한 '순위 + 키워드' 텍스트를 로컬에서 줄 단위로 읽어 곧바로 201.
          *     - 기간(어제 기준 1개월)·이상 감지·아동화 제외는 서버 규칙이라 받지 않는다.
-         *     - (M2) `requestedCids`(하위 cid, F-KW-09)·`filters`(성별·연령·기기, F-KW-10)는 ERD §6.2 `keyword_snapshot.filters`.
+         *     - (M2) `requestedCids`(하위 cid, F-KW-09)·`filters`(성별·연령·기기, F-KW-10)는 ERD §6.2 `keyword_snapshot.filters`. M1은 받지 않는다(422 `VALIDATION_FAILED`, P2-01 Proposed).
+         *     - P2-01 구현(Proposed, 05-1 §7.2 'P2-01 구현 결정'): BUTTON 검사 순서 = 설정 없음 503 → 수집 중 409 `ALREADY_IN_PROGRESS` → 24시간 쉼 409 `EXTERNAL_CALL_COOLDOWN` → 오늘 남은 요청이 이번 수집 요청 수(100위 10·500위 50)보다 적음 409 `DAILY_LIMIT_REACHED`(details.required·remaining, Retry-After). 요청 사이 간격은 설정 `keywords.datalab.requestIntervalSeconds`(2초 이상). 짧은 페이지(20개 미만)는 그 cid의 마지막 페이지로 보고 다음 페이지를 부르지 않는다. 응답을 받지 못하면 `NETWORK_ERROR`, 그 밖에 도중에 멈추면 `INTERRUPTED`로 닫는다. 받은 페이지의 키워드는 중단돼도 남는다.
+         *     - PASTE 줄 형식(Proposed, M0 S4에서 확정): '순위 키워드'(공백·탭·`.`·`)`·`:`·`위` 구분, 붙어 있어도 됨) 또는 숫자만 있는 줄 다음 줄이 키워드. 빈 줄은 건너뛴다. `fieldErrors[].field` = `text[줄 번호]`(1부터). 글자 수는 코드 포인트로 센다.
          */
         post: operations["createKeywordSnapshot"];
         delete?: never;
@@ -652,6 +654,7 @@ export interface paths {
          * 키워드 수집 묶음 한 건
          * @description 기간·range 대조·중단 사유·구조 변경 의심·24시간 쉼을 함께 준다.
          *     `structureChangeSuspected` = ABORTED이고 사유가 NO_RANKS_KEY·HTTP_404·NOT_JSON·RETURN_CODE·COUNT_MISMATCH. `blockedUntil`은 `call_log`(DATALAB)로 계산한다.
+         *     경로 id가 1 이상 정수가 아니면 404 `KEYWORD_SNAPSHOT_NOT_FOUND`(P2-01, P1-01·P1-04와 같다).
          */
         get: operations["getKeywordSnapshot"];
         put?: never;
@@ -672,8 +675,8 @@ export interface paths {
         /**
          * 묶음 안 키워드 목록
          * @description 순위순 키워드(페이징). 기본은 아동화로 빠진 키워드를 뺀다(`excluded=true`면 '제외됨'만). `candidateIds`는 이 키워드를 출처로 만든 후보(`candidate.source_keyword_id` 역참조).
-         *     (M2) `classification`(ERD §6.2)·`brandPolicy`(brand_policy 조인)와 `view` 필터.
-         *     정렬 허용 필드: `rank`(기본 `rank,asc`).
+         *     (M2) `classification`(ERD §6.2)·`brandPolicy`(brand_policy 조인)와 `view` 필터. M1은 `view=ALL`만 받는다(그 밖은 422 `INVALID_QUERY_PARAMETER`, P2-01 Proposed).
+         *     정렬 허용 필드: `rank`(기본 `rank,asc`, 같은 순위는 cid·id 순).
          */
         get: operations["listSnapshotKeywords"];
         put?: never;
@@ -696,6 +699,7 @@ export interface paths {
          * G1 키워드 고르기
          * @description G1 기록 = `keyword.selected_at`. 체크박스 토글을 멱등하게 하려고 하위 리소스 PUT·DELETE로 둔다. 이미 골랐으면 `selectedAt`을 유지한다.
          *     아동화로 빠진 키워드는 고를 수 없다(`ck_keyword_excluded_not_selected`).
+         *     새로 고를 때만 감사 기록 `user_action_log`(GATE_PASSED, gate=G1, candidate_id NULL, detail keywordId·keywordSnapshotId)을 같은 트랜잭션에 남긴다(P2-01). 경로 id가 1 이상 정수가 아니면 404.
          */
         put: operations["selectKeyword"];
         post?: never;
@@ -720,6 +724,7 @@ export interface paths {
          * 데이터랩 수집 상태
          * @description 화면 머리의 '마지막 수집 13:30 · 2초 간격 · 이상 없음'과 '수집' 버튼의 꺼진 이유. 설치본당 하나라 단수 리소스다.
          *     24시간 쉼은 `call_log`(target=DATALAB)의 최근 403·418·429로 계산한다(ERD 결정 ⑦).
+         *     `last*`는 마지막으로 끝난 **버튼 수집**(붙여넣기 제외, P2-01 Proposed). `requestIntervalSeconds`는 설정 `keywords.datalab.requestIntervalSeconds`(없으면 2).
          */
         get: operations["getKeywordCollectionStatus"];
         put?: never;
@@ -745,7 +750,7 @@ export interface paths {
         put?: never;
         /**
          * 아동 단어 더하기
-         * @description 더할 수만 있어 DELETE를 두지 않는다(F-KW-07). 설정 파일에 다시 쓰고 새 `settings_snapshot`을 만든다.
+         * @description 더할 수만 있어 DELETE를 두지 않는다(F-KW-07). 설정 파일(`safety.childKeywords`만)에 다시 쓰고 새 `settings_snapshot`을 만든다(같은 내용의 스냅샷이 있으면 그 id). 같은 단어 비교는 NFKC·소문자·앞뒤 공백 정규화(P2-01 Proposed). 감사 기록 SETTING_CHANGED(detail setting=CHILD_KEYWORD_TERMS·term·changedKeys)와 SSE `settings.reloaded`를 남긴다.
          */
         post: operations["addChildKeywordTerm"];
         delete?: never;
@@ -4251,10 +4256,10 @@ export interface components {
         KeywordCollectionAbortedEvent: {
             keywordSnapshotId: number;
             /**
-             * @description keyword_snapshot.abort_reason
+             * @description keyword_snapshot.abort_reason(P2-01 뒤 3개는 Proposed)
              * @enum {string}
              */
-            abortReason: "NO_RANKS_KEY" | "HTTP_404" | "NOT_JSON" | "RETURN_CODE" | "COUNT_MISMATCH" | "HTTP_403" | "HTTP_418" | "HTTP_429";
+            abortReason: "NO_RANKS_KEY" | "HTTP_404" | "NOT_JSON" | "RETURN_CODE" | "COUNT_MISMATCH" | "HTTP_403" | "HTTP_418" | "HTTP_429" | "NETWORK_ERROR" | "APP_RESTART" | "INTERRUPTED";
             httpStatus: number | null;
             /** @description 응답 구조 변경 의심(계산값) */
             structureChangeSuspected: boolean;
@@ -4515,10 +4520,10 @@ export interface components {
             rangeMatched?: boolean | null;
             status: components["schemas"]["KeywordSnapshotStatus"];
             /**
-             * @description 이상 사유(F-KW-04). ABORTED일 때만
+             * @description 이상 사유(F-KW-04). ABORTED일 때만. P2-01 Proposed(ERD v0.5, V2 마이그레이션) — 이상 응답이 아닌 중단 NETWORK_ERROR(응답 없음)·APP_RESTART(앱 재시작)·INTERRUPTED(그 밖에 도중에 멈춤)
              * @enum {string|null}
              */
-            abortReason?: "NO_RANKS_KEY" | "HTTP_404" | "NOT_JSON" | "RETURN_CODE" | "COUNT_MISMATCH" | "HTTP_403" | "HTTP_418" | "HTTP_429" | null;
+            abortReason?: "NO_RANKS_KEY" | "HTTP_404" | "NOT_JSON" | "RETURN_CODE" | "COUNT_MISMATCH" | "HTTP_403" | "HTTP_418" | "HTTP_429" | "NETWORK_ERROR" | "APP_RESTART" | "INTERRUPTED" | null;
             /** @description 중단 때 HTTP 상태 코드 */
             httpStatus?: number | null;
             /** @description (M2) 성별·연령·기기 필터 요청값(ERD §6.2 filters, 데이터랩 파라미터 이름 그대로). null = 전체 */
@@ -8984,9 +8989,9 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
-            /** @description `ALREADY_IN_PROGRESS`(details.job=KEYWORD_COLLECTION) — 수집 중. `EXTERNAL_CALL_COOLDOWN`(details.target=DATALAB, blockedUntil, Retry-After) — 403·418·429 뒤 24시간 쉼(BUTTON만) */
+            /** @description `ALREADY_IN_PROGRESS`(details.job=KEYWORD_COLLECTION) — 수집 중. `EXTERNAL_CALL_COOLDOWN`(details.target=DATALAB, blockedUntil, Retry-After) — 403·418·429 뒤 24시간 쉼(BUTTON만). `DAILY_LIMIT_REACHED`(details.target=DATALAB·dailyLimit·required·remaining, Retry-After) — 오늘 남은 요청으로 이번 수집을 끝낼 수 없음(BUTTON만, P2-01 Proposed) */
             409: components["responses"]["Conflict"];
-            /** @description `PAYLOAD_TOO_LARGE` — 붙여 넣은 글이 100,000자를 넘음 */
+            /** @description `PAYLOAD_TOO_LARGE` — 붙여 넣은 글이 100,000자를 넘음(본문 1MB 초과도 같다, P2-01 Proposed) */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -8998,6 +9003,15 @@ export interface operations {
             /** @description `VALIDATION_FAILED` — 본문 값 위반. `IMPORT_PARSE_FAILED` — 순위·키워드 형식 불일치·같은 순위 중복(fieldErrors에 줄). `IMPORT_EMPTY` — 읽을 수 있는 줄 없음 */
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
+            /** @description SETTINGS_INVALID — 로드된 설정 스냅샷이 없어 버튼 수집 설정(keywords.datalab)을 읽을 수 없음(BUTTON만, P2-01). 붙여넣기는 설정이 없어도 기본 아동 단어로 거른다 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     getKeywordSnapshot: {
@@ -9171,6 +9185,15 @@ export interface operations {
             };
             403: components["responses"]["Forbidden"];
             500: components["responses"]["InternalError"];
+            /** @description SETTINGS_INVALID — 로드된 설정 스냅샷이 없음(P2-01) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     addChildKeywordTerm: {
@@ -9205,6 +9228,15 @@ export interface operations {
             /** @description `VALIDATION_FAILED` — 빈 값·길이 초과 */
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
+            /** @description SETTINGS_INVALID — 로드된 설정 스냅샷이 없음(P2-01) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     getRakutenQuerySuggestion: {

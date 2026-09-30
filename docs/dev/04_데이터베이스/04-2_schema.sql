@@ -1,6 +1,7 @@
 -- 04-2. 전체 스키마 DDL (PostgreSQL 14 이상)
 -- 생성: prisma migrate diff --from-empty --to-schema 04-3_schema.prisma (Prisma 7.10.0) + 04-3 맨 아래 'Prisma 밖 SQL'
 -- 2026-09-27 로컬 PostgreSQL 14.20 새 DB에 ON_ERROR_STOP으로 적용 확인(ERD v0.4: 테이블 55, CHECK 258, FK 75, 부분·식 인덱스 11, 트리거 49. 적용한 DB → 스키마 migrate diff 빈 결과). 원본은 04-1_ERD.md → 04-3_schema.prisma이며 이 파일은 파생물이다.
+-- 2026-09-30 v0.5(P2-01 Proposed): ck_kws_abort_reason에 NETWORK_ERROR·APP_RESTART·INTERRUPTED를 더했다(V2 마이그레이션 04-6_V2__keyword_abort_reasons.sql, 표·열 수는 그대로).
 
 -- ===== 1. Prisma가 만드는 테이블·FK·UNIQUE·인덱스 =====
 -- CreateSchema
@@ -1487,11 +1488,11 @@ ALTER TABLE step_chain
   ADD CONSTRAINT ck_step_chain_stop_reason CHECK (stop_reason IN ('AWAIT_G2','AWAIT_G3','AWAIT_G4','NO_RUNNABLE_STEP','APP_RESTART')),
   ADD CONSTRAINT ck_step_chain_end CHECK ((ended_at IS NULL) = (stop_reason IS NULL));
 CREATE INDEX ix_step_chain_open ON step_chain (candidate_id) WHERE ended_at IS NULL;
--- keyword_snapshot
+-- keyword_snapshot (v0.5 P2-01: abort_reason 값 3개 NETWORK_ERROR·APP_RESTART·INTERRUPTED — V2 마이그레이션 04-6)
 ALTER TABLE keyword_snapshot
   ADD CONSTRAINT ck_kws_method CHECK (method IN ('BUTTON','PASTE')),
   ADD CONSTRAINT ck_kws_status CHECK (status IN ('RUNNING','COMPLETED','ABORTED')),
-  ADD CONSTRAINT ck_kws_abort_reason CHECK (abort_reason IN ('NO_RANKS_KEY','HTTP_404','NOT_JSON','RETURN_CODE','COUNT_MISMATCH','HTTP_403','HTTP_418','HTTP_429')),
+  ADD CONSTRAINT ck_kws_abort_reason CHECK (abort_reason IN ('NO_RANKS_KEY','HTTP_404','NOT_JSON','RETURN_CODE','COUNT_MISMATCH','HTTP_403','HTTP_418','HTTP_429','NETWORK_ERROR','APP_RESTART','INTERRUPTED')),
   ADD CONSTRAINT ck_kws_abort_pair CHECK ((status = 'ABORTED') = (abort_reason IS NOT NULL)),
   ADD CONSTRAINT ck_kws_button CHECK (method = 'PASTE' OR (period_start IS NOT NULL AND period_end IS NOT NULL AND rank_limit IS NOT NULL)),
   ADD CONSTRAINT ck_kws_rank_limit CHECK (rank_limit IN (100, 500)),

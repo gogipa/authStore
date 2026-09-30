@@ -22,6 +22,8 @@ import {
 } from './commerce-meta/commerce-meta-sync.scheduler.js';
 import { CommerceMetaSyncService } from './commerce-meta/commerce-meta-sync.service.js';
 import { CommerceMetaController } from './commerce-meta/commerce-meta.controller.js';
+import { DatalabRankHttpAdapter } from './datalab/datalab-rank.http-adapter.js';
+import { DATALAB_RANK_PORT } from './datalab/datalab-rank.port.js';
 import { CallLogService } from './http/call-log.service.js';
 import { CLOCK, systemClock } from './http/clock.token.js';
 import {
@@ -48,6 +50,9 @@ import {
  *   AI 입구)·`IsolatedCliRunner`(spawn 래퍼 하나 — P3-02 이미지 생성 공급자도 쓴다)를 export한다. AI CLI는 HTTP가 아니라
  *   외부 호출 관문을 지나지 않고, 격리 검사기(cli-isolation.ts)를 지나 spawn한다. 테스트는 AI_ENGINE_ADAPTERS를 가짜로 바꾼다.
  *   P1-11: `AgyModelsProvider`(`agy models` 목록 캐시 — AI 엔진 설정의 AGY 모델 목록·검사, 감지 때 갱신)를 export한다.
+ * datalab(P2-01): 순위 요청 포트 `DATALAB_RANK_PORT`(→ `DatalabRankHttpAdapter`, 관문 target=DATALAB)를 export한다.
+ *   keywords 모듈이 이 포트로만 데이터랩을 부른다(응답 해석은 keywords). 테스트는 이 토큰을 가짜 포트로 바꾸거나
+ *   가짜 fetch(HTTP_FETCH) 뒤에 가짜 데이터랩을 둔다.
  */
 @Module({
   // 하루 조회 상한의 원본이 설정 파일이다(P1-03). settings도 프로필 검증에 CommerceMetaCacheService를 쓰므로(P1-09)
@@ -91,6 +96,7 @@ import {
     },
     AiExecutor,
     AgyModelsProvider,
+    { provide: DATALAB_RANK_PORT, useClass: DatalabRankHttpAdapter },
   ],
   exports: [
     HTTP_FETCH,
@@ -106,6 +112,7 @@ import {
     AiExecutor,
     IsolatedCliRunner,
     AgyModelsProvider,
+    DATALAB_RANK_PORT,
   ],
 })
 export class IntegrationsModule {}

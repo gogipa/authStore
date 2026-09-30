@@ -1,0 +1,106 @@
+{
+  "returnCode": 0,
+  "range": "2026.08.23. ~ 2026.09.23.",
+  "ranks": [
+    {
+      "rank": 1,
+      "keyword": "뉴발란스 530",
+      "linkId": "link-1"
+    },
+    {
+      "rank": 2,
+      "keyword": "아디다스 삼바",
+      "linkId": "link-2"
+    },
+    {
+      "rank": 3,
+      "keyword": "나이키 코르테즈",
+      "linkId": "link-3"
+    },
+    {
+      "rank": 4,
+      "keyword": "어그 부츠",
+      "linkId": "link-4"
+    },
+    {
+      "rank": 5,
+      "keyword": "크록스",
+      "linkId": "link-5"
+    },
+    {
+      "rank": 6,
+      "keyword": "아식스 젤카야노14",
+      "linkId": "link-6"
+    },
+    {
+      "rank": 7,
+      "keyword": "컨버스 척70",
+      "linkId": "link-7"
+    },
+    {
+      "rank": 8,
+      "keyword": "반스 올드스쿨",
+      "linkId": "link-8"
+    },
+    {
+      "rank": 9,
+      "keyword": "호카 클리프톤",
+      "linkId": "link-9"
+    },
+    {
+      "rank": 10,
+      "keyword": "살로몬 XT-6",
+      "linkId": "link-10"
+    },
+    {
+      "rank": 11,
+      "keyword": "버켄스탁 보스턴",
+      "linkId": "link-11"
+    },
+    {
+      "rank": 12,
+      "keyword": "닥터마틴 1461",
+      "linkId": "link-12"
+    },
+    {
+      "rank": 13,
+      "keyword": "메리제인",
+      "linkId": "link-13"
+    },
+    {
+      "rank": 14,
+      "keyword": "로퍼",
+      "linkId": "link-14"
+    },
+    {
+      "rank": 15,
+      "keyword": "뮬",
+      "linkId": "link-15"
+    },
+    {
+      "rank": 16,
+      "keyword": "키즈 운동화",
+      "linkId": "link-16"
+    },
+    {
+      "rank": 17,
+      "keyword": "플랫슈즈",
+      "linkId": "link-17"
+    },
+    {
+      "rank": 18,
+      "keyword": "슬링백",
+      "linkId": "link-18"
+    },
+    {
+      "rank": 19,
+      "keyword": "레인부츠",
+      "linkId": "link-19"
+    },
+    {
+      "rank": 20,
+      "keyword": "어그 타스만",
+      "linkId": "link-20"
+    }
+  ]
+}

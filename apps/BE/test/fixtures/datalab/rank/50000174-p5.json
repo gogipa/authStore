@@ -1,0 +1,106 @@
+{
+  "returnCode": 0,
+  "range": "2026.08.23. ~ 2026.09.23.",
+  "ranks": [
+    {
+      "rank": 81,
+      "keyword": "반스 어센틱",
+      "linkId": "link-81"
+    },
+    {
+      "rank": 82,
+      "keyword": "반스 슬립온",
+      "linkId": "link-82"
+    },
+    {
+      "rank": 83,
+      "keyword": "컨버스 런스타",
+      "linkId": "link-83"
+    },
+    {
+      "rank": 84,
+      "keyword": "컨버스 원스타",
+      "linkId": "link-84"
+    },
+    {
+      "rank": 85,
+      "keyword": "수페르가",
+      "linkId": "link-85"
+    },
+    {
+      "rank": 86,
+      "keyword": "락포트",
+      "linkId": "link-86"
+    },
+    {
+      "rank": 87,
+      "keyword": "캠퍼",
+      "linkId": "link-87"
+    },
+    {
+      "rank": 88,
+      "keyword": "파라부트",
+      "linkId": "link-88"
+    },
+    {
+      "rank": 89,
+      "keyword": "알든",
+      "linkId": "link-89"
+    },
+    {
+      "rank": 90,
+      "keyword": "처치스",
+      "linkId": "link-90"
+    },
+    {
+      "rank": 91,
+      "keyword": "구두",
+      "linkId": "link-91"
+    },
+    {
+      "rank": 92,
+      "keyword": "정장구두",
+      "linkId": "link-92"
+    },
+    {
+      "rank": 93,
+      "keyword": "키높이 신발",
+      "linkId": "link-93"
+    },
+    {
+      "rank": 94,
+      "keyword": "깔창",
+      "linkId": "link-94"
+    },
+    {
+      "rank": 95,
+      "keyword": "운동화 끈",
+      "linkId": "link-95"
+    },
+    {
+      "rank": 96,
+      "keyword": "실내화",
+      "linkId": "link-96"
+    },
+    {
+      "rank": 97,
+      "keyword": "아쿠아슈즈",
+      "linkId": "link-97"
+    },
+    {
+      "rank": 98,
+      "keyword": "장화",
+      "linkId": "link-98"
+    },
+    {
+      "rank": 99,
+      "keyword": "사파리부츠",
+      "linkId": "link-99"
+    },
+    {
+      "rank": 100,
+      "keyword": "웨스턴부츠",
+      "linkId": "link-100"
+    }
+  ]
+}

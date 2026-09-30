@@ -345,6 +345,24 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+/** 묶음의 키 경로 하나만 바꾼 새 묶음(가운데가 묶음이 아니면 새 묶음). 나머지 키·순서는 그대로 */
+function withValueAt(
+  obj: Record<string, unknown>,
+  [head, ...rest]: readonly [string, ...string[]],
+  value: unknown,
+): Record<string, unknown> {
+  if (rest.length === 0) return { ...obj, [head]: value };
+  const child = obj[head];
+  return {
+    ...obj,
+    [head]: withValueAt(
+      isPlainObject(child) ? child : {},
+      rest as unknown as [string, ...string[]],
+      value,
+    ),
+  };
+}
+
 function isNotFound(error: unknown): boolean {
   return (error as NodeJS.ErrnoException | null)?.code === 'ENOENT';
 }
@@ -393,10 +411,35 @@ export class SettingsFileLoader {
    * - 파일이 JSON이 아니면 쓰지 않고 422 SETTINGS_SCHEMA_INVALID(고치는 중인 파일을 덮지 않는다)
    * @returns 쓴 파일의 file_manifest
    */
-  async writeAiSection(
+  writeAiSection(
     ai: AiSettings,
     whole: AppSettings,
     ops: Partial<AtomicWriteOps> = {},
+  ): Promise<SettingsFileManifestEntry[]> {
+    return this.writeKeyPath(['ai'], ai, whole, ops);
+  }
+
+  /**
+   * `safety.childKeywords`만 바꿔 쓴다(P2-01 POST /child-keyword-terms, 원자적 쓰기). `writeAiSection`과 같은 규칙이다
+   * (파일의 그 키만 바꾸고 나머지 키·순서·다시 읽지 않은 수정은 그대로, 파일이 없으면 `whole`, JSON 아니면 422).
+   */
+  writeChildKeywords(
+    childKeywords: readonly string[],
+    whole: AppSettings,
+    ops: Partial<AtomicWriteOps> = {},
+  ): Promise<SettingsFileManifestEntry[]> {
+    return this.writeKeyPath(['safety', 'childKeywords'], [...childKeywords], whole, ops);
+  }
+
+  /**
+   * 파일 JSON의 한 키 경로만 바꿔 쓴다(원자적). 가운데 묶음이 없거나 묶음이 아니면 새 묶음으로 둔다.
+   * @returns 쓴 파일의 file_manifest
+   */
+  private async writeKeyPath(
+    path: readonly [string, ...string[]],
+    value: unknown,
+    whole: AppSettings,
+    ops: Partial<AtomicWriteOps>,
   ): Promise<SettingsFileManifestEntry[]> {
     const appDataDir = this.config.appDataDir;
     let text: string | null = null;
@@ -419,13 +462,13 @@ export class SettingsFileLoader {
     if (!isPlainObject(parsed)) {
       throw this.unwritable([{ field: ROOT_FIELD, message: '묶음({ })여야 합니다.' }]);
     }
-    const next = { ...parsed, ai };
+    const next = withValueAt(parsed, path, value);
     return manifestOf(
       await writeSettingsFileAtomically(appDataDir, `${JSON.stringify(next, null, 2)}\n`, ops),
     );
   }
 
-  /** ai 섹션을 쓸 수 없는 파일(JSON 아님): 422 SETTINGS_SCHEMA_INVALID(경로 /, 줄·칸만) */
+  /** 섹션을 쓸 수 없는 파일(JSON 아님): 422 SETTINGS_SCHEMA_INVALID(경로 /, 줄·칸만) */
   private unwritable(errors: FieldError[]): ApiException {
     const fieldErrors =
       errors.length > 0 ? errors : [{ field: ROOT_FIELD, message: '설정 파일을 읽지 못했습니다.' }];

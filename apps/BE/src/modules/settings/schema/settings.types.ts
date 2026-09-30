@@ -171,10 +171,30 @@ export interface SourcingSettings {
   pageFetchDailyLimit: number;
 }
 
+/**
+ * 데이터랩 인기검색어 요청(PRD §8.1, F-BS-33, P2-01 Proposed — 06-4 §2.2).
+ * Referer·UA는 여기 두지 않는다: Referer는 외부 호출 관문이 허용한 값 하나(`DATALAB_REFERER`)만 받고,
+ * UA는 위장을 막으려고 코드 상수(`APP_USER_AGENT`)다(P1-01 Proposed). 24시간 쉼도 관문 상수(`COOLDOWN_MS`)다.
+ */
+export interface DatalabSettings {
+  /** 순위 요청 주소(내부 엔드포인트). 호스트는 관문 허용 목록(datalab.naver.com)이어야 한다 */
+  rankUrl: string;
+  /** 한 페이지 크기(form `count`). 20 */
+  pageSize: number;
+  /** cid당 최대 페이지. 25(= 500위) */
+  maxPage: number;
+  /** 요청 사이 간격(초). 2 — 2보다 짧게 할 수 없다(F-BS-33) */
+  requestIntervalSeconds: number;
+  /** 버튼 수집 기본 cid(여성신발·남성신발). 한 요청에 cid 하나(콤마 금지) */
+  defaultCids: string[];
+}
+
 /** 키워드 수집(① 데이터랩) */
 export interface KeywordSettings {
   /** 데이터랩 하루 요청 상한(DATALAB). 100(06-2 §9 P1-01) */
   datalabDailyLimit: number;
+  /** 데이터랩 순위 요청(P2-01) */
+  datalab: DatalabSettings;
 }
 
 /** 안전 기준(F-BS-05). 하한·상한과 내장 목록은 safety/builtin-safety-lists.ts */
@@ -183,8 +203,12 @@ export interface SafetySettings {
   childShoeMaxSizeMm: number;
   /** 판정 유효 시간(RG-08). 6시간보다 길게 할 수 없다 */
   judgementValidityHours: number;
-  /** 아동 키워드(KW-01). 내장 단어는 뺄 수 없고 더하기만 된다 */
+  /** 아동 키워드(KW-01). 내장 단어는 뺄 수 없고 더하기만 된다. 키워드 화면 '단어 더하기'(P2-01)가 여기에 더한다 */
   childKeywords: string[];
+  /** 바퀴 달린 운동화 단어(F-BS-12, P2-01 Proposed). 내장 단어는 뺄 수 없고 더하기만 된다 */
+  wheeledShoeWords: string[];
+  /** 고령자용 신발 단어(F-BS-12, P2-01 Proposed). 내장 단어는 뺄 수 없고 더하기만 된다 */
+  seniorShoeWords: string[];
   /** 실존 인물·그룹·연예인 차단어(IM-07). 내장 단어는 뺄 수 없고 더하기만 된다 */
   personBlockWords: string[];
 }

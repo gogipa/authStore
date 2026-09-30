@@ -87,12 +87,30 @@
     "pageFetchDailyLimit": 110
   },
   "keywords": {
-    "datalabDailyLimit": 100
+    "datalabDailyLimit": 100,
+    "datalab": {
+      "rankUrl": "https://datalab.naver.com/shoppingInsight/getCategoryKeywordRank.naver",
+      "pageSize": 20,
+      "maxPage": 25,
+      "requestIntervalSeconds": 2,
+      "defaultCids": ["50000173", "50000174"]
+    }
   },
   "safety": {
     "childShoeMaxSizeMm": 235,
     "judgementValidityHours": 6,
     "childKeywords": ["키즈", "주니어", "아동", "キッズ", "ジュニア", "ベビー"],
+    "wheeledShoeWords": ["바퀴", "롤러", "힐리스", "heelys", "ローラー", "ヒーリーズ", "車輪"],
+    "seniorShoeWords": [
+      "실버화",
+      "효도화",
+      "효도신발",
+      "노인화",
+      "介護",
+      "高齢者",
+      "シニア",
+      "リハビリ"
+    ],
     "personBlockWords": [
       "방탄소년단",
       "BTS",

@@ -1,0 +1,106 @@
+{
+  "returnCode": 0,
+  "range": "2026.08.23. ~ 2026.09.23.",
+  "ranks": [
+    {
+      "rank": 21,
+      "keyword": "나이키 덩크",
+      "linkId": "link-21"
+    },
+    {
+      "rank": 22,
+      "keyword": "나이키 조던1",
+      "linkId": "link-22"
+    },
+    {
+      "rank": 23,
+      "keyword": "나이키 에어포스1",
+      "linkId": "link-23"
+    },
+    {
+      "rank": 24,
+      "keyword": "아디다스 가젤",
+      "linkId": "link-24"
+    },
+    {
+      "rank": 25,
+      "keyword": "아디다스 스페지알",
+      "linkId": "link-25"
+    },
+    {
+      "rank": 26,
+      "keyword": "퓨마 스웨이드",
+      "linkId": "link-26"
+    },
+    {
+      "rank": 27,
+      "keyword": "리복 클럽C",
+      "linkId": "link-27"
+    },
+    {
+      "rank": 28,
+      "keyword": "휠라 디스럽터",
+      "linkId": "link-28"
+    },
+    {
+      "rank": 29,
+      "keyword": "미즈노 웨이브",
+      "linkId": "link-29"
+    },
+    {
+      "rank": 30,
+      "keyword": "스케쳐스 고워크",
+      "linkId": "link-30"
+    },
+    {
+      "rank": 31,
+      "keyword": "러닝화",
+      "linkId": "link-31"
+    },
+    {
+      "rank": 32,
+      "keyword": "등산화",
+      "linkId": "link-32"
+    },
+    {
+      "rank": 33,
+      "keyword": "축구화",
+      "linkId": "link-33"
+    },
+    {
+      "rank": 34,
+      "keyword": "풋살화",
+      "linkId": "link-34"
+    },
+    {
+      "rank": 35,
+      "keyword": "농구화",
+      "linkId": "link-35"
+    },
+    {
+      "rank": 36,
+      "keyword": "테니스화",
+      "linkId": "link-36"
+    },
+    {
+      "rank": 37,
+      "keyword": "골프화",
+      "linkId": "link-37"
+    },
+    {
+      "rank": 38,
+      "keyword": "배드민턴화",
+      "linkId": "link-38"
+    },
+    {
+      "rank": 39,
+      "keyword": "트레킹화",
+      "linkId": "link-39"
+    },
+    {
+      "rank": 40,
+      "keyword": "안전화",
+      "linkId": "link-40"
+    }
+  ]
+}

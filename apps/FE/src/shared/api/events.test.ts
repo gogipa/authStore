@@ -6,6 +6,7 @@ import { callUsageChanged } from '@/test/fixtures/callUsage';
 import {
   connectProgressEvents,
   EVENT_INVALIDATIONS,
+  onProgressEvent,
   PROGRESS_EVENT_NAMES,
   PROGRESS_EVENTS_URL,
   type ProgressEventData,
@@ -55,8 +56,58 @@ describe('진행 알림 이름', () => {
       'gate.invalidated',
       'auth.failed',
       'ai-cli-check.completed',
+      'keyword-collection.progress',
+      'keyword-collection.completed',
+      'keyword-collection.aborted',
       'commerce-meta-sync.completed',
     ]);
+    // 데이터랩 수집(P2-01): 페이지마다 그 묶음·키워드, 끝나면 목록·수집 상태까지
+    expect(
+      EVENT_INVALIDATIONS['keyword-collection.progress']?.({
+        keywordSnapshotId: 5,
+        cid: '50000173',
+        page: 3,
+        pagesPerCid: 5,
+        requestsDone: 3,
+        requestsTotal: 10,
+      }),
+    ).toEqual([
+      ['keywords', 'getKeywordSnapshot', { keywordSnapshotId: 5 }],
+      ['keywords', 'listSnapshotKeywords', { keywordSnapshotId: 5 }],
+    ]);
+    const endKeys = [
+      ['keywords', 'listKeywordSnapshots'],
+      ['keywords', 'getKeywordSnapshot', { keywordSnapshotId: 5 }],
+      ['keywords', 'listSnapshotKeywords', { keywordSnapshotId: 5 }],
+      ['keywords', 'getKeywordCollectionStatus'],
+    ];
+    expect(
+      EVENT_INVALIDATIONS['keyword-collection.completed']?.({
+        keywordSnapshotId: 5,
+        keywordCount: 200,
+        excludedCount: 3,
+        rangeMatched: true,
+      }),
+    ).toEqual(endKeys);
+    expect(
+      EVENT_INVALIDATIONS['keyword-collection.aborted']?.({
+        keywordSnapshotId: 5,
+        abortReason: 'HTTP_429',
+        httpStatus: 429,
+        structureChangeSuspected: false,
+        blockedUntil: '2026-09-29T00:00:00Z',
+      }),
+    ).toEqual(endKeys);
+    // 아동 단어를 더하면(설정 safety.childKeywords 변경) 아동 단어 목록도 다시 읽는다(P2-01)
+    expect(
+      EVENT_INVALIDATIONS['settings.reloaded']?.({
+        settingsSnapshotId: 5,
+        changedKeys: ['safety.childKeywords'],
+        valid: true,
+        errors: [],
+        rerunRequiredStepCount: 0,
+      }),
+    ).toEqual([['settings'], ['keywords', 'listChildKeywordTerms']]);
     // AI 엔진 하나의 점검이 끝나면 최신 점검·이력을 다시 읽는다. AGY면 agy models 목록이 바뀌었을 수 있어 설정도(P1-11)
     const aiCheck = {
       installed: true,
@@ -282,12 +333,34 @@ describe('connectProgressEvents', () => {
     const source = FakeEventSource.latest();
 
     source.emit('unknown.event', { x: 1 });
-    // 표에 없는 M1 이벤트(P1-05가 step-run.status-changed를 표에 더해 다른 이벤트로 본다)
-    source.emit('keyword-collection.progress', { keywordSnapshotId: 1 });
+    // 표에 없는 M1 이벤트(P2-01이 keyword-collection.*를 표에 더해 소싱 이벤트로 본다)
+    source.emit('sourcing.search-completed', { candidateId: 1 });
     source.emitRaw('call-usage.changed', '{not json');
 
     expect(invalidate).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('onProgressEvent: 그 이벤트의 data를 구독자에게 준다(무효화 뒤), 풀면 더 받지 않는다(P2-01)', () => {
+    const { queryClient, invalidate } = setup();
+    connect(queryClient);
+    const got: unknown[] = [];
+    const off = onProgressEvent('keyword-collection.progress', (data) => got.push(data.page));
+    const source = FakeEventSource.latest();
+    const progress = {
+      keywordSnapshotId: 5,
+      cid: '50000173',
+      page: 3,
+      pagesPerCid: 5,
+      requestsDone: 3,
+      requestsTotal: 10,
+    };
+    source.emit('keyword-collection.progress', progress);
+    expect(got).toEqual([3]);
+    expect(invalidate).toHaveBeenCalledTimes(2);
+    off();
+    source.emit('keyword-collection.progress', { ...progress, page: 4 });
+    expect(got).toEqual([3]);
   });
 
   it('처음 열릴 때는 다시 읽지 않는다', () => {

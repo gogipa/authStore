@@ -42,6 +42,7 @@
 4. **search params(경로 추가 아님, Proposed)**:
    - `/candidates?candidateId=12` — 목록 화면 오른쪽에 그 후보의 단계 표를 연다(SCR-12 시안이 목록 + 고른 후보 단계 표를 한 화면에 둔다).
    - `/candidates?runnableStep=PRICING` — '입력 고르기'(F-CW-22). `listCandidates`의 `runnableStep` 필터를 그대로 쓴다.
+   - `/candidates?runnableStep=SOURCING` — SCR-02 '키워드 없이 시작하려면 소싱 화면으로 갑니다' 링크(P2-01 Proposed). SCR-03 경로에 `candidateId`가 있어야 해서 후보 없는 소싱 입구가 없다. 검색어·URL로 후보를 만드는 입구는 P2-02가 정한다.
    - 상태 필터(`status`)도 search params로 둔다. 새로고침·뒤로 가기에 남는다.
 5. **재작명 없음**: 경로 조각은 화면 이름(시안 파일 이름)에서 왔고 API 경로와 섞지 않는다. API 경로·operationId는 05-2 그대로 쓴다.
 

@@ -109,6 +109,29 @@ describe('AllExceptionsFilter', () => {
     expect(res.body).toMatchObject({ code, status });
   });
 
+  /** body-parser가 던지는 http-errors 모양(Nest는 SyntaxError만 400으로 바꾸고 나머지는 그대로 넘긴다) */
+  function bodyParserError(status: number, type: string): Error {
+    return Object.assign(new Error(`body-parser ${type}`), {
+      status,
+      statusCode: status,
+      type,
+      expose: true,
+    });
+  }
+
+  it.each([
+    [bodyParserError(413, 'entity.too.large'), 413, 'PAYLOAD_TOO_LARGE'],
+    [bodyParserError(400, 'request.aborted'), 400, 'MALFORMED_REQUEST'],
+    [bodyParserError(400, 'entity.verify.failed'), 400, 'MALFORMED_REQUEST'],
+    [bodyParserError(415, 'charset.unsupported'), 400, 'MALFORMED_REQUEST'],
+    [Object.assign(new Error('internal'), { status: 413 }), 500, 'INTERNAL_ERROR'],
+  ])('body-parser 오류(P2-01 JSON 본문 상한) %p → %i %s', (exception, status, code) => {
+    const { host, res } = mockHost();
+    filter.catch(exception, host);
+    expect(res.statusCode).toBe(status);
+    expect(res.body).toMatchObject({ code, status });
+  });
+
   it('예상 못 한 오류의 내부 메시지는 응답에 넣지 않는다', () => {
     const { host, res } = mockHost();
     filter.catch(new Error('db password=secret'), host);

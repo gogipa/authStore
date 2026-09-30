@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
+import { isSameTerm } from '../../common/child-shoe/child-shoe.rules.js';
 import { APP_VERSION } from '../../common/config/app-version.js';
 import { ApiException } from '../../common/errors/api.exception.js';
 import { formatErrorMessage } from '../../common/errors/error-codes.js';
@@ -55,6 +56,15 @@ export interface AiSectionReplaceOptions {
   inTransaction?: (tx: Prisma.TransactionClient, changedKeys: readonly string[]) => Promise<void>;
   /** 테스트: 원자 쓰기의 rename을 바꿔 끼운다 */
   writeOps?: Partial<AtomicWriteOps>;
+}
+
+/** 아동 단어 더하기(P2-01) 결과 */
+export interface ChildKeywordAddOutcome {
+  /** 더한 단어(앞뒤 공백을 뗀 글자) */
+  term: string;
+  /** 새(또는 같은 내용의) 설정 스냅샷 id */
+  snapshotId: number;
+  changedKeys: string[];
 }
 
 interface CurrentSettings {
@@ -334,6 +344,62 @@ export class SettingsService implements OnApplicationBootstrap {
         `AI 엔진 설정 저장: 스냅샷 #${saved.row.id}, 바뀐 키 ${saved.changedKeys.length}개`,
       );
       return { changed: true, snapshotId: saved.row.id, changedKeys: saved.changedKeys };
+    });
+  }
+
+  /**
+   * 아동 단어 더하기(P2-01 POST /child-keyword-terms, F-KW-07 '더할 수만 있다'). `replaceAiSection`과 같은 줄에서 돈다.
+   * 1. 현재 설정(없으면 503). 같은 단어(NFKC·소문자·앞뒤 공백 정규화 비교, Proposed)가 있으면 409 CHILD_TERM_ALREADY_EXISTS
+   * 2. 설정 파일의 `safety.childKeywords`만 원자적으로 바꿔 쓴다(나머지 키·다시 읽지 않은 수정은 그대로)
+   * 3. 현재 설정 + 새 목록으로 설정 스냅샷(같은 내용이 있으면 그 행 — P1-03 중복 제거) + 재실행 필요 전파 + `inTransaction`
+   *    (감사 기록 SETTING_CHANGED)을 한 트랜잭션으로
+   * 4. SSE `settings.reloaded { valid: true, errors: [] }`
+   * 이미 수집한 키워드 묶음에는 다시 적용하지 않는다(05-2 addChildKeywordTerm x-decision) — 다음 수집·붙여넣기부터 쓴다.
+   */
+  addChildKeyword(
+    rawTerm: string,
+    options: AiSectionReplaceOptions = {},
+  ): Promise<ChildKeywordAddOutcome> {
+    return this.serialized(async () => {
+      const current = this.requireCurrent();
+      const term = rawTerm.trim();
+      if (current.settings.safety.childKeywords.some((w) => isSameTerm(w, term))) {
+        throw new ApiException('CHILD_TERM_ALREADY_EXISTS', { details: { term } });
+      }
+      const childKeywords = [...current.settings.safety.childKeywords, term];
+      const checked = checkSettingsValue({
+        ...current.settings,
+        safety: { ...current.settings.safety, childKeywords },
+      });
+      if (!checked.ok) {
+        throw new ApiException('SETTINGS_SCHEMA_INVALID', {
+          message: formatErrorMessage('SETTINGS_SCHEMA_INVALID', {
+            위치: describeLocation(checked.errors),
+          }),
+          fieldErrors: checked.errors,
+        });
+      }
+      const fileManifest = await this.loader.writeChildKeywords(
+        checked.settings.safety.childKeywords,
+        checked.settings,
+        options.writeOps,
+      );
+      const saved = await this.saveSnapshot(
+        { settings: checked.settings, contentSha256: checked.contentSha256, fileManifest },
+        current.settings,
+        options.inTransaction,
+      );
+      this.currentState = { snapshotId: saved.row.id, settings: deepFreeze(checked.settings) };
+      this.events.publish('settings.reloaded', {
+        settingsSnapshotId: saved.row.id,
+        changedKeys: saved.changedKeys,
+        valid: true,
+        errors: [],
+        rerunRequiredStepCount: saved.rerunRequiredStepCount,
+      });
+      this.runAfterCommit(saved.afterCommit);
+      this.logger.log(`아동 단어를 더했습니다: 스냅샷 #${saved.row.id}`);
+      return { term, snapshotId: saved.row.id, changedKeys: saved.changedKeys };
     });
   }
 

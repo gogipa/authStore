@@ -1,0 +1,109 @@
+/* SCR-02 '데이터랩 수집'(Keywords.dc.html 위 줄 왼쪽). 줄 사이 12px, 칸 사이 16px, 라벨·칸 사이 4px. */
+.panel {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.statusLine {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+.fixed {
+  font: var(--type-body);
+  color: var(--color-ink);
+  min-height: 36px; /* 칸 높이(공통 부품 36px)에 맞춘다 */
+  display: inline-flex;
+  align-items: center;
+}
+
+.period {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.date {
+  width: 112px;
+}
+
+.tilde {
+  font: var(--type-body);
+  color: var(--color-ink-muted);
+}
+
+.hint {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.progressBox {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px; /* 보드 값. 토큰 없음. */
+}
+
+.progressHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.perCid {
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.pages {
+  font: var(--type-caption);
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.reason {
+  align-self: flex-end;
+}
+
+.error {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-failed);
+}

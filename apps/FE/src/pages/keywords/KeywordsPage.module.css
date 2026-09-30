@@ -1,0 +1,22 @@
+/* SCR-02 키워드(Keywords.dc.html). 위 줄: 수집 | 붙여넣기 400px, 아래 줄: 표 | 오른쪽 400px. 줄·열 사이 24px(보드 값). */
+.top {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.bottom {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.side {
+  width: 400px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}

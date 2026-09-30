@@ -57,6 +57,12 @@ class FakeLoader {
   text = JSON.stringify(DEFAULT_SETTINGS);
   /** writeAiSection으로 쓴 ai 섹션(P1-11) */
   aiWrites: AiSettings[] = [];
+  /** writeChildKeywords로 쓴 아동 단어 목록(P2-01) */
+  childWrites: string[][] = [];
+  writeChildKeywords(list: readonly string[]) {
+    this.childWrites.push([...list]);
+    return Promise.resolve([{ name: 'settings.json', sha256: 'c'.repeat(64), sizeBytes: 3 }]);
+  }
   writeAiSection(ai: AiSettings): Promise<{ name: string; sha256: string; sizeBytes: number }[]> {
     this.aiWrites.push(ai);
     return Promise.resolve([{ name: 'settings.json', sha256: 'a'.repeat(64), sizeBytes: 2 }]);
@@ -442,5 +448,58 @@ describe('ai 섹션 저장 replaceAiSection(P1-11 규칙 5·6)', () => {
     const error = await rejection(service.replaceAiSection(agy));
     expect(error.code).toBe('SETTINGS_INVALID');
     expect(loader.aiWrites).toHaveLength(0);
+  });
+});
+
+describe('아동 단어 더하기 addChildKeyword(P2-01 규칙 11)', () => {
+  it('safety.childKeywords만 파일에 쓰고 새 스냅샷·전파(safety.childKeywords)·트랜잭션 훅·SSE', async () => {
+    const { service, loader, prisma, published, propagated } = setup();
+    await service.initialize();
+    published.length = 0;
+    const hooked: string[][] = [];
+    const outcome = await service.addChildKeyword('  유아 ', {
+      inTransaction: (_tx, keys) => {
+        hooked.push([...keys]);
+        return Promise.resolve();
+      },
+    });
+    expect(outcome).toEqual({ term: '유아', snapshotId: 2, changedKeys: ['safety.childKeywords'] });
+    expect(loader.childWrites).toEqual([[...DEFAULT_SETTINGS.safety.childKeywords, '유아']]);
+    expect(prisma.rows).toHaveLength(2);
+    expect(service.current().safety.childKeywords.at(-1)).toBe('유아');
+    expect(propagated).toEqual([['safety.childKeywords']]);
+    expect(hooked).toEqual([['safety.childKeywords']]);
+    expect(published).toEqual([
+      {
+        name: 'settings.reloaded',
+        data: {
+          settingsSnapshotId: 2,
+          changedKeys: ['safety.childKeywords'],
+          valid: true,
+          errors: [],
+          rerunRequiredStepCount: 0,
+        },
+      },
+    ]);
+  });
+
+  it('같은 단어(NFKC·소문자 정규화)면 409 CHILD_TERM_ALREADY_EXISTS, 쓰지 않는다', async () => {
+    const { service, loader } = setup();
+    await service.initialize();
+    for (const term of ['키즈', ' ｷｯｽﾞ ', 'ベビー']) {
+      const error = await rejection(service.addChildKeyword(term));
+      expect(error.code).toBe('CHILD_TERM_ALREADY_EXISTS');
+    }
+    await service.addChildKeyword('Kids');
+    expect((await rejection(service.addChildKeyword('KIDS'))).code).toBe(
+      'CHILD_TERM_ALREADY_EXISTS',
+    );
+    expect(loader.childWrites).toHaveLength(1);
+  });
+
+  it('로드된 설정이 없으면 503 SETTINGS_INVALID', async () => {
+    const { service, loader } = setup();
+    expect((await rejection(service.addChildKeyword('유아'))).code).toBe('SETTINGS_INVALID');
+    expect(loader.childWrites).toHaveLength(0);
   });
 });

@@ -1363,11 +1363,12 @@ model AiCliCheck {
 //   ADD CONSTRAINT ck_step_chain_stop_reason CHECK (stop_reason IN ('AWAIT_G2','AWAIT_G3','AWAIT_G4','NO_RUNNABLE_STEP','APP_RESTART')),
 //   ADD CONSTRAINT ck_step_chain_end CHECK ((ended_at IS NULL) = (stop_reason IS NULL));
 // CREATE INDEX ix_step_chain_open ON step_chain (candidate_id) WHERE ended_at IS NULL;
-// -- keyword_snapshot
+// -- keyword_snapshot (v0.5 P2-01: ck_kws_abort_reason의 NETWORK_ERROR·APP_RESTART·INTERRUPTED는 V2 마이그레이션
+//    20260930000000_keyword_abort_reasons가 더한다 — 04-6_V2__keyword_abort_reasons.sql)
 // ALTER TABLE keyword_snapshot
 //   ADD CONSTRAINT ck_kws_method CHECK (method IN ('BUTTON','PASTE')),
 //   ADD CONSTRAINT ck_kws_status CHECK (status IN ('RUNNING','COMPLETED','ABORTED')),
-//   ADD CONSTRAINT ck_kws_abort_reason CHECK (abort_reason IN ('NO_RANKS_KEY','HTTP_404','NOT_JSON','RETURN_CODE','COUNT_MISMATCH','HTTP_403','HTTP_418','HTTP_429')),
+//   ADD CONSTRAINT ck_kws_abort_reason CHECK (abort_reason IN ('NO_RANKS_KEY','HTTP_404','NOT_JSON','RETURN_CODE','COUNT_MISMATCH','HTTP_403','HTTP_418','HTTP_429','NETWORK_ERROR','APP_RESTART','INTERRUPTED')),
 //   ADD CONSTRAINT ck_kws_abort_pair CHECK ((status = 'ABORTED') = (abort_reason IS NOT NULL)),
 //   ADD CONSTRAINT ck_kws_button CHECK (method = 'PASTE' OR (period_start IS NOT NULL AND period_end IS NOT NULL AND rank_limit IS NOT NULL)),
 //   ADD CONSTRAINT ck_kws_rank_limit CHECK (rank_limit IN (100, 500)),

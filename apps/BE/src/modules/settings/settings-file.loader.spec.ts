@@ -466,4 +466,29 @@ describe('SettingsFileLoader(파일)', () => {
       );
     });
   });
+
+  describe('아동 단어 쓰기(P2-01 규칙 11)', () => {
+    const words = [...DEFAULT_SETTINGS.safety.childKeywords, '유아'];
+    const whole = structuredClone(DEFAULT_SETTINGS) as AppSettings;
+    whole.safety.childKeywords = words;
+
+    it('safety.childKeywords만 바꾸고 나머지 키·다시 읽지 않은 수정은 그대로', async () => {
+      const handEdited = structuredClone(DEFAULT_SETTINGS) as AppSettings;
+      handEdited.safety.personBlockWords.push('테스트인물');
+      await writeSettingsFileAtomically(dir, handEdited);
+      await loaderFor(dir).writeChildKeywords(words, whole);
+      const file = JSON.parse(readFileSync(settingsFilePath(dir), 'utf8')) as AppSettings;
+      expect(file.safety.childKeywords).toEqual(words);
+      expect(file.safety.personBlockWords.at(-1)).toBe('테스트인물');
+      expect(Object.keys(file.safety)).toEqual(Object.keys(handEdited.safety));
+    });
+
+    it('safety 섹션이 없는 파일이면 새 묶음으로 둔다(빠진 키는 기본값으로 채워 읽는다)', async () => {
+      await writeSettingsFileAtomically(dir, '{ "schemaVersion": "1" }');
+      await loaderFor(dir).writeChildKeywords(words, whole);
+      const loaded = await loaderFor(dir).load();
+      expect(loaded.ok).toBe(true);
+      if (loaded.ok) expect(loaded.settings.safety.childKeywords).toEqual(words);
+    });
+  });
 });

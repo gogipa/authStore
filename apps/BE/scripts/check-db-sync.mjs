@@ -1,9 +1,10 @@
 // 문서 원본(docs/dev/04_데이터베이스)과 앱 사본(apps/BE/prisma)이 어긋나지 않는지 검사한다.
-//  1) 04-4_V1__init.sql ↔ prisma/migrations/20260927000000_v1_init/migration.sql : 바이트 그대로
+//  1) 마이그레이션 SQL: 아래 MIGRATIONS 표의 문서 파일 ↔ prisma/migrations/<폴더>/migration.sql 바이트 그대로
+//     (V1 04-4_V1__init.sql, V2부터 04-6_V2__….sql — P2-01 Proposed). 표에 없는 마이그레이션 폴더가 있어도 실패한다
 //  2) 04-3_schema.prisma ↔ prisma/schema.prisma : generator client 블록의 허용 키(output)만 다를 수 있다
 // 사용: pnpm --filter @autostore/be db:check-sync   (어긋나면 exit 1)
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,11 +15,17 @@ const DOC_DIR = join(REPO_ROOT, 'docs', 'dev', '04_데이터베이스');
 /** 앱 사본에서 달라도 되는 generator 키(빌드에 필요한 차이). 06-2 §4에 적었다 */
 const ALLOWED_GENERATOR_KEYS = new Set(['output']);
 
+/**
+ * 마이그레이션 폴더 ↔ 문서 원본(바이트 그대로). 새 마이그레이션을 만들면 문서 원본을 먼저 쓰고 여기에 한 줄 더한다
+ * (06-2 §4). 기존 줄(V1)은 고치지 않는다.
+ */
+const MIGRATIONS = [
+  { dir: '20260927000000_v1_init', doc: '04-4_V1__init.sql' },
+  { dir: '20260930000000_keyword_abort_reasons', doc: '04-6_V2__keyword_abort_reasons.sql' },
+];
+const MIGRATIONS_DIR = join(BE_ROOT, 'prisma', 'migrations');
+
 const pairs = {
-  sql: {
-    doc: join(DOC_DIR, '04-4_V1__init.sql'),
-    app: join(BE_ROOT, 'prisma', 'migrations', '20260927000000_v1_init', 'migration.sql'),
-  },
   prisma: {
     doc: join(DOC_DIR, '04-3_schema.prisma'),
     app: join(BE_ROOT, 'prisma', 'schema.prisma'),
@@ -29,16 +36,38 @@ const rel = (p) => relative(REPO_ROOT, p);
 const sha = (buf) => createHash('sha256').update(buf).digest('hex').slice(0, 12);
 const problems = [];
 
-// 1) SQL: 바이트 그대로
+// 1) 마이그레이션 SQL: 바이트 그대로 + 표에 없는 폴더 없음
 {
-  const doc = readFileSync(pairs.sql.doc);
-  const app = readFileSync(pairs.sql.app);
-  if (!doc.equals(app)) {
-    problems.push(
-      `${rel(pairs.sql.app)}가 ${rel(pairs.sql.doc)}와 다릅니다(sha256 ${sha(app)} ≠ ${sha(doc)}).`,
-    );
-  } else {
-    console.log(`OK  SQL 동일: ${rel(pairs.sql.app)} (${doc.length} bytes, sha256 ${sha(doc)})`);
+  const dirs = readdirSync(MIGRATIONS_DIR).filter((name) =>
+    statSync(join(MIGRATIONS_DIR, name)).isDirectory(),
+  );
+  const known = new Set(MIGRATIONS.map((m) => m.dir));
+  for (const dir of dirs) {
+    if (!known.has(dir)) {
+      problems.push(
+        `마이그레이션 폴더 ${dir}에 짝 문서가 없습니다. docs/dev/04_데이터베이스에 원본 SQL을 두고 check-db-sync.mjs MIGRATIONS 표에 더하세요.`,
+      );
+    }
+  }
+  for (const m of MIGRATIONS) {
+    const docPath = join(DOC_DIR, m.doc);
+    const appPath = join(MIGRATIONS_DIR, m.dir, 'migration.sql');
+    let doc;
+    let app;
+    try {
+      doc = readFileSync(docPath);
+      app = readFileSync(appPath);
+    } catch (e) {
+      problems.push(`${m.dir}: 파일을 읽지 못했습니다(${e.code ?? e.message}).`);
+      continue;
+    }
+    if (!doc.equals(app)) {
+      problems.push(
+        `${rel(appPath)}가 ${rel(docPath)}와 다릅니다(sha256 ${sha(app)} ≠ ${sha(doc)}).`,
+      );
+    } else {
+      console.log(`OK  SQL 동일: ${rel(appPath)} (${doc.length} bytes, sha256 ${sha(doc)})`);
+    }
   }
 }
 

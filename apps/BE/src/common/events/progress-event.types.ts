@@ -194,7 +194,11 @@ export interface KeywordCollectionAbortedEvent {
     | 'COUNT_MISMATCH'
     | 'HTTP_403'
     | 'HTTP_418'
-    | 'HTTP_429';
+    | 'HTTP_429'
+    // P2-01 Proposed(이상 응답이 아닌 중단, 구조 변경 의심 아님)
+    | 'NETWORK_ERROR'
+    | 'APP_RESTART'
+    | 'INTERRUPTED';
   httpStatus: number | null;
   structureChangeSuspected: boolean;
   blockedUntil: string | null;

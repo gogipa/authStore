@@ -244,6 +244,23 @@ export const ERROR_CODES = {
   },
   /** 05-3 §5.1: keyword.excluded_reason 있음 */
   KEYWORD_EXCLUDED: { status: 409, message: '아동화로 빠진 키워드는 고를 수 없습니다.' },
+  // ── keywords ① 키워드(P2-01, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 묶음 id 없음 */
+  KEYWORD_SNAPSHOT_NOT_FOUND: { status: 404, message: '키워드 수집 결과를 찾을 수 없습니다.' },
+  /** 05-3 §5.1: 이 키워드를 출처로 만든 후보가 있어 G1 취소 불가(candidate.source_keyword_id, details.candidateIds) */
+  KEYWORD_IN_USE: {
+    status: 409,
+    message: '이 키워드로 만든 후보가 있어 선택을 취소할 수 없습니다.',
+  },
+  /** 05-3 §5.1: 같은 아동 단어(NFKC·소문자 정규화 비교, Proposed) */
+  CHILD_TERM_ALREADY_EXISTS: { status: 409, message: '이미 있는 아동 단어입니다.' },
+  /** 05-3 §5.1: 붙여넣기 형식 불일치·같은 순위 중복(fieldErrors에 줄) */
+  IMPORT_PARSE_FAILED: {
+    status: 422,
+    message: '파일(또는 붙여 넣은 글)에서 필요한 열이나 형식을 찾지 못했습니다.',
+  },
+  /** 05-3 §5.1: 읽을 수 있는 줄 0개 */
+  IMPORT_EMPTY: { status: 422, message: '읽을 수 있는 줄이 없습니다.' },
   /** 05-3 §5.1: 검색어 규칙 위반(fieldErrors에 규칙) */
   RAKUTEN_QUERY_INVALID: {
     status: 422,

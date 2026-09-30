@@ -1,5 +1,6 @@
 import { Ajv, type JSONSchemaType, type ValidateFunction } from 'ajv';
 import { AI_ENGINE_CODES } from '../../integrations/ai-engine/ai-engine.port.js';
+import { EXTERNAL_TARGETS } from '../../integrations/http/external-targets.js';
 import { DEFAULT_SETTINGS } from '../defaults/default-settings.js';
 import {
   type AiEngineModelPair,
@@ -77,6 +78,9 @@ const noticeBlock: JSONSchemaType<NoticeBlock> = {
     text: { type: 'string', minLength: 1, maxLength: 1000 },
   },
 };
+
+/** 데이터랩 순위 요청 주소 모양(P2-01): https + 관문 허용 목록의 데이터랩 호스트 + 경로(호스트는 바꿀 수 없다) */
+export const DATALAB_RANK_URL_PATTERN = `^https://${EXTERNAL_TARGETS.DATALAB.hosts[0]!.replace(/\./g, '\\.')}/[A-Za-z0-9/._-]+$`;
 
 /** 발송 택배사 코드 모양(P1-09 Proposed): 영문·숫자·`_`·`-`·`.` 40자까지(profile.dispatch_delivery_company_code varchar(40)) */
 export const DISPATCH_COMPANY_CODE_PATTERN = '^[A-Za-z0-9_.-]{1,40}$';
@@ -256,9 +260,29 @@ const schema: JSONSchemaType<AppSettings> = {
     keywords: {
       type: 'object',
       additionalProperties: false,
-      required: ['datalabDailyLimit'],
+      required: ['datalabDailyLimit', 'datalab'],
       properties: {
         datalabDailyLimit: { type: 'integer', minimum: 0, maximum: 1000 },
+        datalab: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['rankUrl', 'pageSize', 'maxPage', 'requestIntervalSeconds', 'defaultCids'],
+          properties: {
+            // 호스트는 외부 호출 관문 허용 목록의 데이터랩 호스트만(경로만 바꿀 수 있다)
+            rankUrl: { type: 'string', pattern: DATALAB_RANK_URL_PATTERN, maxLength: 500 },
+            pageSize: { type: 'integer', minimum: 1, maximum: 100 },
+            maxPage: { type: 'integer', minimum: 1, maximum: 100 },
+            // F-BS-33: 요청 간격 2초 이상(더 짧게 풀 수 없다)
+            requestIntervalSeconds: { type: 'number', minimum: 2, maximum: 60 },
+            defaultCids: {
+              type: 'array',
+              minItems: 1,
+              maxItems: 10,
+              // 한 요청에 cid 하나: 숫자만(콤마로 여러 cid를 묶지 않는다, PRD §8.1)
+              items: { type: 'string', pattern: '^[0-9]{1,16}$' },
+            },
+          },
+        },
       },
     },
     safety: {
@@ -268,12 +292,16 @@ const schema: JSONSchemaType<AppSettings> = {
         'childShoeMaxSizeMm',
         'judgementValidityHours',
         'childKeywords',
+        'wheeledShoeWords',
+        'seniorShoeWords',
         'personBlockWords',
       ],
       properties: {
         childShoeMaxSizeMm: { type: 'integer', minimum: 0, maximum: 400 },
         judgementValidityHours: { type: 'number', exclusiveMinimum: 0 },
         childKeywords: wordList,
+        wheeledShoeWords: wordList,
+        seniorShoeWords: wordList,
         personBlockWords: wordList,
       },
     },
