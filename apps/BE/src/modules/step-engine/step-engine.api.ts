@@ -7,6 +7,7 @@ import type { StepOutcome } from './contracts/step-runner.js';
 import type { StepCode } from './domain/steps.js';
 import { StepExecutionService } from './execution/step-execution.service.js';
 import type { PinnedAiContext } from '../integrations/ai-engine/ai-executor.types.js';
+import type { ReferenceInputChange } from '../settings/forwarder-rate-tables/rate-table-rerun.port.js';
 import type { CandidateCreationExtension } from './ports/candidate-creation.extension.js';
 import type { GenderInputListener } from './ports/gender-input.port.js';
 import type {
@@ -105,6 +106,15 @@ export class StepEngineApi {
       if (changed.length > 0) await this.status.reevaluate(s, candidateId);
       return changed;
     };
+    return scope ? apply(scope) : this.transactions.run(apply);
+  }
+
+  referenceInputsChanged(
+    changes: readonly ReferenceInputChange[],
+    scope?: StepEngineTx,
+  ): Promise<number> {
+    const apply = (s: StepEngineTx) =>
+      this.propagation.onReferenceInputsChanged(changes, s.tx, (fn) => s.afterCommit(fn));
     return scope ? apply(scope) : this.transactions.run(apply);
   }
 

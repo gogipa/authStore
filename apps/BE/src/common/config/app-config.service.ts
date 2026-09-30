@@ -45,6 +45,11 @@ export class AppConfigService {
     return this.config.get('AI_ENGINE_STARTUP_CHECK', { infer: true }) !== 'off';
   }
 
+  /** 환율 자동 수집을 켜는지(`FX_AUTO_COLLECT`, 기본 on, P2-04) */
+  get fxAutoCollect(): boolean {
+    return this.config.get('FX_AUTO_COLLECT', { infer: true }) !== 'off';
+  }
+
   /** 개발에서만 더 허용하는 FE 개발 서버 Origin. 개발이 아니면 빈 배열. */
   get devFeOrigins(): string[] {
     if (!this.isDevelopment) return [];

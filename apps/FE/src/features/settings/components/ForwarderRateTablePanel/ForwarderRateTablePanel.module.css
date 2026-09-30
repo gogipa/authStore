@@ -1,0 +1,84 @@
+/* SCR-10 '비용·요금표' 탭 배대지 요금표: 가져오기 줄(파일 칸 · 배대지 이름 · 단추), 안내·결과, 활성 버전 목록·구간 표 */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.importForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.fileField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+.fileInput {
+  min-height: 36px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font: var(--type-body);
+  color: var(--color-ink);
+  min-width: 0;
+}
+
+.submit {
+  justify-self: start;
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.done {
+  font: var(--type-caption);
+  color: var(--color-done);
+}
+
+.done:empty {
+  display: none;
+}
+
+.alertText {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}
+
+.errorList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+  font: var(--type-caption);
+}
+
+.field {
+  font: var(--type-id);
+  color: var(--color-ink-muted);
+}
+
+.active {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}

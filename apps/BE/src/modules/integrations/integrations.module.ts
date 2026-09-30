@@ -24,6 +24,10 @@ import { CommerceMetaSyncService } from './commerce-meta/commerce-meta-sync.serv
 import { CommerceMetaController } from './commerce-meta/commerce-meta.controller.js';
 import { DatalabRankHttpAdapter } from './datalab/datalab-rank.http-adapter.js';
 import { DATALAB_RANK_PORT } from './datalab/datalab-rank.port.js';
+import { CustomsServiceAdapter } from './fx/customs-service.adapter.js';
+import { FxApiCaller } from './fx/fx-call.js';
+import { FX_SOURCE_PORT, type FxSourcePort } from './fx/fx-source.port.js';
+import { KeximAdapter } from './fx/kexim.adapter.js';
 import { CallLogService } from './http/call-log.service.js';
 import { CLOCK, systemClock } from './http/clock.token.js';
 import {
@@ -66,6 +70,9 @@ import {
  *   백오프 3회), `RAKUTEN_PAGE_PORT`(상품 페이지, 관문 RAKUTEN_PAGE 직렬 큐 하나·3초·하루 상한·24시간 쉼, 캐시 없음),
  *   `RAKUTEN_GENRE_PORT`(IchibaGenre) + 장르 경로 캐시 `RakutenGenreService`(rakuten_genre). 외부 응답 캐시는 integrations
  *   소유(ERD 결정 ⑭). 키는 키체인(SECRET_STORE)에서만 읽는다. sourcing 모듈이 이 포트로만 라쿠텐을 부른다.
+ * fx(P2-04): 환율 출처 포트 `FX_SOURCE_PORT`(원가 = `KeximAdapter` 관문 FX_KOREAEXIM, 과세 = `CustomsServiceAdapter` 관문
+ *   FX_CUSTOMS)를 export한다. 원값·단위 문자열만 돌려주고 정규화·저장은 pricing이 한다. 키가 없으면 부르지 않고 call_log에
+ *   실패 1행(`FxApiCaller`). 테스트는 이 토큰을 `FxFixtureAdapter`로 바꾸거나 가짜 fetch(HTTP_FETCH) 뒤에 fixture를 둔다.
  */
 @Module({
   // 하루 조회 상한의 원본이 설정 파일이다(P1-03). settings도 프로필 검증에 CommerceMetaCacheService를 쓰므로(P1-09)
@@ -116,6 +123,17 @@ import {
     { provide: RAKUTEN_GENRE_PORT, useClass: RakutenGenreHttpAdapter },
     RakutenGenreRepository,
     RakutenGenreService,
+    FxApiCaller,
+    KeximAdapter,
+    CustomsServiceAdapter,
+    {
+      provide: FX_SOURCE_PORT,
+      inject: [KeximAdapter, CustomsServiceAdapter],
+      useFactory: (kexim: KeximAdapter, customs: CustomsServiceAdapter): FxSourcePort => ({
+        fetchCostJpy: (kstDate) => kexim.fetchCostJpy(kstDate),
+        fetchCustomsRates: (kstDate) => customs.fetchCustomsRates(kstDate),
+      }),
+    },
   ],
   exports: [
     HTTP_FETCH,
@@ -136,6 +154,7 @@ import {
     RAKUTEN_PAGE_PORT,
     RAKUTEN_GENRE_PORT,
     RakutenGenreService,
+    FX_SOURCE_PORT,
   ],
 })
 export class IntegrationsModule {}

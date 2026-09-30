@@ -32,9 +32,10 @@ describe('EXTERNAL_TARGETS', () => {
     expect(EXTERNAL_TARGETS.RAKUTEN_API.hosts).toEqual(['openapi.rakuten.co.jp']);
     expect(EXTERNAL_TARGETS.RAKUTEN_PAGE.hosts).toEqual(['item.rakuten.co.jp']);
     expect(EXTERNAL_TARGETS.DATALAB.hosts).toEqual(['datalab.naver.com']);
+    // P2-04(Proposed): 환율 두 곳
+    expect(EXTERNAL_TARGETS.FX_KOREAEXIM.hosts).toEqual(['oapi.koreaexim.go.kr']);
+    expect(EXTERNAL_TARGETS.FX_CUSTOMS.hosts).toEqual(['apis.data.go.kr']);
     for (const t of [
-      'FX_KOREAEXIM',
-      'FX_CUSTOMS',
       'NOTICE_MONITOR',
       'UPDATE_CHECK',
       'AI_CLAUDE_CLI',

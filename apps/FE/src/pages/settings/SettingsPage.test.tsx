@@ -11,6 +11,14 @@ import {
   returnDeliveryCompanyEntry,
 } from '@/test/fixtures/commerceMeta';
 import { dispatchCompanyList, filledProfile } from '@/test/fixtures/purchaseAgencyProfile';
+import {
+  FX_FETCH_FAILED_WARNING,
+  fxLatest,
+  fxPage,
+  rateTableDetail,
+  rateTablePage,
+  rateTableSummary,
+} from '@/test/fixtures/pricing';
 import { settingsContent, settingsReloadResult, settingsView } from '@/test/fixtures/settings';
 import { renderRoute } from '@/test/renderRoute';
 
@@ -25,6 +33,11 @@ const PROFILE_TAB_ROUTES = {
     jsonResponse(page([returnDeliveryCompanyEntry()])),
   'GET /dispatch-delivery-companies': () => jsonResponse(dispatchCompanyList()),
   'GET /commerce-meta-sync-runs/latest': () => jsonResponse(metaSyncStatusList()),
+  // P2-04: 탭 캡션·요약의 배대지 요금표·환율
+  'GET /fx-rates/latest': () => jsonResponse(fxLatest()),
+  'GET /fx-rates': () => jsonResponse(fxPage()),
+  'GET /forwarder-rate-tables': () => jsonResponse(rateTablePage([rateTableSummary()])),
+  'GET /forwarder-rate-tables/1': () => jsonResponse(rateTableDetail()),
 };
 
 function stubSettings(view = settingsView()) {
@@ -58,7 +71,14 @@ describe('설정 화면(SCR-10, P1-03)', () => {
       ),
     ).toBeInTheDocument();
     const tabs = within(screen.getByRole('tablist', { name: '설정 항목' })).getAllByRole('tab');
-    expect(tabs.map((t) => t.textContent)).toEqual(['구매대행 프로필', '비용·요금표', '환율']);
+    // 탭 캡션(보드): '요금표 v2026-09', '원가 8.76원/엔 · 09:00'(P2-04)
+    await waitFor(() =>
+      expect(tabs.map((t) => t.textContent)).toEqual([
+        '구매대행 프로필',
+        '비용·요금표요금표 v2026-09',
+        '환율원가 8.76원/엔 · 09:00',
+      ]),
+    );
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('구매대행 프로필');
     // 머리의 '되돌리기'·'저장'은 구매대행 프로필 탭의 것이다(P1-09)
@@ -69,8 +89,8 @@ describe('설정 화면(SCR-10, P1-03)', () => {
   it('탭을 고르면 그 패널을 보인다(프로필 탭이 아니면 머리 버튼이 없다)', async () => {
     stubSettings();
     await renderSettings();
-    await userEvent.click(screen.getByRole('tab', { name: '환율' }));
-    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('환율');
+    await userEvent.click(screen.getByRole('tab', { name: /^환율/ }));
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName(/^환율/);
     expect(screen.queryByRole('button', { name: '저장' })).toBeNull();
   });
 
@@ -100,6 +120,8 @@ describe('설정 화면(SCR-10, P1-03)', () => {
     stubSettings();
     await renderSettings();
     await summary().findByText('2.5%');
+    await summary().findByText('v2026-09');
+    await summary().findByText('8.76원/엔');
     const texts = summary()
       .getAllByRole('definition')
       .map((dd) => dd.textContent);
@@ -111,6 +133,9 @@ describe('설정 화면(SCR-10, P1-03)', () => {
       '10%',
       '5,000원',
       'A 대행수수료 과세',
+      'v2026-09',
+      '15,000원',
+      '8.76원/엔',
     ]);
     const terms = summary()
       .getAllByRole('term')
@@ -123,6 +148,9 @@ describe('설정 화면(SCR-10, P1-03)', () => {
       '목표 마진',
       '최소 이익',
       '부가세 모드',
+      '버전',
+      '신발 박스 1.2kg',
+      '원가 환율',
     ]);
     const taxable = summary().getByRole('switch', { name: '과세 사이즈 판매' });
     expect(taxable).toHaveAttribute('aria-checked', 'false');
@@ -245,5 +273,86 @@ describe('설정 화면(SCR-10, P1-03)', () => {
       });
     });
     await waitFor(() => expect(getRequests(api, 'GET /settings')).toHaveLength(2));
+  });
+
+  describe('P2-04 배대지 요금표·환율', () => {
+    const rateTableGroup = () => within(summary().getByRole('region', { name: '배대지 요금표' }));
+    const fxGroup = () => within(summary().getByRole('region', { name: '환율' }));
+
+    it("요약 '배대지 요금표'·'환율' 묶음: 보드 문구(CSV 열 안내, 'HH:mm 자동 수집. …')와 단추", async () => {
+      stubSettings();
+      await renderSettings();
+      expect(await rateTableGroup().findByText('v2026-09')).toBeInTheDocument();
+      expect(
+        rateTableGroup().getByText(
+          'CSV 열: 무게 상한 · 요금 · 통화(엔/원) · 부피무게 나눗수 · 적용 조건',
+        ),
+      ).toBeInTheDocument();
+      expect(rateTableGroup().getByRole('button', { name: 'CSV 가져오기' })).toBeInTheDocument();
+      expect(await fxGroup().findByText('8.76원/엔')).toBeInTheDocument();
+      expect(
+        fxGroup().getByText(
+          '09:00 자동 수집. 수집이 실패하면 마지막 값을 계속 쓰고 경고를 띄웁니다.',
+        ),
+      ).toBeInTheDocument();
+      expect(fxGroup().getByRole('button', { name: '환율 직접 입력' })).toBeInTheDocument();
+    });
+
+    it("활성 요금표가 없으면 버전 '없음', 신발 박스는 기본값(가정값), 탭 캡션 '요금표 없음 · 기본값'", async () => {
+      const api = stubSettings();
+      api.on('GET /forwarder-rate-tables', () => jsonResponse(rateTablePage([])));
+      await renderSettings();
+      expect(await rateTableGroup().findByText('없음')).toBeInTheDocument();
+      expect(rateTableGroup().getByText('15,000원 · 가정값')).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /비용·요금표/ })).toHaveTextContent(
+        '요금표 없음 · 기본값',
+      );
+    });
+
+    it("요약 'CSV 가져오기' → 비용·요금표 탭(요금표 패널·구간 표), 파일 칸에 초점", async () => {
+      stubSettings();
+      await renderSettings();
+      await userEvent.click(await rateTableGroup().findByRole('button', { name: 'CSV 가져오기' }));
+      expect(screen.getByRole('tabpanel')).toHaveAccessibleName(/^비용·요금표/);
+      expect(await screen.findByRole('table', { name: '무게 구간' })).toBeInTheDocument();
+      await waitFor(() => expect(screen.getByLabelText('요금표 CSV')).toHaveFocus());
+      expect(screen.queryByRole('button', { name: '저장' })).toBeNull();
+    });
+
+    it("요약 '환율 직접 입력' → 환율 탭(최신 3종·직접 입력·기록), 종류 칸에 초점. 경고가 있으면 띠", async () => {
+      const api = stubSettings();
+      api.on('GET /fx-rates/latest', () => jsonResponse(fxLatest([FX_FETCH_FAILED_WARNING])));
+      await renderSettings();
+      expect(
+        await fxGroup().findByText('경고 1건 · 환율 탭에서 확인해 주세요'),
+      ).toBeInTheDocument();
+      await userEvent.click(fxGroup().getByRole('button', { name: '환율 직접 입력' }));
+      expect(screen.getByRole('tabpanel')).toHaveAccessibleName(/^환율/);
+      const cells = within(await screen.findByRole('list', { name: '최신 환율' })).getAllByRole(
+        'listitem',
+      );
+      expect(cells.map((c) => c.textContent)).toEqual([
+        '원가 환율 · 자동 09:008.76원/엔직접 넣기',
+        '과세환율(엔) · 자동 09:008.76원/엔직접 넣기',
+        '과세환율(달러) · 자동 09:001,358.72원/달러직접 넣기',
+      ]);
+      expect(screen.getByText(FX_FETCH_FAILED_WARNING.message)).toBeInTheDocument();
+      await waitFor(() => expect(screen.getByLabelText('종류')).toHaveFocus());
+      expect(await screen.findByRole('table', { name: '환율 기록' })).toBeInTheDocument();
+    });
+
+    it("과세환율(달러) '직접 넣기' → 입력 칸이 과세환율·달러·1달러로 바뀐다", async () => {
+      stubSettings();
+      await renderSettings();
+      await userEvent.click(screen.getByRole('tab', { name: /^환율/ }));
+      const cells = within(await screen.findByRole('list', { name: '최신 환율' })).getAllByRole(
+        'listitem',
+      );
+      await userEvent.click(within(cells[2]!).getByRole('button', { name: '직접 넣기' }));
+      expect(screen.getByLabelText('종류')).toHaveValue('CUSTOMS');
+      expect(screen.getByLabelText('통화')).toHaveValue('USD');
+      expect(screen.getByRole('radio', { name: '1달러' })).toBeChecked();
+      expect(screen.getByRole('radio', { name: '100달러' })).toBeDisabled();
+    });
   });
 });

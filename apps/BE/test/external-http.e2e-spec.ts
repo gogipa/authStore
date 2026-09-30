@@ -328,6 +328,8 @@ describe('외부 호출 관문·GET /call-usage (e2e, 가짜 fetch·가짜 시�
         'RAKUTEN_API',
         'RAKUTEN_PAGE',
         'DATALAB',
+        'FX_KOREAEXIM',
+        'FX_CUSTOMS',
       ]);
       const page = body.items.find((i) => i.target === 'RAKUTEN_PAGE')!;
       expect(page).toEqual({
@@ -421,6 +423,8 @@ describe('외부 호출 관문·GET /call-usage (e2e, 가짜 fetch·가짜 시�
         'RAKUTEN_API',
         'RAKUTEN_PAGE',
         'DATALAB',
+        'FX_KOREAEXIM',
+        'FX_CUSTOMS',
       ]);
     });
 

@@ -1,0 +1,77 @@
+/* 환율 요약(Judgement 보드 '가격 요약' 칸 모양): 칸 머리 12/600 muted, 값 mono 16/600, '직접 넣기' 밑줄 링크 단추 */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.warnings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.error {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}
+
+.cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+
+.valueRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 32px;
+}
+
+.value {
+  font-family: var(--font-mono);
+  font-size: var(--type-heading-size);
+  line-height: var(--type-heading-line-height);
+  font-weight: var(--type-heading-weight);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.missing {
+  color: var(--color-ink-faint);
+}
+
+.link {
+  height: 32px;
+  padding: 0 var(--space-1);
+  border: none;
+  background: transparent;
+  color: var(--color-accent);
+  font: var(--type-body-strong);
+  text-decoration: underline;
+  white-space: nowrap;
+  cursor: pointer;
+}

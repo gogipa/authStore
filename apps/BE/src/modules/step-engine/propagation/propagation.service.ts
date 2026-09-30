@@ -1,12 +1,14 @@
 import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { ProgressEventsService } from '../../../common/events/progress-events.service.js';
 import type { Candidate, CandidateStep } from '../../../generated/prisma/client.js';
+import { ForwarderRateTablesService } from '../../settings/forwarder-rate-tables/forwarder-rate-tables.service.js';
+import type { ReferenceInputChange } from '../../settings/forwarder-rate-tables/rate-table-rerun.port.js';
 import { PurchaseAgencyProfileService } from '../../settings/purchase-agency-profile/purchase-agency-profile.service.js';
 import { SettingsService } from '../../settings/settings.service.js';
 import { CandidateStatusService } from '../candidates/candidate-status.service.js';
 import { StepEngineTransactions, type StepEngineTx } from '../candidates/step-engine-tx.js';
 import type { Tx } from '../contracts/step-runner.js';
-import { changedInputKeys, fingerprint } from '../domain/fingerprint.js';
+import { changedInputKeys, fingerprint, valueHash } from '../domain/fingerprint.js';
 import { settingsKeyAffects } from '../domain/input-keys.js';
 import { waitedSeconds, endTimeFor } from '../domain/run-time.js';
 import { directReaders } from '../domain/step-graph.js';
@@ -33,6 +35,8 @@ const STALEABLE: readonly StepStatus[] = ['COMPLETED', 'RERUN_REQUIRED', 'WAITIN
  * - 설정 변경(`onSettingsChanged`, settings.reloaded의 changedKeys): 그 설정 키를 읽은 단계만. 등록 진행 잠금 후보는
  *   건너뛴다(P1-05 Proposed).
  * - 구매대행 프로필 변경(`onProfileChanged`, P1-09): 바뀐 프로필 입력(`profile.<필드>`)을 읽은 단계만. 규칙은 설정 변경과 같다.
+ * - 판정 기준 데이터 변경(`onReferenceInputsChanged`, P2-04): 새 최신 환율(`fx.*`)·활성 요금표(`forwarder.rateTable`).
+ *   그 입력을 읽은 단계 가운데 **저장된 값 해시가 새 값 해시와 다른** 단계만. 나머지 규칙은 설정 변경과 같다.
  * 공통: 자동으로 다시 실행하지 않는다. 현재 버전이 없는(NOT_RUN) 단계·실행 중·실패 단계는 바꾸지 않는다.
  * 입력 대기 중이던 실행은 step_run도 RERUN_REQUIRED로 닫는다.
  */
@@ -47,6 +51,7 @@ export class PropagationService implements OnModuleInit {
     private readonly status: CandidateStatusService,
     private readonly transactions: StepEngineTransactions,
     private readonly profile: PurchaseAgencyProfileService,
+    private readonly rateTables: ForwarderRateTablesService,
   ) {}
 
   /**
@@ -60,6 +65,9 @@ export class PropagationService implements OnModuleInit {
     );
     this.profile.setRerunPropagator((changedInputKeys, tx, afterCommit) =>
       this.onProfileChanged(changedInputKeys, tx, afterCommit),
+    );
+    this.rateTables.setRerunPropagator((changes, tx, afterCommit) =>
+      this.onReferenceInputsChanged(changes, tx, afterCommit),
     );
   }
 
@@ -138,7 +146,7 @@ export class PropagationService implements OnModuleInit {
   ): Promise<number> {
     if (changedKeys.length === 0) return 0;
     const count = await this.markSettingsReaders(
-      (inputKey) => changedKeys.some((changed) => settingsKeyAffects(changed, inputKey)),
+      ({ inputKey }) => changedKeys.some((changed) => settingsKeyAffects(changed, inputKey)),
       tx,
       afterCommit,
     );
@@ -161,7 +169,7 @@ export class PropagationService implements OnModuleInit {
     if (changedInputKeys.length === 0) return 0;
     const changed = new Set(changedInputKeys);
     const count = await this.markSettingsReaders(
-      (inputKey) => changed.has(inputKey),
+      ({ inputKey }) => changed.has(inputKey),
       tx,
       afterCommit,
     );
@@ -169,9 +177,39 @@ export class PropagationService implements OnModuleInit {
     return count;
   }
 
+  /**
+   * 판정 기준 데이터 변경 전파(P2-04 규칙 10·13): 새 최신 환율(수동 입력 포함, `fx.costJpy`·`fx.customsJpy`·`fx.customsUsd`)
+   * 또는 활성 요금표 교체(`forwarder.rateTable`). 그 값을 쓰는 트랜잭션 안에서 불린다. 현재 버전의 SETTINGS 시작 조건
+   * 입력이 이 이름이고 **저장된 값 해시가 새 값의 해시와 다른** 단계만 재실행 필요로 둔다(같은 값이면 — 같은 고시 재수집·
+   * 같은 값 수동 정정 — 그대로). 범위(Proposed, 05-1 §7.3 'P2-04 구현 결정'): 설정 변경과 같다 — 잠긴 후보는 건너뛰고,
+   * 제외 후보는 표시하고, 승인대기·검증완료 후보는 작업중으로 돌아간다. 자동으로 다시 실행하지 않는다.
+   * @returns 재실행 필요가 된(사유가 늘어난) 후보 단계 수
+   */
+  async onReferenceInputsChanged(
+    changes: readonly ReferenceInputChange[],
+    tx: Tx,
+    afterCommit: (fn: () => void) => void = () => undefined,
+  ): Promise<number> {
+    if (changes.length === 0) return 0;
+    const hashes = new Map(changes.map((c) => [c.inputKey, valueHash(c.value ?? null)]));
+    const count = await this.markSettingsReaders(
+      ({ inputKey, valueHash: stored }) => {
+        const next = hashes.get(inputKey);
+        return next !== undefined && next !== stored;
+      },
+      tx,
+      afterCommit,
+    );
+    if (count > 0) {
+      const keys = changes.map((c) => c.inputKey).join(', ');
+      this.logger.log(`판정 기준(${keys}) 변경으로 재실행 필요가 된 단계 ${count}개`);
+    }
+    return count;
+  }
+
   /** 현재 버전의 SETTINGS 시작 조건 입력 가운데 `affects`에 맞는 것이 있는 단계를 재실행 필요로 둔다 */
   private async markSettingsReaders(
-    affects: (inputKey: string) => boolean,
+    affects: (input: { inputKey: string; valueHash: string }) => boolean,
     tx: Tx,
     afterCommit: (fn: () => void) => void,
   ): Promise<number> {
@@ -189,11 +227,11 @@ export class PropagationService implements OnModuleInit {
     for (const row of rows) {
       const inputs = await tx.stepRunInput.findMany({
         where: { stepRunId: row.currentStepRunId!, sourceType: 'SETTINGS', isStartCondition: true },
-        select: { inputKey: true },
+        select: { inputKey: true, valueHash: true },
       });
       const affected = inputs
-        .map((input) => input.inputKey)
         .filter(affects)
+        .map((input) => input.inputKey)
         .sort();
       if (affected.length === 0) continue;
       await this.markStale(scope, row, affected, null);

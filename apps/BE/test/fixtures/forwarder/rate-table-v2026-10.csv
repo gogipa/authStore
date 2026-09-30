@@ -1,0 +1,4 @@
+weight_max_kg,fee,currency,volumetric_divisor,volumetric_applies_when
+0.5,1000,JPY,,
+1.5,1500,JPY,5000,
+3,2400,JPY,5000,ALWAYS

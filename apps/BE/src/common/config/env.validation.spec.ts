@@ -74,6 +74,12 @@ describe('validateEnv', () => {
     );
   });
 
+  it('FX_AUTO_COLLECT: 기본 on, off로 끌 수 있고 그 밖 값은 거절한다(P2-04)', () => {
+    expect(validateEnv({ ...base }).FX_AUTO_COLLECT).toBe('on');
+    expect(validateEnv({ ...base, FX_AUTO_COLLECT: 'off' }).FX_AUTO_COLLECT).toBe('off');
+    expect(() => validateEnv({ ...base, FX_AUTO_COLLECT: 'yes' })).toThrow(/FX_AUTO_COLLECT/);
+  });
+
   it('PORT 문자열을 숫자로 바꾼다', () => {
     expect(validateEnv({ ...base, PORT: '4000' }).PORT).toBe(4000);
   });

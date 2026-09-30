@@ -12,6 +12,9 @@ import { PROFILE_INPUT_KEY_LABEL } from '../../settings/purchase-agency-profile/
  *   바뀐 키(`costs.targetMarginPct`)와 이 경로를 앞부분 일치로 맞춘다
  * - `profile.<필드>`: 구매대행 프로필 값(P1-09, 예 `profile.importer`, source_type SETTINGS). 이름과 읽는 단계는
  *   settings/purchase-agency-profile/profile-input-keys.ts가 정하고, 프로필 저장 전파는 이름을 정확히 맞춘다
+ * - `fx.*`·`forwarder.rateTable`: ③이 읽는 판정 기준 데이터(P2-04, source_type SETTINGS). 환율 3종(pricing
+ *   `FX_INPUT_KEYS`)과 활성 요금표(settings `RATE_TABLE_INPUT_KEY`). 새 최신 환율·활성 요금표 교체 전파는 이름과
+ *   **값 해시**를 함께 맞춘다(같은 값이면 재실행 필요가 되지 않는다)
  * 64자 이하(varchar(64)). FE `features/step-engine/model/inputLabels.ts`가 같은 표를 쓴다.
  */
 export const INPUT_KEYS = {
@@ -58,6 +61,11 @@ export const INPUT_KEYS = {
   settingsDefaultWidth: 'settings.sourcing.defaultWidth',
   settingsExcludeBackOrder: 'settings.sourcing.excludeBackOrder',
   settingsDefaultShippingYen: 'settings.sourcing.defaultShippingYen',
+  // 판정 기준 데이터(P2-04)
+  fxCostJpy: 'fx.costJpy',
+  fxCustomsJpy: 'fx.customsJpy',
+  fxCustomsUsd: 'fx.customsUsd',
+  forwarderRateTable: 'forwarder.rateTable',
 } as const;
 
 export type InputKey = (typeof INPUT_KEYS)[keyof typeof INPUT_KEYS];
@@ -105,6 +113,11 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'settings.sourcing.defaultWidth': '기본 폭 설정',
   'settings.sourcing.excludeBackOrder': '取り寄せ 제외 설정',
   'settings.sourcing.defaultShippingYen': '기본 송료 설정',
+  // 판정 기준 데이터(P2-04)
+  'fx.costJpy': '원가 환율',
+  'fx.customsJpy': '과세환율(엔)',
+  'fx.customsUsd': '과세환율(달러)',
+  'forwarder.rateTable': '배대지 요금표',
   // 구매대행 프로필(P1-09)
   ...PROFILE_INPUT_KEY_LABEL,
 };

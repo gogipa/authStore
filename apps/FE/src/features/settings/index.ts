@@ -77,3 +77,42 @@ export type {
   AiEngineSettings,
   AiEngineSettingsUpdateRequest,
 } from './api/aiEngineSettings';
+
+/**
+ * P2-04: 배대지 요금표(importForwarderRateTable·listForwarderRateTables·getForwarderRateTable). 설정 화면 '비용·요금표' 탭과
+ * '적용 중인 기본값'의 배대지 요금표 묶음이 쓴다. 신발 박스 구간(`shoeBoxTier`)은 표시용이다(판정 계산은 BE P2-05).
+ */
+export {
+  forwarderRateTablesKeys,
+  useActiveForwarderRateTable,
+  useForwarderRateTableQuery,
+  useForwarderRateTablesQuery,
+  useImportForwarderRateTableMutation,
+} from './api/forwarderRateTables';
+export type {
+  ForwarderRateTablesParams,
+  ImportForwarderRateTableInput,
+} from './api/forwarderRateTables';
+export {
+  appliesWhenLabel,
+  DEFAULT_SHOE_BOX,
+  formatTierFee,
+  formatWeightKg,
+  importResultText,
+  RATE_TABLE_CSV_HINT,
+  RATE_TABLE_MAX_BYTES,
+  rateTableTabCaption,
+  rateTableVersionLabel,
+  readDefaultForwarderFeeKrw,
+  readShoeBox,
+  shoeBoxTier,
+} from './model/forwarderRateTable';
+export type {
+  ForwarderRateTableDetail,
+  ForwarderRateTableImportResult,
+  ForwarderRateTableSummary,
+  ForwarderRateTier,
+  ShoeBox,
+} from './model/forwarderRateTable';
+export { ForwarderRateTablePanel } from './components/ForwarderRateTablePanel/ForwarderRateTablePanel';
+export type { ForwarderRateTablePanelProps } from './components/ForwarderRateTablePanel/ForwarderRateTablePanel';

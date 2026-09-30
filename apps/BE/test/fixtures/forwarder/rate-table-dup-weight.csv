@@ -1,0 +1,4 @@
+weight_max_kg,fee,currency,volumetric_divisor,volumetric_applies_when
+1.2,15000,KRW,,
+2,18000,KRW,,
+1.200,16000,KRW,,

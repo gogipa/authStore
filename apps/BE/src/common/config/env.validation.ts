@@ -66,6 +66,14 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsIn(ON_OFF)
   AI_ENGINE_STARTUP_CHECK: OnOff = 'on';
+
+  /**
+   * 환율 자동 수집(P2-04 — 원가 환율 영업일 11시 뒤 하루 1회, 과세환율 주 1회). off면 설정 화면 '환율 직접 입력'으로만 넣는다.
+   * 키(KOREAEXIM_API_KEY·CUSTOMS_SERVICE_KEY)가 없으면 켜 두어도 부르지 않고 실패 경고만 띄운다
+   */
+  @IsOptional()
+  @IsIn(ON_OFF)
+  FX_AUTO_COLLECT: OnOff = 'on';
 }
 
 export function validateEnv(raw: Record<string, unknown>): EnvironmentVariables {

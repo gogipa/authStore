@@ -62,7 +62,20 @@ describe('진행 알림 이름', () => {
       'sourcing.page-fetch-finished',
       'keyword-collection.completed',
       'keyword-collection.aborted',
+      'fx-rate.updated',
       'commerce-meta-sync.completed',
+    ]);
+    // 환율(P2-04): 새 최신값·수집 실패·±20% 차이 → 최신값과 이력 전체
+    expect(
+      EVENT_INVALIDATIONS['fx-rate.updated']?.({
+        rateKind: 'COST',
+        currency: 'JPY',
+        fxRateId: null,
+        warningCode: 'FX_FETCH_FAILED',
+      }),
+    ).toEqual([
+      ['pricing', 'getLatestFxRates'],
+      ['pricing', 'listFxRates'],
     ]);
     // ② 검색이 끝나면 그 후보의 비교표, 행·페이지 조회 이벤트는 비교표 전체(data에 후보 id가 없다, P2-02)
     expect(
@@ -360,8 +373,8 @@ describe('connectProgressEvents', () => {
     const source = FakeEventSource.latest();
 
     source.emit('unknown.event', { x: 1 });
-    // 표에 없는 M1 이벤트(P2-02가 sourcing.*를 표에 더해 환율 이벤트로 본다)
-    source.emit('fx-rate.updated', { fxRateId: 1 });
+    // 표에 없는 M1 이벤트(P2-04가 fx-rate.updated를 표에 더해 ⑥-2 재확인 이벤트로 본다 — P3-03이 더한다)
+    source.emit('content-field.recheck-flagged', { candidateId: 1 });
     source.emitRaw('call-usage.changed', '{not json');
 
     expect(invalidate).not.toHaveBeenCalled();

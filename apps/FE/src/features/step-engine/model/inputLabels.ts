@@ -41,6 +41,11 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'settings.sourcing.defaultWidth': '기본 폭 설정',
   'settings.sourcing.excludeBackOrder': '取り寄せ 제외 설정',
   'settings.sourcing.defaultShippingYen': '기본 송료 설정',
+  // 판정 기준 데이터(P2-04, BE step-engine/domain/input-keys.ts와 같은 표) — 새 최신 환율·활성 요금표 교체
+  'fx.costJpy': '원가 환율',
+  'fx.customsJpy': '과세환율(엔)',
+  'fx.customsUsd': '과세환율(달러)',
+  'forwarder.rateTable': '배대지 요금표',
   // 구매대행 프로필(P1-09, BE settings/purchase-agency-profile/profile-input-keys.ts와 같은 표)
   'profile.overseasShippingCommerceAddressbookId': '프로필 해외 출고지',
   'profile.returnCommerceAddressbookId': '프로필 반품·교환지',

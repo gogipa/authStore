@@ -96,6 +96,9 @@ export type EventInvalidations = {
  * - P2-03: 비교표 queryKey가 조회 조건을 더 가진다(`{ candidateId, stepRunId, includeNoMatch, sort }`) — 위 키는 부분 일치로
  *   모두 닿는다. `gate.invalidated` → 그 후보 비교표도(다른 샵을 고르면 G2가 무효가 된다 — '다른 샵을 고르면 판정(G2)을 다시
  *   통과해야 합니다'). 행 수정(PATCH)은 SSE 없이 응답으로 캐시를 고친다.
+ * - P2-04: `fx-rate.updated`(새 최신 환율·수집 실패·±20% 차이) → 환율 최신값(`getLatestFxRates`)·이력(`listFxRates` 전체).
+ *   새 최신값이 ③을 재실행 필요로 만들면 그 후보마다 `candidate-step.changed`가 따로 온다. 요금표 가져오기는 SSE가 없고
+ *   응답으로 캐시를 고친다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -187,6 +190,7 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     keywordCollectionEndKeys(keywordSnapshotId),
   'keyword-collection.aborted': ({ keywordSnapshotId }) =>
     keywordCollectionEndKeys(keywordSnapshotId),
+  'fx-rate.updated': () => [qk('pricing', 'getLatestFxRates'), qk('pricing', 'listFxRates')],
   'commerce-meta-sync.completed': () => [
     qk('integrations', 'getLatestCommerceMetaSyncRuns'),
     qk('integrations', 'listCommerceAddressbooks'),

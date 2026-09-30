@@ -311,6 +311,16 @@ export const ERROR_CODES = {
   GENDER_REQUIRED: { status: 409, message: '후보 성별을 먼저 골라 주세요.' },
   /** 05-3 §5.1: 앵커가 없는데 수동 행 추가·재고 확인·선택(P2-03 — 선택·재고 확인은 05-2에 더함) */
   ANCHOR_NOT_FIXED: { status: 409, message: '기준 모델·색상을 먼저 정해 주세요.' },
+  // ── pricing 환율·settings 요금표(P2-04, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 원가·과세 환율 없음(③ 시작 — `FxRatesService.getLatestForJudgement`, details.missing) */
+  FX_RATE_UNAVAILABLE: { status: 409, message: '환율이 없습니다. 설정에서 환율을 넣어 주세요.' },
+  /** 05-3 §5.1: CSV·xlsx·이미지 형식이 아님(요금표는 `{형식}` = CSV) */
+  UNSUPPORTED_FILE_TYPE: {
+    status: 422,
+    message: '이 형식의 파일은 받을 수 없습니다(가능: {형식}).',
+  },
+  /** 05-3 §5.1: 요금표 id 없음 */
+  RATE_TABLE_NOT_FOUND: { status: 404, message: '요금표를 찾을 수 없습니다.' },
   INTERNAL_ERROR: {
     status: 500,
     message: '앱 안에서 오류가 났습니다. 다시 해 보고, 계속되면 로그를 확인해 주세요.',

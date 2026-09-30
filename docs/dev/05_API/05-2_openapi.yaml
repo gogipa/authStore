@@ -2544,6 +2544,8 @@ paths:
       summary: 종류·통화별 최신 환율과 경고
       description: '`fx_rate`(pricing 소유)의 종류·통화별 `reference_at` 최신 행(페이징 없음). 수집 실패는 `call_log`(FX_KOREAEXIM·FX_CUSTOMS)의 최근 실패로, 원가/과세 ±20% 차이는 최신 두 값으로 계산해 `warnings`로 준다. `raw_response`는 빼고 준다.
 
+        P2-04 구현(Proposed, 05-1 §7.3 ''P2-04 구현 결정''): 같은 기준 시각이면 나중에 넣은 행(id가 큰 행)이 최신값이다. `items`는 있는 것만 COST/JPY → CUSTOMS/JPY → CUSTOMS/USD 순서. `FX_FETCH_FAILED`는 출처마다 마지막으로 끝난 `call_log`가 실패(`succeeded=false` 또는 200인데 `error_code` 있음 — 결과 코드 오류·형식 깨짐·키 없음)일 때 하나(원가 = COST/JPY, 과세 = CUSTOMS/통화 null), 다음 수집이 성공하면 사라진다. 빈 응답(휴일·11시 전)은 실패가 아니다. `FX_DIVERGENCE`는 |과세 엔/원가 − 1| > 0.20(정확히 20%는 경고 없음), rateKind CUSTOMS·currency JPY.
+
         '
       tags:
       - pricing
@@ -2616,6 +2618,8 @@ paths:
       summary: 환율 수동 입력
       description: '값을 고치지 않고 새 행을 넣는다(`source=MANUAL`, 수동 입력은 여러 번 허용). 새 최신값은 ③을 재실행 필요로 만든다(SSE `fx-rate.updated`).
 
+        P2-04 구현(Proposed): 넣은 행이 그 종류·통화의 새 최신값일 때만 전파·SSE를 한다(더 옛날 기준 시각이면 기록만). 전파는 ③이 그 환율 입력(`fx.costJpy`·`fx.customsJpy`·`fx.customsUsd`)으로 남긴 계산값(rateValue/unit)과 다를 때만이다(876/100과 8.76/1은 같은 값). 범위는 P1-05 설정 변경 전파와 같다(잠긴 후보 건너뜀, 승인대기·검증완료 후보는 작업중으로). 감사 기록 `SETTING_CHANGED`(detail `{setting: FX_RATE_MANUAL, fxRateId, rateKind, currency}`).
+
         '
       tags:
       - pricing
@@ -2645,7 +2649,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/Unprocessable'
-          description: '`VALIDATION_FAILED` — rateValue ≤ 0, USD인데 unit=100'
+          description: '`VALIDATION_FAILED` — rateValue ≤ 0·소수 다섯째 자리, USD인데 unit=100, 원가 환율(COST)인데 USD(Proposed — 원가 환율은 엔만), referenceAt에 시각·시간대가 없음'
         '500':
           $ref: '#/components/responses/InternalError'
   /candidates/{candidateId}/price-simulations:
@@ -5380,6 +5384,8 @@ paths:
       description: 'CSV(무게 상한·요금·통화·부피무게 나눗수·적용 조건 열, PR-02)를 가져와 새 버전을 만들고 활성화한다. 활성 버전은 하나(부분 UNIQUE).
 
         같은 파일 해시면 새 행 없이 200 + 기존 버전 재활성화. 활성이 바뀌면 ③을 재실행 필요로 전파한다. `sourceFilePath`는 로컬 경로라 응답에 없다.
+
+        P2-04 구현(Proposed, ERD §7.1-13·05-1 §7.3): 파일 이름이 `.csv`이고 바이너리(NUL 바이트)가 아니어야 한다(아니면 `UNSUPPORTED_FILE_TYPE`). UTF-8(BOM 허용)만 읽는다. 첫 줄은 머리행 `weight_max_kg, fee, currency, volumetric_divisor, volumetric_applies_when`(순서·대소문자 무관). `fieldErrors[].field`는 `row{파일 줄 번호}.{열}`(머리행이 1줄, 앞 50건), UTF-8이 아니거나 1,000행을 넘으면 `file`. 같은 해시가 이미 활성이면 아무것도 바꾸지 않는다(200, `rerunRequiredStepCount` 0). 재활성화 때 `forwarderName`은 바꾸지 않는다. Location은 `/api/v1/forwarder-rate-tables/{rateTableId}`. 원본 CSV는 데이터 폴더 `forwarder-rate-tables/<sha256>.csv`. 전파 입력 이름은 `forwarder.rateTable`(값 = 활성 버전 id), 감사 기록 `SETTING_CHANGED`.
 
         '
       tags:
@@ -10388,7 +10394,7 @@ components:
           minimum: 0
     FxRateUpdatedEvent:
       type: object
-      description: fx-rate.updated — 환율 최신값이 바뀌거나 수집 실패·±20% 차이 경고가 생길 때
+      description: 'fx-rate.updated — 환율 최신값이 바뀌거나 수집 실패·±20% 차이 경고가 생길 때. P2-04(Proposed): 새 최신값마다 1건(fxRateId, 이 값으로 ±20% 차이면 warningCode FX_DIVERGENCE), 자동 수집이 실패하면 fxRateId null · FX_FETCH_FAILED(과세환율은 JPY·USD 2건)'
       x-milestone: M1
       required:
       - rateKind
@@ -12546,7 +12552,7 @@ components:
         referenceAt:
           type: string
           format: date-time
-          description: 기준 시각
+          description: 기준 시각(RFC 3339 — 시각·시간대까지. 화면은 한국 시간 +09:00으로 보낸다)
     PriceJudgementSizeBreakdown:
       type: object
       description: 판정의 사이즈별 비용 분해·면세·최소 판매가·판매 가능(price_judgement_size)
@@ -17590,7 +17596,7 @@ components:
           - string
           - 'null'
           maxLength: 200
-          description: 부피무게 적용 조건 원문(형식 미정)
+          description: '부피무게 적용 조건(Proposed, ERD §7.1-13): null(나눗수가 있으면 늘 비교) · `ALWAYS`(청구무게 = max(실무게, 부피무게)) · `NEVER`(실무게만) · `SUM_CM>{n}`(박스 세 변 합이 n cm를 넘을 때만 비교). 나눗수가 없으면 null·NEVER만'
     ForwarderRateTableDetail:
       description: 요금표 버전과 무게 구간
       allOf:

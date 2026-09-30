@@ -1,6 +1,24 @@
 import { useId, useState } from 'react';
 import {
+  formatRecordRate,
+  fxAutoCaption,
+  fxTabCaption,
+  latestOf,
+  useLatestFxRatesQuery,
+  type FxRateLatestSet,
+} from '@/features/pricing';
+import {
+  ForwarderRateTablePanel,
+  formatTierFee,
   PurchaseAgencyProfileForm,
+  RATE_TABLE_CSV_HINT,
+  rateTableTabCaption,
+  rateTableVersionLabel,
+  readDefaultForwarderFeeKrw,
+  readShoeBox,
+  shoeBoxTier,
+  useActiveForwarderRateTable,
+  type ForwarderRateTableDetail,
   readAppliedCostDefaults,
   readSelectedAiEngine,
   readSellTaxableSizes,
@@ -11,7 +29,7 @@ import {
   useSettingsQuery,
   VAT_MODE_LABEL,
 } from '@/features/settings';
-import { EMPTY_VALUE, type FractionDigits } from '@/shared/lib/format';
+import { EMPTY_VALUE, formatKrw, type FractionDigits } from '@/shared/lib/format';
 import {
   Banner,
   Button,
@@ -20,12 +38,12 @@ import {
   Icon,
   Num,
   PageHeader,
-  Panel,
   Switch,
   TabPanel,
   Tabs,
   type TabItem,
 } from '@/shared/ui';
+import { SettingsFxTab } from './SettingsFxTab';
 import styles from './SettingsPage.module.css';
 
 /** M1 탭 3개(Settings 보드 순서). 나머지 탭(템플릿·사전, 브랜드 사전, 목표 사이즈, AI 공급자, 기준값 버전)은 M2다. */
@@ -34,26 +52,24 @@ type SettingsTab = 'profile' | 'costs' | 'fx';
 /**
  * 탭 3개(보드 순서). '구매대행 프로필'은 수입자(importer)가 비면 '수입자 입력 필요' 칩을 단다(보드).
  * 저장된 값 기준이다 — 칸에 적기만 하고 저장하지 않았으면 칩이 남는다.
+ * P2-04: '비용·요금표' 캡션 '요금표 v2026-09'(활성 버전), '환율' 캡션 '원가 8.76원/엔 · 09:00'(보드). 받는 중이면 캡션 없음.
  */
-function settingsTabs(importerMissing: boolean): readonly TabItem<SettingsTab>[] {
+function settingsTabs(
+  importerMissing: boolean,
+  captions: { costs?: string; fx?: string },
+): readonly TabItem<SettingsTab>[] {
   return [
     {
       value: 'profile',
       label: '구매대행 프로필',
       caption: importerMissing ? <Chip tone="waiting">수입자 입력 필요</Chip> : undefined,
     },
-    { value: 'costs', label: '비용·요금표' },
-    { value: 'fx', label: '환율' },
+    { value: 'costs', label: '비용·요금표', caption: captions.costs },
+    { value: 'fx', label: '환율', caption: captions.fx },
   ];
 }
 
 const TAB_ID_PREFIX = 'settings';
-
-/** 아직 입력을 만들지 않은 탭(요금표·환율 P2-04) */
-const TAB_BODY: Record<Exclude<SettingsTab, 'profile'>, { title: string; caption?: string }> = {
-  costs: { title: '비용·요금표' },
-  fx: { title: '환율' },
-};
 
 /** 요율 표기(보드: 2.5% · 3.0% · 3.63%) */
 const RATE_DIGITS: FractionDigits = { minFractionDigits: 1, maxFractionDigits: 3 };
@@ -64,11 +80,18 @@ const RATE_DIGITS: FractionDigits = { minFractionDigits: 1, maxFractionDigits: 3
  * 통과한 설정이 하나도 없으면(503 SETTINGS_INVALID) 차단 띠에 봉투 message를 보인다.
  * P1-09: '구매대행 프로필' 탭 본문과 머리의 '되돌리기'·'저장'(프로필 탭을 볼 때만, Proposed — 다른 탭의 저장은
  * P2-04가 정한다).
+ * P2-04: '비용·요금표' 탭 = 배대지 요금표 가져오기·구간 표(`ForwarderRateTablePanel`), '환율' 탭 = 최신 환율·경고·직접 입력·기록.
+ * 두 탭은 머리 저장 버튼이 없다(가져오기·넣기가 바로 저장 — Proposed). 요약의 '배대지 요금표'·'환율' 묶음(보드)과 'CSV 가져오기'·
+ * '환율 직접 입력' 단추는 그 탭으로 옮겨 첫 칸에 초점을 둔다.
  */
 export function SettingsPage() {
   const settings = useSettingsQuery();
   const profileForm = usePurchaseAgencyProfileForm();
+  const fx = useLatestFxRatesQuery();
+  const rateTable = useActiveForwarderRateTable();
   const [tab, setTab] = useState<SettingsTab>('profile');
+  const [rateTableFocus, setRateTableFocus] = useState(0);
+  const [fxFocus, setFxFocus] = useState(0);
   const view = settings.data;
   const unavailable = settings.error?.code === 'SETTINGS_INVALID' ? settings.error : null;
   const failed = settings.isError && !unavailable ? settings.error : null;
@@ -103,7 +126,13 @@ export function SettingsPage() {
       <div className={styles.layout}>
         <div className={styles.side}>
           <Tabs
-            items={settingsTabs(importerMissing)}
+            items={settingsTabs(importerMissing, {
+              costs:
+                rateTable.summary === undefined
+                  ? undefined
+                  : rateTableTabCaption(rateTable.summary),
+              fx: fx.data ? fxTabCaption(fx.data) : undefined,
+            })}
             value={tab}
             onValueChange={setTab}
             aria-label="설정 항목"
@@ -117,16 +146,29 @@ export function SettingsPage() {
           />
         </div>
         <TabPanel idPrefix={TAB_ID_PREFIX} value={tab} className={styles.tabPanel}>
-          {tab === 'profile' ? (
-            <PurchaseAgencyProfileForm form={profileForm} />
-          ) : (
-            <Panel title={TAB_BODY[tab].title} caption={TAB_BODY[tab].caption}>
-              <p className={styles.muted}>이 탭의 입력은 아직 만들지 않았습니다.</p>
-            </Panel>
-          )}
+          {tab === 'profile' ? <PurchaseAgencyProfileForm form={profileForm} /> : null}
+          {tab === 'costs' ? (
+            <ForwarderRateTablePanel
+              defaultFeeKrw={readDefaultForwarderFeeKrw(view?.content)}
+              focusRequest={rateTableFocus}
+            />
+          ) : null}
+          {tab === 'fx' ? <SettingsFxTab focusRequest={fxFocus} /> : null}
         </TabPanel>
         <aside aria-label="적용 중인 기본값" className={styles.summary}>
-          <AppliedDefaults view={view} />
+          <AppliedDefaults
+            view={view}
+            rateTable={rateTable.table}
+            fx={fx.data}
+            onImportCsv={() => {
+              setTab('costs');
+              setRateTableFocus((n) => n + 1);
+            }}
+            onManualFx={() => {
+              setTab('fx');
+              setFxFocus((n) => n + 1);
+            }}
+          />
           <Banner tone="info" icon="lock">
             아동 단어·실존 인물 차단어·고지 필수 블록은 더할 수만 있고 뺄 수 없습니다.
           </Banner>
@@ -240,8 +282,24 @@ function SettingsCheck({
   );
 }
 
-/** '적용 중인 기본값': 비용 6칸 + 부가세 모드, 과세 사이즈 판매(M1은 파일로만 바꾼다). */
-function AppliedDefaults({ view }: { view: SettingsView | undefined }) {
+/**
+ * '적용 중인 기본값': 비용 6칸 + 부가세 모드, 배대지 요금표(버전·신발 박스 요금·CSV 안내·'CSV 가져오기'), 환율(원가 환율·수집 안내·
+ * '환율 직접 입력'), 과세 사이즈 판매(M1은 파일로만 바꾼다) — Settings 보드 순서.
+ */
+function AppliedDefaults({
+  view,
+  rateTable,
+  fx,
+  onImportCsv,
+  onManualFx,
+}: {
+  view: SettingsView | undefined;
+  /** 활성 요금표 상세(없으면 null, 받는 중이면 undefined) */
+  rateTable: ForwarderRateTableDetail | null | undefined;
+  fx: FxRateLatestSet | undefined;
+  onImportCsv: () => void;
+  onManualFx: () => void;
+}) {
   const titleId = useId();
   const taxableHelpId = useId();
   const costs = readAppliedCostDefaults(view?.content);
@@ -288,6 +346,8 @@ function AppliedDefaults({ view }: { view: SettingsView | undefined }) {
           팔지 않습니다.
         </p>
       </div>
+      <RateTableDefaults view={view} rateTable={rateTable} onImportCsv={onImportCsv} />
+      <FxDefaults fx={fx} onManualFx={onManualFx} />
       <div className={`${styles.group} ${styles.divided}`}>
         {sellTaxable === null ? (
           <div className={styles.switchRow}>
@@ -310,6 +370,92 @@ function AppliedDefaults({ view }: { view: SettingsView | undefined }) {
           설정 파일(<code className={styles.field}>pricing.sellTaxableSizes</code>)에서 바꿉니다.
         </p>
       </div>
+    </section>
+  );
+}
+
+/**
+ * 요약 '배대지 요금표'(보드): 버전(활성 버전 'v2026-09', 없으면 '없음'), '신발 박스 1.2kg'(설정 박스가 들어가는 구간 요금, 없으면
+ * 기본 배대지 비용 + '가정값'), CSV 열 안내, 'CSV 가져오기'(요금표 탭으로 옮겨 파일 칸에 초점).
+ */
+function RateTableDefaults({
+  view,
+  rateTable,
+  onImportCsv,
+}: {
+  view: SettingsView | undefined;
+  rateTable: ForwarderRateTableDetail | null | undefined;
+  onImportCsv: () => void;
+}) {
+  const titleId = useId();
+  const box = readShoeBox(view?.content);
+  const tier = rateTable ? shoeBoxTier(rateTable.tiers, box) : null;
+  const boxLabel = `신발 박스 ${box.weightKg}kg`;
+  let boxFee = EMPTY_VALUE;
+  if (rateTable === null)
+    boxFee = `${formatKrw(readDefaultForwarderFeeKrw(view?.content))} · 가정값`;
+  else if (tier) boxFee = formatTierFee(tier.fee, tier.currency);
+  else if (rateTable) boxFee = '구간 밖';
+  return (
+    <section aria-labelledby={titleId} className={`${styles.group} ${styles.divided}`}>
+      <h3 id={titleId} className={styles.groupTitle}>
+        배대지 요금표
+      </h3>
+      <dl className={styles.values}>
+        <div className={styles.valueRow}>
+          <dt className={styles.term}>버전</dt>
+          <dd className={`${styles.detail} ${styles.monoValue}`}>
+            {rateTable === undefined
+              ? EMPTY_VALUE
+              : rateTable
+                ? rateTableVersionLabel(rateTable)
+                : '없음'}
+          </dd>
+        </div>
+        <div className={styles.valueRow}>
+          <dt className={styles.term}>{boxLabel}</dt>
+          <dd className={`${styles.detail} ${styles.monoValue}`}>{boxFee}</dd>
+        </div>
+      </dl>
+      <p className={styles.caption}>{RATE_TABLE_CSV_HINT}</p>
+      <Button size="sm" className={styles.cardAction} onClick={onImportCsv}>
+        <Icon name="upload" />
+        CSV 가져오기
+      </Button>
+    </section>
+  );
+}
+
+/** 요약 '환율'(보드): 원가 환율 값, '09:00 자동 수집. 수집이 실패하면 …' 안내, '환율 직접 입력'(환율 탭으로 옮겨 첫 칸에 초점) */
+function FxDefaults({
+  fx,
+  onManualFx,
+}: {
+  fx: FxRateLatestSet | undefined;
+  onManualFx: () => void;
+}) {
+  const titleId = useId();
+  const cost = latestOf(fx, 'COST/JPY');
+  return (
+    <section aria-labelledby={titleId} className={`${styles.group} ${styles.divided}`}>
+      <h3 id={titleId} className={styles.groupTitle}>
+        환율
+      </h3>
+      <dl className={styles.values}>
+        <div className={styles.valueRow}>
+          <dt className={styles.term}>원가 환율</dt>
+          <dd className={`${styles.detail} ${styles.monoValue}`}>
+            {cost ? formatRecordRate(cost) : EMPTY_VALUE}
+          </dd>
+        </div>
+      </dl>
+      <p className={styles.caption}>{fxAutoCaption(cost)}</p>
+      {fx && fx.warnings.length > 0 ? (
+        <p className={styles.alertText}>경고 {fx.warnings.length}건 · 환율 탭에서 확인해 주세요</p>
+      ) : null}
+      <Button size="sm" className={styles.cardAction} onClick={onManualFx}>
+        환율 직접 입력
+      </Button>
     </section>
   );
 }

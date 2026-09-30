@@ -5,6 +5,12 @@ import { AiEngineSettingsController } from './ai-engine/ai-engine-settings.contr
 import { AiEngineSettingsService } from './ai-engine/ai-engine-settings.service.js';
 import { DispatchDeliveryCompaniesController } from './dispatch-delivery-companies/dispatch-delivery-companies.controller.js';
 import { DispatchDeliveryCompaniesService } from './dispatch-delivery-companies/dispatch-delivery-companies.service.js';
+import { ForwarderRateTablesController } from './forwarder-rate-tables/forwarder-rate-tables.controller.js';
+import { ForwarderRateTablesService } from './forwarder-rate-tables/forwarder-rate-tables.service.js';
+import {
+  noopReferenceInputsPropagator,
+  RATE_TABLE_RERUN_PROPAGATOR,
+} from './forwarder-rate-tables/rate-table-rerun.port.js';
 import {
   noopProfileRerunPropagator,
   PROFILE_RERUN_PROPAGATOR,
@@ -34,7 +40,11 @@ import { SettingsService } from './settings.service.js';
  * 선택 엔진을 읽으려고 이 모듈을 import하므로, 순환 없이 읽기 창구만 담은 `AiCliCheckQueryModule`을 import한다.
  * AGY 모델 목록은 integrations의 `AgyModelsProvider`(`agy models` 캐시)에서 받는다.
  *
- * 뒤에 더할 것: 요금표(P2-04).
+ * P2-04 배대지 요금표(F-ST-04): POST·GET /forwarder-rate-tables, GET /forwarder-rate-tables/{id}(`forwarder-rate-tables/`).
+ * - `ForwarderRateTablesService`를 export한다(③ 판정 P2-05가 `activeForJudgement()`로 활성 요금표를 읽는다). CSV 해석
+ *   `parseRateTableCsv`·구간 규칙 `findTierForBox`·③ 입력 `rateTableStepInput`은 순수 함수다
+ * - 활성 변경 전파는 RATE_TABLE_RERUN_PROPAGATOR(기본 0) — step-engine이 onModuleInit에서 `setRerunPropagator`로 끼운다
+ * - 원본 CSV는 common `FileStorageService`로 APP_DATA_DIR/forwarder-rate-tables/<sha>.csv에 둔다
  */
 @Module({
   imports: [forwardRef(() => IntegrationsModule), AiCliCheckQueryModule],
@@ -43,6 +53,7 @@ import { SettingsService } from './settings.service.js';
     PurchaseAgencyProfileController,
     DispatchDeliveryCompaniesController,
     AiEngineSettingsController,
+    ForwarderRateTablesController,
   ],
   providers: [
     SettingsFileLoader,
@@ -52,7 +63,9 @@ import { SettingsService } from './settings.service.js';
     { provide: PROFILE_RERUN_PROPAGATOR, useValue: noopProfileRerunPropagator },
     DispatchDeliveryCompaniesService,
     AiEngineSettingsService,
+    ForwarderRateTablesService,
+    { provide: RATE_TABLE_RERUN_PROPAGATOR, useValue: noopReferenceInputsPropagator },
   ],
-  exports: [SettingsService, PurchaseAgencyProfileService],
+  exports: [SettingsService, PurchaseAgencyProfileService, ForwarderRateTablesService],
 })
 export class SettingsModule {}

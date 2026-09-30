@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<response>
+  <header>
+    <resultCode>00</resultCode>
+    <resultMsg>NORMAL SERVICE.</resultMsg>
+  </header>
+  <body>
+    <items>
+      <item>
+        <aplyBgnDt>20260927</aplyBgnDt>
+        <cntySgn>US</cntySgn>
+        <currSgn>USD</currSgn>
+        <fxrt>1,358.72</fxrt>
+        <imexTp>2</imexTp>
+        <mtryUtNm>달러</mtryUtNm>
+      </item>
+      <item>
+        <aplyBgnDt>20260927</aplyBgnDt>
+        <cntySgn>JP</cntySgn>
+        <currSgn>JPY</currSgn>
+        <fxrt>876.00</fxrt>
+        <imexTp>2</imexTp>
+        <mtryUtNm>100엔</mtryUtNm>
+      </item>
+      <item>
+        <aplyBgnDt>20260927</aplyBgnDt>
+        <cntySgn>EU</cntySgn>
+        <currSgn>EUR</currSgn>
+        <fxrt>1,594.05</fxrt>
+        <imexTp>2</imexTp>
+        <mtryUtNm>유로</mtryUtNm>
+      </item>
+    </items>
+    <numOfRows>3</numOfRows>
+    <pageNo>1</pageNo>
+    <totalCount>3</totalCount>
+  </body>
+</response>

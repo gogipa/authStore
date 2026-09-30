@@ -10,6 +10,10 @@ import {
   defaultCommerceMetaSchedule,
 } from '../../src/modules/integrations/commerce-meta/commerce-meta-sync.scheduler.js';
 import { AI_ENGINE_ADAPTERS } from '../../src/modules/integrations/ai-engine/ai-engine.port.js';
+import {
+  defaultFxCollectSchedule,
+  FX_COLLECT_SCHEDULE,
+} from '../../src/modules/pricing/fx/fx-collector.service.js';
 import { CLOCK } from '../../src/modules/integrations/http/clock.token.js';
 import { AI_ENGINE_RELOAD_CHECK } from '../../src/modules/system/ai-cli-checks/ai-engine-reload.check.js';
 import { AI_ENGINE_STARTUP_CHECK } from '../../src/modules/system/ai-cli-checks/ai-engine-startup.check.js';
@@ -54,7 +58,8 @@ export interface CreateTestAppOptions {
 
 /**
  * AppModule 전체를 띄우되, 밖을 부르는 것(HTTP_FETCH)과 시계(CLOCK)는 가짜로 바꾼다.
- * SSE 연결 유지 주석(heartbeat)과 메타데이터 자동 동기화(P1-08, 켜 두면 테스트 중에 몰래 가짜 서버를 부른다)는 끈다.
+ * SSE 연결 유지 주석(heartbeat)과 메타데이터 자동 동기화(P1-08, 켜 두면 테스트 중에 몰래 가짜 서버를 부른다)·환율 자동 수집
+ * (P2-04 — 수집은 `FxCollectorService.runOnce()`로 직접 부른다)은 끈다.
  * AI 엔진 어댑터는 늘 가짜(AI_ENGINE_ADAPTERS)이고 앱 시작 AI 점검·설정 다시 읽기 뒤 점검은 기본으로 끈다
  * (P1-10·P1-11 — 진짜 CLI·구독 쿼터를 쓰지 않게).
  */
@@ -73,6 +78,8 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
     .useValue(0)
     .overrideProvider(COMMERCE_META_SCHEDULE)
     .useValue(defaultCommerceMetaSchedule(false))
+    .overrideProvider(FX_COLLECT_SCHEDULE)
+    .useValue(defaultFxCollectSchedule(false))
     .overrideProvider(AI_ENGINE_ADAPTERS)
     .useValue(ai.adapters)
     .overrideProvider(AI_ENGINE_STARTUP_CHECK)

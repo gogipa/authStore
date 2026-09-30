@@ -1,7 +1,8 @@
 /**
  * 외부 호출 대상 표(GEN-01 허용 목록, F-BS-06). call_log.target 13종(ERD ck_call_log_target)마다 한 줄.
  * 표에 없는 호스트는 요청도 call_log 행도 만들지 않고 거부한다(ExternalHttpGateway).
- * - 환율 두 곳(FX_KOREAEXIM·FX_CUSTOMS)의 호스트는 P2-04에서 더한다.
+ * - 환율 두 곳(P2-04, Proposed — 열린질문 P1-01): FX_KOREAEXIM = 한국수출입은행 환율 API(oapi.koreaexim.go.kr),
+ *   FX_CUSTOMS = 공공데이터포털 관세청 관세환율(apis.data.go.kr). 둘 다 공식 API라 쉼·하루 상한이 없다.
  * - NOTICE_MONITOR·UPDATE_CHECK는 M2라 비워 둔다.
  * - AI_*_CLI는 HTTP가 아니라 하위 프로세스라 호스트가 없다(격리는 ai-engine/cli-isolation.ts).
  * - AI_GEMINI_API·AI_OPENAI_API(이미지 생성 대체 경로)는 P3-02에서 정한다.
@@ -79,8 +80,18 @@ export const EXTERNAL_TARGETS: Readonly<Record<CallLogTarget, ExternalTargetSpec
     dailyLimitKey: 'DATALAB_PER_DAY',
     allowedReferer: DATALAB_REFERER,
   },
-  FX_KOREAEXIM: { label: '한국수출입은행 환율', hosts: [], minIntervalMs: 0, unofficial: false },
-  FX_CUSTOMS: { label: '관세청 관세환율', hosts: [], minIntervalMs: 0, unofficial: false },
+  FX_KOREAEXIM: {
+    label: '한국수출입은행 환율',
+    hosts: ['oapi.koreaexim.go.kr'],
+    minIntervalMs: 0,
+    unofficial: false,
+  },
+  FX_CUSTOMS: {
+    label: '관세청 관세환율',
+    hosts: ['apis.data.go.kr'],
+    minIntervalMs: 0,
+    unofficial: false,
+  },
   NOTICE_MONITOR: { label: '공지 모니터링', hosts: [], minIntervalMs: 0, unofficial: false },
   UPDATE_CHECK: { label: '새 버전 확인', hosts: [], minIntervalMs: 0, unofficial: false },
   AI_CLAUDE_CLI: { label: 'Claude Code', hosts: [], minIntervalMs: 0, unofficial: false },

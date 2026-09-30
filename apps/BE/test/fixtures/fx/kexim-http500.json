@@ -1,0 +1,5 @@
+{
+  "status": 500,
+  "contentType": "text/html; charset=UTF-8",
+  "body": "<html><head><title>500 Internal Server Error</title></head><body>Internal Server Error</body></html>"
+}
