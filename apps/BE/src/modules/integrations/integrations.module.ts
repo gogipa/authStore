@@ -28,6 +28,8 @@ import { CustomsServiceAdapter } from './fx/customs-service.adapter.js';
 import { FxApiCaller } from './fx/fx-call.js';
 import { FX_SOURCE_PORT, type FxSourcePort } from './fx/fx-source.port.js';
 import { KeximAdapter } from './fx/kexim.adapter.js';
+import { FakeImageGenProvider } from './image-gen/fake-image-gen.provider.js';
+import { IMAGE_GEN_PROVIDER } from './image-gen/image-gen.port.js';
 import { CallLogService } from './http/call-log.service.js';
 import { CLOCK, systemClock } from './http/clock.token.js';
 import {
@@ -77,6 +79,10 @@ import {
  * fx(P2-04): 환율 출처 포트 `FX_SOURCE_PORT`(원가 = `KeximAdapter` 관문 FX_KOREAEXIM, 과세 = `CustomsServiceAdapter` 관문
  *   FX_CUSTOMS)를 export한다. 원값·단위 문자열만 돌려주고 정규화·저장은 pricing이 한다. 키가 없으면 부르지 않고 call_log에
  *   실패 1행(`FxApiCaller`). 테스트는 이 토큰을 `FxFixtureAdapter`로 바꾸거나 가짜 fetch(HTTP_FETCH) 뒤에 fixture를 둔다.
+ * image-gen(P3-02): 썸네일 이미지 생성 포트 `IMAGE_GEN_PROVIDER`(image-gen.port.ts)를 export한다. M0 S1(이미지 생성 경로)
+ *   전이라 가짜 공급자(`FakeImageGenProvider` — 밖을 부르지 않는 단색 PNG)만 붙는다. 실제 어댑터(agy `generate_image` 또는
+ *   Gemini API)는 S1 뒤에 이 토큰에 붙이고 호출마다 call_log(`IMAGE_GEN_CALL_TARGET`)를 남긴다. 테스트는
+ *   `overrideProvider(IMAGE_GEN_PROVIDER)`로 대본 가짜를 넣는다.
  */
 @Module({
   // 하루 조회 상한의 원본이 설정 파일이다(P1-03). settings도 프로필 검증에 CommerceMetaCacheService를 쓰므로(P1-09)
@@ -139,6 +145,14 @@ import {
         fetchCustomsRates: (kstDate) => customs.fetchCustomsRates(kstDate),
       }),
     },
+    {
+      provide: IMAGE_GEN_PROVIDER,
+      useFactory: () => {
+        const provider = new FakeImageGenProvider();
+        provider.announceDefault();
+        return provider;
+      },
+    },
   ],
   exports: [
     HTTP_FETCH,
@@ -161,6 +175,7 @@ import {
     RAKUTEN_GENRE_PORT,
     RakutenGenreService,
     FX_SOURCE_PORT,
+    IMAGE_GEN_PROVIDER,
   ],
 })
 export class IntegrationsModule {}

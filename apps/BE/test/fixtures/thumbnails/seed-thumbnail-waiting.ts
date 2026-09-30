@@ -67,11 +67,14 @@ export function thumbnailImageBytes(name: string): Buffer {
   return readFileSync(join(THUMBNAIL_FIXTURE_DIR, 'images', name));
 }
 
-/** 기본 템플릿 + ⑤ 설정 조각(골격) + 테스트용 차단어 추가분(설정 파일 글) */
-export function settingsWithThumbnail(): string {
+/**
+ * 기본 템플릿 + ⑤ 설정 조각(골격) + 테스트용 차단어 추가분(설정 파일 글). `thumbnail`로 조각의 키를 바꾼다(P3-02 — 예: 생성
+ * 타임아웃을 짧게)
+ */
+export function settingsWithThumbnail(thumbnail: Partial<AppSettings['thumbnail']> = {}): string {
   const fixture = thumbnailSettingsFixture();
   const settings = structuredClone(DEFAULT_SETTINGS) as AppSettings;
-  settings.thumbnail = { ...fixture.thumbnail };
+  settings.thumbnail = { ...fixture.thumbnail, ...thumbnail };
   settings.safety.personBlockWords = [
     ...settings.safety.personBlockWords,
     ...fixture.personBlockWordsExtra,

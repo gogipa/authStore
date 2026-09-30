@@ -702,7 +702,7 @@ paths:
     post:
       operationId: passCandidateGate
       summary: G2·G3 통과 기록
-      description: gate_pass + 후보 상태 자동 전환을 한 트랜잭션으로 쓴다(웹 화면 전용 기록). G3은 thumbnail_selection(+image) 저장과 ⑤ 완료까지 같은 트랜잭션이며, ⑤를 완료한 뒤 G3을 다시 고르면 ⑤의 OWNER_EDIT 새 버전을 만든다(ERD §7.2-4). G2 오류 — 409 STEP_NOT_COMPLETED·VERSION_NOT_CURRENT·NOT_SALE_CANDIDATE·NO_COMPARISON_NOT_CONFIRMED·(M2) PRICE_JUDGEMENT_CALC_ONLY·BRAND_EXCLUDED. G3 오류 — 422 CHECKLIST_INCOMPLETE·IMAGE_NOT_ALLOWED·IMAGE_COUNT_INVALID, 409 SAME_PRODUCT_COLOR_CONFIRMATION_REQUIRED·ALREADY_IN_PROGRESS·STEP_NOT_COMPLETED. 공통 — 422 INVALID_GATE_CODE, 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED·STEP_LOCKED_BY_RUNNING_STEP.
+      description: gate_pass + 후보 상태 자동 전환을 한 트랜잭션으로 쓴다(웹 화면 전용 기록). G3은 thumbnail_selection(+image) 저장과 ⑤ 완료까지 같은 트랜잭션이며, ⑤를 완료한 뒤 G3을 다시 고르면 ⑤의 OWNER_EDIT 새 버전을 만든다(ERD §7.2-4). G2 오류 — 409 STEP_NOT_COMPLETED·VERSION_NOT_CURRENT·NOT_SALE_CANDIDATE·NO_COMPARISON_NOT_CONFIRMED·(M2) PRICE_JUDGEMENT_CALC_ONLY·BRAND_EXCLUDED. G3 오류 — 422 CHECKLIST_INCOMPLETE·IMAGE_NOT_ALLOWED·IMAGE_COUNT_INVALID·SAME_PRODUCT_COLOR_CONFIRMATION_REQUIRED(05-3 표 그대로 422 — P3-02에서 409 표기를 고침), 404 IMAGE_ASSET_NOT_FOUND, 409 ALREADY_IN_PROGRESS·STEP_NOT_COMPLETED. 공통 — 422 INVALID_GATE_CODE, 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED·STEP_LOCKED_BY_RUNNING_STEP.
       tags:
       - step-engine
       x-milestone: M1
@@ -717,7 +717,7 @@ paths:
       - F-TH-16
       - F-TH-17
       - F-PJ-26
-      x-decision: '§7.2-12 제안대로 지문이 최신 통과와 같으면 새 gate_pass 행 없이 200 + 기존 기록을 준다. §7.4-30 G3 체크리스트 키 이름은 표 C 제안(shoeRatioOver70 외 6개)대로 쓴다. P1-06 Proposed — 검사 순서는 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → STEP_LOCKED_BY_RUNNING_STEP(근거 단계가 읽는 ②가 실행 중) → VERSION_NOT_CURRENT → STEP_NOT_COMPLETED → 게이트 조건(공급자). 통과할 수 있는 근거 버전은 G2 = ③ COMPLETED, G3 = ⑤ WAITING_INPUT(첫 선택으로 완료)·COMPLETED(다시 고름). 게이트 공급자(G2 P2-05·G3 P3-02)가 아직 없으면 422 INVALID_GATE_CODE(details.reason=NO_PROVIDER, 문구 ''이 게이트는 아직 준비 중이라 통과할 수 없습니다.''). 200(같은 지문)의 thumbnailSelectionId·thumbnailStepRunId는 null.'
+      x-decision: '§7.2-12 제안대로 지문이 최신 통과와 같으면 새 gate_pass 행 없이 200 + 기존 기록을 준다. §7.4-30 G3 체크리스트 키 이름은 표 C 제안(shoeRatioOver70 외 6개)대로 쓴다. P1-06 Proposed — 검사 순서는 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → STEP_LOCKED_BY_RUNNING_STEP(근거 단계가 읽는 ②가 실행 중) → VERSION_NOT_CURRENT → STEP_NOT_COMPLETED → 게이트 조건(공급자). 통과할 수 있는 근거 버전은 G2 = ③ COMPLETED, G3 = ⑤ WAITING_INPUT(첫 선택으로 완료)·COMPLETED(다시 고름). 게이트 공급자(G2 P2-05·G3 P3-02)가 아직 없으면 422 INVALID_GATE_CODE(details.reason=NO_PROVIDER, 문구 ''이 게이트는 아직 준비 중이라 통과할 수 없습니다.''). 200(같은 지문)의 thumbnailSelectionId·thumbnailStepRunId는 null. P3-02 Proposed(G3) — (1) 같은 지문이면 200은 근거 버전이 산출물을 가진(COMPLETED·RERUN_REQUIRED) 때만이다. 입력 대기 ⑤(첫 선택)는 늘 새 gate_pass를 쓰고 ⑤를 끝낸다. (2) G3 검사 순서: 체크리스트 모양(모르는 키·boolean 아님 422 VALIDATION_FAILED, 대표를 추가에 다시 넣음도 VALIDATION_FAILED) → 422 CHECKLIST_INCOMPLETE(details.uncheckedKeys) → 422 IMAGE_COUNT_INVALID(추가 10장 이상 — 모양 검사는 100개까지 받는다) → 404 IMAGE_ASSET_NOT_FOUND → 422 IMAGE_NOT_ALLOWED(details.reason NOT_GENERATED 원본·참조 전용 | OTHER_RUN 이 ⑤ 버전의 SUCCEEDED 생성 결과가 아님) → 422 SAME_PRODUCT_COLOR_CONFIRMATION_REQUIRED(레퍼런스 가운데 앵커 키가 다르거나 색상 코드를 모르는 것이 있음) → 409 ALREADY_IN_PROGRESS(details.job=GENERATION). (3) ''이 ⑤ 버전의 생성본'' = 오너 수정(OWNER_EDIT) 버전이면 base_step_run_id를 따라 올라간 첫 오너 수정 아닌 버전의 generation_run. (4) 한 트랜잭션: gate_pass → ⑤ 입력 대기면 그 버전을 끝내고(실행기 persist가 닫기 전에 thumbnail_selection+image를 쓴다), 완료면 OWNER_EDIT(owner_action=EDIT, base = 화면이 본 버전) 새 버전을 열어 레퍼런스를 복사하고 새 선택으로 닫는다 — gate_pass.basis_step_run_id는 화면이 본 버전, 응답 thumbnailStepRunId는 선택을 가진 버전. (5) thumbnail_selection.checklist = 7개 true + version(앱 상수 M1-1), sameProductColorConfirmed=true면 same_product_color_confirmed_at = 통과 시각. (6) G3 지문 구성값 = referenceHashes(버전의 레퍼런스 파일 SHA-256) + selectedHash(선택본 대표 + 추가 전체를 sort_order 순 ''<순서>:<파일 SHA-256>''으로 이은 값의 SHA-256) + anchorKey.'
       parameters:
       - $ref: '#/components/parameters/ClientHeader'
       requestBody:
@@ -3061,7 +3061,7 @@ paths:
       - F-TH-24
       - F-TH-25
       - F-TH-27
-      x-decision: §7.4-30 G3 체크리스트 키는 표 C 제안 이름 7개를 쓰고 체크리스트 버전은 checklist.version 문자열로 함께 저장한다; §7.4-31 ⑤를 다시 실행하면 이전 버전 생성본을 가져가지 않고 새 버전에서 새로 생성한다(완료 뒤 G3만 다시 고르면 OWNER_EDIT 새 버전).
+      x-decision: '§7.4-30 G3 체크리스트 키는 표 C 제안 이름 7개를 쓰고 체크리스트 버전은 checklist.version 문자열로 함께 저장한다; §7.4-31 ⑤를 다시 실행하면 이전 버전 생성본을 가져가지 않고 새 버전에서 새로 생성한다(완료 뒤 G3만 다시 고르면 OWNER_EDIT 새 버전). P3-02 Proposed — 모르는 쿼리 키·1 이상 정수가 아닌 stepRunId는 422 INVALID_QUERY_PARAMETER, 다른 후보·다른 단계의 실행이면 404 STEP_RUN_NOT_FOUND. generationRuns는 이 버전의 시도(번호·회차 순)이고 오너 수정 버전(G3 다시 고르기·이전 버전 다시 고르기)은 자기 시도가 없어 base_step_run_id를 따라 올라간 버전의 시도를 준다. adopted = 이 버전의 선택본에 들었는지. g3는 후보 단위(현재 버전으로 다시 계산 — 보는 버전과 무관). sameProductColorRequired = 레퍼런스 가운데 앵커 키가 다르거나 색상 코드(source_color_code)를 모르는 것이 있음. candidateCount(P3-02 추가) = 지금 설정 thumbnail.candidateCount(화면의 후보 칸 수).'
       parameters:
       - $ref: '#/components/parameters/CandidateId'
       - name: stepRunId
@@ -3188,6 +3188,7 @@ paths:
       tags:
       - thumbnails
       x-milestone: M1
+      x-decision: 'P3-02 Proposed — 검사 순서: 404 STEP_RUN_NOT_FOUND → 422 INVALID_STEP_CODE(details.reason=NOT_THUMBNAIL) → 422 VALIDATION_FAILED(slotNos 1..N·중복·빈 목록, faceOption 3종, promptAdjustment 2000자) → 422 REAL_PERSON_NAME_BLOCKED(details.blockedTerms — 채운 전체 프롬프트 재검사, 행을 만들지 않는다) → 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → 409 STEP_RUN_NOT_WAITING_INPUT(입력 대기인 현재 ⑤ 버전이 아님) → 409 REFERENCES_NOT_CONFIRMED(이 버전에 확인한 레퍼런스 1~3장 없음) → 409 ALREADY_IN_PROGRESS(details.job=GENERATION, details.slotNos = 생성 중인 요청 번호). 번호마다 generation_run 1행(RUNNING, 번호 오름차순): attempt_no = 그 번호 최대 + 1, trigger_type INITIAL(첫 시도)·OWNER_RETRY, prompt = 검사를 통과한 전문, requested_size_px = 설정 thumbnail.resolutionPx, provider = 설정 thumbnail.imageProvider(기본 AGY, M0 S1 전에는 가짜 공급자 — model fake-image-gen), reference_set_sha256 = 레퍼런스 해시. 커밋 뒤 번호마다 SSE generation-run.updated(RUNNING). 생성은 이미지 슬롯 1개로 순서대로, 하드 타임아웃 = 설정 thumbnail.generationTimeoutSeconds(최대 900초). 결과 형식은 내용으로 판별해 image_asset(GENERATED·PERMITTED)을 만들고 SUCCEEDED·result_image_asset_id·finished_at을 한 번에 채운다. 거부는 REFUSED + refusal_reason, 그 밖은 FAILED + 한국어 error_message. ⑤는 입력 대기 그대로다. 앱을 다시 켜면 RUNNING 시도는 FAILED(''앱이 꺼져 이미지 생성이 중단되었습니다. 다시 만들어 주세요.'')'
       x-features:
       - F-TH-07
       - F-TH-09
@@ -3245,6 +3246,7 @@ paths:
       tags:
       - thumbnails
       x-milestone: M1
+      x-decision: P3-02 Proposed — adopted = 결과 이미지가 어느 ⑤ 버전의 thumbnail_selection_image에든 들어 있는지(완료 뒤 다시 고른 버전 포함). 경로 id가 1 이상 정수가 아니어도 404 GENERATION_RUN_NOT_FOUND. M2 값(shoeRatio·detailPass·colorDeltaE·shoeBox·detailVerdict)은 null.
       x-features:
       - F-TH-08
       - F-TH-09
@@ -8492,7 +8494,7 @@ components:
           type: array
           maxItems: 9
           uniqueItems: true
-          description: 추가이미지 0~9장
+          description: 추가이미지 0~9장(10장 이상은 422 IMAGE_COUNT_INVALID, 대표이미지와 겹치면 422 VALIDATION_FAILED — P3-02)
           items:
             type: integer
             minimum: 1
@@ -13866,6 +13868,7 @@ components:
       - isCurrent
       - references
       - referencesConfirmed
+      - candidateCount
       - generationRuns
       - g3
       - sameProductColorRequired
@@ -13893,6 +13896,11 @@ components:
         referencesConfirmed:
           type: boolean
           description: 레퍼런스를 고르고 '사람·얼굴 없음'을 확인했는지(생성 버튼 켜짐 조건)
+        candidateCount:
+          type: integer
+          minimum: 1
+          maximum: 4
+          description: 후보 칸 수 N(지금 설정 thumbnail.candidateCount, 기본 2 — P3-02 추가). 생성 요청 slotNos는 1..N
         generationRuns:
           type: array
           items:

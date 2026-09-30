@@ -316,7 +316,7 @@ export interface paths {
         put?: never;
         /**
          * G2·G3 통과 기록
-         * @description gate_pass + 후보 상태 자동 전환을 한 트랜잭션으로 쓴다(웹 화면 전용 기록). G3은 thumbnail_selection(+image) 저장과 ⑤ 완료까지 같은 트랜잭션이며, ⑤를 완료한 뒤 G3을 다시 고르면 ⑤의 OWNER_EDIT 새 버전을 만든다(ERD §7.2-4). G2 오류 — 409 STEP_NOT_COMPLETED·VERSION_NOT_CURRENT·NOT_SALE_CANDIDATE·NO_COMPARISON_NOT_CONFIRMED·(M2) PRICE_JUDGEMENT_CALC_ONLY·BRAND_EXCLUDED. G3 오류 — 422 CHECKLIST_INCOMPLETE·IMAGE_NOT_ALLOWED·IMAGE_COUNT_INVALID, 409 SAME_PRODUCT_COLOR_CONFIRMATION_REQUIRED·ALREADY_IN_PROGRESS·STEP_NOT_COMPLETED. 공통 — 422 INVALID_GATE_CODE, 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED·STEP_LOCKED_BY_RUNNING_STEP.
+         * @description gate_pass + 후보 상태 자동 전환을 한 트랜잭션으로 쓴다(웹 화면 전용 기록). G3은 thumbnail_selection(+image) 저장과 ⑤ 완료까지 같은 트랜잭션이며, ⑤를 완료한 뒤 G3을 다시 고르면 ⑤의 OWNER_EDIT 새 버전을 만든다(ERD §7.2-4). G2 오류 — 409 STEP_NOT_COMPLETED·VERSION_NOT_CURRENT·NOT_SALE_CANDIDATE·NO_COMPARISON_NOT_CONFIRMED·(M2) PRICE_JUDGEMENT_CALC_ONLY·BRAND_EXCLUDED. G3 오류 — 422 CHECKLIST_INCOMPLETE·IMAGE_NOT_ALLOWED·IMAGE_COUNT_INVALID·SAME_PRODUCT_COLOR_CONFIRMATION_REQUIRED(05-3 표 그대로 422 — P3-02에서 409 표기를 고침), 404 IMAGE_ASSET_NOT_FOUND, 409 ALREADY_IN_PROGRESS·STEP_NOT_COMPLETED. 공통 — 422 INVALID_GATE_CODE, 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED·STEP_LOCKED_BY_RUNNING_STEP.
          */
         post: operations["passCandidateGate"];
         delete?: never;
@@ -3744,7 +3744,7 @@ export interface components {
             basisStepRunId: number;
             /** @description 대표이미지(M1은 kind=GENERATED만) */
             representativeImageAssetId: number;
-            /** @description 추가이미지 0~9장 */
+            /** @description 추가이미지 0~9장(10장 이상은 422 IMAGE_COUNT_INVALID, 대표이미지와 겹치면 422 VALIDATION_FAILED — P3-02) */
             additionalImageAssetIds: number[];
             checklist: components["schemas"]["GateThumbnailChecklist"];
             /** @description 다른 앵커 키 레퍼런스를 쓸 때 '같은 상품·색상' 확인(thumbnail_selection.same_product_color_confirmed_at) */
@@ -5789,6 +5789,8 @@ export interface components {
             references: components["schemas"]["ThumbnailReferenceItem"][];
             /** @description 레퍼런스를 고르고 '사람·얼굴 없음'을 확인했는지(생성 버튼 켜짐 조건) */
             referencesConfirmed: boolean;
+            /** @description 후보 칸 수 N(지금 설정 thumbnail.candidateCount, 기본 2 — P3-02 추가). 생성 요청 slotNos는 1..N */
+            candidateCount: number;
             generationRuns: components["schemas"]["ThumbnailGenerationSummary"][];
             /** @description G3 선택. 아직 없으면 null */
             selection?: components["schemas"]["ThumbnailSelectionView"] | null;

@@ -4,14 +4,24 @@ import { describe, expect, it } from 'vitest';
 import { jsonResponse, stubApi } from '@/test/apiStub';
 import { callUsageList } from '@/test/fixtures/callUsage';
 import { candidateDetail, gateList, stepRail } from '@/test/fixtures/stepEngine';
-import { promptPreview, referencesResult, sourceImageList } from '@/test/fixtures/thumbnails';
+import {
+  generationSummary,
+  promptPreview,
+  referencesResult,
+  sourceImageList,
+  thumbnailOutput,
+} from '@/test/fixtures/thumbnails';
 import { renderRoute } from '@/test/renderRoute';
 
 const CANDIDATE_ID = 1;
 /** stepRail fixture의 ⑤ 현재 실행 id(100 + 흐름 순서 3) */
 const RUN_ID = 103;
 
-function setup(thumbnailStatus: 'WAITING_INPUT' | 'NOT_RUN' | 'COMPLETED' = 'WAITING_INPUT') {
+function setup(
+  thumbnailStatus: 'WAITING_INPUT' | 'NOT_RUN' | 'COMPLETED' = 'WAITING_INPUT',
+  // P3-01 테스트: 아직 레퍼런스를 저장하지 않은 ⑤(체크가 비어 시작한다)
+  output = thumbnailOutput({ references: [], referencesConfirmed: false }),
+) {
   let saved = false;
   const api = stubApi({
     'GET /call-usage': () => jsonResponse(callUsageList(38)),
@@ -35,6 +45,40 @@ function setup(thumbnailStatus: 'WAITING_INPUT' | 'NOT_RUN' | 'COMPLETED' = 'WAI
       ),
     [`GET /candidates/${CANDIDATE_ID}/gates`]: () => jsonResponse(gateList({ G2: true })),
     [`GET /candidates/${CANDIDATE_ID}/source-images`]: () => jsonResponse(sourceImageList(6)),
+    [`GET /candidates/${CANDIDATE_ID}/thumbnail`]: () => jsonResponse(output),
+    [`POST /step-runs/${RUN_ID}/generation-runs`]: () =>
+      jsonResponse(
+        {
+          stepRunId: RUN_ID,
+          candidateId: CANDIDATE_ID,
+          generationRuns: [
+            {
+              generationRunId: 801,
+              slotNo: 1,
+              attemptNo: 2,
+              triggerType: 'OWNER_RETRY',
+              status: 'RUNNING',
+            },
+          ],
+        },
+        202,
+      ),
+    [`POST /candidates/${CANDIDATE_ID}/gates/G3/pass`]: () =>
+      jsonResponse(
+        {
+          gatePassId: 5,
+          gate: 'G3',
+          fingerprint: 'f'.repeat(64),
+          basisStepRunId: RUN_ID,
+          passedAt: '2026-09-28T05:24:00.000Z',
+          candidateStatus: 'WORKING',
+          statusChanged: false,
+          thumbnailSelectionId: 9,
+          thumbnailStepRunId: RUN_ID,
+          warnings: [],
+        },
+        201,
+      ),
     'POST /thumbnail-prompt-previews': () =>
       jsonResponse(promptPreview({ generationAllowed: saved })),
     [`PUT /step-runs/${RUN_ID}/thumbnail-references`]: () => {
@@ -105,5 +149,62 @@ describe('⑤ 썸네일 화면(SCR-05, P3-01)', () => {
       ).toHaveLength(1),
     );
     expect(requestsTo(api, 'POST', '/thumbnail-prompt-previews')).toHaveLength(0);
+  });
+
+  it('P3-02: 저장된 레퍼런스를 미리 체크해 보이고, 확인하면 다시 만들기 → 번호 1..N 생성 요청', async () => {
+    const api = setup(
+      'WAITING_INPUT',
+      thumbnailOutput({
+        generationRuns: [generationSummary({ slotNo: 1 }), generationSummary({ slotNo: 2 })],
+      }),
+    );
+    await renderThumbnail();
+    const user = userEvent.setup();
+    // 서버에 저장된 레퍼런스(원본 2번)가 미리 체크되어 있다('사람·얼굴 없음'은 미리 켜지 않는다)
+    const saved = await screen.findByRole('checkbox', { name: '원본 2 레퍼런스' });
+    await waitFor(() => expect(saved).toBeChecked());
+    const noPerson = screen.getByRole('checkbox', { name: '레퍼런스에 사람·얼굴 없음' });
+    expect(noPerson).not.toBeChecked();
+    const regenerate = screen.getByRole('button', { name: '다시 만들기' });
+    await user.click(noPerson);
+    await waitFor(() => expect(regenerate).toBeEnabled());
+    await user.click(regenerate);
+    await waitFor(() =>
+      expect(requestsTo(api, 'POST', `/step-runs/${RUN_ID}/generation-runs`)).toHaveLength(1),
+    );
+    expect(
+      await requestsTo(api, 'POST', `/step-runs/${RUN_ID}/generation-runs`)[0]!.clone().json(),
+    ).toEqual({ slotNos: [1, 2], faceOption: 'FULL_FACE', promptAdjustment: null });
+  });
+
+  it('P3-02: 대표를 고르고 7개를 체크하면 G3 통과를 부른다(나란히 보기에 선택본)', async () => {
+    const api = setup(
+      'WAITING_INPUT',
+      thumbnailOutput({
+        generationRuns: [generationSummary({ slotNo: 1 }), generationSummary({ slotNo: 2 })],
+      }),
+    );
+    await renderThumbnail();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('radio', { name: '후보 2 대표' }));
+    await user.click(screen.getByRole('checkbox', { name: '후보 1 추가' }));
+    const compare = screen.getByRole('region', { name: '레퍼런스와 나란히 보기' });
+    expect(within(compare).getByText('후보 2')).toBeInTheDocument();
+    expect(within(compare).getByText('원본 2번 · 참조 전용')).toBeInTheDocument();
+    const checklist = screen.getByRole('region', { name: '선택 전 확인' });
+    for (const box of within(checklist).getAllByRole('checkbox')) await user.click(box);
+    await user.click(within(checklist).getByRole('button', { name: '썸네일 선택(G3)' }));
+    await waitFor(() =>
+      expect(requestsTo(api, 'POST', `/candidates/${CANDIDATE_ID}/gates/G3/pass`)).toHaveLength(1),
+    );
+    const body = (await requestsTo(api, 'POST', `/candidates/${CANDIDATE_ID}/gates/G3/pass`)[0]!
+      .clone()
+      .json()) as Record<string, unknown>;
+    expect(body).toMatchObject({
+      basisStepRunId: RUN_ID,
+      representativeImageAssetId: 902,
+      additionalImageAssetIds: [901],
+    });
+    expect(Object.values(body.checklist as Record<string, boolean>).every(Boolean)).toBe(true);
   });
 });

@@ -18,7 +18,7 @@ import type {
   ThumbnailReferencesResultDto,
 } from '../dto/thumbnail-references.dto.js';
 import { anchorOf } from '../source-images/source-images.service.js';
-import { isSameAnchor } from '../thumbnail-anchor.js';
+import { isSameAnchor, needsSameProductColorConfirmation } from '../thumbnail-anchor.js';
 import { GENERATION_JOB, REFERENCE_MAX, REFERENCE_MIN } from '../thumbnail-sources.js';
 import {
   sameChoices,
@@ -98,6 +98,18 @@ export function toReferenceItem(
     isSameAnchor: isSameAnchor(anchorOf(candidate), row.imageAsset),
     fileUrl: imageAssetFileUrl(row.imageAssetId),
   };
+}
+
+/**
+ * G3 '같은 상품·색상' 확인이 필요한가(05-2 `sameProductColorRequired`, P3-02 규칙 10): 레퍼런스 하나라도 후보 앵커 키와 다르거나
+ * 색상 코드를 모르면 true. 레퍼런스 저장 응답·⑤ 산출물 조회·G3 검사가 같은 함수를 쓴다
+ */
+export function sameProductColorRequired(
+  rows: readonly Pick<ReferenceRowWithImage, 'imageAsset'>[],
+  candidate: Candidate,
+): boolean {
+  const anchor = anchorOf(candidate);
+  return rows.some((row) => needsSameProductColorConfirmation(anchor, row.imageAsset));
 }
 
 /**
@@ -235,7 +247,7 @@ export class ThumbnailReferencesService {
       stepRunId: run.id,
       inputNo,
       references,
-      sameProductColorRequired: references.some((r) => !r.isSameAnchor),
+      sameProductColorRequired: sameProductColorRequired(rows, candidate),
     };
   }
 }

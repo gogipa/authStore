@@ -34,7 +34,7 @@ describe('게이트 통과 요청 검사(P1-06 규칙 10)', () => {
     );
   });
 
-  it('G3 body: 대표 이미지·추가 0~9장(서로 다름)·체크리스트 객체가 필요하다(값 검사는 P3-02 공급자)', () => {
+  it('G3 body: 대표 이미지·추가(서로 다름, 대표와 겹치지 않음)·체크리스트 객체가 필요하다(값·장수 검사는 P3-02 공급자)', () => {
     const ok = {
       basisStepRunId: 3,
       representativeImageAssetId: 10,
@@ -46,13 +46,15 @@ describe('게이트 통과 요청 검사(P1-06 규칙 10)', () => {
     expect(
       codeOf(() => parseGatePassBody('G3', { ...ok, additionalImageAssetIds: [11, 11] })),
     ).toBe('VALIDATION_FAILED');
+    // 10장은 모양은 맞다 — 개수 규칙은 G3 공급자가 422 IMAGE_COUNT_INVALID로 본다(P3-02 Proposed, 표 C)
     expect(
-      codeOf(() =>
-        parseGatePassBody('G3', {
-          ...ok,
-          additionalImageAssetIds: Array.from({ length: 10 }, (_, i) => i + 1),
-        }),
-      ),
+      parseGatePassBody('G3', {
+        ...ok,
+        additionalImageAssetIds: Array.from({ length: 10 }, (_, i) => i + 11),
+      }).basisStepRunId,
+    ).toBe(3);
+    expect(
+      codeOf(() => parseGatePassBody('G3', { ...ok, additionalImageAssetIds: [10, 11] })),
     ).toBe('VALIDATION_FAILED');
     expect(codeOf(() => parseGatePassBody('G3', { ...ok, checklist: undefined }))).toBe(
       'VALIDATION_FAILED',

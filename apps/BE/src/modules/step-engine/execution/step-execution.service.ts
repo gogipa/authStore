@@ -30,7 +30,7 @@ import type {
 } from '../contracts/step-runner.js';
 import { changedInputKeys, fingerprint, NULL_VALUE_HASH } from '../domain/fingerprint.js';
 import { endTimeFor, waitedSeconds } from '../domain/run-time.js';
-import type { StepCode } from '../domain/steps.js';
+import type { StepCode, StepStatus } from '../domain/steps.js';
 import type { CandidateWarning } from '../domain/warnings.js';
 import {
   AI_ENGINE_RESOLVER,
@@ -352,6 +352,64 @@ export class StepExecutionService {
       settingsSnapshotId: this.settings.currentSnapshotId(),
       aiEngine: null,
       inputs,
+    });
+    await this.status.reevaluate(scope, candidateId, { stepRunId: run.id });
+    const outcome = checkOutcome(await outcomeFor(run));
+    return this.closeRun(scope, run, runner, outcome);
+  }
+
+  /**
+   * 호출자 트랜잭션 안에서 완료된 현재 버전을 바탕으로 오너 수정(EDIT) 새 버전을 열고(`openRun` — 바탕 버전의 입력 행·시작
+   * 지문을 복사, P1-05 Proposed 오너 수정 규칙) 곧바로 결과로 닫는다(`closeRun` — 산출물 `persist`가 **닫기 전에** 돈다, 끝 지문이
+   * 다르면 RERUN_REQUIRED, 뒷단계 전파·후보 재평가·게이트 무효 감지·커밋 뒤 SSE). P3-02: ⑤ 완료 뒤 G3을 다시 고르는 경우
+   * (05-2 x-decision §7.4-31 — 새 선택을 새 버전에 쓴다). 후보 행은 이미 잠겨 있어야 한다. 바탕 버전이 이 후보·단계의 현재
+   * 버전이 아니면 409 VERSION_NOT_CURRENT, 완료가 아니면 409 STEP_NOT_COMPLETED. `ai_*`는 바탕 버전 값을 이어 쓴다.
+   */
+  async recordOwnerEditRun(
+    scope: StepEngineTx,
+    candidateId: number,
+    stepCode: StepCode,
+    baseStepRunId: number,
+    outcomeFor: (run: StepRun) => Promise<StepOutcome>,
+  ): Promise<StepRun> {
+    const runner = this.assertRunnableCode(stepCode);
+    const candidate = await this.guard.lockForUpdate(scope.tx, candidateId);
+    const rows = await loadStepRows(scope.tx, candidateId);
+    const row = rows.find((r) => r.stepCode === stepCode);
+    const base = await scope.tx.stepRun.findUnique({ where: { id: baseStepRunId } });
+    if (!base || base.candidateId !== candidateId || base.stepCode !== stepCode) {
+      throw new ApiException('STEP_RUN_NOT_FOUND', { details: { baseStepRunId } });
+    }
+    if (!row || row.currentStepRunId !== base.id) {
+      throw new ApiException('VERSION_NOT_CURRENT', {
+        details: { stepCode, currentStepRunId: row?.currentStepRunId ?? null },
+      });
+    }
+    if (base.status !== 'COMPLETED') {
+      throw toApiException({
+        code: 'STEP_NOT_COMPLETED',
+        stepCode,
+        status: base.status as StepStatus,
+      });
+    }
+    const run = await this.openRun(scope, {
+      candidate,
+      stepCode,
+      runner,
+      rows,
+      executionMode: 'OWNER_EDIT',
+      ownerAction: 'EDIT',
+      baseStepRunId: base.id,
+      settingsSnapshotId: this.settings.currentSnapshotId(),
+      aiEngine:
+        base.aiEngine && base.aiModel
+          ? {
+              aiEngine: base.aiEngine as AiEngineFix['aiEngine'],
+              aiModel: base.aiModel,
+              aiCliVersion: base.aiCliVersion,
+            }
+          : null,
+      copyInputsFrom: base,
     });
     await this.status.reevaluate(scope, candidateId, { stepRunId: run.id });
     const outcome = checkOutcome(await outcomeFor(run));

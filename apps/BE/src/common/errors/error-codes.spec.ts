@@ -318,6 +318,31 @@ describe('error-codes', () => {
     );
   });
 
+  it('P3-02 썸네일 생성·G3 코드 5개는 05-3 §5.1 문구·상태 그대로다', () => {
+    const expected: Record<string, { status: number; message: string }> = {
+      GENERATION_RUN_NOT_FOUND: { status: 404, message: '썸네일 생성 기록을 찾을 수 없습니다.' },
+      REFERENCES_NOT_CONFIRMED: {
+        status: 409,
+        message: "레퍼런스 컷을 고르고 '사람·얼굴 없음'을 체크해 주세요.",
+      },
+      REAL_PERSON_NAME_BLOCKED: {
+        status: 422,
+        message: '프롬프트에 실존 인물 이름({단어})이 있어 만들 수 없습니다.',
+      },
+      CHECKLIST_INCOMPLETE: { status: 422, message: '체크리스트를 모두 확인해 주세요.' },
+      SAME_PRODUCT_COLOR_CONFIRMATION_REQUIRED: {
+        status: 422,
+        message: "다른 상품·색상의 레퍼런스를 썼습니다. '같은 상품·색상'을 확인해 주세요.",
+      },
+    };
+    for (const [code, value] of Object.entries(expected)) {
+      expect(ERROR_CODES[code as keyof typeof ERROR_CODES]).toEqual(value);
+    }
+    expect(formatErrorMessage('REAL_PERSON_NAME_BLOCKED', { 단어: 'BTS' })).toBe(
+      '프롬프트에 실존 인물 이름(BTS)이 있어 만들 수 없습니다.',
+    );
+  });
+
   it('formatErrorMessage는 {…} 자리를 채우고 모르는 자리는 그대로 둔다', () => {
     expect(formatErrorMessage('DAILY_LIMIT_REACHED', { 대상: '라쿠텐 상품 페이지', n: 110 })).toBe(
       '오늘 라쿠텐 상품 페이지 조회 한도(110건)를 다 썼습니다. 내일 0시(한국 시간)에 다시 됩니다.',

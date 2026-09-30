@@ -48,3 +48,15 @@ export function isSameAnchor(anchor: AnchorKeyFields, image: ImageAnchorFields):
   const imageColor = normalizeAnchorCode(image.sourceColorCode);
   return anchorColor && imageColor ? anchorColor === imageColor : true;
 }
+
+/**
+ * G3 '같은 상품·색상' 확인이 필요한 레퍼런스인가(F-TH-15, P3-02 규칙 10, ERD `image_asset.source_color_code` '모르면 G3
+ * 확인으로 대신한다'): 후보 앵커 키와 다르거나(`isSameAnchor` = false) 이미지의 색상 코드를 모르면 true. `isSameAnchor`는 그대로
+ * 둔다(색상을 모르면 상품만 본다 — 원본 목록의 '같은 앵커' 표시). 레퍼런스 저장 응답·⑤ 산출물·G3 검사가 이 함수 하나를 쓴다.
+ */
+export function needsSameProductColorConfirmation(
+  anchor: AnchorKeyFields,
+  image: ImageAnchorFields,
+): boolean {
+  return !isSameAnchor(anchor, image) || normalizeAnchorCode(image.sourceColorCode) === null;
+}

@@ -15,6 +15,9 @@ describe('설정 thumbnail 섹션(P3-01 — ⑤ 프롬프트 골격·얼굴 노�
     expect(t.faceOptionDefault).toBe('FULL_FACE');
     expect(t.candidateCount).toBe(2);
     expect(t.resolutionPx).toBe(2048);
+    // P3-02: 이미지 생성 공급자(M0 S1 전 가짜 공급자가 이 코드로 기록)·생성 타임아웃 15분
+    expect(t.imageProvider).toBe('AGY');
+    expect(t.generationTimeoutSeconds).toBe(900);
     expect(t.promptTemplate).toContain('{resolution}');
     expect(t.promptTemplate).toContain('{face_option}');
     expect(t.promptTemplate).toContain('NOT resembling any real person or celebrity');
@@ -44,6 +47,12 @@ describe('설정 thumbnail 섹션(P3-01 — ⑤ 프롬프트 골격·얼굴 노�
     ['후보 0장', (s: AppSettings) => (s.thumbnail.candidateCount = 0)],
     ['후보 5장', (s: AppSettings) => (s.thumbnail.candidateCount = 5)],
     ['해상도 256', (s: AppSettings) => (s.thumbnail.resolutionPx = 256)],
+    [
+      '모르는 공급자',
+      (s: AppSettings) => ((s.thumbnail as { imageProvider: string }).imageProvider = 'MIDJOURNEY'),
+    ],
+    ['타임아웃 0초', (s: AppSettings) => (s.thumbnail.generationTimeoutSeconds = 0)],
+    ['타임아웃 15분 초과', (s: AppSettings) => (s.thumbnail.generationTimeoutSeconds = 901)],
     [
       '모르는 키',
       (s: AppSettings) => ((s.thumbnail as unknown as Record<string, unknown>).model = 'x'),

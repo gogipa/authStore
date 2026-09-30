@@ -63,7 +63,8 @@ function isId(value: unknown): value is number {
 
 /**
  * 통과 body 모양 검사(05-2 GatePassG2Request·GatePassG3Request, 표 C). 어긋나면 422 VALIDATION_FAILED.
- * G3 체크리스트 값(모두 true, 422 CHECKLIST_INCOMPLETE)·이미지 규칙은 G3 공급자(P3-02)가 `blockers`로 본다.
+ * G3 체크리스트 값(모두 true, 422 CHECKLIST_INCOMPLETE)·추가이미지 9장 초과(422 IMAGE_COUNT_INVALID)·이미지 규칙은 G3
+ * 공급자(P3-02 thumbnails `ThumbnailG3GateBasis`)가 `blockers`로 본다. 대표이미지를 추가이미지에 다시 넣으면 모양 오류다.
  */
 export function parseGatePassBody(
   gate: GateCode,
@@ -99,16 +100,23 @@ export function parseGatePassBody(
         rejectedValue: body.representativeImageAssetId,
       });
     }
+    // 9장 초과는 모양이 아니라 개수 규칙이라 G3 공급자가 422 IMAGE_COUNT_INVALID로 본다(P3-02 Proposed, 표 C)
     const extra = body.additionalImageAssetIds;
     if (
       !Array.isArray(extra) ||
-      extra.length > 9 ||
+      extra.length > 100 ||
       !extra.every(isId) ||
       new Set(extra).size !== extra.length
     ) {
       errors.push({
         field: 'additionalImageAssetIds',
-        message: '서로 다른 이미지 id 0~9개여야 합니다.',
+        message: '서로 다른 이미지 id 목록이어야 합니다(추가이미지는 9장까지).',
+        rejectedValue: extra,
+      });
+    } else if ((extra as unknown[]).includes(body.representativeImageAssetId)) {
+      errors.push({
+        field: 'additionalImageAssetIds',
+        message: '대표이미지를 추가이미지에 다시 넣을 수 없습니다.',
         rejectedValue: extra,
       });
     }
@@ -266,7 +274,12 @@ export class GateService {
         where: { candidateId, gate },
         orderBy: [{ passedAt: 'desc' }, { id: 'desc' }],
       });
-      if (latest && latest.fingerprint === fingerprint) {
+      // 같은 지문이면 새 행 없이 200 — 근거 버전이 산출물을 가진(완료) 때만. 입력 대기 ⑤(G3 첫 선택)는 늘 기록하고
+      // onPass로 ⑤를 끝낸다(P3-02 Proposed — 같은 해시의 선택이어도 ⑤가 입력 대기에 머물지 않게)
+      const basisRow = rows.find((r) => r.stepCode === basisStepCode);
+      const basisHasOutput =
+        basisRow?.status === 'COMPLETED' || basisRow?.status === 'RERUN_REQUIRED';
+      if (latest && latest.fingerprint === fingerprint && basisHasOutput) {
         return {
           created: false,
           result: this.toResult(latest, candidate.status as CandidateStatus, false, {}),

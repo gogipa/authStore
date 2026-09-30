@@ -1,4 +1,8 @@
-import { isSameAnchor, normalizeAnchorCode } from './thumbnail-anchor.js';
+import {
+  isSameAnchor,
+  needsSameProductColorConfirmation,
+  normalizeAnchorCode,
+} from './thumbnail-anchor.js';
 
 const anchor = { anchorModelCode: '1201A019108', anchorItemCode: null, anchorColorCode: '108' };
 
@@ -47,5 +51,44 @@ describe('isSameAnchor(P3-01 Proposed — 型番·색상 코드와 앵커 키 �
       ),
     ).toBe(false);
     expect(normalizeAnchorCode('  ')).toBeNull();
+  });
+});
+
+describe('needsSameProductColorConfirmation(P3-02 규칙 10 — G3 같은 상품·색상 확인)', () => {
+  const image = { sourceItemCode: 'shop-a:1', sourceModelCodeNorm: '1201A019108' };
+
+  it('앵커 키가 같고 색상 코드를 알면 확인이 필요 없다', () => {
+    expect(needsSameProductColorConfirmation(anchor, { ...image, sourceColorCode: '108' })).toBe(
+      false,
+    );
+  });
+
+  it('型番이 다르거나 색상이 다르면 확인이 필요하다', () => {
+    expect(
+      needsSameProductColorConfirmation(anchor, {
+        ...image,
+        sourceModelCodeNorm: '9999X001',
+        sourceColorCode: '108',
+      }),
+    ).toBe(true);
+    expect(needsSameProductColorConfirmation(anchor, { ...image, sourceColorCode: '001' })).toBe(
+      true,
+    );
+  });
+
+  it('색상 코드를 모르면(같은 型番이어도) 확인이 필요하다 — ERD source_color_code', () => {
+    expect(isSameAnchor(anchor, { ...image, sourceColorCode: null })).toBe(true);
+    expect(needsSameProductColorConfirmation(anchor, { ...image, sourceColorCode: null })).toBe(
+      true,
+    );
+  });
+
+  it('앵커가 아직 없으면 확인이 필요하다', () => {
+    expect(
+      needsSameProductColorConfirmation(
+        { anchorModelCode: null, anchorItemCode: null, anchorColorCode: null },
+        { ...image, sourceColorCode: '108' },
+      ),
+    ).toBe(true);
   });
 });

@@ -1,0 +1,20 @@
+{
+  "note": "⑤ 가짜 이미지 생성 공급자 대본(P3-02 §5.3). 합성 값이다 — 실제 이미지 모델을 부르지 않는다. image는 이 폴더 기준 경로(작은 실제 PNG), slot-2.jpg는 확장자만 jpg이고 내용은 PNG(형식을 내용으로 판별하는지 본다). 거부 사유·실패 문구는 가짜 공급자 문구다(비밀·로컬 경로 없음).",
+  "scenarios": {
+    "success": { "kind": "success", "image": "generated/slot-1.png", "fileName": "slot-1.png" },
+    "success-png-named-jpg": {
+      "kind": "success",
+      "image": "generated/slot-2.jpg",
+      "fileName": "slot-2.jpg"
+    },
+    "refused": {
+      "kind": "refused",
+      "reason": "인물 생성 제한: 실제 사람과 닮은 얼굴은 만들 수 없습니다(가짜 공급자)."
+    },
+    "failed": {
+      "kind": "failed",
+      "message": "이미지 생성 도구가 오류로 끝났습니다(가짜 공급자)."
+    },
+    "timeout": { "kind": "timeout" }
+  }
+}

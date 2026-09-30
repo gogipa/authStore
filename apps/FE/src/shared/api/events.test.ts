@@ -54,6 +54,7 @@ describe('진행 알림 이름', () => {
       'continuous-run.stopped',
       'gate.passed',
       'gate.invalidated',
+      'generation-run.updated',
       'auth.failed',
       'ai-cli-check.completed',
       'keyword-collection.progress',
@@ -351,7 +352,12 @@ describe('진행 알림 이름', () => {
         gatePassId: 3,
         passedAt: '2026-09-28T00:00:00.000Z',
       }),
-    ).toEqual([...gateKeys, ['pricing', 'getPriceJudgement', { candidateId: 12 }]]);
+    ).toEqual([
+      ...gateKeys,
+      ['pricing', 'getPriceJudgement', { candidateId: 12 }],
+      // P3-02: ⑤ 산출물의 G3 유효·선택본
+      ['thumbnails', 'getCandidateThumbnail', { candidateId: 12 }],
+    ]);
     expect(
       EVENT_INVALIDATIONS['gate.invalidated']?.({
         candidateId: 12,
@@ -365,6 +371,24 @@ describe('진행 알림 이름', () => {
       ['sourcing', 'getSourcingComparison', { candidateId: 12 }],
       // P2-05: 판정 화면의 소싱 확정(G2) 줄
       ['pricing', 'getPriceJudgement', { candidateId: 12 }],
+      // P3-02: ⑤ 산출물의 G3 유효
+      ['thumbnails', 'getCandidateThumbnail', { candidateId: 12 }],
+    ]);
+    // P3-02: 생성 시도 상태가 바뀌면 그 후보 ⑤ 산출물(후보 칸)과 그 시도 한 건
+    expect(
+      EVENT_INVALIDATIONS['generation-run.updated']?.({
+        candidateId: 12,
+        stepRunId: 40,
+        generationRunId: 7,
+        slotNo: 1,
+        attemptNo: 1,
+        triggerType: 'INITIAL',
+        status: 'SUCCEEDED',
+        resultImageAssetId: 90,
+      }),
+    ).toEqual([
+      ['thumbnails', 'getCandidateThumbnail', { candidateId: 12 }],
+      ['thumbnails', 'getThumbnailGenerationRun', { generationRunId: 7 }],
     ]);
   });
 });

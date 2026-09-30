@@ -18,6 +18,11 @@ import type {
   ThumbnailReferenceRepository,
 } from './references/thumbnail-reference.repository.js';
 import {
+  checklistSnapshot,
+  type ThumbnailSelectionOutput,
+} from './selection/thumbnail-selection.js';
+import type { ThumbnailSelectionRepository } from './selection/thumbnail-selection.repository.js';
+import {
   SourceImageDownloadError,
   type SourceImageDownloader,
   type SourceImagesInput,
@@ -113,13 +118,30 @@ function setup(options: { selection?: boolean; itemCode?: string } = {}) {
       replaced.push({ stepRunId, rows });
       return Promise.resolve();
     },
-    copyReferences: () => Promise.resolve(0),
+    copyReferences: (_tx: Tx, from: number, to: number) => {
+      copied.push({ table: 'thumbnail_reference', from, to });
+      return Promise.resolve(0);
+    },
   } as unknown as ThumbnailReferenceRepository;
-  const runner = new ThumbnailStepRunner(api, downloader, references, clock);
+  const written: { stepRunId: number; output: ThumbnailSelectionOutput }[] = [];
+  const copied: { table: string; from: number; to: number }[] = [];
+  const selections = {
+    write: (_tx: Tx, stepRunId: number, output: ThumbnailSelectionOutput) => {
+      written.push({ stepRunId, output });
+      return Promise.resolve(1);
+    },
+    copy: (_tx: Tx, from: number, to: number) => {
+      copied.push({ table: 'thumbnail_selection', from, to });
+      return Promise.resolve(null);
+    },
+  } as unknown as ThumbnailSelectionRepository;
+  const runner = new ThumbnailStepRunner(api, downloader, references, selections, clock);
   return {
     runner,
     downloads,
     replaced,
+    written,
+    copied,
     setLatest: (value: ReferenceInputSelection | null) => (latest = value),
     setExisting: (n: number) => (existing = n),
     failDownload: (error: Error) => (downloadImpl = () => Promise.reject(error)),
@@ -261,5 +283,31 @@ describe('ThumbnailStepRunner(P3-01 §5 — ⑤ 실행기)', () => {
       errorMessage: 'x',
     });
     expect(t.replaced).toHaveLength(1);
+  });
+
+  it('persist(P3-02): G3 선택 결과(THUMBNAIL_SELECTION)면 ⑤를 닫기 전에 선택본을 쓰고 레퍼런스는 건드리지 않는다', async () => {
+    const t = setup();
+    const output: ThumbnailSelectionOutput = {
+      kind: 'THUMBNAIL_SELECTION',
+      checklist: checklistSnapshot(),
+      sameProductColorConfirmedAt: null,
+      selectedAt: AT,
+      images: [{ imageAssetId: 31, role: 'REPRESENTATIVE', sortOrder: 0 }],
+    };
+    await t.runner.persist(db, 90, { kind: 'COMPLETED', output });
+    expect(t.written).toEqual([{ stepRunId: 90, output }]);
+    expect(t.replaced).toEqual([]);
+    // 결과가 선택본이 아니면(다른 완료) 쓰지 않는다
+    await t.runner.persist(db, 91, { kind: 'COMPLETED', output: null });
+    expect(t.written).toHaveLength(1);
+  });
+
+  it('copyOutput(P3-02): 이전 버전 다시 고르기는 레퍼런스와 G3 선택을 새 버전으로 복사한다(생성 시도는 복사하지 않는다)', async () => {
+    const t = setup();
+    await t.runner.copyOutput(db, 90, 95);
+    expect(t.copied).toEqual([
+      { table: 'thumbnail_reference', from: 90, to: 95 },
+      { table: 'thumbnail_selection', from: 90, to: 95 },
+    ]);
   });
 });

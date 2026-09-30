@@ -16,6 +16,8 @@ import {
   type SettingsSchemaVersion,
   type SizeRangeMm,
   THUMBNAIL_FACE_OPTIONS,
+  THUMBNAIL_GENERATION_TIMEOUT_MAX_SECONDS,
+  THUMBNAIL_IMAGE_PROVIDERS,
   VAT_MODES,
 } from './settings.types.js';
 
@@ -402,7 +404,14 @@ const schema: JSONSchemaType<AppSettings> = {
     thumbnail: {
       type: 'object',
       additionalProperties: false,
-      required: ['promptTemplate', 'faceOptionDefault', 'candidateCount', 'resolutionPx'],
+      required: [
+        'promptTemplate',
+        'faceOptionDefault',
+        'candidateCount',
+        'resolutionPx',
+        'imageProvider',
+        'generationTimeoutSeconds',
+      ],
       properties: {
         promptTemplate: {
           type: 'string',
@@ -413,6 +422,12 @@ const schema: JSONSchemaType<AppSettings> = {
         faceOptionDefault: { type: 'string', enum: THUMBNAIL_FACE_OPTIONS },
         candidateCount: { type: 'integer', minimum: 1, maximum: 4 },
         resolutionPx: { type: 'integer', minimum: 512, maximum: 4096 },
+        imageProvider: { type: 'string', enum: THUMBNAIL_IMAGE_PROVIDERS },
+        generationTimeoutSeconds: {
+          type: 'integer',
+          minimum: 1,
+          maximum: THUMBNAIL_GENERATION_TIMEOUT_MAX_SECONDS,
+        },
       },
     },
     notice: {

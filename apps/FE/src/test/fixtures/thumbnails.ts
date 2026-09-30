@@ -1,4 +1,6 @@
 import type {
+  ThumbnailGenerationSummary,
+  ThumbnailOutput,
   ThumbnailPromptPreview,
   ThumbnailReferencesResult,
   ThumbnailSourceImage,
@@ -75,6 +77,62 @@ export function promptPreview(patch: Partial<ThumbnailPromptPreview> = {}): Thum
     realPersonNameDetected: false,
     blockedTerms: [],
     generationAllowed: false,
+    ...patch,
+  };
+}
+
+/** 생성 시도 한 건 요약(기본: 번호 1·1회차·완료, 결과 이미지 id 900 + 번호) — P3-02 */
+export function generationSummary(
+  patch: Partial<ThumbnailGenerationSummary> & { slotNo: number },
+): ThumbnailGenerationSummary {
+  const status = patch.status ?? 'SUCCEEDED';
+  return {
+    generationRunId: 700 + patch.slotNo,
+    attemptNo: 1,
+    triggerType: 'INITIAL',
+    promptAdjusted: false,
+    faceOption: 'FULL_FACE',
+    requestedSizePx: 2048,
+    provider: 'AGY',
+    model: 'fake-image-gen',
+    providerVersion: 'fake-1',
+    status,
+    refusalReason: null,
+    errorMessage: null,
+    resultImageAssetId: status === 'SUCCEEDED' ? 900 + patch.slotNo : null,
+    startedAt: '2026-09-28T05:20:00.000Z',
+    finishedAt: status === 'RUNNING' ? null : '2026-09-28T05:21:00.000Z',
+    adopted: false,
+    shoeRatio: null,
+    shoeRatioMetric: null,
+    detailPass: null,
+    colorDeltaE: null,
+    ...patch,
+  };
+}
+
+/** ⑤ 산출물(기본: 입력 대기 · 레퍼런스 원본 2번 확인 · 후보 2칸 · 선택 없음 · G3 무효) — P3-02 */
+export function thumbnailOutput(patch: Partial<ThumbnailOutput> = {}): ThumbnailOutput {
+  const stepRunId = patch.stepRunId ?? 103;
+  return {
+    stepRunId,
+    candidateId: 1,
+    version: 1,
+    stepRunStatus: 'WAITING_INPUT',
+    isCurrent: true,
+    references: referencesResult(stepRunId, [2]).references,
+    referencesConfirmed: true,
+    candidateCount: 2,
+    generationRuns: [],
+    selection: null,
+    g3: {
+      gatePassId: null,
+      passedAt: null,
+      basisStepRunId: null,
+      valid: false,
+      changedBasisKeys: [],
+    },
+    sameProductColorRequired: false,
     ...patch,
   };
 }

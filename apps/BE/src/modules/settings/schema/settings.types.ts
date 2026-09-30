@@ -374,6 +374,16 @@ export const THUMBNAIL_FACE_OPTIONS = ['FULL_FACE', 'CHIN_CROP', 'HANDS_UPPER_BO
 export type ThumbnailFaceOption = (typeof THUMBNAIL_FACE_OPTIONS)[number];
 
 /**
+ * 이미지 생성 공급자(ERD `ck_gen_provider`, PRD §8.4 공급자 표, IM-09). M0 S1에서 하나로 정한다. 정하기 전에는 가짜 공급자
+ * (`integrations/image-gen/fake-image-gen.provider.ts`)가 이 코드로 기록한다(P3-02 Proposed). 선택 AI 엔진(`ai.engine`)과 섞지 않는다
+ */
+export const THUMBNAIL_IMAGE_PROVIDERS = ['AGY', 'GEMINI_API', 'OPENAI_API', 'CODEX'] as const;
+export type ThumbnailImageProvider = (typeof THUMBNAIL_IMAGE_PROVIDERS)[number];
+
+/** 생성 한 건 하드 타임아웃 상한(초, P3-02 규칙 5 — 15분). 설정은 이 값 이하로만 줄인다 */
+export const THUMBNAIL_GENERATION_TIMEOUT_MAX_SECONDS = 900;
+
+/**
  * ⑤ 썸네일(P3-01 — ERD `generation_run` '⑤ 입력 기록 규칙', PRD §8.4 '기본 프롬프트 골격', 06-4 §2.2).
  * `promptTemplate`·`faceOptionDefault`만 ⑤ 시작 조건(입력 지문)이다. 후보 수·해상도는 P3-01 Proposed 키 이름이다.
  * 실존 인물 차단어 추가분은 안전 목록 `safety.personBlockWords`(내장 목록은 뺄 수 없다)를 그대로 쓴다.
@@ -390,6 +400,10 @@ export interface ThumbnailSettings {
   candidateCount: number;
   /** 생성 해상도 px(PRD §16 ③ 2K = 2048, M0 S1에서 확정). 512~4096 */
   resolutionPx: number;
+  /** 이미지 생성 공급자(P3-02 Proposed 키 — M0 S1에서 확정). 기본 AGY */
+  imageProvider: ThumbnailImageProvider;
+  /** 생성 한 건 타임아웃(초, P3-02 Proposed 키). 1~900, 기본 900(15분 — 하드 상한). 테스트는 짧게 둔다 */
+  generationTimeoutSeconds: number;
 }
 
 /** 설정 JSON 전체(schemaVersion "1") */
@@ -402,7 +416,7 @@ export interface AppSettings {
   safety: SafetySettings;
   /** P2-06: ④ 카테고리 매핑표 */
   category: CategorySettings;
-  /** P3-01: ⑤ 썸네일 프롬프트 골격·얼굴 노출 기본값·후보 수·해상도 */
+  /** P3-01: ⑤ 썸네일 프롬프트 골격·얼굴 노출 기본값·후보 수·해상도. P3-02: 이미지 생성 공급자·생성 타임아웃 */
   thumbnail: ThumbnailSettings;
   notice: NoticeSettings;
   /** P1-09: 발송 택배사 코드 목록(GET /dispatch-delivery-companies) */

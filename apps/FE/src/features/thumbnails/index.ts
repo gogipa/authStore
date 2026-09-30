@@ -1,14 +1,80 @@
 /**
  * thumbnails 도메인(OpenAPI 태그 `thumbnails`)의 공개 API. 밖에서는 `@/features/thumbnails`로만 가져온다.
  * P3-01: 원본 이미지 목록(listCandidateSourceImages)·레퍼런스 저장(putThumbnailReferences)·프롬프트 미리보기
- * (createThumbnailPromptPreview) 훅과 표시 규칙(model/thumbnails). P3-02가 생성·G3 훅을 더한다.
+ * (createThumbnailPromptPreview) 훅과 표시 규칙(model/thumbnails).
+ * P3-02: ⑤ 산출물(getCandidateThumbnail)·생성 시도(getThumbnailGenerationRun)·생성(createThumbnailGenerationRuns) 훅과 후보 칸·
+ * 대표·추가 고르기·G3 체크리스트 규칙(model/generation). G3 통과는 `@/features/step-engine`의 `usePassGate`를 쓴다.
  */
 export { THUMBNAILS_TAG_KEY, thumbnailKeys } from './api/queryKeys';
 export {
   useCandidateSourceImagesQuery,
+  useCandidateThumbnailQuery,
+  useCreateGenerationRunsMutation,
+  useGenerationRunQuery,
   usePutThumbnailReferencesMutation,
   useThumbnailPromptPreviewMutation,
 } from './api/thumbnails';
+export {
+  ADDITIONAL_LABEL,
+  ADDITIONAL_MAX,
+  allSlots,
+  CANDIDATE_GRID_TITLE,
+  candidateSummaryText,
+  checklistComplete,
+  chooseRepresentative,
+  EMPTY_PICK,
+  emptyChecklist,
+  G3_CHECKLIST_KEYS,
+  G3_CHECKLIST_REASON,
+  G3_CHECKLIST_TITLE,
+  G3_GENERATING_REASON,
+  G3_INVALID_TEXT,
+  G3_NOT_WAITING_REASON,
+  G3_PASS_LABEL,
+  G3_PICK_REASON,
+  G3_REPICK_CAPTION,
+  G3_REPICK_NOTE,
+  G3_SAME_AS_PASSED_REASON,
+  G3_SAME_PRODUCT_REASON,
+  g3ChecklistItems,
+  g3DisabledReason,
+  g3PassBody,
+  GRID_EMPTY_TEXT,
+  hasRunning,
+  LOWEST_FACE_TEXT,
+  lowerFaceLabel,
+  lowerFaceOption,
+  NEXT_CONTENT_LABEL,
+  pickFromSelection,
+  REGENERATE_LABEL,
+  REPRESENTATIVE_LABEL,
+  resolutionLabel,
+  SAME_PRODUCT_DESCRIPTION,
+  SAME_PRODUCT_LABEL,
+  SAME_PRODUCT_NOTE,
+  samePick,
+  SIDE_BY_SIDE_EMPTY_TEXT,
+  SIDE_BY_SIDE_TITLE,
+  SLOT_EMPTY_TEXT,
+  SLOT_FAILED_TITLE,
+  SLOT_REFUSED_TITLE,
+  SLOT_RUNNING_TEXT,
+  slotCells,
+  toggleAdditional,
+  withAndParticle,
+} from './model/generation';
+export type {
+  G3ChecklistKey,
+  G3ChecklistState,
+  G3State,
+  GenerationRunAccepted,
+  GenerationRunCreateRequest,
+  GenerationRunDetail,
+  SlotCell,
+  ThumbnailGenerationSummary,
+  ThumbnailOutput,
+  ThumbnailPick,
+} from './model/generation';
 export {
   blockedTermsText,
   DEFAULT_FACE_OPTION,

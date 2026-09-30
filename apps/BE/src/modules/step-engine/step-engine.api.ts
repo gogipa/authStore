@@ -4,8 +4,9 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { CandidateStatusService } from './candidates/candidate-status.service.js';
 import { StepEngineTransactions, type Db, type StepEngineTx } from './candidates/step-engine-tx.js';
 import type { StepOutcome } from './contracts/step-runner.js';
-import type { StepCode } from './domain/steps.js';
+import type { GateCode, StepCode } from './domain/steps.js';
 import { StepExecutionService } from './execution/step-execution.service.js';
+import { GateValidityService } from './gates/gate-validity.service.js';
 import type { PinnedAiContext } from '../integrations/ai-engine/ai-executor.types.js';
 import type { ReferenceInputChange } from '../settings/forwarder-rate-tables/rate-table-rerun.port.js';
 import type { CandidateCreationExtension } from './ports/candidate-creation.extension.js';
@@ -19,6 +20,15 @@ import type {
 } from './ports/sourcing-selection.port.js';
 import { StepModulePorts } from './ports/step-module-ports.js';
 import { PropagationService } from './propagation/propagation.service.js';
+
+/** 게이트 하나의 최신 통과·유효성(P3-02 — 05-2 ThumbnailG3Validity 모양) */
+export interface GateStateView {
+  gatePassId: number | null;
+  passedAt: Date | null;
+  basisStepRunId: number | null;
+  valid: boolean;
+  changedBasisKeys: string[];
+}
 
 /** 입력 대기 실행 이어 가기(다시 run) 또는 끝내기(결과를 줌) */
 export type ResumeWaitingInput =
@@ -54,6 +64,12 @@ export type ResumeWaitingInput =
  * - `readSourcingImages(sourcingStepRunId, db?)`: ② 버전의 소싱 선택 상품 원본 이미지 출처(⑤ 원본 받기). 읽기 함수의 선택
  *   메서드 `readImages`를 부른다. ⑤는 이 값을 입력 지문에 넣지 않는다
  * - `refreshWaitingRunInputs`는 ⑤ 레퍼런스 저장(실행 중 오너 입력 `owner.referenceSelection` 해시 갱신)도 쓴다
+ * P3-02:
+ * - `recordOwnerEditRun(scope, candidateId, stepCode, baseStepRunId, outcomeFor)`: 호출자 트랜잭션 안에서 완료된 현재 버전을
+ *   바탕으로 오너 수정(EDIT) 새 버전을 열고 `outcomeFor`의 결과로 곧바로 닫는다(⑤ 완료 뒤 G3 다시 고르기 — 새 선택은
+ *   `persist`가 닫기 전에 쓴다). `outcomeFor` 안에서 새 버전에 산출물(레퍼런스 복사 등)을 쓸 수 있다
+ * - `gateState(candidateId, gate, db?)`: 게이트 최신 통과·지문 유효·바뀐 구성값(⑤ 산출물 조회의 G3 유효 — 05-2
+ *   ThumbnailG3Validity). 게이트 통과 자체는 여기에 열지 않는다(웹 화면 전용 `POST …/gates/{code}/pass`)
  */
 @Injectable()
 export class StepEngineApi {
@@ -64,7 +80,40 @@ export class StepEngineApi {
     private readonly propagation: PropagationService,
     private readonly status: CandidateStatusService,
     private readonly ports: StepModulePorts,
+    private readonly gateValidity: GateValidityService,
   ) {}
+
+  recordOwnerEditRun(
+    scope: StepEngineTx,
+    candidateId: number,
+    stepCode: StepCode,
+    baseStepRunId: number,
+    outcomeFor: (run: StepRun) => Promise<StepOutcome>,
+  ): Promise<StepRun> {
+    return this.executions.recordOwnerEditRun(
+      scope,
+      candidateId,
+      stepCode,
+      baseStepRunId,
+      outcomeFor,
+    );
+  }
+
+  /** 게이트(G2·G3) 하나의 최신 통과와 지금 값 기준 유효성(지문 재계산) */
+  async gateState(
+    candidateId: number,
+    gate: GateCode,
+    db: Db = this.prisma,
+  ): Promise<GateStateView> {
+    const inspection = (await this.gateValidity.inspect(db, candidateId))[gate];
+    return {
+      gatePassId: inspection.latest?.id ?? null,
+      passedAt: inspection.latest?.passedAt ?? null,
+      basisStepRunId: inspection.latest?.basisStepRunId ?? null,
+      valid: inspection.valid,
+      changedBasisKeys: inspection.changedBasisKeys,
+    };
+  }
 
   recordInlineRun(
     scope: StepEngineTx,

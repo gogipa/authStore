@@ -1,7 +1,8 @@
 /*
- * SCR-05 ⑤ 썸네일(Thumbnail.dc.html, P3-01). ⑤ 구역은 h2(20px) + 상태 줄, 아래 '원본 이미지' 패널(6칸 격자 — 카드 안
+ * SCR-05 ⑤ 썸네일(Thumbnail.dc.html, P3-01·P3-02). ⑤ 구역은 h2(20px) + 상태 줄, 아래 '원본 이미지' 패널(6칸 격자 — 카드 안
  * 84px 그림 칸 · '참조 전용' 칩 · 번호·해상도 · '레퍼런스' 체크, 고른 카드는 accent 2px 테두리 + accent-soft), 그 아래
- * [왼쪽 280px '생성 옵션' | (P3-02) 썸네일 후보]. 색·크기는 토큰 변수만(라이트 테마).
+ * [왼쪽 280px '생성 옵션' | 썸네일 후보(칸 격자 — 92px 그림 칸)], 맨 아래 [408px '레퍼런스와 나란히 보기'(144px 그림 칸 2개) |
+ * '선택 전 확인'(체크 2열)]. 색·크기는 토큰 변수만(라이트 테마).
  */
 .srOnly {
   position: absolute;
@@ -225,4 +226,216 @@
 
 .personCheck {
   display: flex;
+}
+
+/* ── 썸네일 후보(P3-02) ── */
+.candidatesPanel {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.candidateGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.candidateCard,
+.candidateCardSelected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  box-sizing: border-box;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  min-width: 0;
+}
+
+.candidateCardSelected {
+  padding: calc(var(--space-2) - 1px);
+  border: 2px solid var(--color-accent);
+}
+
+.candidateFrame {
+  height: 92px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunk);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.candidateHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+.candidateName {
+  font: var(--type-caption);
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.pickRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.regenerateRow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.failedText {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-failed);
+  word-break: break-word;
+}
+
+.refusal {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.refusalBody {
+  font: var(--type-caption);
+  word-break: break-word;
+}
+
+.refusalAction {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+/* ── 아래 칸: 나란히 보기(408px) | 선택 전 확인(P3-02) ── */
+.comparePanel {
+  width: 408px;
+  flex-shrink: 0;
+}
+
+.compareGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.compareFigure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.compareFrame {
+  height: 144px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunk);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.compareCaption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+
+.compareLabel {
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-ink);
+}
+
+.referenceSwitch {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.switchButton,
+.switchButtonOn {
+  height: 28px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: var(--type-caption);
+  cursor: pointer;
+}
+
+.switchButtonOn {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.checklistPanel {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.checklistGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-3);
+}
+
+.checklistFoot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.gateLine {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.gateRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mono {
+  font: var(--type-caption);
+  font-family: var(--font-mono);
+  color: var(--color-ink-muted);
+}
+
+.passAction {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
+.error {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-failed);
 }

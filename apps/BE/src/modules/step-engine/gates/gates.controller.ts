@@ -53,12 +53,15 @@ export class GatesController {
   })
   @ApiOkResponse({ type: GatePassResultDto, description: '지문이 최신 통과와 같아 기존 기록' })
   @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host·Origin·X-AutoStore-Client)' })
-  @ApiNotFoundResponse({ description: 'CANDIDATE_NOT_FOUND' })
+  @ApiNotFoundResponse({ description: 'CANDIDATE_NOT_FOUND · (G3) IMAGE_ASSET_NOT_FOUND' })
   @ApiConflictResponse({
     description:
-      'VERSION_NOT_CURRENT · STEP_NOT_COMPLETED · NOT_SALE_CANDIDATE · NO_COMPARISON_NOT_CONFIRMED · CANDIDATE_LOCKED · CANDIDATE_EXCLUDED · STEP_LOCKED_BY_RUNNING_STEP',
+      'VERSION_NOT_CURRENT · STEP_NOT_COMPLETED · NOT_SALE_CANDIDATE · NO_COMPARISON_NOT_CONFIRMED · CANDIDATE_LOCKED · CANDIDATE_EXCLUDED · STEP_LOCKED_BY_RUNNING_STEP · (G3) ALREADY_IN_PROGRESS',
   })
-  @ApiUnprocessableEntityResponse({ description: 'INVALID_GATE_CODE · VALIDATION_FAILED' })
+  @ApiUnprocessableEntityResponse({
+    description:
+      'INVALID_GATE_CODE · VALIDATION_FAILED · (G3) CHECKLIST_INCOMPLETE · IMAGE_COUNT_INVALID · IMAGE_NOT_ALLOWED · SAME_PRODUCT_COLOR_CONFIRMATION_REQUIRED',
+  })
   async pass(
     @Param('candidateId', CandidateIdPipe) candidateId: number,
     @Param('gateCode', GateCodePipe) gate: GateCode,

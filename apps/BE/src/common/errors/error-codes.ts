@@ -361,6 +361,26 @@ export const ERROR_CODES = {
   },
   /** 05-3 §5.1: 레퍼런스가 될 수 없는 종류·다른 itemCode 원본 등(details.reason, `{이유}`는 P3-01 Proposed 문구) */
   IMAGE_NOT_ALLOWED: { status: 422, message: '이 이미지는 여기에 쓸 수 없습니다({이유}).' },
+  // ── thumbnails ⑤ 썸네일 생성·G3(P3-02, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 생성 id 없음 */
+  GENERATION_RUN_NOT_FOUND: { status: 404, message: '썸네일 생성 기록을 찾을 수 없습니다.' },
+  /** 05-3 §5.1: 레퍼런스 확인 전 생성(이 ⑤ 버전에 '사람·얼굴 없음'을 확인한 레퍼런스 1~3장이 없음) */
+  REFERENCES_NOT_CONFIRMED: {
+    status: 409,
+    message: "레퍼런스 컷을 고르고 '사람·얼굴 없음'을 체크해 주세요.",
+  },
+  /** 05-3 §5.1: 차단어(F-TH-10) — details.blockedTerms, `{단어}` = 걸린 단어(쉼표로 잇는다) */
+  REAL_PERSON_NAME_BLOCKED: {
+    status: 422,
+    message: '프롬프트에 실존 인물 이름({단어})이 있어 만들 수 없습니다.',
+  },
+  /** 05-3 §5.1: G3 체크리스트 항목 false·누락(details.uncheckedKeys) */
+  CHECKLIST_INCOMPLETE: { status: 422, message: '체크리스트를 모두 확인해 주세요.' },
+  /** 05-3 §5.1: 앵커 키가 다른(또는 색상 코드를 모르는) 레퍼런스인데 '같은 상품·색상' 확인 없음(F-TH-15) */
+  SAME_PRODUCT_COLOR_CONFIRMATION_REQUIRED: {
+    status: 422,
+    message: "다른 상품·색상의 레퍼런스를 썼습니다. '같은 상품·색상'을 확인해 주세요.",
+  },
   INTERNAL_ERROR: {
     status: 500,
     message: '앱 안에서 오류가 났습니다. 다시 해 보고, 계속되면 로그를 확인해 주세요.',

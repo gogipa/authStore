@@ -49,6 +49,7 @@
 6. **SCR-04가 더 읽는 것(P2-05 Proposed)**: 틀 공통 + 표의 연산에 더해 `getSourcingComparison`(② 현재 버전이 비교를 했는지 — 쿠폰 칸·'비교 없이 확정'을 URL 후보에만 보이려고)과 `getForwarderRateTable`(비용 분해 배대지 줄의 요금표 버전 'v2026-09')을 부른다. '실행'·'다시 실행'은 틀 공통 `startCandidateStepRun`(URL 후보면 `ownerInputs.couponYen`), '소싱 확정(G2)'은 `passCandidateGate`(G2)다.
 7. **SCR-04 ④(P2-06 Proposed)**: `getCategoryDecision`·`selectCategoryDecisionLeaf` + 성별 재확인은 `setCandidateGender`(step-engine). 표의 `listCommerceCategories`는 M1에서 부르지 않는다 — '남성신발 전체 목록'도 결정 응답의 `categoryOptions`를 쓴다(목록 밖 검색·직접 선택은 M2 F-CA-11). 단계 레일 ④ 링크 `judgement#category`는 화면이 해시로 스크롤한다.
 8. **SCR-05 ⑤(P3-01 Proposed)**: P3-01은 `listCandidateSourceImages`(`sourceSection=PRODUCT_IMAGE`)·`putThumbnailReferences`·`createThumbnailPromptPreview` + 틀 공통 `startCandidateStepRun`(THUMBNAIL, body 없음)만 부른다. 이미지는 응답 `fileUrl`(`getImageAssetFile`)을 `<img src>`로. `getCandidateThumbnail`·`createThumbnailGenerationRuns`·`getThumbnailGenerationRun`은 P3-02가 붙인다(SSE 무효화 키는 먼저 넣었다).
+9. **SCR-05 ⑤(P3-02 Proposed)**: `getCandidateThumbnail`(현재 버전 — 레퍼런스 미리 체크·후보 칸·G3 유효, `candidateCount`), `createThumbnailGenerationRuns`('만들기'·'다시 만들기'·거부 뒤 낮춘 재시도), `getThumbnailGenerationRun`(칸의 '프롬프트'를 펼칠 때만), G3 통과는 틀 공통 `passCandidateGate`(G3)·`getCandidate`(선택 색상). 이미지는 `fileUrl`(`getImageAssetFile`). `?stepRunId=` 이전 버전 보기는 M1 화면에 두지 않는다(SCR-12 버전 이력이 맡는다).
 
 ## 4. M2 연산 (시안에만 있고 M1에서 만들지 않음)
 

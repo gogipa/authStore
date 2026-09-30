@@ -33,6 +33,11 @@ export interface SourceImagesPanelProps {
    * 고른 것을 바꾸거나 체크를 풀면 `false`
    */
   onConfirmedChange?: (confirmed: boolean, result: ThumbnailReferencesResult | null) => void;
+  /**
+   * 서버에 저장된 이 버전의 레퍼런스(순서대로, P3-02 `getCandidateThumbnail`). 오너가 아직 고르지 않았으면 체크에 미리 보인다
+   * (다시 실행 때 복사한 기본값 포함). '사람·얼굴 없음'은 미리 켜지 않는다
+   */
+  savedSelection?: readonly number[] | null;
 }
 
 /**
@@ -47,11 +52,15 @@ export function SourceImagesPanel({
   candidateId,
   stepRunId,
   onConfirmedChange,
+  savedSelection,
 }: SourceImagesPanelProps) {
   const reasonId = useId();
   const query = useCandidateSourceImagesQuery(candidateId, 'PRODUCT_IMAGE');
   const save = usePutThumbnailReferencesMutation();
-  const [selection, setSelection] = useState<number[]>([]);
+  // 오너가 고르기 전에는 서버에 저장된 레퍼런스를 보인다(P3-02)
+  const [picked, setPicked] = useState<number[] | null>(null);
+  const selection = picked ?? [...(savedSelection ?? [])];
+  const setSelection = (next: (current: number[]) => number[]) => setPicked(next(selection));
   const [noPerson, setNoPerson] = useState(false);
   const editable = stepRunId !== null;
   const images = query.data?.items ?? [];

@@ -18,6 +18,8 @@ import { INPUT_KEYS } from '../step-engine/domain/input-keys.js';
 import { toApiException } from '../step-engine/execution/step-blocks.js';
 import { StepEngineApi } from '../step-engine/step-engine.api.js';
 import { ThumbnailReferenceRepository } from './references/thumbnail-reference.repository.js';
+import { isThumbnailSelectionOutput } from './selection/thumbnail-selection.js';
+import { ThumbnailSelectionRepository } from './selection/thumbnail-selection.repository.js';
 import {
   SourceImageDownloader,
   SourceImageDownloadError,
@@ -83,7 +85,10 @@ function externalFailure(error: unknown): Extract<StepOutcome, { kind: 'FAILED' 
  *   생성(P3-02 `generation_run`)의 값이라 여기서 기록하지 않는다
  * - 실행: ② 선택 상품 원본 받기(`SourceImageDownloader`) → 입력 대기(`THUMBNAIL_REFERENCE_REQUIRED`, pending
  *   `owner.referenceSelection`) → `persist`가 레퍼런스 기본값 복사. 받기 실패는 FAILED(EXTERNAL_API). ⑤는 G3 선택(P3-02)까지
- *   입력 대기다
+ *   입력 대기다. 생성 시도(`generation_run`)는 ⑤ 단계 상태를 바꾸지 않는다(P3-02 규칙 6)
+ * - P3-02 완료: G3 공급자(`ThumbnailG3GateBasis.onPass`)가 입력 대기를 결과 `THUMBNAIL_SELECTION`으로 끝내면 `persist`가 ⑤를
+ *   닫기 **전에** `thumbnail_selection`(+image)을 쓴다(`trg_output_frozen`). ⑤를 다시 실행하면 이전 버전의 생성본은 가져가지 않는다
+ *   (새 버전에서 새로 만든다 — 05-2 x-decision §7.4-31)
  * - ② 산출물은 step-engine 창구(`StepEngineApi.currentCompletedRun`·`readSourcingImages`)로만 읽는다(sourcing import 없음)
  */
 @StepRunnerFor('THUMBNAIL')
@@ -97,6 +102,7 @@ export class ThumbnailStepRunner implements StepRunner {
     private readonly api: StepEngineApi,
     private readonly downloader: SourceImageDownloader,
     private readonly references: ThumbnailReferenceRepository,
+    private readonly selections: ThumbnailSelectionRepository,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -192,6 +198,11 @@ export class ThumbnailStepRunner implements StepRunner {
    * 이 버전의 `thumbnail_reference`로 복사해 기본값으로 둔다(규칙 6). 같은 실행에 두 번 불려도 이미 있으면 두지 않는다
    */
   async persist(tx: Tx, stepRunId: number, outcome: StepOutcome): Promise<void> {
+    // P3-02: G3 선택으로 끝낼 때 — 선택본을 ⑤를 닫기 전에 쓴다
+    if (outcome.kind === 'COMPLETED' && isThumbnailSelectionOutput(outcome.output)) {
+      await this.selections.write(tx, stepRunId, outcome.output);
+      return;
+    }
     if (outcome.kind !== 'WAITING_INPUT' || !isThumbnailOriginalsOutput(outcome.output)) return;
     const output = outcome.output;
     const existing = await this.references.referencesOf(tx, stepRunId);
@@ -214,12 +225,18 @@ export class ThumbnailStepRunner implements StepRunner {
     );
   }
 
-  /** 이전 버전 다시 고르기·그대로 유지: 레퍼런스 행을 새 버전으로 그대로 복사한다(생성·G3 선택은 P3-02가 더한다) */
+  /**
+   * 이전 버전 다시 고르기(오너 수정 RESTORE_VERSION): 레퍼런스 행과 G3 선택(+image)을 새 버전으로 그대로 복사한다(P3-02).
+   * 생성 시도(`generation_run`)는 복사하지 않는다 — 새 버전의 '이 실행의 생성본'은 `base_step_run_id`를 따라 올라간 버전의
+   * 생성 시도다(`ThumbnailSelectionRepository.generationSourceRunId`, P3-02 Proposed). G3 다시 고르기(OWNER_EDIT EDIT)는 G3
+   * 공급자가 레퍼런스만 복사하고 새 선택을 쓴다
+   */
   async copyOutput(
     tx: Tx,
     fromStepRunId: number,
     toStepRunId: number,
   ): Promise<CandidateEffects | void> {
     await this.references.copyReferences(tx, fromStepRunId, toStepRunId);
+    await this.selections.copy(tx, fromStepRunId, toStepRunId);
   }
 }

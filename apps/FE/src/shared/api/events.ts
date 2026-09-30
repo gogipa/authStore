@@ -107,6 +107,9 @@ export type EventInvalidations = {
  * - P3-01: `step-run.status-changed`가 ⑤(THUMBNAIL)이면 그 후보의 원본 이미지 목록(`listCandidateSourceImages` — ⑤가 원본을
  *   받고 입력 대기가 될 때)과 ⑤ 산출물(`getCandidateThumbnail`, P3-02 훅). 레퍼런스 저장은 응답 뒤 훅이 무효화하고, 프롬프트
  *   미리보기는 캐시하지 않는 mutation이다.
+ * - P3-02: `generation-run.updated`(생성 시도 RUNNING → SUCCEEDED·FAILED·REFUSED, 재시작 정리) → 그 후보의 ⑤ 산출물
+ *   (`getCandidateThumbnail` — 후보 칸)과 그 시도 한 건(`getThumbnailGenerationRun`). `gate.passed`·`gate.invalidated` → ⑤
+ *   산출물도(G3 유효·선택본 — '선택 전 확인' 패널).
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -194,11 +197,17 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
   'gate.passed': ({ candidateId }) => [
     ...gateKeys(candidateId),
     qk('pricing', 'getPriceJudgement', { candidateId }),
+    qk('thumbnails', 'getCandidateThumbnail', { candidateId }),
   ],
   'gate.invalidated': ({ candidateId }) => [
     ...gateKeys(candidateId),
     qk('sourcing', 'getSourcingComparison', { candidateId }),
     qk('pricing', 'getPriceJudgement', { candidateId }),
+    qk('thumbnails', 'getCandidateThumbnail', { candidateId }),
+  ],
+  'generation-run.updated': ({ candidateId, generationRunId }) => [
+    qk('thumbnails', 'getCandidateThumbnail', { candidateId }),
+    qk('thumbnails', 'getThumbnailGenerationRun', { generationRunId }),
   ],
   'auth.failed': () => [qk('system', 'getAuthStatus')],
   'ai-cli-check.completed': ({ engineCode }) => [

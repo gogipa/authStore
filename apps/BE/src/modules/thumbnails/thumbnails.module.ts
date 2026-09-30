@@ -2,15 +2,23 @@ import { Module } from '@nestjs/common';
 import { IntegrationsModule } from '../integrations/integrations.module.js';
 import { SettingsModule } from '../settings/settings.module.js';
 import { StepEngineModule } from '../step-engine/step-engine.module.js';
+import { ThumbnailG3GateBasis } from './gate/g3-gate.handler.js';
+import { GenerationRecovery } from './generation/generation-recovery.js';
+import { GenerationRunsController } from './generation/generation-runs.controller.js';
+import { GenerationRunsService } from './generation/generation-runs.service.js';
+import { GenerationWorker } from './generation/generation.worker.js';
 import { ThumbnailPromptPreviewsController } from './prompt/thumbnail-prompt-previews.controller.js';
 import { ThumbnailPromptPreviewsService } from './prompt/thumbnail-prompt-previews.service.js';
 import { ThumbnailReferenceRepository } from './references/thumbnail-reference.repository.js';
 import { ThumbnailReferencesController } from './references/thumbnail-references.controller.js';
 import { ThumbnailReferencesService } from './references/thumbnail-references.service.js';
+import { ThumbnailSelectionRepository } from './selection/thumbnail-selection.repository.js';
 import { OriginalImageStore } from './source-images/original-image.store.js';
 import { SourceImageDownloader } from './source-images/source-image.downloader.js';
 import { SourceImagesController } from './source-images/source-images.controller.js';
 import { SourceImagesService } from './source-images/source-images.service.js';
+import { ThumbnailOutputController } from './thumbnail-output.controller.js';
+import { ThumbnailOutputService } from './thumbnail-output.service.js';
 import { ThumbnailStepRunner } from './thumbnail-step.runner.js';
 
 /**
@@ -24,6 +32,15 @@ import { ThumbnailStepRunner } from './thumbnail-step.runner.js';
  *   (`findBlockedTerms`·`personBlockDictionary`), `references/reference-set-hash.ts`(`referenceSetSha256`),
  *   `thumbnail-anchor.ts`(`isSameAnchor`), `prompt/thumbnail-prompt-previews.service.ts`(`checkThumbnailPrompt`)
  * - 감사 기록은 common `UserActionLogService`(OWNER_CONFIRMED — '사람·얼굴 없음' 확인)
+ *
+ * P3-02(⑤ 생성·비교·선택, G3):
+ * - 생성 `generation/`: `POST /step-runs/{id}/generation-runs`(202 — 번호마다 generation_run RUNNING, 차단어 서버 재검사),
+ *   `GET /generation-runs/{id}`, 생성 작업 `GenerationWorker`(이미지 슬롯 1개 직렬, 하드 타임아웃, 형식 판별, image_asset
+ *   GENERATED, SSE `generation-run.updated`), 재시작 정리 `GenerationRecovery`(RUNNING → FAILED). 이미지 모델은 integrations
+ *   `IMAGE_GEN_PROVIDER` 포트로만 부른다(M0 S1 전 가짜 공급자)
+ * - 산출물 조회 `GET /candidates/{id}/thumbnail`(`ThumbnailOutputService`)
+ * - G3 공급자 `ThumbnailG3GateBasis`(`@GateBasisFor('G3')` — step-engine `GateService`가 부른다): 체크리스트·이미지·'같은
+ *   상품·색상' 검사, 선택본 저장(실행기 `persist`), ⑤ 완료 또는 OWNER_EDIT 새 버전, 지문 구성값
  */
 @Module({
   imports: [IntegrationsModule, SettingsModule, StepEngineModule],
@@ -31,6 +48,8 @@ import { ThumbnailStepRunner } from './thumbnail-step.runner.js';
     SourceImagesController,
     ThumbnailReferencesController,
     ThumbnailPromptPreviewsController,
+    GenerationRunsController,
+    ThumbnailOutputController,
   ],
   providers: [
     ThumbnailReferenceRepository,
@@ -40,6 +59,12 @@ import { ThumbnailStepRunner } from './thumbnail-step.runner.js';
     ThumbnailReferencesService,
     ThumbnailPromptPreviewsService,
     ThumbnailStepRunner,
+    ThumbnailSelectionRepository,
+    GenerationWorker,
+    GenerationRunsService,
+    GenerationRecovery,
+    ThumbnailOutputService,
+    ThumbnailG3GateBasis,
   ],
 })
 export class ThumbnailsModule {}
