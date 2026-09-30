@@ -1,0 +1,14 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-detail-child" },
+  "body": {
+    "id": "50000794",
+    "name": "실내화",
+    "wholeCategoryName": "패션잡화>남성신발>슬리퍼>실내화",
+    "last": true,
+    "exceptionalCategories": ["CHILD_CERTIFICATION", "KC_CERTIFICATION"],
+    "certificationInfos": [
+      { "id": 2001, "name": "[어린이제품] 안전확인", "kindTypes": ["CHILD_CERTIFICATION"] }
+    ]
+  }
+}

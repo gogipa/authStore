@@ -13,9 +13,11 @@ import styles from './Chip.module.css';
  * - idle: 설치 안 됨
  * - done: 키체인에 저장됨 · 정상(P1-07, System 보드. 단계 상태가 아닌 '완료·통과' 칩)
  * - failed: 인증 실패 · 지금 원인(P1-07. 단계 상태가 아닌 '실패·차단' 칩)
+ * - running: 동기화 중(P1-08 System 보드 메타 패널. 단계 상태가 아닌 '진행 중' 칩)
  * '템플릿 제안'·'임시'·'수동'의 tone은 보드에서 읽은 값이다(디자인 사전에는 없음, 오너 검토).
  */
-export type ChipTone = 'outline' | 'neutral' | 'waiting' | 'accent' | 'idle' | 'done' | 'failed';
+export type ChipTone =
+  'outline' | 'neutral' | 'waiting' | 'accent' | 'idle' | 'done' | 'failed' | 'running';
 
 export interface ChipProps {
   tone: ChipTone;

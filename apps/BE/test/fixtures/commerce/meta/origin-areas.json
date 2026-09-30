@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-origin-areas" },
+  "body": {
+    "originAreaCodeNames": [
+      { "code": "00", "name": "국산" },
+      { "code": "02", "name": "수입산" },
+      { "code": "03", "name": "기타-상세설명에 표시" },
+      { "code": "04", "name": "기타-직접입력" }
+    ]
+  }
+}

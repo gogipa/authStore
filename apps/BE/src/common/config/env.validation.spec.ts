@@ -54,6 +54,16 @@ describe('validateEnv', () => {
     expect(homedir().length).toBeGreaterThan(0);
   });
 
+  it('COMMERCE_META_AUTO_SYNC: 기본 on, off로 끌 수 있고 그 밖 값은 거절한다(P1-08)', () => {
+    expect(validateEnv({ ...base }).COMMERCE_META_AUTO_SYNC).toBe('on');
+    expect(validateEnv({ ...base, COMMERCE_META_AUTO_SYNC: 'off' }).COMMERCE_META_AUTO_SYNC).toBe(
+      'off',
+    );
+    expect(() => validateEnv({ ...base, COMMERCE_META_AUTO_SYNC: 'false' })).toThrow(
+      /COMMERCE_META_AUTO_SYNC/,
+    );
+  });
+
   it('PORT 문자열을 숫자로 바꾼다', () => {
     expect(validateEnv({ ...base, PORT: '4000' }).PORT).toBe(4000);
   });

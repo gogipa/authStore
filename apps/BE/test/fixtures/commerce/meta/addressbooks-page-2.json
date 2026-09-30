@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-addressbooks-2" },
+  "body": {
+    "addressBooks": [
+      {
+        "addressBookNo": 100000003,
+        "name": "[배대지 창고 2] 해외 출고지",
+        "addressType": "RELEASE",
+        "overseasAddress": true,
+        "baseAddress": "[배대지 창고 2 주소]",
+        "detailAddress": null,
+        "phoneNumber1": "[전화번호]"
+      },
+      {
+        "addressBookNo": 100000004,
+        "name": "[국내 출고지]",
+        "addressType": "RELEASE",
+        "overseasAddress": false,
+        "baseAddress": "[국내 출고지 주소]",
+        "detailAddress": "[상세 주소]",
+        "phoneNumber1": "[전화번호]"
+      }
+    ],
+    "page": 2,
+    "size": 2,
+    "totalElements": 4,
+    "totalPages": 2
+  }
+}

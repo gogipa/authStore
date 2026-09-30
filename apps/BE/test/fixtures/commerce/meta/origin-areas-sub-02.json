@@ -1,0 +1,11 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-origin-sub-02" },
+  "body": {
+    "originAreaCodeNames": [
+      { "code": "0200037", "name": "아시아>일본" },
+      { "code": "0200036", "name": "아시아>베트남" },
+      { "code": "0200001", "name": "아시아>중국" }
+    ]
+  }
+}

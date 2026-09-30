@@ -1,0 +1,15 @@
+{
+  "status": 429,
+  "headers": {
+    "GNCP-GW-Trace-ID": "fixture-trace-429",
+    "GNCP-GW-RateLimit-Remaining": "0",
+    "GNCP-GW-RateLimit-Replenish-Rate": "2",
+    "GNCP-GW-RateLimit-Burst-Capacity": "4"
+  },
+  "body": {
+    "code": "GW.RATE_LIMIT",
+    "message": "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+    "timestamp": "2026-09-28T09:10:00.000+09:00",
+    "traceId": "fixture-trace-429"
+  }
+}

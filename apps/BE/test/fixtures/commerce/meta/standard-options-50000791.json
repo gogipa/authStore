@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-standard-options" },
+  "body": {
+    "useStandardOption": true,
+    "standardOptionCategoryGroups": [
+      {
+        "attributeId": 90001,
+        "attributeName": "사이즈(공통)",
+        "optionSetRequired": true,
+        "standardOptionAttributes": [
+          { "attributeValueId": 900011, "attributeValueName": "250" },
+          { "attributeValueId": 900012, "attributeValueName": "255" },
+          { "attributeValueId": 900013, "attributeValueName": "260" }
+        ]
+      }
+    ]
+  }
+}

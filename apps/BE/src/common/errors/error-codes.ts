@@ -62,6 +62,18 @@ export const ERROR_CODES = {
     status: 502,
     message: '네이버 커머스API 인증에 실패했습니다({원인}). 시스템 상태 화면의 안내를 따라 주세요.',
   },
+  // ── 커머스API 메타 동기화(P1-08, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 같은 작업 진행 중(details.job: META_SYNC 등, P1-08은 details.targets도 준다) */
+  ALREADY_IN_PROGRESS: {
+    status: 409,
+    message: '{작업}이 이미 진행 중입니다. 끝난 뒤 다시 해 주세요.',
+  },
+  /** 05-3 §5.1: 메타 캐시가 비어 있음(details.target: CATEGORY·ORIGIN_AREA) */
+  COMMERCE_META_NOT_SYNCED: {
+    status: 409,
+    message:
+      "네이버 {카테고리·원산지} 정보가 아직 없습니다. 시스템 상태에서 '지금 동기화'를 눌러 주세요.",
+  },
   /** 05-3 §5.1: 이미지 id 없음 */
   IMAGE_ASSET_NOT_FOUND: { status: 404, message: '이미지를 찾을 수 없습니다.' },
   /** 05-3 §5.1: DB 행은 있으나 파일 없음 */

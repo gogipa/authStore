@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-addressbooks-1" },
+  "body": {
+    "addressBooks": [
+      {
+        "addressBookNo": 100000001,
+        "name": "[배대지 창고] 해외 출고지",
+        "addressType": "RELEASE",
+        "overseasAddress": true,
+        "baseAddress": "[배대지 창고 주소]",
+        "detailAddress": "[동·호수]",
+        "phoneNumber1": "[전화번호]"
+      },
+      {
+        "addressBookNo": 100000002,
+        "name": "[국내 반품지]",
+        "addressType": "REFUND_OR_EXCHANGE",
+        "overseasAddress": false,
+        "baseAddress": "[국내 반품지 주소]",
+        "detailAddress": "[상세 주소]",
+        "phoneNumber1": "[전화번호]"
+      }
+    ],
+    "page": 1,
+    "size": 2,
+    "totalElements": 4,
+    "totalPages": 2
+  }
+}

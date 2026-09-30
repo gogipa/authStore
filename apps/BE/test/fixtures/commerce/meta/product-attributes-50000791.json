@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-attributes" },
+  "body": [
+    {
+      "attributeSeq": 70001,
+      "attributeName": "굽높이",
+      "attributeType": "PRIMARY",
+      "attributeValueType": "SINGLE_SELECT"
+    },
+    {
+      "attributeSeq": 70002,
+      "attributeName": "소재",
+      "attributeType": "OPTIONAL",
+      "attributeValueType": "MULTI_SELECT"
+    }
+  ]
+}

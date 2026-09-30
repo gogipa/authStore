@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-attribute-values" },
+  "body": [
+    { "attributeSeq": 70001, "attributeValueSeq": 700011, "minAttributeValue": "1cm 미만" },
+    { "attributeSeq": 70001, "attributeValueSeq": 700012, "minAttributeValue": "1~3cm" },
+    { "attributeSeq": 70002, "attributeValueSeq": 700021, "minAttributeValue": "메쉬" }
+  ]
+}

@@ -35,6 +35,11 @@ export class AppConfigService {
     return this.config.get('LOG_LEVEL', { infer: true });
   }
 
+  /** 커머스API 메타데이터 하루 1회 자동 동기화를 켜는지(`COMMERCE_META_AUTO_SYNC`, 기본 on, P1-08) */
+  get commerceMetaAutoSync(): boolean {
+    return this.config.get('COMMERCE_META_AUTO_SYNC', { infer: true }) !== 'off';
+  }
+
   /** 개발에서만 더 허용하는 FE 개발 서버 Origin. 개발이 아니면 빈 배열. */
   get devFeOrigins(): string[] {
     if (!this.isDevelopment) return [];

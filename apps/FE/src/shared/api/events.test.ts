@@ -43,7 +43,7 @@ describe('진행 알림 이름', () => {
     >();
   });
 
-  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 후보 이벤트 2개(P1-04), 단계 실행(P1-05), 연속 실행·게이트(P1-06), auth.failed(P1-07)', () => {
+  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 후보 이벤트 2개(P1-04), 단계 실행(P1-05), 연속 실행·게이트(P1-06), auth.failed(P1-07), commerce-meta-sync.completed(P1-08)', () => {
     expect(Object.keys(EVENT_INVALIDATIONS)).toEqual([
       'call-usage.changed',
       'settings.reloaded',
@@ -54,6 +54,22 @@ describe('진행 알림 이름', () => {
       'gate.passed',
       'gate.invalidated',
       'auth.failed',
+      'commerce-meta-sync.completed',
+    ]);
+    // 메타 대상 하나가 끝나면 동기화 상태와 주소록·반품 택배사 캐시 목록을 다시 읽는다(P1-08)
+    expect(
+      EVENT_INVALIDATIONS['commerce-meta-sync.completed']?.({
+        runId: 1,
+        target: 'ADDRESSBOOK',
+        status: 'SUCCEEDED',
+        finishedAt: '2026-09-28T09:10:00+09:00',
+        itemCount: 4,
+        errorMessage: null,
+      }),
+    ).toEqual([
+      ['integrations', 'getLatestCommerceMetaSyncRuns'],
+      ['integrations', 'listCommerceAddressbooks'],
+      ['integrations', 'listCommerceReturnDeliveryCompanies'],
     ]);
     // 재발급까지 실패하면 인증 상태(원인 안내)를 다시 읽는다(P1-07)
     expect(

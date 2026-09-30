@@ -5528,6 +5528,8 @@ paths:
 
         장르 없는 URL 후보의 ''전체 목록에서 고르기''에 쓴다. sort 허용 필드는 `wholeCategoryName`, 기본 `wholeCategoryName,asc`.
 
+        Proposed(P1-08) — 빼는 리프는 (1) 카테고리 상세의 예외 유형에 CHILD_CERTIFICATION이 있는 것, (2) 이름·전체 경로에 아동 말(아동·키즈·주니어·유아·베이비)이 있는 것, (3) 이름·전체 경로에 CON-08 제외 품목 말(바퀴·롤러·힐리스·실버·효도)이 있는 것이다(말 목록은 문서에 출처가 없어 정했다). 같은 경로는 id 순. 캐시가 비었다는 것은 사라지지 않은(removedAt 없는) commerce_category 행이 없다는 뜻이다. M1에서 q를 주면 422 INVALID_QUERY_PARAMETER.
+
         '
       tags:
       - integrations
@@ -5576,7 +5578,7 @@ paths:
     get:
       operationId: listCommerceOriginAreas
       summary: 원산지 코드 목록 조회
-      description: '`commerce_origin_area` 캐시를 읽기만 한다(`removedAt` 행 제외). 원산지 직접 입력·03·04 코드 선택에 쓴다. sort 허용 필드는 `name`, `originAreaCode`, 기본 `name,asc`.'
+      description: '`commerce_origin_area` 캐시를 읽기만 한다(`removedAt` 행 제외). 원산지 직접 입력·03·04 코드 선택에 쓴다. sort 허용 필드는 `name`, `originAreaCode`, 기본 `name,asc`. Proposed(P1-08) — q는 이름·코드 부분 일치(대소문자 무시), 같은 값이면 id 순. parentCode는 동기화한 하위 한 단계(sub-origin-areas)의 상위 코드다.'
       tags:
       - integrations
       x-milestone: M1
@@ -5621,7 +5623,7 @@ paths:
     get:
       operationId: listCommerceAddressbooks
       summary: 스토어 주소록 캐시 조회
-      description: 해외 주소록은 API로 만들 수 없어 읽기만 한다(P-03). 프로필의 해외 출고지·반품지 선택 목록이다. 응답 원문(`raw`)은 주지 않는다. sort 허용 필드는 `name`, 기본 `name,asc`.
+      description: 해외 주소록은 API로 만들 수 없어 읽기만 한다(P-03). 프로필의 해외 출고지·반품지 선택 목록이다. 응답 원문(`raw`)은 주지 않는다. sort 허용 필드는 `name`, 기본 `name,asc`. Proposed(P1-08) — `overseas=false`면 국내(isOverseas=false)만, 주지 않으면 모두. 불리언 쿼리는 `true`·`false` 글자만 받는다(그 밖 422 INVALID_QUERY_PARAMETER). 같은 이름이면 id 순.
       tags:
       - integrations
       x-milestone: M1
@@ -5630,7 +5632,7 @@ paths:
       parameters:
       - name: overseas
         in: query
-        description: true면 해외 출고지(overseasAddress)만
+        description: true면 해외 출고지(overseasAddress)만, false면 국내 주소록만(P1-08 Proposed). 없으면 모두
         schema:
           type: boolean
       - name: includeRemoved
@@ -5694,7 +5696,7 @@ paths:
     get:
       operationId: getLatestCommerceMetaSyncRuns
       summary: 메타데이터 대상별 최신 동기화 상태 조회
-      description: '`commerce_meta_sync_run`의 대상별 최신 행과 마지막 성공 시각(계산)을 준다(페이징 없음). 한 번도 돌지 않은 대상은 `latestRun=null`.'
+      description: '`commerce_meta_sync_run`의 대상별 최신 행과 마지막 성공 시각(계산)을 준다(페이징 없음). 한 번도 돌지 않은 대상은 `latestRun=null`. Proposed(P1-08) — 최신 행은 id가 가장 큰 행이다. 앱을 다시 켤 때 RUNNING으로 남은 행은 FAILED(finishedAt = 켠 시각, errorMessage ''앱이 다시 시작되어 동기화가 중단되었습니다.'')로 닫는다.'
       tags:
       - integrations
       x-milestone: M1
@@ -5719,6 +5721,8 @@ paths:
       description: '`targets[]`(없으면 전체) 대상별로 run 행(RUNNING)을 만들고 202를 준다. 하루 1회 자동 실행과 같은 서비스다.
 
         완료는 대상마다 SSE `commerce-meta-sync.completed`로 알린다.
+
+        Proposed(P1-08, 05-1 §2.13) — 검사 순서는 본문(422) → 진행 중(409 ALREADY_IN_PROGRESS, details.job=META_SYNC·targets[]=요청 대상 중 RUNNING인 것) → 커머스 키(409 SECRET_NOT_CONFIGURED, 키체인 오류 503). 대상은 enum 순서로 하나씩 돈다(CATEGORY 먼저, 커머스API 호출이 겹치지 않는다). 대상 하나는 외부 응답을 모두 받은 뒤 캐시 쓰기·removedAt 표시·run SUCCEEDED를 한 트랜잭션으로 하고, 실패하면 run만 FAILED(errorMessage)이고 이전 캐시는 그대로다. 대상 하나가 실패해도 나머지는 계속한다. 다만 키 없음·키체인·인증 실패(COMMERCE_AUTH_FAILED)면 남은 대상은 부르지 않고 같은 사유로 FAILED. CATEGORY_DETAIL·STANDARD_OPTIONS·PRODUCT_ATTRIBUTES는 캐시의 성별 신발 리프(패션잡화>남성신발>·패션잡화>여성신발>, removedAt 없음)만 부른다. 하루 1회 자동 실행은 대상마다 오늘(KST) 끝난 SUCCEEDED가 없으면 돌린다(앱 시작 10초 뒤·매시간 확인, 실패한 대상은 시작 6시간 뒤 다시, 커머스 키가 없으면 조용히 건너뜀).
 
         '
       tags:
@@ -5753,10 +5757,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '409':
           $ref: '#/components/responses/Conflict'
-          description: ALREADY_IN_PROGRESS(details.job=META_SYNC, 진행 중 대상) · SECRET_NOT_CONFIGURED(커머스 키 없음)
+          description: ALREADY_IN_PROGRESS(details.job=META_SYNC, details.targets=진행 중 대상) · SECRET_NOT_CONFIGURED(커머스 키 없음, details.secretKeys)
         '422':
           $ref: '#/components/responses/Unprocessable'
-          description: VALIDATION_FAILED — 알 수 없는 대상
+          description: VALIDATION_FAILED — 빈 배열·중복·알 수 없는 대상·null·정의 밖 칸
         '500':
           $ref: '#/components/responses/InternalError'
         '503':
@@ -17817,6 +17821,8 @@ components:
             $ref: '#/components/schemas/CommerceMetaSyncTargetStatus'
     CommerceMetaSyncRequest:
       type: object
+      description: 본문은 선택. targets를 빼면 전체 대상. targets에 null은 줄 수 없다(422, P1-08)
+      additionalProperties: false
       properties:
         targets:
           type: array

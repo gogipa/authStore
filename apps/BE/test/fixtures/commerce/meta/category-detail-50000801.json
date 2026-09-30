@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-detail-none" },
+  "body": {
+    "id": "50000801",
+    "name": "러닝화",
+    "wholeCategoryName": "패션잡화>여성신발>운동화>러닝화",
+    "last": true,
+    "exceptionalCategories": [],
+    "certificationInfos": []
+  }
+}

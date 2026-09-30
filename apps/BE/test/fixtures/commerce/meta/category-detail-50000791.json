@@ -1,0 +1,14 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-detail-kc" },
+  "body": {
+    "id": "50000791",
+    "name": "러닝화",
+    "wholeCategoryName": "패션잡화>남성신발>운동화>러닝화",
+    "last": true,
+    "exceptionalCategories": ["KC_CERTIFICATION"],
+    "certificationInfos": [
+      { "id": 1001, "name": "[생활용품] 안전확인", "kindTypes": ["KC_CERTIFICATION"] }
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+/* SCR-11 (3) 메타데이터 동기화(System.dc.html). 줄 36px, 위 테두리 line, 시각 폭 40px(mono 12px, 오른쪽 정렬). */
+.muted {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.rows,
+.targets {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--color-line);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.label,
+.targetLabel {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.targetLabel {
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+.time {
+  width: 40px;
+  flex-shrink: 0;
+  text-align: right;
+  font: var(--type-caption);
+  font-family: var(--font-mono);
+  color: var(--color-ink-faint);
+}
+
+.error {
+  padding-bottom: var(--space-2);
+  font: var(--type-caption);
+  color: var(--color-failed);
+  overflow-wrap: anywhere;
+}
+
+.detail {
+  padding-bottom: var(--space-2);
+}
+
+.target + .target {
+  border-top: 1px solid var(--color-line);
+}
+
+.alert {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}

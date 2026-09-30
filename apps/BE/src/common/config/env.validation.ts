@@ -20,6 +20,10 @@ export type LogLevel = (typeof LOG_LEVELS)[number];
 
 const DEFAULT_DEV_FE_ORIGINS = 'http://127.0.0.1:5173,http://localhost:5173';
 
+/** 켜기·끄기 환경변수 값 */
+export const ON_OFF = ['on', 'off'] as const;
+export type OnOff = (typeof ON_OFF)[number];
+
 /** 시작할 때 검증하는 환경변수(06-4). 틀리면 앱이 뜨지 않는다. */
 export class EnvironmentVariables {
   @IsOptional()
@@ -49,6 +53,11 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   DEV_FE_ORIGINS: string = DEFAULT_DEV_FE_ORIGINS;
+
+  /** 커머스API 메타데이터 하루 1회 자동 동기화(P1-08). off면 '지금 동기화'로만 받는다 */
+  @IsOptional()
+  @IsIn(ON_OFF)
+  COMMERCE_META_AUTO_SYNC: OnOff = 'on';
 }
 
 export function validateEnv(raw: Record<string, unknown>): EnvironmentVariables {

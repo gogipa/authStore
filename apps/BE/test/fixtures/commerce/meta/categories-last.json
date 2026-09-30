@@ -1,0 +1,54 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-categories" },
+  "body": [
+    {
+      "id": "50000791",
+      "name": "러닝화",
+      "wholeCategoryName": "패션잡화>남성신발>운동화>러닝화",
+      "last": true
+    },
+    {
+      "id": "50000792",
+      "name": "스니커즈",
+      "wholeCategoryName": "패션잡화>남성신발>운동화>스니커즈",
+      "last": true
+    },
+    {
+      "id": "50000793",
+      "name": "로퍼",
+      "wholeCategoryName": "패션잡화>남성신발>구두>로퍼",
+      "last": true
+    },
+    {
+      "id": "50000794",
+      "name": "실내화",
+      "wholeCategoryName": "패션잡화>남성신발>슬리퍼>실내화",
+      "last": true
+    },
+    {
+      "id": "50000801",
+      "name": "러닝화",
+      "wholeCategoryName": "패션잡화>여성신발>운동화>러닝화",
+      "last": true
+    },
+    {
+      "id": "50000802",
+      "name": "플랫슈즈",
+      "wholeCategoryName": "패션잡화>여성신발>단화>플랫슈즈",
+      "last": true
+    },
+    {
+      "id": "50000803",
+      "name": "앵클부츠",
+      "wholeCategoryName": "패션잡화>여성신발>부츠>앵클부츠",
+      "last": true
+    },
+    {
+      "id": "50000100",
+      "name": "백팩",
+      "wholeCategoryName": "패션잡화>남성가방>백팩",
+      "last": true
+    }
+  ]
+}

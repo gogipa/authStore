@@ -1,0 +1,10 @@
+{
+  "status": 500,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-500" },
+  "body": {
+    "code": "GW.INTERNAL_SERVER_ERROR",
+    "message": "일시적인 오류가 발생했습니다.",
+    "timestamp": "2026-09-28T09:10:00.000+09:00",
+    "traceId": "fixture-trace-500"
+  }
+}

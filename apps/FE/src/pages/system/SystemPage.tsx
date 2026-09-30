@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
+import { MetaSyncPanel } from '@/features/integrations';
 import {
   AuthStatusPanel,
+  isSecretKey,
   type SecretKey,
   secretKeyFromHash,
   SecretKeysPanel,
   secretRowId,
+  SystemKeyLink,
 } from '@/features/system';
 import { PageHeader } from '@/shared/ui';
 import styles from './SystemPage.module.css';
@@ -13,7 +16,8 @@ import styles from './SystemPage.module.css';
 /**
  * SCR-11 시스템 상태(System.dc.html)의 틀: 3열(열 A 420px · 열 B 368px · 열 C 나머지).
  * - 열 A: (1) 키 입력 · (2) 인증 상태(P1-07). (8) 외부 호출 기록은 M2.
- * - 열 B: (12) 첫 실행 점검(P1-11) · (3) 메타데이터 동기화(P1-08)가 패널을 끼운다. (5) 사전 조건 · (6) 자격증명 기한은 M2.
+ * - 열 B: (12) 첫 실행 점검(P1-11)이 맨 위에 끼운다 · (3) 메타데이터 동기화(P1-08). (5) 사전 조건 · (6) 자격증명 기한은 M2.
+ *   메타 패널의 '지금 동기화'가 커머스 키 없음(409)이면 열 A 키 입력의 그 키 행으로 잇는다(SystemKeyLink → `#secret-<키>`).
  * - 열 C: (4) AI 도구 상태(P1-11)가 끼운다. (9) AI 사용량 · (7) 공인 IP · (10) 공지 · (11) 버전은 M2.
  * 머리의 '첫 실행 점검 열기'·'다시 점검'도 P1-11 몫이다.
  * 다른 화면이 `/system#secret-<키>`로 보내면 그 키 행 입력칸을 열고 초점을 옮긴다(규칙 14).
@@ -61,7 +65,14 @@ export function SystemPage() {
           />
           <AuthStatusPanel onReenterSecret={reenter} />
         </div>
-        <div className={styles.columnB} data-column="B" />
+        <div className={styles.columnB} data-column="B">
+          <MetaSyncPanel
+            renderSecretLink={(keys) => {
+              const key = keys.find(isSecretKey);
+              return <SystemKeyLink secretKey={key}>키 입력으로 가기</SystemKeyLink>;
+            }}
+          />
+        </div>
         <div className={styles.columnC} data-column="C" />
       </div>
     </>

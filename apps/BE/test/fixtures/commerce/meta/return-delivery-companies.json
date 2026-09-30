@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-return-delivery" },
+  "body": [
+    { "deliveryCompanyCode": "CJGLS", "deliveryCompanyName": "CJ대한통운" },
+    { "deliveryCompanyCode": "HANJIN", "deliveryCompanyName": "한진택배" },
+    { "deliveryCompanyCode": "EPOST", "deliveryCompanyName": "우체국택배" }
+  ]
+}

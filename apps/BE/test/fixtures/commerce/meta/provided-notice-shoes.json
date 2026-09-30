@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-provided-notice" },
+  "body": {
+    "productInfoProvidedNoticeType": "SHOES",
+    "productInfoProvidedNoticeTypeName": "구두/신발",
+    "fields": [
+      { "name": "material", "label": "제품 주소재", "maxLength": 200, "required": true },
+      { "name": "color", "label": "색상", "maxLength": 200, "required": true },
+      { "name": "size", "label": "치수", "maxLength": 200, "required": true },
+      { "name": "manufacturer", "label": "제조자(수입자)", "maxLength": 200, "required": true },
+      { "name": "caution", "label": "취급시 주의사항", "maxLength": 1000, "required": true },
+      { "name": "warrantyPolicy", "label": "품질보증기준", "maxLength": 1000, "required": true },
+      {
+        "name": "afterServiceDirector",
+        "label": "A/S 책임자와 전화번호",
+        "maxLength": 200,
+        "required": true
+      }
+    ]
+  }
+}

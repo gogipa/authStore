@@ -1,0 +1,10 @@
+{
+  "status": 403,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-403-api-group" },
+  "body": {
+    "code": "GW.FORBIDDEN",
+    "message": "호출 권한이 없는 API입니다.",
+    "timestamp": "2026-09-28T09:10:00.000+09:00",
+    "traceId": "fixture-trace-403-api-group"
+  }
+}

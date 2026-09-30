@@ -46,3 +46,8 @@
   background: var(--color-failed-soft);
   color: var(--color-failed);
 }
+
+.running {
+  background: var(--color-accent-soft);
+  color: var(--color-running);
+}

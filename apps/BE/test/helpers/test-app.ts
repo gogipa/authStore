@@ -5,6 +5,10 @@ import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/app.setup.js';
 import { SSE_HEARTBEAT_INTERVAL_MS } from '../../src/common/events/events.controller.js';
+import {
+  COMMERCE_META_SCHEDULE,
+  defaultCommerceMetaSchedule,
+} from '../../src/modules/integrations/commerce-meta/commerce-meta-sync.scheduler.js';
 import { CLOCK } from '../../src/modules/integrations/http/clock.token.js';
 import { HTTP_FETCH } from '../../src/modules/integrations/http/http-fetch.token.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
@@ -38,7 +42,7 @@ export interface CreateTestAppOptions {
 
 /**
  * AppModule 전체를 띄우되, 밖을 부르는 것(HTTP_FETCH)과 시계(CLOCK)는 가짜로 바꾼다.
- * SSE 연결 유지 주석(heartbeat)은 끈다.
+ * SSE 연결 유지 주석(heartbeat)과 메타데이터 자동 동기화(P1-08, 켜 두면 테스트 중에 몰래 가짜 서버를 부른다)는 끈다.
  */
 export async function createTestApp(options: CreateTestAppOptions = {}): Promise<TestApp> {
   const clock = new FakeClock(TEST_START_MS);
@@ -51,7 +55,9 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
     .overrideProvider(CLOCK)
     .useValue(clock)
     .overrideProvider(SSE_HEARTBEAT_INTERVAL_MS)
-    .useValue(0);
+    .useValue(0)
+    .overrideProvider(COMMERCE_META_SCHEDULE)
+    .useValue(defaultCommerceMetaSchedule(false));
   for (const o of options.overrides ?? []) {
     builder = builder.overrideProvider(o.provide).useValue(o.useValue);
   }

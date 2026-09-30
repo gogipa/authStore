@@ -200,6 +200,24 @@ describe('error-codes', () => {
     ).toBe('커머스API client_id 키가 아직 없습니다. 시스템 상태 화면에서 넣어 주세요.');
   });
 
+  it('P1-08 메타 동기화 코드는 05-3 §5.1 문구·상태 그대로다', () => {
+    expect(ERROR_CODES.ALREADY_IN_PROGRESS).toEqual({
+      status: 409,
+      message: '{작업}이 이미 진행 중입니다. 끝난 뒤 다시 해 주세요.',
+    });
+    expect(ERROR_CODES.COMMERCE_META_NOT_SYNCED).toEqual({
+      status: 409,
+      message:
+        "네이버 {카테고리·원산지} 정보가 아직 없습니다. 시스템 상태에서 '지금 동기화'를 눌러 주세요.",
+    });
+    expect(formatErrorMessage('ALREADY_IN_PROGRESS', { 작업: '메타데이터 동기화' })).toBe(
+      '메타데이터 동기화가 이미 진행 중입니다. 끝난 뒤 다시 해 주세요.',
+    );
+    expect(formatErrorMessage('COMMERCE_META_NOT_SYNCED', { '카테고리·원산지': '원산지' })).toBe(
+      "네이버 원산지 정보가 아직 없습니다. 시스템 상태에서 '지금 동기화'를 눌러 주세요.",
+    );
+  });
+
   it("조사 '을/를'·'은/는'도 받침에 맞춘다(한글이 아니면 문구 그대로)", () => {
     expect(formatErrorMessage('GATE_NOT_PASSED', { 게이트: 'G3 썸네일 선택' })).toBe(
       'G3 썸네일 선택을 먼저 통과해 주세요.',
