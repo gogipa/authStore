@@ -14,6 +14,7 @@ import type { GenderInputListener } from './ports/gender-input.port.js';
 import type {
   SourcingGenreView,
   SourcingImagesView,
+  SourcingItemContentView,
   SourcingSelectionReader,
   SourcingSelectionView,
   SourcingTargetSkus,
@@ -64,6 +65,9 @@ export type ResumeWaitingInput =
  * - `readSourcingImages(sourcingStepRunId, db?)`: ② 버전의 소싱 선택 상품 원본 이미지 출처(⑤ 원본 받기). 읽기 함수의 선택
  *   메서드 `readImages`를 부른다. ⑤는 이 값을 입력 지문에 넣지 않는다
  * - `refreshWaitingRunInputs`는 ⑤ 레퍼런스 저장(실행 중 오너 입력 `owner.referenceSelection` 해시 갱신)도 쓴다
+ * P3-03:
+ * - `readSourcingItemContent(sourcingStepRunId, db?)`: ② 버전의 소싱 선택 상품 상품명·설명(NFKC 글·HTML 원문)·상품/SKU 속성·
+ *   선택 색상 원문(⑥-1 카피·⑥-2 사양 추출 입력). 읽기 함수의 선택 메서드 `readItemContent`를 부른다
  * P3-02:
  * - `recordOwnerEditRun(scope, candidateId, stepCode, baseStepRunId, outcomeFor)`: 호출자 트랜잭션 안에서 완료된 현재 버전을
  *   바탕으로 오너 수정(EDIT) 새 버전을 열고 `outcomeFor`의 결과로 곧바로 닫는다(⑤ 완료 뒤 G3 다시 고르기 — 새 선택은
@@ -176,6 +180,15 @@ export class StepEngineApi {
   ): Promise<SourcingImagesView | null> {
     const reader = this.ports.sourcingSelectionReader;
     return reader?.readImages ? reader.readImages(db, sourcingStepRunId) : null;
+  }
+
+  /** ② 버전의 소싱 선택 상품 글·속성(P3-03 — ⑥-1·⑥-2 입력). 읽기 함수가 없거나 선택이 없으면 null */
+  async readSourcingItemContent(
+    sourcingStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<SourcingItemContentView | null> {
+    const reader = this.ports.sourcingSelectionReader;
+    return reader?.readItemContent ? reader.readItemContent(db, sourcingStepRunId) : null;
   }
 
   /** 입력 대기 실행의 입력 기록 일부를 지금 값으로(P2-06 — ④ 성별 재확인). 호출자 트랜잭션 안(후보 행 잠금) */

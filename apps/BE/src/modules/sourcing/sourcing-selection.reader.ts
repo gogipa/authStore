@@ -4,6 +4,7 @@ import { idPathFromNamePath } from '../integrations/rakuten/rakuten-genre.servic
 import type {
   SourcingGenreView,
   SourcingImagesView,
+  SourcingItemContentView,
   SourcingSelectionReader,
   SourcingSelectionView,
   SourcingTargetSkus,
@@ -206,6 +207,60 @@ export async function readSourcingImages(
 }
 
 /**
+ * ② 버전의 소싱 선택 상품 글·속성(P3-03 Proposed — ⑥-1·⑥-2 입력). 고른 페이지 스냅샷의 상품명·설명(NFKC 글·HTML 원문)·상품
+ * 속성과, 선택 색상(앵커 색상 코드 → 라벨) SKU의 속성(대표 SKU 먼저). 선택 색상 SKU가 없으면 모든 SKU. 선택이 없으면 null.
+ */
+export async function readSourcingItemContent(
+  db: Db,
+  sourcingStepRunId: number,
+): Promise<SourcingItemContentView | null> {
+  const selection = await readSourcingSelection(db, sourcingStepRunId);
+  if (!selection) return null;
+  const item = await db.rakutenItem.findUniqueOrThrow({
+    where: { id: selection.rakutenItemId },
+    select: {
+      id: true,
+      itemCode: true,
+      itemUrl: true,
+      itemName: true,
+      descriptionText: true,
+      descriptionHtml: true,
+      attributes: true,
+      collectedAt: true,
+      skus: {
+        orderBy: { id: 'asc' },
+        select: { id: true, colorCode: true, colorLabel: true, attributes: true },
+      },
+    },
+  });
+  const sameColor = item.skus.filter(
+    (sku) =>
+      (selection.anchorColorCode !== null && sku.colorCode === selection.anchorColorCode) ||
+      (selection.anchorColorLabel !== null && sku.colorLabel === selection.anchorColorLabel),
+  );
+  const skus = (sameColor.length > 0 ? sameColor : item.skus).sort((a, b) =>
+    a.id === selection.representativeRakutenSkuId
+      ? -1
+      : b.id === selection.representativeRakutenSkuId
+        ? 1
+        : a.id - b.id,
+  );
+  return {
+    sourcingStepRunId,
+    rakutenItemId: item.id,
+    itemCode: item.itemCode,
+    itemUrl: item.itemUrl,
+    itemName: item.itemName,
+    descriptionText: item.descriptionText,
+    descriptionHtml: item.descriptionHtml,
+    itemAttributes: item.attributes ?? null,
+    skuAttributes: skus.map((sku) => sku.attributes ?? null).filter((a) => a !== null),
+    selectedColorRaw: selection.anchorColorLabel,
+    collectedAt: item.collectedAt,
+  };
+}
+
+/**
  * step-engine에 등록할 읽기 함수(`StepEngineApi.registerSourcingSelectionReader`). 목표 사이즈 SKU 읽기(P2-05)는 버전
  * 설정 사본에 빠진 값을 지금 설정으로 채우므로 설정 읽기를 받는다.
  */
@@ -218,6 +273,7 @@ export function createSourcingSelectionReader(
       readSourcingTargetSkus(db, sourcingStepRunId, gender, currentSettings()),
     readGenre: readSourcingGenre,
     readImages: readSourcingImages,
+    readItemContent: readSourcingItemContent,
   };
 }
 

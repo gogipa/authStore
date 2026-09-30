@@ -110,11 +110,16 @@ export const STEP_INPUT_SPECS: Record<StepCode, readonly StepInputSpec[]> = {
   ],
   // ② 상품명·설명·SKU 속성
   COPY: [prev(K.sourcingItemText, 'SOURCING'), prev(K.sourcingSkuAttributes, 'SOURCING')],
-  // ② 소싱 선택(itemCode)·속성·설명·스펙 이미지·선택 색상
+  // ② 소싱 선택(itemCode)·속성·설명·스펙 이미지(주소 — P3-03 Proposed)·선택 색상, 나라 사전·소재 말·항목 이름·스펙 이미지
+  // 고르기 설정(P3-03). 실행 중 오너 입력(원산지 직접 입력)은 산출물(content_draft_field)에 둔다
   NOTICE_RAW: [
     prev(K.sourcingSelection, 'SOURCING'),
     prev(K.sourcingAttributes, 'SOURCING'),
     prev(K.sourcingSelectedColor, 'SOURCING'),
+    settingsKey(K.settingsContentOriginCountries),
+    settingsKey(K.settingsContentMaterialTerms),
+    settingsKey(K.settingsContentFactLabels),
+    settingsKey(K.settingsContentSpecImages),
   ],
   // ⑥-1, ⑥-2, ③ 판매 사이즈, 성별, (선택) ④ 리프 카테고리(상품명, ERD §7.2-10 P1-05 Proposed), 고시 설정
   NOTICE_HTML: [

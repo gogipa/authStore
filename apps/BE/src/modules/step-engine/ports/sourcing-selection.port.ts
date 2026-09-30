@@ -95,6 +95,31 @@ export interface SourcingImagesView {
   colorCode: string | null;
 }
 
+/**
+ * ② 버전의 소싱 선택 상품 글·속성(P3-03 Proposed — ⑥-1 입력 '② 상품명·설명·SKU 속성', ⑥-2 입력 '② 속성·설명·스펙 이미지·선택
+ * 색상 원문'). 고른 페이지 스냅샷(`rakuten_item`·`rakuten_sku`) 값 그대로다. 속성 모양은 페이지 JSON 원문(`[{name, value}]`,
+ * M0 S2 전 가정)이라 해석은 content가 한다. ⑥은 이 값을 입력 지문에 넣는다(설명은 NFKC 글, 스펙 이미지는 주소).
+ */
+export interface SourcingItemContentView {
+  sourcingStepRunId: number;
+  rakutenItemId: number;
+  itemCode: string;
+  itemUrl: string;
+  itemName: string;
+  /** 설명 HTML에서 뽑은 글(NFKC·공백 정리, P2-02 `htmlToText`). 없으면 null */
+  descriptionText: string | null;
+  /** 설명 HTML 원문(원문 발췌·스펙 이미지 주소). 없으면 null */
+  descriptionHtml: string | null;
+  /** 상품 속성 원문(`rakuten_item.attributes`). 없으면 null */
+  itemAttributes: unknown;
+  /** 선택 색상 SKU의 속성 원문(`rakuten_sku.attributes`, 대표 SKU 먼저 — 선택 색상 SKU가 없으면 모든 SKU) */
+  skuAttributes: unknown[];
+  /** 선택 색상 원문(② 앵커 색상 라벨 — 없으면 null) */
+  selectedColorRaw: string | null;
+  /** 고른 페이지 스냅샷의 수집 시각 */
+  collectedAt: Date;
+}
+
 export interface SourcingSelectionReader {
   /** ② 버전 하나(step_run id)의 소싱 선택. 선택이 없으면 null */
   read(db: Db, sourcingStepRunId: number): Promise<SourcingSelectionView | null>;
@@ -110,4 +135,6 @@ export interface SourcingSelectionReader {
   readGenre?(db: Db, sourcingStepRunId: number): Promise<SourcingGenreView | null>;
   /** 소싱 선택 상품의 원본 이미지 출처(P3-01 Proposed, 선택 메서드). 선택이 없으면 null */
   readImages?(db: Db, sourcingStepRunId: number): Promise<SourcingImagesView | null>;
+  /** 소싱 선택 상품의 상품명·설명·속성·선택 색상 원문(P3-03 Proposed, 선택 메서드). 선택이 없으면 null */
+  readItemContent?(db: Db, sourcingStepRunId: number): Promise<SourcingItemContentView | null>;
 }

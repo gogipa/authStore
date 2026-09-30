@@ -54,6 +54,7 @@ describe('진행 알림 이름', () => {
       'continuous-run.stopped',
       'gate.passed',
       'gate.invalidated',
+      'content-field.recheck-flagged',
       'generation-run.updated',
       'auth.failed',
       'ai-cli-check.completed',
@@ -65,6 +66,38 @@ describe('진행 알림 이름', () => {
       'keyword-collection.aborted',
       'fx-rate.updated',
       'commerce-meta-sync.completed',
+    ]);
+    // ⑥(P3-03): ⑥-1·⑥-2 실행 상태 → 카피·고시 원자료, 재확인 필요 → 고시 원자료·단계 레일
+    const stepRun = (stepCode: 'COPY' | 'NOTICE_RAW') =>
+      EVENT_INVALIDATIONS['step-run.status-changed']?.({
+        stepRunId: 104,
+        candidateId: 1,
+        stepCode,
+        version: 1,
+        status: 'COMPLETED',
+        stepChainId: null,
+      } as ProgressEventData<'step-run.status-changed'>);
+    expect(stepRun('COPY')).toContainEqual([
+      'content',
+      'getCandidateContentCopy',
+      { candidateId: 1 },
+    ]);
+    expect(stepRun('NOTICE_RAW')).toContainEqual([
+      'content',
+      'getCandidateContentFact',
+      { candidateId: 1 },
+    ]);
+    expect(
+      EVENT_INVALIDATIONS['content-field.recheck-flagged']?.({
+        candidateId: 1,
+        stepCode: 'NOTICE_RAW',
+        stepRunId: 105,
+        fieldKeys: ['fact.origin'],
+        recheckReason: 'ITEM_CODE_CHANGED',
+      }),
+    ).toEqual([
+      ['content', 'getCandidateContentFact', { candidateId: 1 }],
+      ['step-engine', 'listCandidateSteps', { candidateId: 1 }],
     ]);
     // 환율(P2-04): 새 최신값·수집 실패·±20% 차이 → 최신값과 이력 전체
     expect(
@@ -435,8 +468,8 @@ describe('connectProgressEvents', () => {
     const source = FakeEventSource.latest();
 
     source.emit('unknown.event', { x: 1 });
-    // 표에 없는 M1 이벤트(P2-04가 fx-rate.updated를 표에 더해 ⑥-2 재확인 이벤트로 본다 — P3-03이 더한다)
-    source.emit('content-field.recheck-flagged', { candidateId: 1 });
+    // 표에 없는 M1 이벤트(P3-03이 content-field.recheck-flagged를 더해 등록 스위치 이벤트로 본다 — P4-03이 더한다)
+    source.emit('registration-switch.changed', { enabled: true });
     source.emitRaw('call-usage.changed', '{not json');
 
     expect(invalidate).not.toHaveBeenCalled();

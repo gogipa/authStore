@@ -406,6 +406,58 @@ export interface ThumbnailSettings {
   generationTimeoutSeconds: number;
 }
 
+/**
+ * 원산지 나라 사전 한 줄(P3-03 Proposed — PRD §8.5 원산지 코드 규칙 '일본어 국가명 → 대륙 > 국가 사전(설정 파일)', P3-04가 같은
+ * 사전으로 원산지 코드를 찾는다). `raw`는 라쿠텐 표기(일본어·영문 — NFKC·대문자·공백 무시로 비교), `area`는 '대륙 > 국가'
+ * (커머스API 원산지 이름과 같은 모양, 예 '아시아 > 베트남'). ⑥-2는 `area`의 마지막 조각(국가)을 한국어 값으로 쓴다
+ */
+export interface OriginCountryEntry {
+  raw: string;
+  area: string;
+}
+
+/** 소재 말 사전 한 줄(P3-03 Proposed — ⑥-2 값의 한국어 정리). `raw` 일본어(NFKC 비교) → `ko` 한국어 */
+export interface MaterialTermEntry {
+  raw: string;
+  ko: string;
+}
+
+/**
+ * ⑥-2 설명문·속성 항목 이름(P3-03 Proposed — PRD §8.5 CT-02 '설명문 패턴'). 정규식이 아니라 항목 이름 목록이다(앱이 NFKC 뒤
+ * 글자에 맞춰 경계를 붙인다 — 'インソール'은 'ソール'로 잡히지 않는다). 속성 이름(`原産国／製造国` 등)도 같은 목록으로 본다
+ */
+export interface FactLabelSettings {
+  /** 원산지(原産国·生産国·製造国·MADE IN) */
+  origin: string[];
+  /** 겉감(アッパー) */
+  upper: string[];
+  /** 안감(ライニング) */
+  lining: string[];
+  /** 밑창(ソール·アウトソール) */
+  sole: string[];
+  /** 소재 전체(素材 — 안에 겉감·밑창이 없으면 겉감으로 본다) */
+  material: string[];
+  /** 굽·밑창 높이(ヒール高さ·ソール高·厚底) */
+  heelHeight: string[];
+}
+
+/**
+ * ⑥-2 AI 추출용 스펙 이미지 고르기(P3-03 Proposed — F-CT-10 '고르는 규칙은 M0 S2에서 정한다', 그 전 설정값). 설명 HTML의
+ * `<img>` 가운데 라쿠텐 이미지 호스트만 앞에서부터 `maxCount`장, 한 장 `maxBytes` 이하
+ */
+export interface SpecImageSettings {
+  maxCount: number;
+  maxBytes: number;
+}
+
+/** ⑥ 상세 콘텐츠(P3-03 Proposed — 06-4 §2.2). 모두 ⑥-2 시작 조건(입력 지문)이다 */
+export interface ContentSettings {
+  originCountries: OriginCountryEntry[];
+  materialTerms: MaterialTermEntry[];
+  factLabels: FactLabelSettings;
+  specImages: SpecImageSettings;
+}
+
 /** 설정 JSON 전체(schemaVersion "1") */
 export interface AppSettings {
   schemaVersion: SettingsSchemaVersion;
@@ -418,6 +470,8 @@ export interface AppSettings {
   category: CategorySettings;
   /** P3-01: ⑤ 썸네일 프롬프트 골격·얼굴 노출 기본값·후보 수·해상도. P3-02: 이미지 생성 공급자·생성 타임아웃 */
   thumbnail: ThumbnailSettings;
+  /** P3-03: ⑥-2 원산지 나라 사전·소재 말 사전·설명문 항목 이름·스펙 이미지 고르기 */
+  content: ContentSettings;
   notice: NoticeSettings;
   /** P1-09: 발송 택배사 코드 목록(GET /dispatch-delivery-companies) */
   delivery: DeliverySettings;

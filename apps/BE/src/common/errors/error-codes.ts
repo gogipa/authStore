@@ -381,6 +381,11 @@ export const ERROR_CODES = {
     status: 422,
     message: "다른 상품·색상의 레퍼런스를 썼습니다. '같은 상품·색상'을 확인해 주세요.",
   },
+  // ── content ⑥-1 카피·⑥-2 사양(P3-03, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 원산지 오너 입력에 근거 URL 없음(ck_cdfield_origin_url) */
+  EVIDENCE_URL_REQUIRED: { status: 422, message: '원산지는 근거 주소와 함께 넣어 주세요.' },
+  /** 05-3 §5.1: 원산지 사전·commerce_origin_area에 없는 나라 */
+  ORIGIN_COUNTRY_UNKNOWN: { status: 422, message: '원산지 목록에서 찾을 수 없는 나라입니다.' },
   INTERNAL_ERROR: {
     status: 500,
     message: '앱 안에서 오류가 났습니다. 다시 해 보고, 계속되면 로그를 확인해 주세요.',

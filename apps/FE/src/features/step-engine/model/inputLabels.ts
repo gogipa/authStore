@@ -14,7 +14,7 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'sourcing.itemText': '② 상품명·설명',
   'sourcing.skuAttributes': '② SKU 속성',
   'sourcing.selection': '② 소싱 선택',
-  'sourcing.attributes': '② 속성·스펙 이미지',
+  'sourcing.attributes': '② 속성·설명·스펙 이미지',
   'sourcing.selectedColor': '② 선택 색상',
   'sourcing.modelInfo': '② 모델명·상품유형',
   'pricing.saleSizes': '③ 판매 사이즈',
@@ -49,6 +49,10 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   // ⑤ 썸네일(P3-01, BE step-engine domain/input-keys.ts와 같다)
   'settings.thumbnail.promptTemplate': '썸네일 프롬프트 골격 설정',
   'settings.thumbnail.faceOptionDefault': '얼굴 노출 기본값 설정',
+  'settings.content.originCountries': '원산지 나라 사전 설정',
+  'settings.content.materialTerms': '소재 말 사전 설정',
+  'settings.content.factLabels': '원산지·소재 항목 이름 설정',
+  'settings.content.specImages': '스펙 이미지 고르기 설정',
   // 판정 기준 데이터(P2-04, BE step-engine/domain/input-keys.ts와 같은 표) — 새 최신 환율·활성 요금표 교체
   'fx.costJpy': '원가 환율',
   'fx.customsJpy': '과세환율(엔)',

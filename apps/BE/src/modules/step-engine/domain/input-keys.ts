@@ -70,6 +70,11 @@ export const INPUT_KEYS = {
   // ⑤ 썸네일(P3-01): 시작 조건은 이 설정 두 키뿐이다(ERD generation_run '⑤ 입력 기록 규칙')
   settingsThumbnailPromptTemplate: 'settings.thumbnail.promptTemplate',
   settingsThumbnailFaceOptionDefault: 'settings.thumbnail.faceOptionDefault',
+  // ⑥-2 원산지·소재(P3-03): 나라 사전·소재 말 사전·설명문 항목 이름·스펙 이미지 고르기
+  settingsContentOriginCountries: 'settings.content.originCountries',
+  settingsContentMaterialTerms: 'settings.content.materialTerms',
+  settingsContentFactLabels: 'settings.content.factLabels',
+  settingsContentSpecImages: 'settings.content.specImages',
   // 판정 기준 데이터(P2-04)
   fxCostJpy: 'fx.costJpy',
   fxCustomsJpy: 'fx.customsJpy',
@@ -95,7 +100,7 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'sourcing.itemText': '② 상품명·설명',
   'sourcing.skuAttributes': '② SKU 속성',
   'sourcing.selection': '② 소싱 선택',
-  'sourcing.attributes': '② 속성·스펙 이미지',
+  'sourcing.attributes': '② 속성·설명·스펙 이미지',
   'sourcing.selectedColor': '② 선택 색상',
   'sourcing.modelInfo': '② 모델명·상품유형',
   'pricing.saleSizes': '③ 판매 사이즈',
@@ -128,6 +133,10 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'settings.safety.excludedCategoryWords': '판매 제외 품목 카테고리 말 설정',
   'settings.thumbnail.promptTemplate': '썸네일 프롬프트 골격 설정',
   'settings.thumbnail.faceOptionDefault': '얼굴 노출 기본값 설정',
+  'settings.content.originCountries': '원산지 나라 사전 설정',
+  'settings.content.materialTerms': '소재 말 사전 설정',
+  'settings.content.factLabels': '원산지·소재 항목 이름 설정',
+  'settings.content.specImages': '스펙 이미지 고르기 설정',
   // 판정 기준 데이터(P2-04)
   'fx.costJpy': '원가 환율',
   'fx.customsJpy': '과세환율(엔)',

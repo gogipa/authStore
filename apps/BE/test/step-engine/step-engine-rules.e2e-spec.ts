@@ -633,17 +633,17 @@ describe('앱 시작: 재시작 정리는 요청 전에 · 실행기가 없는 �
     });
   });
 
-  // ②(P2-02)·③(P2-05)·④(P2-06)·⑤(P3-01)는 운영 실행기가 있다. 아직 실행기가 없는 ⑥-1 COPY(P3-03)로 본다
+  // ②(P2-02)·③(P2-05)·④(P2-06)·⑤(P3-01)·⑥-1·⑥-2(P3-03)는 운영 실행기가 있다. 아직 실행기가 없는 ⑥-3 NOTICE_HTML(P3-04)로 본다
   it('실행 요청은 422 INVALID_STEP_CODE(NO_RUNNER), 레일 run도 같은 코드로 꺼진다', async () => {
     await truncateStepEngine(t.prisma);
     const c = (await createCandidate(t.prisma, { gender: 'MALE' })).candidate;
     const res = await request(t.app.getHttpServer())
-      .post(`/api/v1/candidates/${c.id}/steps/COPY/runs`)
+      .post(`/api/v1/candidates/${c.id}/steps/NOTICE_HTML/runs`)
       .set('X-AutoStore-Client', '1');
     expect(res.status).toBe(422);
     expect(res.body).toMatchObject({
       code: 'INVALID_STEP_CODE',
-      details: { stepCode: 'COPY', reason: 'NO_RUNNER' },
+      details: { stepCode: 'NOTICE_HTML', reason: 'NO_RUNNER' },
     });
     const rail = await request(t.app.getHttpServer()).get(`/api/v1/candidates/${c.id}/steps`);
     const items = (
@@ -651,7 +651,7 @@ describe('앱 시작: 재시작 정리는 요청 전에 · 실행기가 없는 �
         items: { actions: { run: { disabledReason: { code: string; message: string } } } }[];
       }
     ).items;
-    expect(items[4]!.actions.run.disabledReason).toMatchObject({
+    expect(items[6]!.actions.run.disabledReason).toMatchObject({
       code: 'INVALID_STEP_CODE',
       message: (res.body as { message: string }).message,
     });

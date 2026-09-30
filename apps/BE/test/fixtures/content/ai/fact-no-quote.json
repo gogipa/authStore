@@ -1,0 +1,32 @@
+{
+  "origin": {
+    "value": "ベトナム",
+    "evidence_quote": null,
+    "method": "TEXT",
+    "image_index": null
+  },
+  "material_upper": {
+    "value": "合成皮革",
+    "evidence_quote": "",
+    "method": "TEXT",
+    "image_index": null
+  },
+  "material_lining": {
+    "value": null,
+    "evidence_quote": null,
+    "method": "NONE",
+    "image_index": null
+  },
+  "material_sole": {
+    "value": "ゴム",
+    "evidence_quote": "靴底は丈夫なゴム製です",
+    "method": "TEXT",
+    "image_index": null
+  },
+  "heel_height": {
+    "value": "3cm",
+    "evidence_quote": null,
+    "method": "TEXT",
+    "image_index": null
+  }
+}

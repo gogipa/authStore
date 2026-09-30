@@ -1,0 +1,116 @@
+{
+  "_note": "합성 fixture(실제 상품 아님, 화면시안_명세 §4 후보 A). P3-03 §5.3: 속성 原産国／製造国·ヒール高",
+  "rakutenItem": {
+    "itemCode": "shop-a:10000123",
+    "shopCode": "shop-a",
+    "shopName": "라쿠텐 샵 A",
+    "itemName": "アシックス ゲルカヤノ14 1201A019-108 クリーム/ブラック",
+    "itemUrl": "https://item.rakuten.co.jp/shop-a/10000123/",
+    "modelCode": "1201A019-108",
+    "modelCodeNorm": "1201A019108",
+    "collectedAt": "2026-09-28T05:02:00Z",
+    "descriptionHtml": "<p>かかとにGEL搭載、衝撃緩衝性に優れる。</p><p>2008年発売モデルを復刻。</p><p>カラー：クリーム/ブラック</p><p>素材：アッパー：合成繊維・合成皮革 ／ ソール：ゴム</p><p>原産国：日本</p>",
+    "attributes": [
+      {
+        "name": "原産国／製造国",
+        "value": "ベトナム、インドネシア、中国"
+      },
+      {
+        "name": "ヒール高",
+        "value": {
+          "value": "3.5",
+          "unit": "cm"
+        }
+      },
+      {
+        "name": "メーカー型番",
+        "value": "1201A019-108"
+      }
+    ]
+  },
+  "skus": [
+    {
+      "variantId": "v-250",
+      "colorLabel": "クリーム/ブラック",
+      "colorCode": "108",
+      "sizeLabel": "25.0cm",
+      "sizeMm": 250,
+      "attributes": [
+        {
+          "name": "カラーコード",
+          "value": "108"
+        }
+      ]
+    },
+    {
+      "variantId": "v-255",
+      "colorLabel": "クリーム/ブラック",
+      "colorCode": "108",
+      "sizeLabel": "25.5cm",
+      "sizeMm": 255,
+      "attributes": [
+        {
+          "name": "カラーコード",
+          "value": "108"
+        }
+      ]
+    },
+    {
+      "variantId": "v-260",
+      "colorLabel": "クリーム/ブラック",
+      "colorCode": "108",
+      "sizeLabel": "26.0cm",
+      "sizeMm": 260,
+      "attributes": [
+        {
+          "name": "カラーコード",
+          "value": "108"
+        }
+      ]
+    },
+    {
+      "variantId": "v-265",
+      "colorLabel": "クリーム/ブラック",
+      "colorCode": "108",
+      "sizeLabel": "26.5cm",
+      "sizeMm": 265,
+      "attributes": [
+        {
+          "name": "カラーコード",
+          "value": "108"
+        }
+      ]
+    },
+    {
+      "variantId": "v-270",
+      "colorLabel": "クリーム/ブラック",
+      "colorCode": "108",
+      "sizeLabel": "27.0cm",
+      "sizeMm": 270,
+      "attributes": [
+        {
+          "name": "カラーコード",
+          "value": "108"
+        }
+      ]
+    },
+    {
+      "variantId": "v-275",
+      "colorLabel": "クリーム/ブラック",
+      "colorCode": "108",
+      "sizeLabel": "27.5cm",
+      "sizeMm": 275,
+      "attributes": [
+        {
+          "name": "カラーコード",
+          "value": "108"
+        }
+      ]
+    }
+  ],
+  "anchor": {
+    "modelCode": "1201A019108",
+    "colorCode": "108",
+    "colorLabel": "クリーム/ブラック"
+  }
+}

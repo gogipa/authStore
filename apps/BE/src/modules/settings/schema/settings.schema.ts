@@ -7,6 +7,8 @@ import {
   type AppSettings,
   type CategoryLeafMapping,
   type DispatchDeliveryCompanySetting,
+  type MaterialTermEntry,
+  type OriginCountryEntry,
   DUTY_HS_HEADINGS,
   NOTICE_BLOCK_CONDITIONS,
   type NoticeBlock,
@@ -130,6 +132,35 @@ const categoryLeafMapping: JSONSchemaType<CategoryLeafMapping> = {
 export const THUMBNAIL_PROMPT_TEMPLATE_PATTERN =
   '^(?=[\\s\\S]*\\{resolution\\})(?=[\\s\\S]*\\{face_option\\})[\\s\\S]+$';
 
+/** ⑥-2 사전 한 줄의 원문 표기(P3-03 Proposed): 1~40자 */
+const rawTerm = { type: 'string', minLength: 1, maxLength: 40 } as const;
+
+const originCountry: JSONSchemaType<OriginCountryEntry> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['raw', 'area'],
+  properties: {
+    raw: rawTerm,
+    // '대륙 > 국가'(커머스API 원산지 이름과 같은 모양) — '>' 한 번, 양쪽 글자
+    area: { type: 'string', minLength: 3, maxLength: 60, pattern: '^[^>]+>[^>]+$' },
+  },
+};
+
+const materialTerm: JSONSchemaType<MaterialTermEntry> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['raw', 'ko'],
+  properties: { raw: rawTerm, ko: { type: 'string', minLength: 1, maxLength: 40 } },
+};
+
+/** ⑥-2 항목 이름 목록(P3-03 Proposed): 1~20자, 1~50개 */
+const factLabelList = {
+  type: 'array',
+  minItems: 1,
+  maxItems: 50,
+  items: { type: 'string', minLength: 1, maxLength: 20 },
+} as const;
+
 const schema: JSONSchemaType<AppSettings> = {
   type: 'object',
   additionalProperties: false,
@@ -142,6 +173,7 @@ const schema: JSONSchemaType<AppSettings> = {
     'safety',
     'category',
     'thumbnail',
+    'content',
     'notice',
     'delivery',
     'ai',
@@ -427,6 +459,39 @@ const schema: JSONSchemaType<AppSettings> = {
           type: 'integer',
           minimum: 1,
           maximum: THUMBNAIL_GENERATION_TIMEOUT_MAX_SECONDS,
+        },
+      },
+    },
+    content: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['originCountries', 'materialTerms', 'factLabels', 'specImages'],
+      properties: {
+        originCountries: { type: 'array', items: originCountry, maxItems: 500 },
+        materialTerms: { type: 'array', items: materialTerm, maxItems: 500 },
+        factLabels: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['origin', 'upper', 'lining', 'sole', 'material', 'heelHeight'],
+          properties: {
+            origin: factLabelList,
+            upper: factLabelList,
+            lining: factLabelList,
+            sole: factLabelList,
+            material: factLabelList,
+            heelHeight: factLabelList,
+          },
+        },
+        specImages: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['maxCount', 'maxBytes'],
+          properties: {
+            // 비전 호출 한 번에 넘기는 장수(0 = 스펙 이미지를 쓰지 않고 글만 넘긴다)
+            maxCount: { type: 'integer', minimum: 0, maximum: 10 },
+            // 한 장 크기 상한(바이트) — 라쿠텐 이미지 받기 상한(20MB) 이하
+            maxBytes: { type: 'integer', minimum: 10_240, maximum: 20_971_520 },
+          },
         },
       },
     },

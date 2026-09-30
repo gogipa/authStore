@@ -5925,7 +5925,7 @@ export interface components {
             stepRunId: number;
             /** @description ERD 형식 필드 경로(copy.* / fact.* / notice.* / product_name) */
             fieldKey: string;
-            /** @description 유효 값(문자열·배열·{value, unit} 같은 작은 구조값). null = '정보 없음' */
+            /** @description 유효 값(문자열·배열·{value, unit} 같은 작은 구조값). null = '정보 없음'. P3-03(Proposed): copy.selling_points는 글 배열, 그 밖 copy.*는 글, fact.origin은 한국어 나라 이름 배열, fact.material_*는 글, fact.heel_height는 {value, unit} */
             value: unknown;
             /** @description 이 버전에서 단계가 계산·추출한 값(오너 입력과 나란히 보여 줄 때) */
             generatedValue?: unknown;

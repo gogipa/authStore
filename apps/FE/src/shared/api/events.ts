@@ -110,6 +110,9 @@ export type EventInvalidations = {
  * - P3-02: `generation-run.updated`(생성 시도 RUNNING → SUCCEEDED·FAILED·REFUSED, 재시작 정리) → 그 후보의 ⑤ 산출물
  *   (`getCandidateThumbnail` — 후보 칸)과 그 시도 한 건(`getThumbnailGenerationRun`). `gate.passed`·`gate.invalidated` → ⑤
  *   산출물도(G3 유효·선택본 — '선택 전 확인' 패널).
+ * - P3-03: `step-run.status-changed`가 ⑥-1(COPY)이면 그 후보의 카피(`getCandidateContentCopy`), ⑥-2(NOTICE_RAW)면 고시 원자료
+ *   (`getCandidateContentFact` — 입력 대기·완료). `content-field.recheck-flagged` → 그 후보의 고시 원자료와 단계 레일(재확인 필요
+ *   칩). 카피 편집·원산지 직접 넣기는 응답 뒤 훅이 무효화한다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -189,6 +192,10 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
           qk('thumbnails', 'getCandidateThumbnail', { candidateId }),
         ]
       : []),
+    ...(stepCode === 'COPY' ? [qk('content', 'getCandidateContentCopy', { candidateId })] : []),
+    ...(stepCode === 'NOTICE_RAW'
+      ? [qk('content', 'getCandidateContentFact', { candidateId })]
+      : []),
   ],
   'continuous-run.stopped': ({ candidateId, stepChainId }) => [
     qk('step-engine', 'getContinuousRun', { stepChainId }),
@@ -204,6 +211,10 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     qk('sourcing', 'getSourcingComparison', { candidateId }),
     qk('pricing', 'getPriceJudgement', { candidateId }),
     qk('thumbnails', 'getCandidateThumbnail', { candidateId }),
+  ],
+  'content-field.recheck-flagged': ({ candidateId }) => [
+    qk('content', 'getCandidateContentFact', { candidateId }),
+    qk('step-engine', 'listCandidateSteps', { candidateId }),
   ],
   'generation-run.updated': ({ candidateId, generationRunId }) => [
     qk('thumbnails', 'getCandidateThumbnail', { candidateId }),

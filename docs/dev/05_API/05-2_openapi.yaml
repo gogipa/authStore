@@ -3398,7 +3398,7 @@ paths:
       - F-CT-07
       - F-CT-08
       - F-CT-36
-      x-decision: D-16(오너 결정, 세부는 추천안 D-11) — 응답에서 aiProvider·aiModel을 뺐다. 'AI 생성 · {엔진}' 표시는 stepRunId의 실행 기록(aiEngine·aiModel)을 쓴다(R11)
+      x-decision: 'D-16(오너 결정, 세부는 추천안 D-11) — 응답에서 aiProvider·aiModel을 뺐다. ''AI 생성 · {엔진}'' 표시는 stepRunId의 실행 기록(aiEngine·aiModel)을 쓴다(R11). P3-03(Proposed) — generatedCopy·copy의 키는 카피 스키마 snake_case 그대로(headline·selling_points·body·fit_and_styling·size_guide·source_facts_used). fields는 오너가 고친 copy.* 필드(OWNER_INPUT)와 오너가 새 결과를 고른 필드(GENERATED)만. stepRunId가 이 후보의 ⑥-1 실행이 아니면 404 STEP_RUN_NOT_FOUND(getCandidateThumbnail과 같다), ⑥-1 실행 전 404 STEP_OUTPUT_NOT_FOUND, 모르는 쿼리 키 422. keepAsIsAllowed = 이 버전이 현재 버전이고 ⑥-1이 RERUN_REQUIRED'
       parameters:
       - $ref: '#/components/parameters/CandidateId'
       - name: stepRunId
@@ -3442,7 +3442,7 @@ paths:
       - F-CT-15
       - F-CT-17
       - F-CT-21
-      x-decision: D-16(오너 결정, 세부는 추천안 D-11) — 응답에서 aiProvider·aiModel을 뺐다. 엔진·모델은 stepRunId의 실행 기록(aiEngine·aiModel)을 쓴다(R11)
+      x-decision: 'D-16(오너 결정, 세부는 추천안 D-11) — 응답에서 aiProvider·aiModel을 뺐다. 엔진·모델은 stepRunId의 실행 기록(aiEngine·aiModel)을 쓴다(R11). P3-03(Proposed) — ⑥-2는 시작 때 늘 aiEngine·aiModel을 고정한다(규칙으로만 끝나도 — ERD §7.2-25). fields는 fact.origin·material_upper·material_lining·material_sole·heel_height 순 다섯 행. 값 모양: fact.origin = 한국어 나라 이름 배열(설정 원산지 나라 사전), fact.material_* = 한국어 글(설정 소재 말 사전, 없는 말은 원문), fact.heel_height = {value, unit(cm|mm)}, 근거 없음 = null·extractionMethod NONE. evidenceQuote는 일본어 원문 표기 그대로, evidenceUrl은 ② 상품 페이지(오너 입력이면 오너 근거 URL). pendingInputs는 입력 대기일 때만(원산지가 오너 입력으로 확정되지 않았으면 fact.origin). stepRunId 규칙은 getCandidateContentCopy와 같다'
       parameters:
       - $ref: '#/components/parameters/CandidateId'
       - name: stepRunId
@@ -3480,7 +3480,7 @@ paths:
       x-features:
       - F-CT-14
       - F-CT-17
-      x-decision: §7.4-34 실행 중 입력 허용 키는 앱 상수 목록으로 두고 명세는 fact.* 형식만 강제한다. M1 확정 키는 fact.origin이고 색상 표기 키 이름은 M0 뒤 상수에 더한다(목록 밖 키는 422 FIELD_NOT_EDITABLE).
+      x-decision: '§7.4-34 실행 중 입력 허용 키는 앱 상수 목록으로 두고 명세는 fact.* 형식만 강제한다. M1 확정 키는 fact.origin이고 색상 표기 키 이름은 M0 뒤 상수에 더한다(목록 밖 키는 422 FIELD_NOT_EDITABLE). P3-03(Proposed) — 검사 순서: 경로 키 모양 422 VALIDATION_FAILED → 404 STEP_RUN_NOT_FOUND → ⑥-2 아님 422 INVALID_STEP_CODE(details.reason=NOT_NOTICE_RAW) → 허용 목록 밖 422 FIELD_NOT_EDITABLE → 근거 URL 없음 422 EVIDENCE_URL_REQUIRED(http·https 주소가 아니면 VALIDATION_FAILED) → value(나라 이름 1~100자, 여러 나라는 쉼표·빗금·가운뎃점으로 나눈다) → 원산지 나라 사전(원문·''대륙 > 국가''·한국어 이름)·commerce_origin_area(이름의 마지막 ''>'' 조각)에 없으면 422 ORIGIN_COUNTRY_UNKNOWN(details.country) → 잠김·제외 409 → 입력 대기 아님 409 STEP_RUN_NOT_WAITING_INPUT. 저장 값은 한국어 나라 이름 배열, basisItemCode는 후보 현재 itemCode, 재확인 표시가 있으면 recheckResolvedAt도 채운다. 감사 기록 OWNER_EDITED(detail.input=RUNTIME).'
       parameters:
       - $ref: '#/components/parameters/ClientHeader'
       - name: stepRunId
@@ -14279,7 +14279,7 @@ components:
           pattern: ^((copy|fact|notice)\.[a-z_]+|product_name)$
           description: ERD 형식 필드 경로(copy.* / fact.* / notice.* / product_name)
         value:
-          description: 유효 값(문자열·배열·{value, unit} 같은 작은 구조값). null = '정보 없음'
+          description: "유효 값(문자열·배열·{value, unit} 같은 작은 구조값). null = '정보 없음'. P3-03(Proposed): copy.selling_points는 글 배열, 그 밖 copy.*는 글, fact.origin은 한국어 나라 이름 배열, fact.material_*는 글, fact.heel_height는 {value, unit}"
         generatedValue:
           description: 이 버전에서 단계가 계산·추출한 값(오너 입력과 나란히 보여 줄 때)
         valueSource:

@@ -22,6 +22,15 @@ export interface FakeAiRunCall {
   imagePaths: readonly string[];
   /** 프롬프트 길이만(본문은 남기지 않는다 — 테스트도 규칙 15를 따른다) */
   promptLength: number;
+  /**
+   * 부른 결과 스키마(P3-03 — ⑥-2 AI 스키마는 못 찾은 필드만 담는다. 녹화 출력을 그 필드로 줄일 때 쓴다). 비전이면 `images_seen`이
+   * 더해진 스키마다
+   */
+  schema: AiJsonSchema;
+  /**
+   * 프롬프트가 이 글을 담았는가(P3-03 — 데이터 블록 격리 확인용). 본문은 남기지 않고 질문에만 답한다
+   */
+  promptIncludes: (text: string) => boolean;
 }
 
 /**
@@ -88,16 +97,19 @@ export class FakeAiEngineAdapter implements AiEngineAdapter {
 
   async runStructured<T>(
     task: string,
-    _schema: AiJsonSchema,
+    schema: AiJsonSchema,
     inputs: AiEngineInputs,
     options: AiRunOptions,
   ): Promise<AiStructuredResult<T>> {
+    const prompt = inputs.prompt;
     const call: FakeAiRunCall = {
       task,
       model: options.model,
       timeoutMs: options.timeoutMs,
       imagePaths: inputs.imagePaths ?? [],
-      promptLength: inputs.prompt.length,
+      promptLength: prompt.length,
+      schema,
+      promptIncludes: (text) => prompt.includes(text),
     };
     this.calls.runStructured.push(call);
     const output = (await this.runImpl(call)) as T;

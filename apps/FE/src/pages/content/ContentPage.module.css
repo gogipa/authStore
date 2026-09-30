@@ -1,0 +1,302 @@
+/*
+ * SCR-06 ⑥ 상세 콘텐츠(Content.dc.html, P3-03). ⑥ 구역은 h2(20px) + 묶음 상태 줄, 세부 단계 이동 줄, 구획 셋(⑥-1 카피 ·
+ * ⑥-2 원산지·소재 · ⑥-3 고시·HTML)은 패널 모양(흰 바탕·line 테두리·radius 8·안쪽 16). 카피는 [편집 칸 | 원문 사실·펼치기] 두 열,
+ * 원산지·소재는 표(머리 행 surface-sunk 36px, 행 line 위선). 색·크기는 토큰 변수만(라이트 테마).
+ */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.stepHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.stepTitle {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+/* 화면 ID 칩(SCR-03·04·05와 같은 모양 — 보드에는 없다) */
+.screenId {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunk);
+  color: var(--color-ink);
+  font: var(--type-id);
+}
+
+.bar {
+  display: flex;
+  flex-grow: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.failed {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-caption);
+  color: var(--color-failed);
+}
+
+.reasonLine {
+  align-self: flex-end;
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+.placeholder {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+/* ── 세부 단계 이동 ── */
+.subNavRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.subNav {
+  display: flex;
+  flex-grow: 1;
+  gap: var(--space-2);
+}
+
+.subNav a {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font: var(--type-body-strong);
+  text-decoration: none;
+}
+
+.subNav a:hover,
+.subNav a:focus-visible {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* ── 구획(패널 모양) ── */
+.sub {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  scroll-margin-top: var(--space-4);
+}
+
+.subHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.subTitle {
+  margin: 0 var(--space-2) 0 0;
+  font: var(--type-heading);
+  color: var(--color-ink);
+}
+
+/* ── ⑥-1 카피 ── */
+.copyGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-4);
+}
+
+.copyFields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.copyAside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fieldLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunk);
+}
+
+.factList {
+  margin: 0;
+  padding-left: var(--space-4);
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.choice {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-waiting-soft);
+}
+
+.choiceColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.choiceValue {
+  margin: var(--space-1) 0 0;
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.choiceActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ── ⑥-2 원산지·소재 표 ── */
+.tableBox {
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.table thead th {
+  height: 36px;
+  padding: 0 var(--space-3);
+  background: var(--color-surface-sunk);
+  color: var(--color-ink-muted);
+  font: var(--type-label);
+  text-align: left;
+}
+
+.table tbody th,
+.table tbody td {
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--color-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table tbody th {
+  font: var(--type-body-strong);
+  white-space: nowrap;
+}
+
+.quote {
+  color: var(--color-ink-muted);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.factValue {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.factSource {
+  display: flex;
+  flex-direction: column;
+}
+
+.factSource a {
+  color: var(--color-accent);
+}
+
+.actionCell {
+  white-space: nowrap;
+}
+
+.actionCell > * + * {
+  margin-left: var(--space-2);
+}
+
+.originForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 2fr) auto;
+  align-items: end;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunk);
+}
+
+.formActions {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}

@@ -100,6 +100,7 @@ export { INPUT_KEY_LABEL } from './model/inputLabels';
 export {
   CONTENT_GROUP_CODES,
   contentGroupStatus,
+  groupLastRunAt,
   inputSourceText,
   lastRunAt,
   railByCode,

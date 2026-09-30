@@ -25,6 +25,11 @@ export type CommerceMetaDocumentView = Pick<
   'kind' | 'scopeKey' | 'payload' | 'payloadSha256' | 'syncedAt'
 >;
 
+/** 원산지 이름 비교 키(NFKC·공백 제거) */
+function originNameKey(name: string): string {
+  return name.normalize('NFKC').replace(/\s+/g, '');
+}
+
 function withBlockReason(row: CommerceCategory): CommerceCategoryView {
   return { ...row, blockReason: categoryBlockReason(row) };
 }
@@ -90,6 +95,24 @@ export class CommerceMetaCacheService implements MetaLeafSource {
   /** 원산지 코드 하나(사라진 행도 준다). 없으면 null */
   findOriginArea(originAreaCode: string): Promise<CommerceOriginArea | null> {
     return this.prisma.commerceOriginArea.findUnique({ where: { originAreaCode } });
+  }
+
+  /**
+   * 나라 이름으로 사라지지 않은 원산지 코드 행(P3-03 — ⑥-2 원산지 직접 입력 검사 ORIGIN_COUNTRY_UNKNOWN). 이름('아시아>베트남')의
+   * 마지막 '>' 조각이나 이름 전체가 같으면(공백·NFKC 무시) 맞다. 없으면 빈 배열
+   */
+  async findOriginAreasByCountry(countryName: string): Promise<CommerceOriginArea[]> {
+    const key = originNameKey(countryName);
+    if (key === '') return [];
+    const last = key.split('>').at(-1) ?? key;
+    const rows = await this.prisma.commerceOriginArea.findMany({
+      where: { removedAt: null, name: { contains: last } },
+      orderBy: { originAreaCode: 'asc' },
+    });
+    return rows.filter((row) => {
+      const name = originNameKey(row.name);
+      return name === key || name.split('>').at(-1) === last;
+    });
   }
 
   /** 주소록 한 행(DB id, 프로필 FK). 사라진 행도 준다. 없으면 null */

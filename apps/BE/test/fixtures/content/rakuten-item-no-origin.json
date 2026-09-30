@@ -1,0 +1,73 @@
+{
+  "_note": "합성 fixture. 원산지 근거가 없는 상품(⑥-2 입력 대기). 설명 속 스펙표 이미지 1장(spec-images/spec-table.png)",
+  "rakutenItem": {
+    "itemCode": "shop-c:30000789",
+    "shopCode": "shop-c",
+    "shopName": "라쿠텐 샵 C",
+    "itemName": "アシックス ゲルカヤノ14 1201A019-108",
+    "itemUrl": "https://item.rakuten.co.jp/shop-c/30000789/",
+    "modelCode": "1201A019-108",
+    "modelCodeNorm": "1201A019108",
+    "collectedAt": "2026-09-28T05:02:00Z",
+    "descriptionHtml": "<p>かかとにGEL搭載、衝撃緩衝性に優れる。</p><p>詳しいスペックは下の表をご覧ください。</p><img src=\"https://image.rakuten.co.jp/shop-c/cabinet/spec-table.png\" alt=\"スペック表\"><img src=\"https://example.com/not-rakuten.png\">",
+    "attributes": []
+  },
+  "skus": [
+    {
+      "variantId": "v-250",
+      "colorLabel": "クリーム/ブラック",
+      "colorCode": "108",
+      "sizeLabel": "25.0cm",
+      "sizeMm": 250,
+      "attributes": []
+    },
+    {
+      "variantId": "v-255",
+      "colorLabel": "クリーム/ブラック",
+      "colorCode": "108",
+      "sizeLabel": "25.5cm",
+      "sizeMm": 255,
+      "attributes": []
+    },
+    {
+      "variantId": "v-260",
+      "colorLabel": "クリーム/ブラック",
+      "colorCode": "108",
+      "sizeLabel": "26.0cm",
+      "sizeMm": 260,
+      "attributes": []
+    },
+    {
+      "variantId": "v-265",
+      "colorLabel": "クリーム/ブラック",
+      "colorCode": "108",
+      "sizeLabel": "26.5cm",
+      "sizeMm": 265,
+      "attributes": []
+    },
+    {
+      "variantId": "v-270",
+      "colorLabel": "クリーム/ブラック",
+      "colorCode": "108",
+      "sizeLabel": "27.0cm",
+      "sizeMm": 270,
+      "attributes": []
+    },
+    {
+      "variantId": "v-275",
+      "colorLabel": "クリーム/ブラック",
+      "colorCode": "108",
+      "sizeLabel": "27.5cm",
+      "sizeMm": 275,
+      "attributes": []
+    }
+  ],
+  "anchor": {
+    "modelCode": "1201A019108",
+    "colorCode": "108",
+    "colorLabel": "クリーム/ブラック"
+  },
+  "specImages": {
+    "https://image.rakuten.co.jp/shop-c/cabinet/spec-table.png": "spec-table.png"
+  }
+}

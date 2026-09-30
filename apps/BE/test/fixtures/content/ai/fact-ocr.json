@@ -1,0 +1,32 @@
+{
+  "origin": {
+    "value": null,
+    "evidence_quote": null,
+    "method": "NONE",
+    "image_index": null
+  },
+  "material_upper": {
+    "value": "合成皮革",
+    "evidence_quote": "アッパー素材：合成皮革",
+    "method": "IMAGE",
+    "image_index": 1
+  },
+  "material_lining": {
+    "value": "合成繊維",
+    "evidence_quote": "ライニング：合成繊維",
+    "method": "IMAGE",
+    "image_index": 1
+  },
+  "material_sole": {
+    "value": "ゴム",
+    "evidence_quote": "アウトソール：ゴム",
+    "method": "IMAGE",
+    "image_index": 1
+  },
+  "heel_height": {
+    "value": "約2.5cm",
+    "evidence_quote": "ヒール高さ 約2.5cm",
+    "method": "IMAGE",
+    "image_index": 1
+  }
+}
