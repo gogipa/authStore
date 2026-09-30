@@ -113,4 +113,47 @@ describe('FactTable(SCR-06 ⑥-2 원산지·소재, P3-03)', () => {
     expect(screen.getByText('재확인 필요')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '현재 근거로 확인' })).toBeEnabled();
   });
+
+  it("'색상 표기' 줄(P3-04 F-CT-17): 선택 색상 원문·AI 보조 표시, 입력 대기면 '고치기' → PUT fact.color_ko", async () => {
+    const color = contentField({
+      id: 16,
+      stepRunId: 105,
+      fieldKey: 'fact.color_ko',
+      value: '크림/블랙',
+      extractionMethod: 'AI',
+      evidenceQuote: 'クリーム/ブラック',
+    });
+    const api = renderFacts({
+      item: railItem({ stepCode: 'NOTICE_RAW', status: 'WAITING_INPUT' }),
+      output: contentFactOutput({
+        ...waitingOutput(),
+        fields: [...waitingOutput().fields, color],
+      }),
+    });
+    api.on('PUT /step-runs/105/content-fields/fact.color_ko', () =>
+      jsonResponse({
+        field: { ...color, value: '크림', valueSource: 'OWNER_INPUT' },
+        stepRunId: 105,
+        stepRunStatus: 'WAITING_INPUT',
+        pendingInputs: ['fact.origin'],
+      }),
+    );
+    const table = screen.getByRole('table');
+    const row = within(table).getByRole('row', { name: /색상 표기/ });
+    expect(within(row).getByText('크림/블랙')).toBeInTheDocument();
+    expect(within(row).getByText("'クリーム/ブラック'")).toBeInTheDocument();
+    expect(within(row).getByText('선택 색상 원문')).toBeInTheDocument();
+    expect(within(row).getByText('사전에 없어 AI 보조')).toBeInTheDocument();
+    expect(within(row).getByText('AI 생성')).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(within(row).getByRole('button', { name: '색상 표기 고치기' }));
+    const input = screen.getByRole('textbox', { name: '색상 표기' });
+    await user.clear(input);
+    await user.type(input, '크림');
+    await user.click(screen.getByRole('button', { name: '색상 저장' }));
+    await waitFor(() => expect(api.requests.filter((r) => r.method === 'PUT')).toHaveLength(1));
+    const req = api.requests.find((r) => r.method === 'PUT')!;
+    expect(req.url).toContain('/content-fields/fact.color_ko');
+    expect(await req.json()).toEqual({ value: '크림' });
+  });
 });

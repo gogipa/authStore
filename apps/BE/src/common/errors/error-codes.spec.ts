@@ -354,6 +354,20 @@ describe('error-codes', () => {
     });
   });
 
+  it('P3-04 ⑥-3 코드 2개는 05-3 §5.1 문구·상태 그대로다', () => {
+    expect(ERROR_CODES.PROFILE_INCOMPLETE).toEqual({
+      status: 409,
+      message: '구매대행 프로필에 빈칸({항목})이 있습니다. 설정에서 채워 주세요.',
+    });
+    expect(ERROR_CODES.ORIGIN_CODE_NOT_ALLOWED).toEqual({
+      status: 422,
+      message: '사양 블록에 실제 나라 표기가 없어 이 원산지 코드를 쓸 수 없습니다.',
+    });
+    expect(formatErrorMessage('PROFILE_INCOMPLETE', { 항목: '수입자' })).toBe(
+      '구매대행 프로필에 빈칸(수입자)이 있습니다. 설정에서 채워 주세요.',
+    );
+  });
+
   it('formatErrorMessage는 {…} 자리를 채우고 모르는 자리는 그대로 둔다', () => {
     expect(formatErrorMessage('DAILY_LIMIT_REACHED', { 대상: '라쿠텐 상품 페이지', n: 110 })).toBe(
       '오늘 라쿠텐 상품 페이지 조회 한도(110건)를 다 썼습니다. 내일 0시(한국 시간)에 다시 됩니다.',

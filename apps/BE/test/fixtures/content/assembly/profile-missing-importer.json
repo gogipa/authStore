@@ -1,0 +1,15 @@
+{
+  "_note": "합성 fixture. P3-04 §5.3·§6 e2e: 수입자(importer)만 비었다 → ⑥-3 409 PROFILE_INCOMPLETE(details.missingFields = ['importer'])",
+  "overseasShippingCommerceAddressbookId": null,
+  "returnCommerceAddressbookId": null,
+  "dispatchDeliveryCompanyCode": null,
+  "commerceReturnDeliveryCompanyId": null,
+  "returnFeeKrw": 30000,
+  "exchangeFeeKrw": 60000,
+  "businessName": "[내 상호]",
+  "afterServicePhone": "[A/S 연락처]",
+  "afterServiceGuide": "[A/S 안내]",
+  "importer": null,
+  "noticeFixedTexts": {},
+  "maxPurchaseQuantityPerOrder": 1
+}

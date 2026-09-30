@@ -376,12 +376,15 @@ describe('⑥-1 카피·⑥-2 사양 추출(P3-03) e2e — autostore_test·실�
         selectedColorRaw: 'クリーム/ブラック',
         pendingInputs: [],
       });
+      // P3-04: 색상 한국어 표기·소재별 주의 문구 두 행이 더해져 일곱 행이다
       expect(body.fields.map((f) => f.fieldKey)).toEqual([
         'fact.origin',
         'fact.material_upper',
         'fact.material_lining',
         'fact.material_sole',
         'fact.heel_height',
+        'fact.color_ko',
+        'fact.caution',
       ]);
       expect(field(body, 'fact.origin')).toMatchObject({
         value: ['베트남', '인도네시아', '중국'],
@@ -410,7 +413,11 @@ describe('⑥-1 카피·⑥-2 사양 추출(P3-03) e2e — autostore_test·실�
       const calls = t.ai.claude.calls.runStructured;
       expect(calls).toHaveLength(1);
       expect(calls[0]).toMatchObject({ task: 'CT-02', imagePaths: [] });
-      expect(Object.keys(calls[0]!.schema.properties as object)).toEqual(['material_lining']);
+      // 못 찾은 필드만 묻고, P3-04 주의 문구 보완을 같은 호출에 묶는다(색상은 사전으로 정해 묻지 않는다)
+      expect(Object.keys(calls[0]!.schema.properties as object)).toEqual([
+        'material_lining',
+        'caution',
+      ]);
     });
 
     it('설명 속 스펙표 이미지를 받아(DESCRIPTION_IMAGE·call_log RAKUTEN_IMAGE) 비전으로 읽은 값은 AI·이미지 id. 원산지 근거 없으면 입력 대기', async () => {

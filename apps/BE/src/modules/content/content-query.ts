@@ -9,7 +9,10 @@ function invalidQuery(field: string, message: string): ApiException {
   return new ApiException('INVALID_QUERY_PARAMETER', { fieldErrors: [{ field, message }] });
 }
 
-/** 산출물 조회 쿼리(05-2 getCandidateContentCopy·getCandidateContentFact: stepRunId만) — 어기면 422 INVALID_QUERY_PARAMETER */
+/**
+ * 산출물 조회 쿼리(05-2 getCandidateContentCopy·getCandidateContentFact·getCandidateContentAssembly·getContentAssemblyPreview:
+ * stepRunId만) — 어기면 422 INVALID_QUERY_PARAMETER
+ */
 export function parseContentQuery(query: Record<string, unknown>): { stepRunId: number | null } {
   for (const key of Object.keys(query)) {
     if (key !== 'stepRunId') throw invalidQuery(key, '받지 않는 조건입니다.');
@@ -29,7 +32,7 @@ export function parseContentQuery(query: Record<string, unknown>): { stepRunId: 
 export async function resolveContentRun(
   prisma: PrismaService,
   candidateId: number,
-  stepCode: 'COPY' | 'NOTICE_RAW',
+  stepCode: 'COPY' | 'NOTICE_RAW' | 'NOTICE_HTML',
   stepRunId: number | null,
   notFound: () => ApiException,
 ): Promise<{ run: StepRun; isCurrent: boolean; stepStatus: string | null }> {

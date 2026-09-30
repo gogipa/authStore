@@ -10,9 +10,13 @@ import type {
   ContentFieldInputResultDto,
   ContentStepStatus,
 } from '../dto/content.dto.js';
-import { draftOf, fieldsOf, updateField } from '../fields/content-field.store.js';
+import { draftOf, fieldsOf, updateField, type FieldDraft } from '../fields/content-field.store.js';
 import { toFieldItem } from '../fields/content-field.view.js';
-import { RUNTIME_INPUT_FIELD_KEYS, type FactFieldKey } from '../fields/field-keys.js';
+import {
+  COLOR_KO_FIELD_KEY,
+  RUNTIME_INPUT_FIELD_KEYS,
+  type FactFieldKey,
+} from '../fields/field-keys.js';
 import { storedPendingInputs } from './content-fact.service.js';
 import { NOTICE_RAW_INPUT_DONE } from './notice-raw-step.runner.js';
 import { evidenceUrlOf, OriginInputResolver } from './origin-input.resolver.js';
@@ -29,6 +33,7 @@ const PATH_FIELD_KEY = /^fact\.[a-z_]+$/;
  * 저장(한 트랜잭션): 행을 `OWNER_INPUT`·`owner_confirmed_at`=지금·`basis_item_code`=현재 itemCode·근거 URL·발췌(선택)로 고치고
  * (재확인 표시가 있으면 `recheck_resolved_at`도), 감사 기록(OWNER_EDITED). 대기 입력이 다 차면 같은 실행을 완료로 끝낸다
  * (step-engine `resumeWaiting({outcome})` — 끝 지문·뒷단계 전파·SSE).
+ * P3-04: 허용 키에 색상 표기 확인(`fact.color_ko`)을 더했다 — 근거 URL 없이 글 1~100자(`putColor`).
  */
 @Injectable()
 export class ContentFieldsService {
@@ -69,6 +74,7 @@ export class ContentFieldsService {
         details: { fieldKey, stepCode: 'NOTICE_RAW' },
       });
     }
+    if (fieldKey === COLOR_KO_FIELD_KEY) return this.putColor(found.candidateId, stepRunId, body);
     if (
       body.evidenceUrl === undefined ||
       body.evidenceUrl === null ||
@@ -91,8 +97,62 @@ export class ContentFieldsService {
     const countries = await this.origins.resolve(body.value, 'value');
     const evidenceQuote = body.evidenceQuote?.trim() ? body.evidenceQuote.trim() : null;
 
+    return this.save(found.candidateId, stepRunId, fieldKey, (current, candidate, now) => ({
+      ...current,
+      value: countries,
+      valueSource: 'OWNER_INPUT',
+      evidenceUrl,
+      evidenceQuote,
+      evidenceImageAssetId: null,
+      basisItemCode: candidate.itemCode ?? current.basisItemCode,
+      ownerConfirmedAt: now,
+      choicePending: false,
+      recheckResolvedAt: current.recheckReason !== null ? now : null,
+    }));
+  }
+
+  /**
+   * 색상 표기 확인(P3-04 규칙 6, F-CT-17 — 열린 ⑥-2의 `fact.color_ko`). 근거 URL은 받지 않는다(선택 색상 원문이 근거다). 값은 글
+   * 1~100자(어기면 422 VALIDATION_FAILED). 색상은 입력 대기 사유가 아니라 저장만 하고, 원산지가 남아 있으면 그대로 기다린다
+   */
+  private async putColor(
+    candidateId: number,
+    stepRunId: number,
+    body: ContentFieldInputRequestDto,
+  ): Promise<ContentFieldInputResultDto> {
+    const text = typeof body.value === 'string' ? body.value.trim() : '';
+    if (text === '' || [...text].length > 100) {
+      throw new ApiException('VALIDATION_FAILED', {
+        fieldErrors: [
+          {
+            field: 'value',
+            message: '색상 표기는 1~100자 글이어야 합니다.',
+            rejectedValue: body.value,
+          },
+        ],
+      });
+    }
+    return this.save(candidateId, stepRunId, COLOR_KO_FIELD_KEY, (current, candidate, now) => ({
+      ...current,
+      value: text,
+      valueSource: 'OWNER_INPUT',
+      evidenceUrl: null,
+      evidenceImageAssetId: null,
+      basisItemCode: candidate.itemCode ?? current.basisItemCode,
+      ownerConfirmedAt: now,
+      choicePending: false,
+    }));
+  }
+
+  /** 열린 ⑥-2 행 하나를 오너 값으로 고치고(한 트랜잭션), 대기 입력이 다 차면 실행을 끝낸다 */
+  private save(
+    candidateId: number,
+    stepRunId: number,
+    fieldKey: string,
+    next: (current: FieldDraft, candidate: { itemCode: string | null }, now: Date) => FieldDraft,
+  ): Promise<ContentFieldInputResultDto> {
     return this.transactions.run(async (scope) => {
-      const candidate = await this.guard.lockForUpdate(scope.tx, found.candidateId);
+      const candidate = await this.guard.lockForUpdate(scope.tx, candidateId);
       this.guard.assertMutable(candidate);
       const run = await scope.tx.stepRun.findUniqueOrThrow({ where: { id: stepRunId } });
       if (run.status !== 'WAITING_INPUT') throw new ApiException('STEP_RUN_NOT_WAITING_INPUT');
@@ -104,18 +164,7 @@ export class ContentFieldsService {
       const updated = await updateField(
         scope.tx,
         row.id,
-        {
-          ...current,
-          value: countries,
-          valueSource: 'OWNER_INPUT',
-          evidenceUrl,
-          evidenceQuote,
-          evidenceImageAssetId: null,
-          basisItemCode: candidate.itemCode ?? current.basisItemCode,
-          ownerConfirmedAt: scope.now,
-          choicePending: false,
-          recheckResolvedAt: current.recheckReason !== null ? scope.now : null,
-        },
+        next(current, candidate, scope.now),
         scope.now,
       );
       await this.audit.record(

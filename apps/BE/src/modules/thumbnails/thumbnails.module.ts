@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleInit } from '@nestjs/common';
 import { IntegrationsModule } from '../integrations/integrations.module.js';
 import { SettingsModule } from '../settings/settings.module.js';
+import { StepEngineApi } from '../step-engine/step-engine.api.js';
 import { StepEngineModule } from '../step-engine/step-engine.module.js';
 import { ThumbnailG3GateBasis } from './gate/g3-gate.handler.js';
 import { GenerationRecovery } from './generation/generation-recovery.js';
@@ -12,6 +13,7 @@ import { ThumbnailPromptPreviewsService } from './prompt/thumbnail-prompt-previe
 import { ThumbnailReferenceRepository } from './references/thumbnail-reference.repository.js';
 import { ThumbnailReferencesController } from './references/thumbnail-references.controller.js';
 import { ThumbnailReferencesService } from './references/thumbnail-references.service.js';
+import { thumbnailSelectionReader } from './selection/thumbnail-selection.reader.js';
 import { ThumbnailSelectionRepository } from './selection/thumbnail-selection.repository.js';
 import { OriginalImageStore } from './source-images/original-image.store.js';
 import { SourceImageDownloader } from './source-images/source-image.downloader.js';
@@ -41,6 +43,9 @@ import { ThumbnailStepRunner } from './thumbnail-step.runner.js';
  * - 산출물 조회 `GET /candidates/{id}/thumbnail`(`ThumbnailOutputService`)
  * - G3 공급자 `ThumbnailG3GateBasis`(`@GateBasisFor('G3')` — step-engine `GateService`가 부른다): 체크리스트·이미지·'같은
  *   상품·색상' 검사, 선택본 저장(실행기 `persist`), ⑤ 완료 또는 OWNER_EDIT 새 버전, 지문 구성값
+ *
+ * P3-04: G3 선택본 읽기(`selection/thumbnail-selection.reader.ts`)를 앱 시작 때 `StepEngineApi.registerThumbnailSelectionReader`로
+ * 끼운다 — ⑥-3 미리보기가 step-engine을 거쳐 읽는다(content는 thumbnails를 import하지 않는다).
  */
 @Module({
   imports: [IntegrationsModule, SettingsModule, StepEngineModule],
@@ -67,4 +72,10 @@ import { ThumbnailStepRunner } from './thumbnail-step.runner.js';
     ThumbnailG3GateBasis,
   ],
 })
-export class ThumbnailsModule {}
+export class ThumbnailsModule implements OnModuleInit {
+  constructor(private readonly api: StepEngineApi) {}
+
+  onModuleInit(): void {
+    this.api.registerThumbnailSelectionReader(thumbnailSelectionReader);
+  }
+}

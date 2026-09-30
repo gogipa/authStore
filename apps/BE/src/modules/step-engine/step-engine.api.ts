@@ -19,6 +19,12 @@ import type {
   SourcingSelectionView,
   SourcingTargetSkus,
 } from './ports/sourcing-selection.port.js';
+import type {
+  PricingOutputReader,
+  PricingSaleSizesView,
+  ThumbnailSelectionReader,
+  ThumbnailSelectionView,
+} from './ports/step-output-readers.port.js';
 import { StepModulePorts } from './ports/step-module-ports.js';
 import { PropagationService } from './propagation/propagation.service.js';
 
@@ -74,6 +80,11 @@ export type ResumeWaitingInput =
  *   `persist`가 닫기 전에 쓴다). `outcomeFor` 안에서 새 버전에 산출물(레퍼런스 복사 등)을 쓸 수 있다
  * - `gateState(candidateId, gate, db?)`: 게이트 최신 통과·지문 유효·바뀐 구성값(⑤ 산출물 조회의 G3 유효 — 05-2
  *   ThumbnailG3Validity). 게이트 통과 자체는 여기에 열지 않는다(웹 화면 전용 `POST …/gates/{code}/pass`)
+ * P3-04:
+ * - `registerPricingOutputReader(reader)`·`readPricingSaleSizes(pricingStepRunId, db?)`: ③ 버전의 판매 사이즈(⑥-3 시작 조건).
+ *   pricing이 등록한다. 등록 전·판정 없음이면 null
+ * - `registerThumbnailSelectionReader(reader)`·`readThumbnailSelection(candidateId, db?)`: 후보의 지금 G3 선택본(⑤ 현재 버전 —
+ *   ⑥-3 미리보기 자리표시자 채우기). thumbnails가 등록한다. ⑥-3의 입력이 아니다(지문에 넣지 않는다)
  */
 @Injectable()
 export class StepEngineApi {
@@ -138,6 +149,32 @@ export class StepEngineApi {
 
   registerGenderInputListener(listener: GenderInputListener): void {
     this.ports.registerGenderInputListener(listener);
+  }
+
+  registerPricingOutputReader(reader: PricingOutputReader): void {
+    this.ports.registerPricingOutputReader(reader);
+  }
+
+  registerThumbnailSelectionReader(reader: ThumbnailSelectionReader): void {
+    this.ports.registerThumbnailSelectionReader(reader);
+  }
+
+  /** ③ 버전의 판매 사이즈(P3-04 — ⑥-3 입력). 읽기 함수가 없거나 판정이 없으면 null */
+  async readPricingSaleSizes(
+    pricingStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<PricingSaleSizesView | null> {
+    const reader = this.ports.pricingOutputReader;
+    return reader ? reader.readSaleSizes(db, pricingStepRunId) : null;
+  }
+
+  /** 후보의 지금 G3 선택본(P3-04 — ⑥-3 미리보기). 읽기 함수가 없거나 선택이 없으면 null */
+  async readThumbnailSelection(
+    candidateId: number,
+    db: Db = this.prisma,
+  ): Promise<ThumbnailSelectionView | null> {
+    const reader = this.ports.thumbnailSelectionReader;
+    return reader ? reader.readCurrentSelection(db, candidateId) : null;
   }
 
   pinnedAiOf(stepRunId: number, db: Db = this.prisma): Promise<PinnedAiContext | null> {

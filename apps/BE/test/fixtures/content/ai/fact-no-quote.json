@@ -28,5 +28,17 @@
     "evidence_quote": null,
     "method": "TEXT",
     "image_index": null
+  },
+  "color_ko": {
+    "value": "크림",
+    "evidence_quote": null,
+    "method": "TEXT",
+    "image_index": null
+  },
+  "caution": {
+    "value": null,
+    "evidence_quote": null,
+    "method": "NONE",
+    "image_index": null
   }
 }

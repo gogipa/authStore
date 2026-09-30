@@ -313,6 +313,18 @@ export interface NoticeValues {
 export interface NoticeSettings {
   /** `{템플릿_기준일}`(YYYY-MM-DD). 템플릿을 고치면 함께 고친다(F-CT-02, 04 기능리스트 판단 17) */
   basisDate: string;
+  /**
+   * 고지 템플릿 버전(P3-04 Proposed 키 — `content_draft_assembly.disclosure_template_version`, 40자). 템플릿을 고치면 기준일과
+   * 함께 바꾼다(M1은 버전 기록 없이 파일 값만, 버전 이력은 M2 F-BS-71)
+   */
+  templateVersion: string;
+  /** AI 생성 고지 한 줄(F-CT-01, ②-15 — AI_IMAGE_LABEL 블록)을 넣는가. 기본 true(켬), M1은 끄는 API가 없다(P3-04 Proposed 키) */
+  aiImageLabel: boolean;
+  /**
+   * 가죽 판정 말(F-CT-03 LEATHER_OR_UNKNOWN_MATERIAL, P3-04 Proposed): ⑥-2 소재(겉감·안감·밑창) 글에 들어 있으면(NFKC·대문자·공백
+   * 무시) 안전관리대상 고지를 붙인다. 한국어(소재 말 사전 결과)와 원문(사전에 없는 말) 둘 다 둔다
+   */
+  leatherTerms: string[];
   blocks: NoticeBlock[];
   values: NoticeValues;
 }
@@ -450,12 +462,46 @@ export interface SpecImageSettings {
   maxBytes: number;
 }
 
-/** ⑥ 상세 콘텐츠(P3-03 Proposed — 06-4 §2.2). 모두 ⑥-2 시작 조건(입력 지문)이다 */
+/** 색상 말 사전 한 줄(P3-04 Proposed — F-CT-17 색상 한국어 표기). `raw` 원문 색상 조각(NFKC·대문자 비교) → `ko` 한국어 */
+export interface ColorTermEntry {
+  raw: string;
+  ko: string;
+}
+
+/** 소재별 주의 문구 한 줄(P3-04 Proposed — F-CT-21): 소재 글에 `terms` 가운데 하나가 들어 있으면 `text`를 붙인다 */
+export interface CautionTemplateEntry {
+  terms: string[];
+  text: string;
+}
+
+/** 고시 `caution` 템플릿(P3-04 Proposed): 늘 넣는 기본 문장 + 소재별 문장(겹치면 한 번) */
+export interface CautionTemplateSettings {
+  default: string;
+  byMaterial: CautionTemplateEntry[];
+}
+
+/**
+ * 제조국이 여럿일 때 원산지 코드 조합(F-CT-26 — M0 S3에서 확정, 그 전 설정 스위치, P3-04 Proposed 키·기본값).
+ * - FIRST_COUNTRY_PLURAL: 첫 나라의 수입산 02 계열 코드 + `origin_area_plural=true`(기본 — 03·04는 오너가 고를 때만, 규칙 9)
+ * - CODE_03_CONTENT: `03`(상세설명에 표시) + `origin_area_content`(사양 블록 제조국 표기)
+ */
+export const MULTI_ORIGIN_MODES = ['FIRST_COUNTRY_PLURAL', 'CODE_03_CONTENT'] as const;
+export type MultiOriginMode = (typeof MULTI_ORIGIN_MODES)[number];
+
+/** ⑥ 상세 콘텐츠(P3-03 Proposed — 06-4 §2.2). P3-04가 색상 사전·주의 문구·상품명 금지 수식어·여러 원산지 방식을 더했다 */
 export interface ContentSettings {
   originCountries: OriginCountryEntry[];
   materialTerms: MaterialTermEntry[];
   factLabels: FactLabelSettings;
   specImages: SpecImageSettings;
+  /** ⑥-2 색상 한국어 표기 사전(P3-04, ⑥-2 시작 조건) */
+  colorTerms: ColorTermEntry[];
+  /** ⑥-2 소재별 주의 문구 템플릿(P3-04, ⑥-2 시작 조건 — AI 보완은 ⑥-2 AI 호출에 묶는다) */
+  cautionTemplates: CautionTemplateSettings;
+  /** 상품명 금지 수식어(P3-04, F-CT-33 — 조회 때 경고만. PRD §8.5 CT-05 '홍보·혜택'·'비교·과장'·'공인 오인') */
+  productNameBannedWords: string[];
+  /** 여러 원산지 코드 방식(P3-04, ⑥-3 시작 조건) */
+  multiOriginMode: MultiOriginMode;
 }
 
 /** 설정 JSON 전체(schemaVersion "1") */

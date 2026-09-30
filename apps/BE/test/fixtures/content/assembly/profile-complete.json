@@ -1,0 +1,15 @@
+{
+  "_note": "합성 fixture(실제 상호·연락처 아님 — 자리표시자). P3-04 §5.3: ⑥-3 고지·고시가 읽는 프로필 값이 모두 있다. 주소록·택배사 FK는 비운다(⑥-3은 읽지 않는다)",
+  "overseasShippingCommerceAddressbookId": null,
+  "returnCommerceAddressbookId": null,
+  "dispatchDeliveryCompanyCode": null,
+  "commerceReturnDeliveryCompanyId": null,
+  "returnFeeKrw": 30000,
+  "exchangeFeeKrw": 60000,
+  "businessName": "[내 상호]",
+  "afterServicePhone": "[A/S 연락처]",
+  "afterServiceGuide": "[A/S 안내]",
+  "importer": "[수입자]",
+  "noticeFixedTexts": {},
+  "maxPurchaseQuantityPerOrder": 1
+}

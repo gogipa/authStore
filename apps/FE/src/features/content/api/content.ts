@@ -54,6 +54,28 @@ export function useContentFactQuery(candidateId: number | null, stepRunId?: numb
 }
 
 /**
+ * ⑥-3 조립 결과(`GET /candidates/{candidateId}/content-assembly`, getCandidateContentAssembly — P3-04). HTML 본문은 없고
+ * 미리보기는 fetch하지 않고 iframe `src`(응답 `previewUrl`)로 연다. 실행 전 404는 다시 시도하지 않는다.
+ */
+export function useContentAssemblyQuery(candidateId: number | null, stepRunId?: number) {
+  return useQuery({
+    queryKey: contentKeys.assembly(candidateId ?? 0, stepRunId),
+    enabled: candidateId !== null,
+    retry: retryUnlessMissing,
+    queryFn: ({ signal }) =>
+      request(() =>
+        api.GET('/candidates/{candidateId}/content-assembly', {
+          params: {
+            path: { candidateId: candidateId ?? 0 },
+            query: stepRunId !== undefined ? { stepRunId } : {},
+          },
+          signal,
+        }),
+      ),
+  });
+}
+
+/**
  * 열린 ⑥-2 실행에 필드 오너 입력(`PUT /step-runs/{stepRunId}/content-fields/{fieldKey}`, putContentFieldInput) — 원산지 직접
  * 넣기(웹 화면 전용). 대기 입력이 다 차면 서버가 ⑥-2를 끝낸다. 성공·실패 모두 단계 레일과 ⑥-2 산출물을 다시 읽는다.
  */

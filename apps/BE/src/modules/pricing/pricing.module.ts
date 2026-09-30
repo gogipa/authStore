@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleInit } from '@nestjs/common';
 import { AppConfigService } from '../../common/config/app-config.service.js';
 import { IntegrationsModule } from '../integrations/integrations.module.js';
 import { SettingsModule } from '../settings/settings.module.js';
+import { StepEngineApi } from '../step-engine/step-engine.api.js';
 import { StepEngineModule } from '../step-engine/step-engine.module.js';
 import { DomesticPricesController } from './domestic-prices.controller.js';
 import { DomesticPricesService } from './domestic-prices.service.js';
@@ -10,6 +11,7 @@ import { NaverShoppingLinksController } from './naver-shopping-links.controller.
 import { NaverShoppingLinksService } from './naver-shopping-links.service.js';
 import { PriceJudgementController } from './price-judgement.controller.js';
 import { PriceJudgementService } from './price-judgement.service.js';
+import { pricingOutputReader } from './pricing-output.reader.js';
 import { PricingSnapshotRepository } from './pricing-snapshot.repository.js';
 import { PricingStepRunner } from './pricing-step.runner.js';
 import {
@@ -38,6 +40,9 @@ import { FxRatesService } from './fx/fx-rates.service.js';
  * - `PricingG2GateBasis`(`@GateBasisFor('G2')`): G2 지문·막힌 이유(판매 후보 아님·비교 없이 확정 없음)
  * - API: `GET …/price-judgement`, `POST·GET …/domestic-prices`, `GET …/naver-shopping-links`
  *   ('비교 없이 확정'은 step-engine `NoComparisonController`)
+ *
+ * P3-04: ③ 판정 읽기(`pricing-output.reader.ts`)를 앱 시작 때 `StepEngineApi.registerPricingOutputReader`로 끼운다 — ⑥-3이
+ * 판매 사이즈를 step-engine을 거쳐 읽는다(content는 pricing을 import하지 않는다).
  */
 @Module({
   imports: [IntegrationsModule, SettingsModule, StepEngineModule],
@@ -64,4 +69,10 @@ import { FxRatesService } from './fx/fx-rates.service.js';
   ],
   exports: [FxRatesService],
 })
-export class PricingModule {}
+export class PricingModule implements OnModuleInit {
+  constructor(private readonly api: StepEngineApi) {}
+
+  onModuleInit(): void {
+    this.api.registerPricingOutputReader(pricingOutputReader);
+  }
+}

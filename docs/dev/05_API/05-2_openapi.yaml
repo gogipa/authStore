@@ -447,7 +447,7 @@ paths:
       - F-CT-27
       - F-CT-34
       - F-TG-14
-      x-decision: §7.4-32 제안대로 필드의 '재확인 필요' 해소는 fields[].recheckConfirmed=true로 새 OWNER_EDIT 버전을 만들어 기록한다(현재 행의 recheck_resolved_at만 고치지 않는다).
+      x-decision: '§7.4-32 제안대로 필드의 ''재확인 필요'' 해소는 fields[].recheckConfirmed=true로 새 OWNER_EDIT 버전을 만들어 기록한다(현재 행의 recheck_resolved_at만 고치지 않는다). P3-04(Proposed) — NOTICE_HTML EDIT 허용 키 = product_name(1~255자, 100자 초과는 저장하고 warnings에 PRODUCT_NAME_TOO_LONG — 금지 수식어·반복도 warnings), notice.material·color·size·height(null = 키 빼기)·manufacturer·caution·warranty_policy·after_service_director·return_cost_reason·no_refund_reason·quality_assurance_standard·compensation_procedure·trouble_shooting_contents(글 1~500자), notice.origin_area(코드 글자 ''0200036''·''03'' 또는 {code, content?, plural?} — 03·04는 사양 블록 제조국 표기에 실제 나라가 있어야 하고 없으면 422 ORIGIN_CODE_NOT_ALLOWED, 상세 표기는 오너 값 또는 사양 블록 표기, 02 계열은 원산지 캐시에 있어야, 00은 422 VALIDATION_FAILED). 그 밖 키(고지 블록 notice.disclosure* 포함)는 422 FIELD_NOT_EDITABLE. ⑥-3 필드의 choose·evidenceUrl은 422 VALIDATION_FAILED. recheckConfirmed는 재확인 표시가 있는 notice.size·material·origin_area만. 고시 material·size를 고치면 사양 블록 같은 행도 그 글로 바꾸고 html_sha256을 다시 계산한다(고지 블록은 그대로). NOTICE_RAW EDIT 허용 키에 fact.color_ko(1~100자)·fact.caution(1~500자)을 더했다. 실행기가 새 버전 산출물로 계산한 막지 않는 경고를 warnings에 담는다(StepRunner.editWarnings — C4 §3.1).'
       parameters:
       - $ref: '#/components/parameters/ClientHeader'
       requestBody:
@@ -3442,7 +3442,7 @@ paths:
       - F-CT-15
       - F-CT-17
       - F-CT-21
-      x-decision: 'D-16(오너 결정, 세부는 추천안 D-11) — 응답에서 aiProvider·aiModel을 뺐다. 엔진·모델은 stepRunId의 실행 기록(aiEngine·aiModel)을 쓴다(R11). P3-03(Proposed) — ⑥-2는 시작 때 늘 aiEngine·aiModel을 고정한다(규칙으로만 끝나도 — ERD §7.2-25). fields는 fact.origin·material_upper·material_lining·material_sole·heel_height 순 다섯 행. 값 모양: fact.origin = 한국어 나라 이름 배열(설정 원산지 나라 사전), fact.material_* = 한국어 글(설정 소재 말 사전, 없는 말은 원문), fact.heel_height = {value, unit(cm|mm)}, 근거 없음 = null·extractionMethod NONE. evidenceQuote는 일본어 원문 표기 그대로, evidenceUrl은 ② 상품 페이지(오너 입력이면 오너 근거 URL). pendingInputs는 입력 대기일 때만(원산지가 오너 입력으로 확정되지 않았으면 fact.origin). stepRunId 규칙은 getCandidateContentCopy와 같다'
+      x-decision: 'D-16(오너 결정, 세부는 추천안 D-11) — 응답에서 aiProvider·aiModel을 뺐다. 엔진·모델은 stepRunId의 실행 기록(aiEngine·aiModel)을 쓴다(R11). P3-03(Proposed) — ⑥-2는 시작 때 늘 aiEngine·aiModel을 고정한다(규칙으로만 끝나도 — ERD §7.2-25). fields는 fact.origin·material_upper·material_lining·material_sole·heel_height 순 다섯 행(P3-04 Proposed — 뒤에 fact.color_ko(색상 한국어 표기: 사전 DICTIONARY·AI 보조 AI·없음 NONE, 발췌 = 선택 색상 원문)·fact.caution(소재별 주의 문구: 템플릿 TEMPLATE, 같은 AI 호출의 보완을 붙이면 AI)을 더해 일곱 행. P3-04 전 버전에는 두 행이 없다). 값 모양: fact.origin = 한국어 나라 이름 배열(설정 원산지 나라 사전), fact.material_* = 한국어 글(설정 소재 말 사전, 없는 말은 원문), fact.heel_height = {value, unit(cm|mm)}, 근거 없음 = null·extractionMethod NONE. evidenceQuote는 일본어 원문 표기 그대로, evidenceUrl은 ② 상품 페이지(오너 입력이면 오너 근거 URL). pendingInputs는 입력 대기일 때만(원산지가 오너 입력으로 확정되지 않았으면 fact.origin). stepRunId 규칙은 getCandidateContentCopy와 같다'
       parameters:
       - $ref: '#/components/parameters/CandidateId'
       - name: stepRunId
@@ -3480,7 +3480,7 @@ paths:
       x-features:
       - F-CT-14
       - F-CT-17
-      x-decision: '§7.4-34 실행 중 입력 허용 키는 앱 상수 목록으로 두고 명세는 fact.* 형식만 강제한다. M1 확정 키는 fact.origin이고 색상 표기 키 이름은 M0 뒤 상수에 더한다(목록 밖 키는 422 FIELD_NOT_EDITABLE). P3-03(Proposed) — 검사 순서: 경로 키 모양 422 VALIDATION_FAILED → 404 STEP_RUN_NOT_FOUND → ⑥-2 아님 422 INVALID_STEP_CODE(details.reason=NOT_NOTICE_RAW) → 허용 목록 밖 422 FIELD_NOT_EDITABLE → 근거 URL 없음 422 EVIDENCE_URL_REQUIRED(http·https 주소가 아니면 VALIDATION_FAILED) → value(나라 이름 1~100자, 여러 나라는 쉼표·빗금·가운뎃점으로 나눈다) → 원산지 나라 사전(원문·''대륙 > 국가''·한국어 이름)·commerce_origin_area(이름의 마지막 ''>'' 조각)에 없으면 422 ORIGIN_COUNTRY_UNKNOWN(details.country) → 잠김·제외 409 → 입력 대기 아님 409 STEP_RUN_NOT_WAITING_INPUT. 저장 값은 한국어 나라 이름 배열, basisItemCode는 후보 현재 itemCode, 재확인 표시가 있으면 recheckResolvedAt도 채운다. 감사 기록 OWNER_EDITED(detail.input=RUNTIME).'
+      x-decision: '§7.4-34 실행 중 입력 허용 키는 앱 상수 목록으로 두고 명세는 fact.* 형식만 강제한다. M1 확정 키는 fact.origin이고 색상 표기 키 이름은 M0 뒤 상수에 더한다(목록 밖 키는 422 FIELD_NOT_EDITABLE). P3-04(Proposed) — 색상 표기 확인 키 fact.color_ko를 더했다: 근거 URL 없이 글 1~100자(아니면 422 VALIDATION_FAILED), 저장만 하고 입력 대기 사유가 아니다(원산지가 남으면 WAITING_INPUT 그대로). P3-03(Proposed) — 검사 순서: 경로 키 모양 422 VALIDATION_FAILED → 404 STEP_RUN_NOT_FOUND → ⑥-2 아님 422 INVALID_STEP_CODE(details.reason=NOT_NOTICE_RAW) → 허용 목록 밖 422 FIELD_NOT_EDITABLE → 근거 URL 없음 422 EVIDENCE_URL_REQUIRED(http·https 주소가 아니면 VALIDATION_FAILED) → value(나라 이름 1~100자, 여러 나라는 쉼표·빗금·가운뎃점으로 나눈다) → 원산지 나라 사전(원문·''대륙 > 국가''·한국어 이름)·commerce_origin_area(이름의 마지막 ''>'' 조각)에 없으면 422 ORIGIN_COUNTRY_UNKNOWN(details.country) → 잠김·제외 409 → 입력 대기 아님 409 STEP_RUN_NOT_WAITING_INPUT. 저장 값은 한국어 나라 이름 배열, basisItemCode는 후보 현재 itemCode, 재확인 표시가 있으면 recheckResolvedAt도 채운다. 감사 기록 OWNER_EDITED(detail.input=RUNTIME).'
       parameters:
       - $ref: '#/components/parameters/ClientHeader'
       - name: stepRunId
@@ -3555,7 +3555,7 @@ paths:
       - F-CT-34
       - F-CT-37
       - F-CT-38
-      x-decision: §7.4-33 상품명 경고는 조회 때 계산하고 M1은 content_draft_assembly에 저장하지 않는다(승인 시점 재현은 registration.validation_result가 맡는다).
+      x-decision: '§7.4-33 상품명 경고는 조회 때 계산하고 M1은 content_draft_assembly에 저장하지 않는다(승인 시점 재현은 registration.validation_result가 맡는다). P3-04(Proposed) — 경고 코드 PRODUCT_NAME_TOO_LONG·PRODUCT_NAME_BANNED_WORD(지금 설정 content.productNameBannedWords)·PRODUCT_NAME_REPEATED_WORD(05-3 §5.2). stepRunId 규칙은 getCandidateContentCopy와 같다(다른 후보·단계 404 STEP_RUN_NOT_FOUND, 실행 전 404 STEP_OUTPUT_NOT_FOUND details.stepCode=NOTICE_HTML, 모르는 쿼리 422). 화면용 필드를 더했다: productNameSuggestion(템플릿 제안 — 오너가 고쳤으면 그 행의 generatedValue), parallelImport(제안에 병행을 넣었는지), originAreaName(원산지 캐시 이름, 03·04면 null), disclosureBlocks[].text(저장 HTML의 data-block-id 요소 글), disclosureTemplateMatched(블록 글 해시가 기록과 같고 필수 블록 글이 앱 내장 해시를 통과한 설정 템플릿에서 나왔는지). fields는 product_name·notice.*·notice.origin_area 순. 상세 HTML 계약(자리표시자·블록 표식·블록 해시)은 BE common/rules/detail-html.ts(05-1 §7.4 P3-04).'
       parameters:
       - $ref: '#/components/parameters/CandidateId'
       - name: stepRunId
@@ -3594,6 +3594,7 @@ paths:
       - F-CT-29
       - F-CT-30
       - F-CT-31
+      x-decision: 'P3-04(Proposed) — 자리표시자 칸 n(0 대표, 1~9 추가)은 ⑤ 현재 버전 thumbnail_selection_image의 sort_order n 이미지로 채우고, 그 순서의 이미지가 없으면(선택 전·추가 이미지가 적음) 칸을 뺀다. 최소 문서 틀(charset·viewport·기본 글꼴 style — 외부 글꼴·스크립트 없음)로 감싼다. CSP·Cache-Control no-store는 성공 응답에만 단다(오류는 JSON 봉투). ⑥-3 입력이 아니다(G3을 읽지 않는다 — 규칙 1).'
       parameters:
       - $ref: '#/components/parameters/CandidateId'
       - name: stepRunId
@@ -14515,6 +14516,7 @@ components:
       - blockId
       - sha256
       - conditional
+      - text
       properties:
         blockId:
           type: string
@@ -14525,6 +14527,9 @@ components:
         conditional:
           type: boolean
           description: 조건부 블록(가죽·정보 없음·AI 이미지 고지)인지
+        text:
+          type: string
+          description: (P3-04 Proposed) 채운 블록 글 — 저장 HTML의 data-block-id 요소에서 읽는다(화면 구매대행 고지 미리보기). sha256은 이 글(NFC·공백 한 칸·앞뒤 공백 제거)의 해시
     ProductNameWarning:
       type: object
       description: 상품명 경고(100자 초과·금지 수식어·반복). 조회 때 계산하고 막지 않는다
@@ -14535,7 +14540,7 @@ components:
         code:
           type: string
           pattern: ^[A-Z][A-Z0-9_]*$
-          description: 경고 코드(05-3에서 확정)
+          description: 경고 코드(05-3 §5.2, P3-04 Proposed) — PRODUCT_NAME_TOO_LONG(100자 초과)·PRODUCT_NAME_BANNED_WORD(금지 수식어)·PRODUCT_NAME_REPEATED_WORD(같은 낱말 반복)
         message:
           type: string
     ContentAssemblyOutput:
@@ -14549,10 +14554,13 @@ components:
       - isCurrent
       - contentDraftAssemblyId
       - productName
+      - productNameSuggestion
       - productNameWarnings
+      - parallelImport
       - noticeFields
       - noticeSizesMm
       - originAreaCode
+      - originAreaName
       - originAreaPlural
       - importer
       - specBlockHtml
@@ -14561,6 +14569,7 @@ components:
       - disclosureTemplateDate
       - disclosureBlockIds
       - disclosureBlocks
+      - disclosureTemplateMatched
       - htmlSha256
       - previewUrl
       - createdAt
@@ -14587,10 +14596,17 @@ components:
           type: string
           maxLength: 255
           description: 유효 상품명. 100자 초과도 초안으로 저장한다(RG-08이 막음)
+        productNameSuggestion:
+          type: string
+          maxLength: 255
+          description: (P3-04 Proposed) 템플릿 제안 상품명 — 오너가 고쳤으면 그 행의 generatedValue, 아니면 productName과 같다
         productNameWarnings:
           type: array
           items:
             $ref: '#/components/schemas/ProductNameWarning'
+        parallelImport:
+          type: boolean
+          description: (P3-04 Proposed) 라쿠텐 상품명에 並行輸入品이 있어 제안에 병행을 넣었는지
         noticeFields:
           type: object
           additionalProperties: true
@@ -14606,6 +14622,12 @@ components:
           type: string
           maxLength: 20
           description: originAreaInfo 원산지 코드
+        originAreaName:
+          type:
+          - string
+          - 'null'
+          maxLength: 100
+          description: (P3-04 Proposed) 원산지 코드 이름(commerce_origin_area.name, 예 아시아>베트남). 03·04면 null
         originAreaPlural:
           type: boolean
           description: 복수 원산지 표시
@@ -14643,6 +14665,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ContentDisclosureBlock'
+        disclosureTemplateMatched:
+          type: boolean
+          description: (P3-04 Proposed) 저장 HTML의 고지 블록 글 해시가 기록과 같고, 필수 블록 글이 앱 내장 해시를 통과한 설정 템플릿에서 나왔는지(화면 '템플릿과 일치')
         htmlSha256:
           type: string
           pattern: ^[0-9a-f]{64}$

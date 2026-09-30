@@ -13,13 +13,15 @@ import {
   type FieldJson,
 } from '../fields/content-field.store.js';
 import {
+  CAUTION_FIELD_KEY,
+  COLOR_KO_FIELD_KEY,
   FACT_FIELD_KEYS,
   isFactFieldKey,
   ORIGIN_FIELD_KEY,
   type FactFieldKey,
 } from '../fields/field-keys.js';
 import { evidenceUrlOf, OriginInputResolver } from './origin-input.resolver.js';
-import { recheckReasonFor, resolveRecheck } from './recheck.js';
+import { isRecheckFactKey, recheckReasonFor, resolveRecheck } from './recheck.js';
 
 type Tx = Prisma.TransactionClient;
 
@@ -48,6 +50,27 @@ function materialValue(value: unknown): string | null | undefined {
   return text !== '' && text.length <= 100 ? text : undefined;
 }
 
+/** 글 값(오너 — 색상 표기 1~100자, 주의 문구 1~500자, P3-04). null은 받지 않는다(고시 필수 칸) */
+function textValue(value: unknown, max: number): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const text = value.trim();
+  return text !== '' && [...text].length <= max ? text : undefined;
+}
+
+/** 필드별 오너 값 검사(원산지 뺀 것) → 저장 값(undefined = 형식 오류) */
+function ownerValueOf(key: FactFieldKey, value: unknown): FieldJson | undefined {
+  if (key === 'fact.heel_height') return heightValue(value);
+  if (key === COLOR_KO_FIELD_KEY) return textValue(value, 100);
+  if (key === CAUTION_FIELD_KEY) return textValue(value, 500);
+  return materialValue(value);
+}
+
+const VALUE_RULE_MESSAGE: Partial<Record<FactFieldKey, string>> = {
+  'fact.heel_height': "굽높이는 {value: 숫자, unit: 'cm'|'mm'} 또는 null이어야 합니다.",
+  'fact.color_ko': '색상 표기는 글(1~100자)이어야 합니다.',
+  'fact.caution': '주의 문구는 글(1~500자)이어야 합니다.',
+};
+
 /** 굽높이 값(오너): `{value: 0 초과 숫자, unit: cm(≤30)|mm(≤300)}` 또는 null */
 function heightValue(value: unknown): FieldJson | undefined {
   if (value === null) return null;
@@ -64,7 +87,7 @@ function heightValue(value: unknown): FieldJson | undefined {
 /**
  * ⑥-2 NOTICE_RAW 오너 수정 산출물 복사(P3-03 규칙 13·14, 05-1 표 B — step-engine owner-edits가 부른다). 머리 행과 사실 필드
  * 다섯 행을 새 버전으로 옮긴다.
- * - EDIT(`{fields}`): 허용 키 = `fact.*` 다섯 개(밖이면 422 FIELD_NOT_EDITABLE). 필드마다 `value`(오너 입력 — 원산지는
+ * - EDIT(`{fields}`): 허용 키 = `fact.*` 일곱 개(다섯 + P3-04 색상 표기·주의 문구 — 밖이면 422 FIELD_NOT_EDITABLE). 필드마다 `value`(오너 입력 — 원산지는
  *   `evidenceUrl` 필수 422 EVIDENCE_URL_REQUIRED, 모르는 나라 422 ORIGIN_COUNTRY_UNKNOWN) 또는 `recheckConfirmed: true`
  *   (현재 근거로 다시 확인 — 완료 뒤 '재확인 필요' 해소는 이 새 OWNER_EDIT 버전으로 한다, 05-1 §7.4-32 제안). 저장:
  *   `value_source=OWNER_INPUT`·`owner_confirmed_at`·`basis_item_code`=현재 itemCode·재확인 표시가 있으면 `recheck_resolved_at`.
@@ -104,7 +127,9 @@ export class FactOwnerEditHandler {
   }
 
   private restored(row: FieldDraft, itemCode: string): FieldDraft {
-    if (row.valueSource !== 'OWNER_INPUT' || recheckOpen(row)) return row;
+    if (row.valueSource !== 'OWNER_INPUT' || recheckOpen(row) || !isRecheckFactKey(row.fieldKey)) {
+      return row;
+    }
     const reason = recheckReasonFor(row.basisItemCode, itemCode);
     return reason ? { ...row, recheckReason: reason, recheckResolvedAt: null } : row;
   }
@@ -176,15 +201,11 @@ export class FactOwnerEditHandler {
         origins.push({ index, edit });
         return;
       }
-      const value =
-        key === 'fact.heel_height' ? heightValue(edit.value) : materialValue(edit.value);
+      const value = ownerValueOf(key, edit.value);
       if (value === undefined) {
         errors.push({
           field: `${at}.value`,
-          message:
-            key === 'fact.heel_height'
-              ? "굽높이는 {value: 숫자, unit: 'cm'|'mm'} 또는 null이어야 합니다."
-              : '소재는 글(100자 이하) 또는 null이어야 합니다.',
+          message: VALUE_RULE_MESSAGE[key] ?? '소재는 글(100자 이하) 또는 null이어야 합니다.',
           rejectedValue: edit.value,
         });
         return;

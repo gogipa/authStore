@@ -1,11 +1,13 @@
 /**
  * content 도메인(OpenAPI 태그 `content`)의 공개 API. 밖에서는 `@/features/content`로만 가져온다.
  * P3-03: ⑥-1 카피 산출물(getCandidateContentCopy)·⑥-2 고시 원자료(getCandidateContentFact)·열린 ⑥-2 필드 오너 입력
- * (putContentFieldInput) 훅과 카피 편집·사실 표 표시 규칙(model/content). 카피 편집·그대로 유지·완료 뒤 원산지 고치기는
+ * (putContentFieldInput) 훅과 카피 편집·사실 표 표시 규칙(model/content). P3-04: ⑥-3 조립 결과(getCandidateContentAssembly) 훅과
+ * 상품명·고시·고지 표시 규칙(model/assembly). 카피 편집·그대로 유지·완료 뒤 원산지 고치기는
  * `@/features/step-engine`의 `useOwnerEdit`를 쓴다.
  */
 export { CONTENT_TAG_KEY, contentKeys } from './api/queryKeys';
 export {
+  useContentAssemblyQuery,
   useContentCopyQuery,
   useContentFactQuery,
   usePutContentFieldMutation,
@@ -15,6 +17,13 @@ export {
   CHOICE_TITLE,
   CHOOSE_GENERATED_LABEL,
   CHOOSE_OWNER_LABEL,
+  COLOR_AI_METHOD_TEXT,
+  COLOR_EDIT_LABEL,
+  COLOR_EMPTY_REASON,
+  COLOR_NOT_EDITABLE_REASON,
+  COLOR_ROW_LABEL,
+  COLOR_SAVE_LABEL,
+  COLOR_SOURCE_TEXT,
   COPY_EMPTY_TEXT,
   COPY_FIELD_KEYS,
   COPY_FIELD_LABEL,
@@ -60,6 +69,68 @@ export {
   sellingPointsText,
   SOURCE_FACTS_TITLE,
 } from './model/content';
+export {
+  ASSEMBLY_EMPTY_TEXT,
+  ASSEMBLY_PROFILE_FIELDS,
+  ASSEMBLY_RULE_NOTE,
+  assemblyField,
+  assemblyMetaText,
+  CONDITIONAL_BLOCK_LABEL,
+  DISCLOSURE_FULL_LABEL,
+  DISCLOSURE_LOCKED_CHIP,
+  DISCLOSURE_MATCHED_CHIP,
+  DISCLOSURE_MISMATCHED_CHIP,
+  DISCLOSURE_PREVIEW_LINES,
+  DISCLOSURE_TITLE,
+  disclosureFootText,
+  FIXED_TEXT_LABELS,
+  FIXED_TEXTS_SUMMARY,
+  HEIGHT_OMITTED_TEXT,
+  missingAssemblyProfile,
+  NOTICE_EDIT_LABEL,
+  NOTICE_EDIT_LABELS,
+  NOTICE_FIELD_KEY,
+  NOTICE_SAVE_LABEL,
+  NOTICE_TITLE,
+  noticeEditFields,
+  noticeFormOf,
+  noticeText,
+  originText,
+  PREVIEW_CAPTION,
+  PREVIEW_ENLARGE_LABEL,
+  PREVIEW_SHRINK_LABEL,
+  PREVIEW_TITLE,
+  PRODUCT_NAME_EMPTY_REASON,
+  PRODUCT_NAME_LABEL,
+  PRODUCT_NAME_MAX,
+  PRODUCT_NAME_NO_CHANGE_REASON,
+  PRODUCT_NAME_NOT_EDITABLE_REASON,
+  PRODUCT_NAME_SAVE_LABEL,
+  PRODUCT_NAME_STORE_MAX,
+  PRODUCT_NAME_TEMPLATE_CHIP,
+  PRODUCT_NAME_TEMPLATE_TEXT,
+  PRODUCT_NAME_TOO_LONG_TEXT,
+  productNameCheckText,
+  productNameCounter,
+  productNameLength,
+  productNameSaveDisabledReason,
+  productNameTooLong,
+  PROFILE_FILL_LINK_LABEL,
+  PROFILE_LINK_LABEL,
+  PROFILE_OK_TEXT,
+  profileMissingText,
+  SETTINGS_PATH,
+  SPEC_BLOCK_CAPTION,
+  SPEC_BLOCK_TITLE,
+  specBlockLines,
+} from './model/assembly';
+export type {
+  ContentAssemblyOutput,
+  ContentDisclosureBlock,
+  EditableNoticeKey,
+  NoticeForm,
+  ProductNameWarning,
+} from './model/assembly';
 export type {
   ContentCopyOutput,
   ContentDraftFieldItem,

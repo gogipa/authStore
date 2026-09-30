@@ -1,6 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import {
+  COLOR_EDIT_LABEL,
+  COLOR_EMPTY_REASON,
+  COLOR_NOT_EDITABLE_REASON,
+  COLOR_ROW_LABEL,
+  COLOR_SAVE_LABEL,
   contentKeys,
   FACT_EMPTY_TEXT,
   FACT_HEAD_NOTE,
@@ -84,7 +89,9 @@ const quote = (field: ContentDraftFieldItem | undefined) =>
  * 보드 안내 글) + 표(항목 · 값 · 근거 원문 · 출처·방법 · 동작). 방법 글은 '상품 속성에서 찾음'·'설명문에서 찾음'·'AI로 찾음'·
  * '정보 없음'. 소재는 한 줄에 겉감·안감·밑창을 나눠 보인다. 원산지 '직접 넣기'(나라 + 근거 URL + 원문 발췌 — 근거 URL을 넣기 전에는
  * 저장이 꺼진다): 입력 대기면 `PUT …/content-fields/fact.origin`, 완료된 현재 버전이면 오너 수정(EDIT). '재확인 필요' 칩과 완료 뒤
- * '현재 근거로 확인'(오너 수정 recheckConfirmed). 입력 대기면 경고 띠. '색상 표기' 줄은 P3-04(F-CT-17)가 더한다.
+ * '현재 근거로 확인'(오너 수정 recheckConfirmed). 입력 대기면 경고 띠.
+ * P3-04(F-CT-17): '색상 표기' 줄(값 · 선택 색상 원문 · '색상 사전으로 바꿈'/'사전에 없어 AI 보조' · '고치기') — 입력 대기면
+ * `PUT …/content-fields/fact.color_ko`, 완료된 현재 버전이면 오너 수정(EDIT). 주의 문구(fact.caution)는 ⑥-3 고시 표가 보인다.
  */
 export function FactTable({ candidateId, item, output, runAction }: FactTableProps) {
   const queryClient = useQueryClient();
@@ -94,10 +101,13 @@ export function FactTable({ candidateId, item, output, runAction }: FactTablePro
   const [country, setCountry] = useState('');
   const [evidenceUrl, setEvidenceUrl] = useState('');
   const [evidenceQuote, setEvidenceQuote] = useState('');
+  const [colorOpen, setColorOpen] = useState(false);
+  const [colorText, setColorText] = useState('');
 
   const fields = output?.fields ?? [];
   const origin = factField(fields, 'fact.origin');
   const heel = factField(fields, 'fact.heel_height');
+  const color = factField(fields, 'fact.color_ko');
   const waiting = output?.stepRunStatus === 'WAITING_INPUT' && output.isCurrent;
   const completed =
     output?.isCurrent === true &&
@@ -143,6 +153,37 @@ export function FactTable({ candidateId, item, output, runAction }: FactTablePro
           fields: [
             { fieldKey: 'fact.origin', value: country.trim(), evidenceUrl: evidenceUrl.trim() },
           ],
+        },
+      },
+      { onSuccess },
+    );
+  };
+
+  /** 색상 표기 고치기(P3-04 F-CT-17): 입력 대기면 열린 실행에 PUT, 완료된 현재 버전이면 오너 수정(EDIT) */
+  const saveColor = () => {
+    if (!output) return;
+    putField.reset();
+    edit.reset();
+    const value = colorText.trim();
+    const onSuccess = () => {
+      setColorOpen(false);
+      refresh();
+    };
+    if (waiting) {
+      putField.mutate(
+        { candidateId, stepRunId: output.stepRunId, fieldKey: 'fact.color_ko', body: { value } },
+        { onSuccess },
+      );
+      return;
+    }
+    edit.mutate(
+      {
+        candidateId,
+        stepCode: 'NOTICE_RAW',
+        body: {
+          ownerAction: 'EDIT',
+          baseStepRunId: output.stepRunId,
+          fields: [{ fieldKey: 'fact.color_ko', value }],
         },
       },
       { onSuccess },
@@ -290,14 +331,68 @@ export function FactTable({ candidateId, item, output, runAction }: FactTablePro
                 </td>
                 <td className={styles.actionCell}>{recheckButton(heel)}</td>
               </tr>
+              {color ? (
+                <tr>
+                  <th scope="row">{COLOR_ROW_LABEL}</th>
+                  <td>
+                    <span className={styles.factValue}>
+                      <ValueLine field={color} />
+                      {color.valueSource === 'GENERATED' && color.extractionMethod === 'AI' ? (
+                        <Chip tone="outline">AI 생성</Chip>
+                      ) : null}
+                    </span>
+                  </td>
+                  <td className={styles.quote}>{quote(color)}</td>
+                  <td>
+                    <SourceLine field={color} />
+                  </td>
+                  <td className={styles.actionCell}>
+                    <Button
+                      size="sm"
+                      aria-label="색상 표기 고치기"
+                      aria-expanded={colorOpen}
+                      disabled={!originEditable || pending}
+                      aria-describedby={originEditable ? undefined : 'origin-input-why'}
+                      onClick={() => {
+                        setColorText(typeof color.value === 'string' ? color.value : '');
+                        setColorOpen((v) => !v);
+                      }}
+                    >
+                      {COLOR_EDIT_LABEL}
+                    </Button>
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
       )}
       {output && !originEditable ? (
         <DisabledReason id="origin-input-why" tone="muted" className={styles.reasonLine}>
-          {ORIGIN_NOT_EDITABLE_REASON}
+          {color ? COLOR_NOT_EDITABLE_REASON : ORIGIN_NOT_EDITABLE_REASON}
         </DisabledReason>
+      ) : null}
+      {colorOpen && output ? (
+        <div className={styles.originForm} role="group" aria-label="색상 표기 고치기">
+          <TextField
+            label={COLOR_ROW_LABEL}
+            value={colorText}
+            placeholder="예: 크림/블랙"
+            onChange={(e) => setColorText(e.target.value)}
+          />
+          <span className={styles.formActions}>
+            <Button
+              disabled={colorText.trim() === '' || pending}
+              aria-describedby={colorText.trim() === '' ? 'color-save-why' : undefined}
+              onClick={saveColor}
+            >
+              {COLOR_SAVE_LABEL}
+            </Button>
+            {colorText.trim() === '' ? (
+              <DisabledReason id="color-save-why">{COLOR_EMPTY_REASON}</DisabledReason>
+            ) : null}
+          </span>
+        </div>
       ) : null}
       {open && output ? (
         <div className={styles.originForm} role="group" aria-label="원산지 직접 넣기">

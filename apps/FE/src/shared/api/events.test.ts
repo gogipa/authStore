@@ -68,7 +68,7 @@ describe('진행 알림 이름', () => {
       'commerce-meta-sync.completed',
     ]);
     // ⑥(P3-03): ⑥-1·⑥-2 실행 상태 → 카피·고시 원자료, 재확인 필요 → 고시 원자료·단계 레일
-    const stepRun = (stepCode: 'COPY' | 'NOTICE_RAW') =>
+    const stepRun = (stepCode: 'COPY' | 'NOTICE_RAW' | 'NOTICE_HTML') =>
       EVENT_INVALIDATIONS['step-run.status-changed']?.({
         stepRunId: 104,
         candidateId: 1,
@@ -99,6 +99,35 @@ describe('진행 알림 이름', () => {
       ['content', 'getCandidateContentFact', { candidateId: 1 }],
       ['step-engine', 'listCandidateSteps', { candidateId: 1 }],
     ]);
+    // ⑥-3(P3-04): 실행 상태·재확인 필요 → 조립 결과, G3 통과(다시 고르기) → 조립 결과(미리보기 다시 열기)
+    expect(stepRun('NOTICE_HTML')).toContainEqual([
+      'content',
+      'getCandidateContentAssembly',
+      { candidateId: 1 },
+    ]);
+    expect(stepRun('COPY')).not.toContainEqual([
+      'content',
+      'getCandidateContentAssembly',
+      { candidateId: 1 },
+    ]);
+    expect(
+      EVENT_INVALIDATIONS['content-field.recheck-flagged']?.({
+        candidateId: 1,
+        stepCode: 'NOTICE_HTML',
+        stepRunId: 106,
+        fieldKeys: ['notice.size'],
+        recheckReason: 'SALE_SIZES_CHANGED',
+      }),
+    ).toEqual([
+      ['content', 'getCandidateContentAssembly', { candidateId: 1 }],
+      ['step-engine', 'listCandidateSteps', { candidateId: 1 }],
+    ]);
+    expect(
+      EVENT_INVALIDATIONS['gate.passed']?.({
+        candidateId: 1,
+        gate: 'G3',
+      } as ProgressEventData<'gate.passed'>),
+    ).toContainEqual(['content', 'getCandidateContentAssembly', { candidateId: 1 }]);
     // 환율(P2-04): 새 최신값·수집 실패·±20% 차이 → 최신값과 이력 전체
     expect(
       EVENT_INVALIDATIONS['fx-rate.updated']?.({
@@ -390,6 +419,8 @@ describe('진행 알림 이름', () => {
       ['pricing', 'getPriceJudgement', { candidateId: 12 }],
       // P3-02: ⑤ 산출물의 G3 유효·선택본
       ['thumbnails', 'getCandidateThumbnail', { candidateId: 12 }],
+      // P3-04: G3을 다시 고르면 ⑥-3 미리보기를 새로 연다
+      ['content', 'getCandidateContentAssembly', { candidateId: 12 }],
     ]);
     expect(
       EVENT_INVALIDATIONS['gate.invalidated']?.({

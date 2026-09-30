@@ -386,6 +386,20 @@ export const ERROR_CODES = {
   EVIDENCE_URL_REQUIRED: { status: 422, message: '원산지는 근거 주소와 함께 넣어 주세요.' },
   /** 05-3 §5.1: 원산지 사전·commerce_origin_area에 없는 나라 */
   ORIGIN_COUNTRY_UNKNOWN: { status: 422, message: '원산지 목록에서 찾을 수 없는 나라입니다.' },
+  // ── content ⑥-3 고시·HTML(P3-04, 05-3 §5.1 문구 그대로) ──
+  /**
+   * 05-3 §5.1: ⑥-3 시작 때 프로필 빈칸(F-CT-24, details.missingFields). P3-04(Proposed): 상호·A/S 연락처·A/S 안내·수입자에
+   * 반품비·설정 배송기간(notice.values.deliveryDaysMin·Max)도 본다. {항목}은 빈칸 이름을 쉼표로 잇는다
+   */
+  PROFILE_INCOMPLETE: {
+    status: 409,
+    message: '구매대행 프로필에 빈칸({항목})이 있습니다. 설정에서 채워 주세요.',
+  },
+  /** 05-3 §5.1: 원산지 03·04를 골랐는데 사양 블록 제조국 표기에 실제 나라가 없음(F-CT-27) */
+  ORIGIN_CODE_NOT_ALLOWED: {
+    status: 422,
+    message: '사양 블록에 실제 나라 표기가 없어 이 원산지 코드를 쓸 수 없습니다.',
+  },
   INTERNAL_ERROR: {
     status: 500,
     message: '앱 안에서 오류가 났습니다. 다시 해 보고, 계속되면 로그를 확인해 주세요.',

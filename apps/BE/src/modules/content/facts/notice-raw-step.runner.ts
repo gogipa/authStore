@@ -32,11 +32,15 @@ import {
 import { buildFactDrafts, pendingFactInputs } from './fact-drafts.js';
 import { FactOwnerEditHandler } from './fact-owner-edit.handler.js';
 import { mergeFacts, missingFacts, type FactExtraction } from './fact.schema.js';
+import { cautionDraft, cautionFromTemplates } from './caution.supplement.js';
+import { colorKoDraft, colorKoFromDictionary } from './color-ko.resolver.js';
 import {
   buildFactPrompt,
   factAiSchema,
   factAiTask,
+  interpretAiExtras,
   interpretAiFacts,
+  type AiExtraField,
 } from './extractors/ai-fact.extractor.js';
 import { extractFromDescription } from './extractors/description-pattern.extractor.js';
 import { extractFromAttributes } from './extractors/sku-attribute.extractor.js';
@@ -81,6 +85,8 @@ export const NOTICE_RAW_INPUT_DONE = { kind: 'NOTICE_RAW_INPUT_DONE' } as const;
  * - 다시 실행(규칙 14): 이전 버전의 오너 입력 사실 필드를 가져가고 itemCode가 바뀌었으면 `ITEM_CODE_CHANGED` + SSE
  * - 원산지를 확정하지 못하면 입력 대기(`NOTICE_RAW_ORIGIN_REQUIRED`, pending `fact.origin` — 규칙 12). 오너 입력은
  *   `PUT /step-runs/{id}/content-fields/fact.origin`(`ContentFieldsService`)
+ * - P3-04(F-CT-17·21): 색상 한국어 표기(`fact.color_ko` — 사전 → 사전에 없으면 같은 AI 호출에서 보조)와 소재별 주의 문구
+ *   (`fact.caution` — 템플릿 + AI를 부를 때 보완 한 문장)를 더해 버전마다 일곱 행을 둔다. 둘 다 입력 대기 사유가 아니다
  */
 @StepRunnerFor('NOTICE_RAW')
 @Injectable()
@@ -138,6 +144,9 @@ export class NoticeRawStepRunner implements StepRunner {
       setting(INPUT_KEYS.settingsContentMaterialTerms, settings.materialTerms),
       setting(INPUT_KEYS.settingsContentFactLabels, settings.factLabels),
       setting(INPUT_KEYS.settingsContentSpecImages, settings.specImages),
+      // P3-04: 색상 한국어 표기 사전·소재별 주의 문구 템플릿
+      setting(INPUT_KEYS.settingsContentColorTerms, settings.colorTerms),
+      setting(INPUT_KEYS.settingsContentCautionTemplates, settings.cautionTemplates),
     ];
   }
 
@@ -162,19 +171,52 @@ export class NoticeRawStepRunner implements StepRunner {
       extractFromDescription(rawText, settings.factLabels),
     );
     let images: SpecImage[] = [];
+    let extras: Partial<Record<AiExtraField, { value: string; quote: string }>> = {};
     const missing = missingFacts(extraction);
-    if (missing.length > 0) {
-      const found = await this.extractWithAi(ctx, content, attributes, rawText, missing);
+    // P3-04 규칙 6: 색상은 사전 먼저, 사전에 없으면 같은 AI 호출에서 보조한다. 주의 문구 보완은 AI를 부를 때만 묶는다
+    const colorByDictionary = colorKoFromDictionary(content.selectedColorRaw, settings.colorTerms);
+    const extraNames: AiExtraField[] =
+      colorByDictionary === null && content.selectedColorRaw?.trim() ? ['color_ko'] : [];
+    if (missing.length > 0 || extraNames.length > 0) {
+      const found = await this.extractWithAi(ctx, content, attributes, rawText, missing, [
+        ...extraNames,
+        'caution',
+      ]);
       images = found.images;
+      extras = found.extras;
       extraction = mergeFacts(extraction, found.extraction);
     }
-    const { drafts, unresolvedOrigins } = buildFactDrafts({
+    const built = buildFactDrafts({
       extraction,
       settings,
       itemCode: content.itemCode,
       itemUrl: content.itemUrl,
       imageAssetIds: images.map((image) => image.imageAssetId),
     });
+    const { unresolvedOrigins } = built;
+    const materialOf = (key: string) => {
+      const value = built.drafts.find((d) => d.fieldKey === key)?.value;
+      return typeof value === 'string' ? value : null;
+    };
+    const drafts = [
+      ...built.drafts,
+      colorKoDraft({
+        selectedColorRaw: content.selectedColorRaw,
+        dictionaryValue: colorByDictionary,
+        ai: extras.color_ko ?? null,
+        itemCode: content.itemCode,
+        itemUrl: content.itemUrl,
+      }),
+      cautionDraft({
+        templateText: cautionFromTemplates(
+          ['fact.material_upper', 'fact.material_lining', 'fact.material_sole'].map(materialOf),
+          settings.cautionTemplates,
+        ),
+        supplement: extras.caution ?? null,
+        itemCode: content.itemCode,
+        itemUrl: content.itemUrl,
+      }),
+    ];
     const previousId = await this.previousFactsRunId(ctx);
     const previous = previousId !== null ? await this.previousFields(previousId) : [];
     const carried = carryOwnerFacts(previous, drafts, content.itemCode);
@@ -201,14 +243,22 @@ export class NoticeRawStepRunner implements StepRunner {
     return { kind: 'COMPLETED', output };
   }
 
-  /** 3순위 AI(규칙 9-3·15): 스펙 이미지를 받아(있으면) 못 찾은 필드만 묻는다 */
+  /**
+   * 3순위 AI(규칙 9-3·15): 스펙 이미지를 받아(있으면) 못 찾은 필드만 묻는다. P3-04: 같은 호출에 색상 표기 보조(사전에 없을 때)·
+   * 주의 문구 보완(`extras`)을 묶는다
+   */
   private async extractWithAi(
     ctx: StepRunContext,
     content: NonNullable<Awaited<ReturnType<StepEngineApi['readSourcingItemContent']>>>,
     attributes: readonly ItemAttribute[],
     rawText: string,
     missing: ReturnType<typeof missingFacts>,
-  ): Promise<{ extraction: FactExtraction; images: SpecImage[] }> {
+    extraNames: readonly AiExtraField[],
+  ): Promise<{
+    extraction: FactExtraction;
+    images: SpecImage[];
+    extras: Partial<Record<AiExtraField, { value: string; quote: string }>>;
+  }> {
     if (!ctx.pinnedAi) throw new Error('⑥-2는 AI 단계인데 고정한 AI 문맥이 없습니다');
     const settings = ctx.settings.content;
     const urls = specImageUrlsOf(content.descriptionHtml, settings.specImages.maxCount);
@@ -224,31 +274,40 @@ export class NoticeRawStepRunner implements StepRunner {
             { candidateId: ctx.candidateId, stepRunId: ctx.stepRunId },
           )
         : [];
+    const names = [...missing, ...extraNames];
     const input = buildFactPrompt({
-      names: missing,
+      names,
       itemName: content.itemName,
       descriptionText: content.descriptionText,
       attributes,
       imageCount: images.length,
+      selectedColorRaw: content.selectedColorRaw,
     });
     const result = await this.ai.run(
       ctx.pinnedAi,
       factAiTask(images.length > 0),
-      factAiSchema(missing),
+      factAiSchema(names),
       images.length > 0 ? { ...input, imagePaths: images.map((image) => image.filePath) } : input,
     );
+    const knownText = [
+      content.itemName,
+      rawText,
+      content.descriptionText ?? '',
+      content.selectedColorRaw ?? '',
+      ...attributes.map((a) => `${a.name}:${a.text}`),
+    ].join('\n');
     const extraction = interpretAiFacts(result.output, {
       names: missing,
       imageCount: images.length,
       imagesSeen: result.imagesSeen,
-      knownText: [
-        content.itemName,
-        rawText,
-        content.descriptionText ?? '',
-        ...attributes.map((a) => `${a.name}:${a.text}`),
-      ].join('\n'),
+      knownText,
     });
-    return { extraction, images };
+    const extras = interpretAiExtras(result.output, {
+      names: extraNames,
+      knownText,
+      imageCount: images.length,
+    });
+    return { extraction, images, extras };
   }
 
   /** 이전 버전(닫혀 동결된 행 — 트랜잭션 밖에서 읽어도 바뀌지 않는다) */

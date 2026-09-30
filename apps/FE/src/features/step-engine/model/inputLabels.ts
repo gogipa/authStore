@@ -36,7 +36,7 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'owner.categorySelection': '리프 카테고리 선택',
   'settings.costs': '비용 설정',
   'settings.pricing': '가격 설정',
-  'settings.notice': '고시 설정',
+  'settings.notice': '구매대행 고지 템플릿 설정',
   'settings.sourcing.targetSizeMm': '목표 사이즈 범위 설정',
   'settings.sourcing.minSizeCount': '최소 사이즈 수 설정',
   'settings.sourcing.defaultWidth': '기본 폭 설정',
@@ -53,6 +53,10 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'settings.content.materialTerms': '소재 말 사전 설정',
   'settings.content.factLabels': '원산지·소재 항목 이름 설정',
   'settings.content.specImages': '스펙 이미지 고르기 설정',
+  // P3-04: ⑥-2 색상 사전·주의 문구, ⑥-3 여러 원산지 방식
+  'settings.content.colorTerms': '색상 사전 설정',
+  'settings.content.cautionTemplates': '소재별 주의 문구 설정',
+  'settings.content.multiOriginMode': '여러 원산지 코드 방식 설정',
   // 판정 기준 데이터(P2-04, BE step-engine/domain/input-keys.ts와 같은 표) — 새 최신 환율·활성 요금표 교체
   'fx.costJpy': '원가 환율',
   'fx.customsJpy': '과세환율(엔)',

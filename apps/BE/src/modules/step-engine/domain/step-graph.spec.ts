@@ -70,15 +70,40 @@ describe('입력 키 그래프(PRD §5.3 표, P1-05)', () => {
     expect(directReaders('CATEGORY')).toEqual(['NOTICE_HTML', 'TAGS']);
     expect(directReaders('PRICING')).toEqual(['NOTICE_HTML']);
     expect(directReaders('COPY')).toEqual(['NOTICE_HTML']);
+    // P3-04: ⑥-3 상품명이 ② 모델명·並行輸入品을 읽는다(sourcing.modelInfo)
     expect(directReaders('SOURCING')).toEqual([
       'PRICING',
       'CATEGORY',
       'THUMBNAIL',
       'COPY',
       'NOTICE_RAW',
+      'NOTICE_HTML',
       'TAGS',
     ]);
     expect(directReaders('UPLOAD')).toEqual([]);
+  });
+
+  it('⑥-3 시작 조건(P3-04 규칙 1): ⑥-1·⑥-2·③ 판매 사이즈·② 모델 정보·성별·고지 설정, 선택 ④·앵커 키·키워드', () => {
+    const spec = STEP_INPUT_SPECS.NOTICE_HTML;
+    expect(spec.filter((s) => s.required).map((s) => s.inputKey)).toEqual([
+      'copy.draft',
+      'noticeRaw.facts',
+      'pricing.saleSizes',
+      'sourcing.modelInfo',
+      'candidate.gender',
+      'settings.notice',
+      'settings.content.originCountries',
+      'settings.content.multiOriginMode',
+    ]);
+    expect(spec.filter((s) => !s.required).map((s) => s.inputKey)).toEqual([
+      'category.leafPath',
+      'candidate.anchorKey',
+      'candidate.seedKeyword',
+    ]);
+    expect(spec.every((s) => s.isStartCondition)).toBe(true);
+    expect(STEP_INPUT_SPECS.NOTICE_RAW.map((s) => s.inputKey)).toEqual(
+      expect.arrayContaining(['settings.content.colorTerms', 'settings.content.cautionTemplates']),
+    );
   });
 
   it('입력 키 → 읽는 단계: 성별은 ③·④·⑥-3·⑦, ④ 리프 카테고리는 ⑥-3·⑦·⑨, 레퍼런스 선택은 ⑤', () => {

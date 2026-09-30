@@ -29,7 +29,20 @@ export const FACT_AI_FIELD_SPECS: Readonly<Record<string, { label: string; hint:
     label: '굽·밑창 높이',
     hint: 'ヒール高さ·ソール高·厚底 값. 숫자와 단위(cm·mm)를 함께(예: 3.5cm)',
   },
+  // P3-04(F-CT-17·21): 사전에 없는 색상 표기 보조, 주의 문구 보완(⑥-2 AI 호출에 묶는다)
+  color_ko: {
+    label: '색상 한국어 표기',
+    hint: '[선택 색상 원문]을 한국어 색상 이름으로 옮긴다(예: クリーム/ブラック → 크림/블랙, 구분자 유지). evidence_quote에는 선택 색상 원문을 그대로',
+  },
+  caution: {
+    label: '소재별 주의 문구 보완',
+    hint: '자료의 소재(원문)에 맞는 신발 관리·주의 문구 한 문장(한국어, 80자 이내). 소재 근거가 없으면 null. evidence_quote에는 근거가 된 소재 원문',
+  },
 };
+
+/** 원문에 없는 한국어 값을 만드는 필드(P3-04): 추측 금지 규칙의 예외 — 근거 원문 발췌는 여전히 필수다 */
+export const AI_EXTRA_FIELDS = ['color_ko', 'caution'] as const;
+export type AiExtraField = (typeof AI_EXTRA_FIELDS)[number];
 
 /** 필드 하나의 결과 모양(draft-07 공통 부분집합 — 모든 키 required, 선택 값은 null 허용) */
 const FIELD_RESULT_SCHEMA = {
@@ -63,6 +76,8 @@ export interface FactPromptInput {
   attributes: readonly ItemAttribute[];
   /** 넘기는 스펙 이미지 수(비전) */
   imageCount: number;
+  /** 선택 색상 원문(`color_ko`를 물을 때 데이터 블록으로 넣는다, P3-04) */
+  selectedColorRaw?: string | null;
 }
 
 /**
@@ -88,16 +103,22 @@ export function buildFactPrompt(input: FactPromptInput): AiExecutorInput {
       : '3. 이미지는 없다. 글에서 찾았으면 method=TEXT, image_index=null.',
     '4. 판매국(일본)과 제조국을 헷갈리지 않는다. 일본에서 판다는 사실만으로 원산지를 일본으로 쓰지 않는다.',
     `5. ${COPY_DATA_BLOCK_RULE}`,
+    ...(input.names.some((n) => (AI_EXTRA_FIELDS as readonly string[]).includes(n))
+      ? [
+          '6. color_ko·caution은 자료의 원문을 한국어로 옮기거나(color_ko) 자료의 소재에 맞는 일반 관리 문구를 쓴다(caution). 둘 다 근거가 된 원문을 evidence_quote에 둔다. 근거가 없으면 null.',
+        ]
+      : []),
   ].join('\n');
   const attributeText = input.attributes.map((a) => `${a.name}: ${a.text}`).join('\n');
-  return {
-    instruction,
-    blocks: [
-      { source: 'RAKUTEN', label: '라쿠텐 상품명', text: input.itemName },
-      { source: 'RAKUTEN', label: '라쿠텐 설명', text: input.descriptionText ?? '(설명 없음)' },
-      { source: 'RAKUTEN', label: '라쿠텐 속성', text: attributeText || '(속성 없음)' },
-    ],
-  };
+  const blocks: AiExecutorInput['blocks'] = [
+    { source: 'RAKUTEN', label: '라쿠텐 상품명', text: input.itemName },
+    { source: 'RAKUTEN', label: '라쿠텐 설명', text: input.descriptionText ?? '(설명 없음)' },
+    { source: 'RAKUTEN', label: '라쿠텐 속성', text: attributeText || '(속성 없음)' },
+    ...(input.names.includes('color_ko') && input.selectedColorRaw
+      ? [{ source: 'RAKUTEN' as const, label: '선택 색상 원문', text: input.selectedColorRaw }]
+      : []),
+  ];
+  return { instruction, blocks };
 }
 
 interface AiFieldResult {
@@ -172,6 +193,33 @@ export function interpretAiFacts(
       continue;
     }
     out[name] = fact;
+  }
+  return out;
+}
+
+/**
+ * AI 결과의 보조 필드(P3-04 — `color_ko`·`caution`) → 값·근거. 값과 원문 발췌가 둘 다 있어야 하고, 발췌가 자료 글(NFKC·공백
+ * 무시)에 없으면 쓰지 않는다(지어낸 근거를 막는다 — 스펙 이미지에서 읽었다고 답한 발췌는 넘긴 이미지 번호가 맞을 때만 받는다)
+ */
+export function interpretAiExtras(
+  output: Record<string, unknown>,
+  options: { names: readonly AiExtraField[]; knownText: string; imageCount: number },
+): Partial<Record<AiExtraField, { value: string; quote: string }>> {
+  const known = compareKey(options.knownText);
+  const out: Partial<Record<AiExtraField, { value: string; quote: string }>> = {};
+  for (const name of options.names) {
+    const r = fieldResult(output, name);
+    if (!r || r.method === 'NONE') continue;
+    const value = typeof r.value === 'string' ? r.value.trim() : '';
+    const quote = typeof r.evidence_quote === 'string' ? r.evidence_quote.trim() : '';
+    if (value === '' || quote === '') continue;
+    const fromImage =
+      r.method === 'IMAGE' &&
+      typeof r.image_index === 'number' &&
+      r.image_index >= 1 &&
+      r.image_index <= options.imageCount;
+    if (!fromImage && !known.includes(compareKey(quote))) continue;
+    out[name] = { value: value.slice(0, name === 'color_ko' ? 100 : 200), quote };
   }
   return out;
 }

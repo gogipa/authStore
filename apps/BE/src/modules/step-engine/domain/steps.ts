@@ -181,8 +181,9 @@ export const STEP_GRAPH: Record<StepCode, StepGraphNode> = {
   // ⑥-1, ⑥-2, ③ 판매 사이즈, 후보 성별, 프로필·템플릿 설정, (선택) ④ 리프 카테고리.
   // 상품명(⑥-3 산출물)이 ④를 읽는다(RG-04). PRD §5.3 표에는 없어 선택 입력으로 둔다: ④ 없이도 실행하고,
   // ④가 바뀌면 ⑥-3이 재실행 필요가 된다(ERD §7.2-10, P1-05 Proposed)
+  // P3-04: 상품명(모델명·並行輸入品)이 ② 산출물을 읽어 ②도 필수 앞 단계다(③이 이미 ②를 요구해 실행 가능 여부는 그대로)
   NOTICE_HTML: node({
-    requires: ['COPY', 'NOTICE_RAW', 'PRICING'],
+    requires: ['SOURCING', 'COPY', 'NOTICE_RAW', 'PRICING'],
     optional: ['CATEGORY'],
     candidateFields: [CANDIDATE_INPUT_KEYS.gender],
   }),

@@ -3,14 +3,22 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { jsonResponse, stubApi } from '@/test/apiStub';
 import { callUsageList } from '@/test/fixtures/callUsage';
-import { contentCopyOutput, contentFactOutput } from '@/test/fixtures/content';
+import {
+  contentAssemblyOutput,
+  contentCopyOutput,
+  contentFactOutput,
+} from '@/test/fixtures/content';
+import { filledProfile } from '@/test/fixtures/purchaseAgencyProfile';
 import { candidateDetail, gateList, stepRail } from '@/test/fixtures/stepEngine';
 import { renderRoute } from '@/test/renderRoute';
 
 const CANDIDATE_ID = 1;
 
-function setup() {
+function setup(noticeHtml: 'NOT_RUN' | 'COMPLETED' = 'NOT_RUN') {
   return stubApi({
+    'GET /purchase-agency-profile': () => jsonResponse(filledProfile()),
+    [`GET /candidates/${CANDIDATE_ID}/content-assembly`]: () =>
+      jsonResponse(contentAssemblyOutput()),
     'GET /call-usage': () => jsonResponse(callUsageList(38)),
     [`GET /candidates/${CANDIDATE_ID}`]: () =>
       jsonResponse(
@@ -22,6 +30,7 @@ function setup() {
           SOURCING: { status: 'COMPLETED' },
           COPY: { status: 'COMPLETED' },
           NOTICE_RAW: { status: 'COMPLETED' },
+          NOTICE_HTML: { status: noticeHtml },
         }),
       ),
     [`GET /candidates/${CANDIDATE_ID}/gates`]: () => jsonResponse(gateList({ G2: true })),
@@ -51,6 +60,23 @@ describe('⑥ 상세 콘텐츠 화면(SCR-06, P3-03)', () => {
     expect(screen.getByRole('navigation', { name: '상세 콘텐츠 세부 단계' })).toBeInTheDocument();
     expect(screen.queryByText('문구 검사')).not.toBeInTheDocument();
     expect(screen.queryByText(/화면은 준비 중/)).not.toBeInTheDocument();
+  });
+
+  it('⑥-3이 끝났으면 조립 결과(상품명·고시·고지)와 HTML 미리보기(iframe sandbox)를 보인다(P3-04)', async () => {
+    setup('COMPLETED');
+    renderRoute(`/candidates/${CANDIDATE_ID}/content`);
+    expect(
+      await screen.findByDisplayValue('아식스 젤카야노14 1201A019-108 러닝화 크림 남성'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('상품정보제공고시 · 신발')).toBeInTheDocument();
+    expect(screen.getByText('구매대행 고지 미리보기')).toBeInTheDocument();
+    const frame = screen.getByTitle('상세페이지 미리보기');
+    expect(frame).toHaveAttribute('sandbox', '');
+    expect(frame).toHaveAttribute(
+      'src',
+      '/api/v1/candidates/1/content-assembly/preview?stepRunId=106',
+    );
+    expect(screen.queryByText('문구 검사')).not.toBeInTheDocument();
   });
 
   it("⑥ '다시 실행'은 ⑥-1부터 ⑥-3까지 이어서(throughStepCode=NOTICE_HTML) 부른다", async () => {

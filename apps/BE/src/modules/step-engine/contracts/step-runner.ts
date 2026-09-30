@@ -3,6 +3,7 @@ import type { Candidate, Prisma, StepRun } from '../../../generated/prisma/clien
 import type { PinnedAiContext } from '../../integrations/ai-engine/ai-executor.types.js';
 import type { AppSettings } from '../../settings/schema/settings.types.js';
 import type { AnchorKeyInput } from '../candidates/candidate-identity.service.js';
+import type { CandidateWarning } from '../domain/warnings.js';
 import type {
   AutoExclusionReason,
   CandidateStatus,
@@ -226,6 +227,12 @@ export interface StepRunner {
     toStepRunId: number,
     edit?: unknown,
   ): Promise<CandidateEffects | void>;
+  /**
+   * 오너 수정(EDIT) 새 버전의 막지 않는 경고(선택, P3-04 Proposed — C4 §3.1). `copyOutput`으로 새 버전 산출물을 쓴 뒤 같은
+   * 트랜잭션에서 부르고, 결과를 05-2 `StepOwnerEditResult.warnings`에 담는다(예: ⑥-3 상품명 100자 초과·금지 수식어·반복).
+   * 없으면 빈 목록
+   */
+  editWarnings?(db: Tx, stepRunId: number): Promise<CandidateWarning[]>;
   /** 이 버전의 실행 중 오너 입력 값(다시 실행 기본값, 규칙 7). 없으면 빈 객체 */
   ownerInputsOf?(db: Tx, stepRunId: number): Promise<Record<string, unknown>>;
   /** ② 버전의 앵커 키(이전 버전 다시 고르기의 409 ANCHOR_KEY_MISMATCH 검사). 없으면 검사하지 않는다 */

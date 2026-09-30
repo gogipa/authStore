@@ -403,6 +403,11 @@ export class OwnerEditService {
         run.id,
         edit.ownerAction === 'EDIT' ? { fields: 'fields' in edit ? edit.fields : [] } : undefined,
       );
+      // 막지 않는 경고(P3-04 — ⑥-3 상품명 100자 초과 등). 실행기가 새 버전 산출물로 계산한다
+      const warnings =
+        edit.ownerAction === 'EDIT' && runner.editWarnings
+          ? await runner.editWarnings(scope.tx, run.id)
+          : [];
       const stepRow = await scope.tx.candidateStep.update({
         where: { id: row.id },
         data: {
@@ -434,7 +439,7 @@ export class OwnerEditService {
           status: runStatus,
           staleDownstreamSteps: stale,
           propagatedSteps: edit.ownerAction === 'RESTORE_VERSION' ? stale : [],
-          warnings: [],
+          warnings,
         },
       };
     });

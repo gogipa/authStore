@@ -120,15 +120,25 @@ export const STEP_INPUT_SPECS: Record<StepCode, readonly StepInputSpec[]> = {
     settingsKey(K.settingsContentMaterialTerms),
     settingsKey(K.settingsContentFactLabels),
     settingsKey(K.settingsContentSpecImages),
+    // P3-04: 색상 한국어 표기 사전·소재별 주의 문구 템플릿
+    settingsKey(K.settingsContentColorTerms),
+    settingsKey(K.settingsContentCautionTemplates),
   ],
-  // ⑥-1, ⑥-2, ③ 판매 사이즈, 성별, (선택) ④ 리프 카테고리(상품명, ERD §7.2-10 P1-05 Proposed), 고시 설정
+  // ⑥-1, ⑥-2, ③ 판매 사이즈, 성별, (선택) ④ 리프 카테고리(상품명, ERD §7.2-10 P1-05 Proposed), 고시 설정.
+  // P3-04(Proposed — 주의 '상품명이 읽는 ② 값'): ② 모델명·並行輸入品·브랜드 속성(`sourcing.modelInfo`), (선택) 앵커 키(모델명
+  // 대체)·① 선택 키워드(브랜드·시리즈), 나라 사전·여러 원산지 방식 설정. 프로필(`profile.*`)은 실행기가 더한다(P1-09 — 표 밖)
   NOTICE_HTML: [
     prev(K.copyDraft, 'COPY'),
     prev(K.noticeRawFacts, 'NOTICE_RAW'),
     prev(K.pricingSaleSizes, 'PRICING'),
+    prev(K.sourcingModelInfo, 'SOURCING'),
     prev(K.categoryLeafPath, 'CATEGORY', false),
     cand(K.candidateGender),
+    cand(K.candidateAnchorKey, false),
+    cand(K.candidateSeedKeyword, false),
     settingsKey(K.settingsNotice),
+    settingsKey(K.settingsContentOriginCountries),
+    settingsKey(K.settingsContentMultiOriginMode),
   ],
   // 시드 키워드, ② 모델명·상품유형, 성별, (선택) 경쟁 태그, (선택) ④ 리프 경로
   TAGS: [

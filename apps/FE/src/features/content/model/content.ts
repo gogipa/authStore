@@ -220,6 +220,9 @@ export const FACT_KEYS = [
   'fact.material_lining',
   'fact.material_sole',
   'fact.heel_height',
+  // P3-04(F-CT-17·21): 색상 한국어 표기·소재별 주의 문구
+  'fact.color_ko',
+  'fact.caution',
 ] as const;
 export type FactKey = (typeof FACT_KEYS)[number];
 
@@ -237,18 +240,29 @@ export const FACT_METHOD_TEXT: Readonly<Record<string, string>> = {
   SKU_ATTRIBUTE: '상품 속성에서 찾음',
   DESCRIPTION_PATTERN: '설명문에서 찾음',
   AI: 'AI로 찾음',
+  DICTIONARY: '색상 사전으로 바꿈',
+  TEMPLATE: '소재별 템플릿',
   NONE: NO_INFO_TEXT,
 };
+
+/** 색상 표기 방법 글(보드 '사전에 없어 AI 보조') */
+export const COLOR_AI_METHOD_TEXT = '사전에 없어 AI 보조';
+export const COLOR_SOURCE_TEXT = '선택 색상 원문';
 
 export function factMethodText(field: ContentDraftFieldItem): string {
   if (field.valueSource === 'OWNER_INPUT') return '직접 입력';
   const method = field.extractionMethod ?? 'NONE';
+  if (field.fieldKey === 'fact.color_ko' && method === 'AI') return COLOR_AI_METHOD_TEXT;
+  if (field.fieldKey === 'fact.caution' && method === 'AI') return '소재별 템플릿 + AI 보완';
   const base = FACT_METHOD_TEXT[method] ?? method;
   return method === 'AI' && field.evidenceImageAssetId !== null ? `${base} · 스펙 이미지` : base;
 }
 
-/** 출처 글: 오너 근거 주소·설명 속 스펙 이미지·라쿠텐 상품 페이지(근거가 없으면 '—') */
+/** 출처 글: 오너 근거 주소·설명 속 스펙 이미지·라쿠텐 상품 페이지(근거가 없으면 '—'). 색상은 선택 색상 원문 */
 export function factSourceText(field: ContentDraftFieldItem): string {
+  if (field.fieldKey === 'fact.color_ko') {
+    return field.valueSource === 'OWNER_INPUT' ? '직접 확인' : COLOR_SOURCE_TEXT;
+  }
   if (field.valueSource === 'OWNER_INPUT') return '오너 근거 주소';
   if (field.evidenceImageAssetId !== null) return '설명 속 스펙 이미지';
   if (field.extractionMethod === 'NONE' || field.extractionMethod === null) return '—';
@@ -286,6 +300,12 @@ export const ORIGIN_COUNTRY_REQUIRED_REASON = '나라 이름을 넣어 주세요
 export const ORIGIN_NOT_EDITABLE_REASON =
   '⑥-2가 입력 대기이거나 완료일 때 원산지를 넣을 수 있습니다.';
 export const RECHECK_LABEL = '재확인 필요';
+/** 색상 표기 고치기(P3-04, F-CT-17 — 보드 '고치기') */
+export const COLOR_EDIT_LABEL = '고치기';
+export const COLOR_SAVE_LABEL = '색상 저장';
+export const COLOR_ROW_LABEL = '색상 표기';
+export const COLOR_NOT_EDITABLE_REASON = '⑥-2가 입력 대기이거나 완료일 때 고칠 수 있습니다.';
+export const COLOR_EMPTY_REASON = '색상 표기를 넣어 주세요.';
 export const RECHECK_CONFIRM_LABEL = '현재 근거로 확인';
 
 /** 원산지 직접 넣기 저장이 꺼진 이유(근거 URL 먼저 — 05-2 EVIDENCE_URL_REQUIRED) */

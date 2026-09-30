@@ -12,3 +12,6 @@ apps/BE/test/fixtures/settings/broken.json
 
 # 라쿠텐 상품 페이지 fixture(P2-02): EUC-JP 바이트 그대로 둔다(src 원본과 build-pages.sh로 짝을 맞춘다)
 apps/BE/test/fixtures/rakuten/pages/
+
+# ⑥-3 상세 HTML 조립 스냅샷(P3-04): 조립 결과를 바이트 그대로 비교한다
+apps/BE/test/fixtures/content/assembly/expected/

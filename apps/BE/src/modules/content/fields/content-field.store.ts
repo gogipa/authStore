@@ -127,7 +127,7 @@ export function updateField(
 export async function latestVersionWithOutput(
   db: Db,
   candidateId: number,
-  stepCode: 'COPY' | 'NOTICE_RAW',
+  stepCode: 'COPY' | 'NOTICE_RAW' | 'NOTICE_HTML',
   beforeVersion: number,
 ): Promise<number | null> {
   const runs = await db.stepRun.findMany({
@@ -137,11 +137,16 @@ export async function latestVersionWithOutput(
       id: true,
       contentDraftCopy: { select: { id: true } },
       contentDraftFact: { select: { id: true } },
+      contentDraftAssembly: { select: { id: true } },
     },
     take: 50,
   });
   const found = runs.find((run) =>
-    stepCode === 'COPY' ? run.contentDraftCopy !== null : run.contentDraftFact !== null,
+    stepCode === 'COPY'
+      ? run.contentDraftCopy !== null
+      : stepCode === 'NOTICE_RAW'
+        ? run.contentDraftFact !== null
+        : run.contentDraftAssembly !== null,
   );
   return found?.id ?? null;
 }

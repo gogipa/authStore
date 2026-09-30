@@ -1,0 +1,9 @@
+{
+  "_note": "⑥-2 결과(합성). 제조국 셋(ベトナム、インドネシア、中国) → 여러 원산지 규칙(F-CT-26). 여성 굽 신발(근거 ヒール高さ 約5cm) → 고시 height 있음",
+  "origin": ["베트남", "인도네시아", "중국"],
+  "materials": { "upper": "천연가죽", "lining": "합성가죽", "sole": "합성고무" },
+  "heel": { "value": 5, "unit": "cm", "quote": "ヒール高さ 約5cm", "ownerInput": false },
+  "colorKo": "블랙",
+  "selectedColorRaw": "ブラック",
+  "caution": null
+}

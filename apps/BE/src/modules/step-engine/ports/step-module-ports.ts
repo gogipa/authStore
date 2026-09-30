@@ -6,6 +6,7 @@ import type {
 } from './candidate-creation.extension.js';
 import type { GenderInputListener } from './gender-input.port.js';
 import type { SourcingSelectionReader } from './sourcing-selection.port.js';
+import type { PricingOutputReader, ThumbnailSelectionReader } from './step-output-readers.port.js';
 
 /**
  * 단계 모듈이 앱 시작 때 step-engine에 끼우는 확장 자리(P2-02 Proposed — C4 §3.1). step-engine은 단계 모듈을 import하지
@@ -13,12 +14,16 @@ import type { SourcingSelectionReader } from './sourcing-selection.port.js';
  * - 후보 만들기 확장(`CANDIDATE_CREATION_EXTENSION`, P1-04 포트): sourcing이 'URL로 만들기' ② URL_CREATE를 채운다
  * - ② 소싱 선택 읽기(`SourcingSelectionReader`): sourcing이 등록하고 ③·⑤·⑥이 `StepEngineApi.readSourcingSelection`으로 쓴다
  * - 오너 성별 입력 리스너(`GenderInputListener`, P2-03): 열린 ②(④)가 성별을 기다리면 이어 간다. 여럿을 차례로 부른다
- * 앞 둘은 둘째 등록이 앱 시작을 멈춘다(한 자리에 구현 하나).
+ * - ③ 판정 읽기(`PricingOutputReader`, P3-04): pricing이 등록하고 ⑥-3이 `StepEngineApi.readPricingSaleSizes`로 쓴다
+ * - ⑤ G3 선택본 읽기(`ThumbnailSelectionReader`, P3-04): thumbnails가 등록하고 ⑥-3 미리보기가 `readThumbnailSelection`으로 쓴다
+ * 리스너를 뺀 자리는 둘째 등록이 앱 시작을 멈춘다(한 자리에 구현 하나).
  */
 @Injectable()
 export class StepModulePorts {
   private creation: CandidateCreationExtension | null = null;
   private selection: SourcingSelectionReader | null = null;
+  private pricingOutput: PricingOutputReader | null = null;
+  private thumbnailSelection: ThumbnailSelectionReader | null = null;
   /**
    * 오너 성별 입력 리스너(`GENDER_INPUT_LISTENERS`의 값 — 같은 배열을 넘긴다, P2-03 Proposed). 단계 모듈(② P2-03·④ P2-06)이
    * 앱 시작 때 `StepEngineApi.registerGenderInputListener`로 더한다
@@ -35,6 +40,16 @@ export class StepModulePorts {
     this.selection = reader;
   }
 
+  registerPricingOutputReader(reader: PricingOutputReader): void {
+    if (this.pricingOutput) throw new Error('③ 판정 읽기가 이미 등록되어 있습니다');
+    this.pricingOutput = reader;
+  }
+
+  registerThumbnailSelectionReader(reader: ThumbnailSelectionReader): void {
+    if (this.thumbnailSelection) throw new Error('⑤ G3 선택본 읽기가 이미 등록되어 있습니다');
+    this.thumbnailSelection = reader;
+  }
+
   registerGenderInputListener(listener: GenderInputListener): void {
     if (this.genderInputListeners.includes(listener)) return;
     this.genderInputListeners.push(listener);
@@ -46,6 +61,14 @@ export class StepModulePorts {
 
   get sourcingSelectionReader(): SourcingSelectionReader | null {
     return this.selection;
+  }
+
+  get pricingOutputReader(): PricingOutputReader | null {
+    return this.pricingOutput;
+  }
+
+  get thumbnailSelectionReader(): ThumbnailSelectionReader | null {
+    return this.thumbnailSelection;
   }
 }
 

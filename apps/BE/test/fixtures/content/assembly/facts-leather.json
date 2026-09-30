@@ -1,0 +1,9 @@
+{
+  "_note": "⑥-2 결과(assembly-facts.ts AssemblyFacts 모양, 합성). 겉감에 합성가죽 → 안전관리대상 문장. 남성 운동화 — 굽높이 근거는 ヒール고(속성)지만 남성이라 고시 height를 뺀다",
+  "origin": ["베트남"],
+  "materials": { "upper": "합성섬유·합성가죽", "lining": null, "sole": "고무" },
+  "heel": { "value": 3.5, "unit": "cm", "quote": "ヒール高:3.5cm", "ownerInput": false },
+  "colorKo": "크림/블랙",
+  "selectedColorRaw": "クリーム/ブラック",
+  "caution": "직사광선과 높은 온도를 피해 서늘한 곳에 보관해 주세요. 가죽 소재는 물에 젖으면 얼룩·변색이 생길 수 있으니 젖었을 때는 그늘에서 말려 주세요."
+}

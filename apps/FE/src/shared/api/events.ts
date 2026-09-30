@@ -113,6 +113,9 @@ export type EventInvalidations = {
  * - P3-03: `step-run.status-changed`가 ⑥-1(COPY)이면 그 후보의 카피(`getCandidateContentCopy`), ⑥-2(NOTICE_RAW)면 고시 원자료
  *   (`getCandidateContentFact` — 입력 대기·완료). `content-field.recheck-flagged` → 그 후보의 고시 원자료와 단계 레일(재확인 필요
  *   칩). 카피 편집·원산지 직접 넣기는 응답 뒤 훅이 무효화한다.
+ * - P3-04: `step-run.status-changed`가 ⑥-3(NOTICE_HTML)이면 조립 결과(`getCandidateContentAssembly`). `content-field.recheck-flagged`는
+ *   stepCode가 NOTICE_HTML이면 조립 결과, 아니면 고시 원자료. `gate.passed`(G3 다시 고르기) → 조립 결과도(미리보기 iframe을 새로 연다 —
+ *   ⑥-3은 다시 실행하지 않는다). 상품명·고시 고치기는 응답 뒤 화면이 무효화한다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -196,6 +199,9 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     ...(stepCode === 'NOTICE_RAW'
       ? [qk('content', 'getCandidateContentFact', { candidateId })]
       : []),
+    ...(stepCode === 'NOTICE_HTML'
+      ? [qk('content', 'getCandidateContentAssembly', { candidateId })]
+      : []),
   ],
   'continuous-run.stopped': ({ candidateId, stepChainId }) => [
     qk('step-engine', 'getContinuousRun', { stepChainId }),
@@ -205,6 +211,8 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     ...gateKeys(candidateId),
     qk('pricing', 'getPriceJudgement', { candidateId }),
     qk('thumbnails', 'getCandidateThumbnail', { candidateId }),
+    // P3-04: G3을 다시 고르면 ⑥-3 미리보기 iframe을 새로 연다(⑥-3은 다시 실행하지 않는다)
+    qk('content', 'getCandidateContentAssembly', { candidateId }),
   ],
   'gate.invalidated': ({ candidateId }) => [
     ...gateKeys(candidateId),
@@ -212,8 +220,10 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     qk('pricing', 'getPriceJudgement', { candidateId }),
     qk('thumbnails', 'getCandidateThumbnail', { candidateId }),
   ],
-  'content-field.recheck-flagged': ({ candidateId }) => [
-    qk('content', 'getCandidateContentFact', { candidateId }),
+  'content-field.recheck-flagged': ({ candidateId, stepCode }) => [
+    stepCode === 'NOTICE_HTML'
+      ? qk('content', 'getCandidateContentAssembly', { candidateId })
+      : qk('content', 'getCandidateContentFact', { candidateId }),
     qk('step-engine', 'listCandidateSteps', { candidateId }),
   ],
   'generation-run.updated': ({ candidateId, generationRunId }) => [

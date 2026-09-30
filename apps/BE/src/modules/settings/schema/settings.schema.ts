@@ -6,10 +6,13 @@ import {
   type AiEngineModelPair,
   type AppSettings,
   type CategoryLeafMapping,
+  type CautionTemplateEntry,
+  type ColorTermEntry,
   type DispatchDeliveryCompanySetting,
   type MaterialTermEntry,
   type OriginCountryEntry,
   DUTY_HS_HEADINGS,
+  MULTI_ORIGIN_MODES,
   NOTICE_BLOCK_CONDITIONS,
   type NoticeBlock,
   NPAY_FEE_GRADES,
@@ -152,6 +155,31 @@ const materialTerm: JSONSchemaType<MaterialTermEntry> = {
   required: ['raw', 'ko'],
   properties: { raw: rawTerm, ko: { type: 'string', minLength: 1, maxLength: 40 } },
 };
+
+const colorTerm: JSONSchemaType<ColorTermEntry> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['raw', 'ko'],
+  properties: { raw: rawTerm, ko: { type: 'string', minLength: 1, maxLength: 40 } },
+};
+
+/** 소재별 주의 문구 한 줄(P3-04 Proposed): 소재 말 1~20개(각 1~40자), 문장 1~300자 */
+const cautionTemplate: JSONSchemaType<CautionTemplateEntry> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['terms', 'text'],
+  properties: {
+    terms: { type: 'array', minItems: 1, maxItems: 20, items: rawTerm },
+    text: { type: 'string', minLength: 1, maxLength: 300 },
+  },
+};
+
+/** 말 목록(P3-04 가죽 판정 말·상품명 금지 수식어): 1~40자, 200개까지 */
+const termList = {
+  type: 'array',
+  maxItems: 200,
+  items: { type: 'string', minLength: 1, maxLength: 40 },
+} as const;
 
 /** ⑥-2 항목 이름 목록(P3-03 Proposed): 1~20자, 1~50개 */
 const factLabelList = {
@@ -465,7 +493,16 @@ const schema: JSONSchemaType<AppSettings> = {
     content: {
       type: 'object',
       additionalProperties: false,
-      required: ['originCountries', 'materialTerms', 'factLabels', 'specImages'],
+      required: [
+        'originCountries',
+        'materialTerms',
+        'factLabels',
+        'specImages',
+        'colorTerms',
+        'cautionTemplates',
+        'productNameBannedWords',
+        'multiOriginMode',
+      ],
       properties: {
         originCountries: { type: 'array', items: originCountry, maxItems: 500 },
         materialTerms: { type: 'array', items: materialTerm, maxItems: 500 },
@@ -493,14 +530,36 @@ const schema: JSONSchemaType<AppSettings> = {
             maxBytes: { type: 'integer', minimum: 10_240, maximum: 20_971_520 },
           },
         },
+        colorTerms: { type: 'array', items: colorTerm, maxItems: 500 },
+        cautionTemplates: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['default', 'byMaterial'],
+          properties: {
+            default: { type: 'string', minLength: 1, maxLength: 300 },
+            byMaterial: { type: 'array', items: cautionTemplate, maxItems: 50 },
+          },
+        },
+        productNameBannedWords: termList,
+        multiOriginMode: { type: 'string', enum: MULTI_ORIGIN_MODES },
       },
     },
     notice: {
       type: 'object',
       additionalProperties: false,
-      required: ['basisDate', 'blocks', 'values'],
+      required: [
+        'basisDate',
+        'templateVersion',
+        'aiImageLabel',
+        'leatherTerms',
+        'blocks',
+        'values',
+      ],
       properties: {
         basisDate: { type: 'string', pattern: '^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$' },
+        templateVersion: { type: 'string', pattern: '^[A-Za-z0-9._-]{1,40}$' },
+        aiImageLabel: { type: 'boolean' },
+        leatherTerms: termList,
         blocks: { type: 'array', items: noticeBlock, minItems: 1, maxItems: 100 },
         values: {
           type: 'object',

@@ -1,0 +1,13 @@
+{
+  "_note": "테스트용 값이다. commerce_origin_area 행 모양(P1-08 동기화 결과)을 흉내 낸 것이고, 실제 코드는 M0 S3·실제 동기화 결과를 따른다(P1-08 fixture origin-areas-sub-02.json과 같은 가정).",
+  "rows": [
+    { "originAreaCode": "00", "name": "국산", "parentCode": null },
+    { "originAreaCode": "02", "name": "수입산", "parentCode": null },
+    { "originAreaCode": "03", "name": "기타-상세설명에 표시", "parentCode": null },
+    { "originAreaCode": "04", "name": "기타-직접입력", "parentCode": null },
+    { "originAreaCode": "0200001", "name": "아시아>중국", "parentCode": "02" },
+    { "originAreaCode": "0200036", "name": "아시아>베트남", "parentCode": "02" },
+    { "originAreaCode": "0200037", "name": "아시아>일본", "parentCode": "02" },
+    { "originAreaCode": "0200041", "name": "아시아>인도네시아", "parentCode": "02" }
+  ]
+}

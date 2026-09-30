@@ -5,6 +5,7 @@ import { composeAiPrompt } from '../../../integrations/ai-engine/ai-prompt-guard
 import { checkAiSchemaRules } from '../../../integrations/ai-engine/schema/ai-schema-rules.js';
 import { validateAiOutput } from '../../../integrations/ai-engine/schema/ai-output-validator.js';
 import {
+  AI_EXTRA_FIELDS,
   buildFactPrompt,
   factAiSchema,
   factAiTask,
@@ -22,6 +23,7 @@ const ALL = [
   'material_sole',
   'heel_height',
 ] as const;
+// P3-04: 녹화 출력에 색상 표기·주의 문구 보완 결과가 함께 들어 있다(같은 호출에 묶는다)
 
 describe('3순위 AI 추출기(P3-03 규칙 9-3·11·15, F-CT-10)', () => {
   it('스키마는 못 찾은 필드만 담는 draft-07 공통 부분집합이다(확장형 — 필드 이름 목록으로 만든다)', () => {
@@ -32,7 +34,10 @@ describe('3순위 AI 추출기(P3-03 규칙 9-3·11·15, F-CT-10)', () => {
   });
 
   it('녹화 출력 fact-ocr.json은 스키마를 통과하고, 이미지에서 읽은 값은 AI·스펙 이미지 순번으로 남는다', () => {
-    const output = validateAiOutput(factAiSchema([...ALL]), load('fact-ocr.json'));
+    const output = validateAiOutput(
+      factAiSchema([...ALL, ...AI_EXTRA_FIELDS]),
+      load('fact-ocr.json'),
+    );
     const facts = interpretAiFacts(output, {
       names: [...ALL],
       imageCount: 1,
@@ -50,7 +55,10 @@ describe('3순위 AI 추출기(P3-03 규칙 9-3·11·15, F-CT-10)', () => {
   });
 
   it('발췌 없는 값 → NONE(쓰지 않는다). 글에 없는 발췌도 쓰지 않는다(추측 금지)', () => {
-    const output = validateAiOutput(factAiSchema([...ALL]), load('fact-no-quote.json'));
+    const output = validateAiOutput(
+      factAiSchema([...ALL, ...AI_EXTRA_FIELDS]),
+      load('fact-no-quote.json'),
+    );
     const facts = interpretAiFacts(output, {
       names: [...ALL],
       imageCount: 0,
@@ -68,7 +76,10 @@ describe('3순위 AI 추출기(P3-03 규칙 9-3·11·15, F-CT-10)', () => {
   });
 
   it('images_seen이 없으면(false) 실패 — AI_IMAGES_NOT_SEEN', () => {
-    const output = validateAiOutput(factAiSchema([...ALL]), load('fact-ocr.json'));
+    const output = validateAiOutput(
+      factAiSchema([...ALL, ...AI_EXTRA_FIELDS]),
+      load('fact-ocr.json'),
+    );
     const run = (imagesSeen: string[] | null) => () =>
       interpretAiFacts(output, { names: [...ALL], imageCount: 1, imagesSeen, knownText: '' });
     expect(run(null)).toThrow(AiOutputInvalidError);

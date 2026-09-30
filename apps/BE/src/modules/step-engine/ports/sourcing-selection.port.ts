@@ -106,6 +106,8 @@ export interface SourcingItemContentView {
   itemCode: string;
   itemUrl: string;
   itemName: string;
+  /** 型番 원문(`rakuten_item.model_code`, 예 `1201A019-108` — P3-04 상품명 모델명). 없으면 null */
+  modelCode: string | null;
   /** 설명 HTML에서 뽑은 글(NFKC·공백 정리, P2-02 `htmlToText`). 없으면 null */
   descriptionText: string | null;
   /** 설명 HTML 원문(원문 발췌·스펙 이미지 주소). 없으면 null */

@@ -1,5 +1,14 @@
 import { recheckOpen, type FieldDraft } from '../fields/content-field.store.js';
-import { ORIGIN_FIELD_KEY, type RecheckReason } from '../fields/field-keys.js';
+import {
+  ORIGIN_FIELD_KEY,
+  RECHECK_FACT_FIELD_KEYS,
+  type RecheckReason,
+} from '../fields/field-keys.js';
+
+/** '재확인 필요'를 붙일 수 있는 사실 필드인가(`ck_cdfield_recheck_target` — 색상 표기·주의 문구는 아니다, P3-04) */
+export function isRecheckFactKey(fieldKey: string): boolean {
+  return (RECHECK_FACT_FIELD_KEYS as readonly string[]).includes(fieldKey);
+}
 
 /**
  * '재확인 필요'(P3-03 규칙 14, F-CT-15, US-35 AC4, PRD §5.3 예외(파생 필드), ERD `ck_cdfield_recheck_*`). 순수 함수.
@@ -33,6 +42,15 @@ export function carryOwnerFacts(
       (p) => p.fieldKey === row.fieldKey && p.valueSource === 'OWNER_INPUT',
     );
     if (!owner) return row;
+    if (!isRecheckFactKey(row.fieldKey)) {
+      // 색상 표기·주의 문구(P3-04): 오너 값을 그대로 가져가고 새 결과는 나란히(재확인 표시 없음 — CHECK 밖)
+      return {
+        ...owner,
+        generatedValue: row.value,
+        extractionMethod: row.extractionMethod,
+        choicePending: false,
+      };
+    }
     const reason = recheckReasonFor(owner.basisItemCode, currentItemCode);
     if (reason) flagged.push(row.fieldKey);
     const carried: FieldDraft = {

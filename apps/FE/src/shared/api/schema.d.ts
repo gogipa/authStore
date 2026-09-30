@@ -6032,10 +6032,12 @@ export interface components {
             sha256: string;
             /** @description 조건부 블록(가죽·정보 없음·AI 이미지 고지)인지 */
             conditional: boolean;
+            /** @description (P3-04 Proposed) 채운 블록 글 — 저장 HTML의 data-block-id 요소에서 읽는다(화면 구매대행 고지 미리보기). sha256은 이 글(NFC·공백 한 칸·앞뒤 공백 제거)의 해시 */
+            text: string;
         };
         /** @description 상품명 경고(100자 초과·금지 수식어·반복). 조회 때 계산하고 막지 않는다 */
         ProductNameWarning: {
-            /** @description 경고 코드(05-3에서 확정) */
+            /** @description 경고 코드(05-3 §5.2, P3-04 Proposed) — PRODUCT_NAME_TOO_LONG(100자 초과)·PRODUCT_NAME_BANNED_WORD(금지 수식어)·PRODUCT_NAME_REPEATED_WORD(같은 낱말 반복) */
             code: string;
             message: string;
         };
@@ -6050,7 +6052,11 @@ export interface components {
             contentDraftAssemblyId: number;
             /** @description 유효 상품명. 100자 초과도 초안으로 저장한다(RG-08이 막음) */
             productName: string;
+            /** @description (P3-04 Proposed) 템플릿 제안 상품명 — 오너가 고쳤으면 그 행의 generatedValue, 아니면 productName과 같다 */
+            productNameSuggestion: string;
             productNameWarnings: components["schemas"]["ProductNameWarning"][];
+            /** @description (P3-04 Proposed) 라쿠텐 상품명에 並行輸入品이 있어 제안에 병행을 넣었는지 */
+            parallelImport: boolean;
             /** @description SHOES 고시 객체(등록 요청 형태, 오너 수정 반영) */
             noticeFields: {
                 [key: string]: unknown;
@@ -6059,6 +6065,8 @@ export interface components {
             noticeSizesMm: number[];
             /** @description originAreaInfo 원산지 코드 */
             originAreaCode: string;
+            /** @description (P3-04 Proposed) 원산지 코드 이름(commerce_origin_area.name, 예 아시아>베트남). 03·04면 null */
+            originAreaName: string | null;
             /** @description 복수 원산지 표시 */
             originAreaPlural: boolean;
             /** @description 03·04 코드일 때 상세 표기 */
@@ -6074,6 +6082,8 @@ export interface components {
             disclosureTemplateDate: string;
             disclosureBlockIds: string[];
             disclosureBlocks: components["schemas"]["ContentDisclosureBlock"][];
+            /** @description (P3-04 Proposed) 저장 HTML의 고지 블록 글 해시가 기록과 같고, 필수 블록 글이 앱 내장 해시를 통과한 설정 템플릿에서 나왔는지(화면 '템플릿과 일치') */
+            disclosureTemplateMatched: boolean;
             htmlSha256: string;
             /** @description 미리보기 경로(/api/v1/candidates/{candidateId}/content-assembly/preview?stepRunId=…) */
             previewUrl: string;

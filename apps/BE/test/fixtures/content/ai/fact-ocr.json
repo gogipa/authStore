@@ -28,5 +28,17 @@
     "evidence_quote": "ヒール高さ 約2.5cm",
     "method": "IMAGE",
     "image_index": 1
+  },
+  "color_ko": {
+    "value": "크림/블랙",
+    "evidence_quote": "クリーム/ブラック",
+    "method": "TEXT",
+    "image_index": null
+  },
+  "caution": {
+    "value": "합성가죽은 물에 젖으면 변색될 수 있으니 주의해 주세요.",
+    "evidence_quote": "合成皮革",
+    "method": "TEXT",
+    "image_index": null
   }
 }
