@@ -1313,7 +1313,8 @@ export interface paths {
         /**
          * ④ 카테고리 결정 조회
          * @description 현재 버전 또는 `?stepRunId=` 버전의 `category_decision`. 리프 후보 목록과 예외 판단을 준다.
-         *     후보별 `kcExemptionRequired`·`blocked`는 `commerce_category`의 예외 유형으로 조회 때 계산해 붙인다(`category_options` jsonb에는 id·이름만).
+         *     후보별 `kcExemptionRequired`·`blocked`·`blockReason`은 `commerce_category`의 **지금** 예외 유형·경로(+ 설정 아동·제외 품목 카테고리 말, 결정의 성별)로 조회 때 계산해 붙인다(`category_options` jsonb에는 id·이름만).
+         *     P2-06(Proposed): 산출물은 입력 대기에서 생긴다(실행 중·실행 전·후보를 뽑지 못해 실패한 버전은 404 STEP_OUTPUT_NOT_FOUND). 모르는 쿼리 키·형식 오류는 422 INVALID_QUERY_PARAMETER.
          */
         get: operations["getCategoryDecision"];
         put?: never;
@@ -1336,7 +1337,8 @@ export interface paths {
          * 리프 카테고리 고르기(④ 완료)
          * @description 리프 카테고리를 고르고(+ 'KC 면제 성인용 확인', 웹 화면 전용) ④를 완료한다. 버전 완료 + 후보 `leaf_category_id`·`whole_category_name` + 판단 감사(`user_action_log` CATEGORY_DECISION)를 한 트랜잭션으로 처리한다.
          *     KC 면제면 `certification_exclude_content`(KC_EXEMPTION_OBJECT / OVERSEAS)를 자동으로 채운다. ⑦을 먼저 만들었으면 ⑦이 재실행 필요가 된다(`staleDownstreamSteps`).
-         *     (M2) 리프 검색·직접 선택은 같은 API에 `candidateSource=SEARCH`.
+         *     (M2) 리프 검색·직접 선택은 같은 API에 `candidateSource=SEARCH`(M1은 422 VALIDATION_FAILED).
+         *     P2-06(Proposed) 검사 순서 — 결정 없음 404 → 입력 대기 아님 409 STEP_RUN_NOT_WAITING_INPUT → 보여 준 목록에 없음·메타 캐시에서 사라짐 422 CATEGORY_NOT_IN_OPTIONS(`details.reason` NOT_IN_OPTIONS·REMOVED) → 아동(어린이 인증·아동 카테고리 말) 409 CATEGORY_CHILD_BLOCKED → 판매 제외 품목 409 CATEGORY_EXCLUDED_ITEM → 성별 불일치 409 CATEGORY_GENDER_MISMATCH → KC 확인 없음 409 KC_EXEMPT_CONFIRMATION_REQUIRED → 잠긴·제외 후보 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED. 예외 판단은 캐시의 지금 값으로 다시 한다. 차단(아동·제외 품목·성별)으로 409를 줄 때는 되돌린 트랜잭션 밖에서 감사 기록(`CATEGORY_DECISION`, detail.decision=BLOCKED·blockReason·reason)만 남기고 결정은 입력 대기 그대로 둔다(`exception_decision=BLOCKED`는 쓰지 않는다). 이미 완료한 결정에 다시 보내면 409 STEP_RUN_NOT_WAITING_INPUT.
          */
         put: operations["selectCategoryDecisionLeaf"];
         post?: never;
@@ -5497,8 +5499,13 @@ export interface components {
             wholeCategoryName: string;
             /** @description KC 인증 예외 — 고르려면 'KC 면제 성인용 확인' 필요(계산) */
             kcExemptionRequired: boolean;
-            /** @description 아동 인증·판매 제외 품목이라 고를 수 없음(계산) */
+            /** @description 아동 인증·아동 카테고리·판매 제외 품목·성별 불일치·메타 캐시에서 사라짐이라 고를 수 없음(계산) */
             blocked: boolean;
+            /**
+             * @description P2-06(Proposed): 막힌 이유(막히지 않았으면 null). CHILD_CERTIFICATION=예외 유형 어린이 인증, CHILD_CATEGORY=이름·경로에 아동 카테고리 말(설정 safety.childCategoryWords), CON08_EXCLUDED=판매 제외 품목 말(safety.excludedCategoryWords), GENDER_MISMATCH=결정 성별과 경로가 다름, REMOVED=메타 캐시에서 사라졌거나 없는 리프
+             * @enum {string|null}
+             */
+            blockReason: "CHILD_CERTIFICATION" | "CHILD_CATEGORY" | "CON08_EXCLUDED" | "GENDER_MISMATCH" | "REMOVED" | null;
         };
         /** @description ④ 카테고리 버전 하나의 결정(category_decision) */
         CategoryDecisionDetail: {
@@ -10321,7 +10328,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             /** @description `CATEGORY_DECISION_NOT_FOUND` */
             404: components["responses"]["NotFound"];
-            /** @description `CATEGORY_GENDER_MISMATCH`, `CATEGORY_CHILD_BLOCKED`, `CATEGORY_EXCLUDED_ITEM`, `KC_EXEMPT_CONFIRMATION_REQUIRED`, `STEP_RUN_NOT_WAITING_INPUT`, `CANDIDATE_LOCKED`, (M2) `COMMERCE_META_NOT_SYNCED` */
+            /** @description `CATEGORY_GENDER_MISMATCH`, `CATEGORY_CHILD_BLOCKED`, `CATEGORY_EXCLUDED_ITEM`, `KC_EXEMPT_CONFIRMATION_REQUIRED`, `STEP_RUN_NOT_WAITING_INPUT`, `CANDIDATE_LOCKED`, `CANDIDATE_EXCLUDED`(P2-06), (M2) `COMMERCE_META_NOT_SYNCED` */
             409: components["responses"]["Conflict"];
             /** @description `CATEGORY_NOT_IN_OPTIONS` — 보여 준 목록·성별 경로 리프가 아님. `VALIDATION_FAILED` */
             422: components["responses"]["Unprocessable"];

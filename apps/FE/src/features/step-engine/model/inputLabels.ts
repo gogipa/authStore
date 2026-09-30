@@ -33,6 +33,7 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'owner.faceOption': '얼굴 옵션',
   'owner.promptAdjustment': '프롬프트 조정',
   'owner.competitorTags': '경쟁 태그',
+  'owner.categorySelection': '리프 카테고리 선택',
   'settings.costs': '비용 설정',
   'settings.pricing': '가격 설정',
   'settings.notice': '고시 설정',
@@ -41,6 +42,10 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'settings.sourcing.defaultWidth': '기본 폭 설정',
   'settings.sourcing.excludeBackOrder': '取り寄せ 제외 설정',
   'settings.sourcing.defaultShippingYen': '기본 송료 설정',
+  // ④ 카테고리(P2-06, BE step-engine domain/input-keys.ts와 같다)
+  'settings.category.leafMapping': '카테고리 매핑표 설정',
+  'settings.safety.childCategoryWords': '아동 카테고리 말 설정',
+  'settings.safety.excludedCategoryWords': '판매 제외 품목 카테고리 말 설정',
   // 판정 기준 데이터(P2-04, BE step-engine/domain/input-keys.ts와 같은 표) — 새 최신 환율·활성 요금표 교체
   'fx.costJpy': '원가 환율',
   'fx.customsJpy': '과세환율(엔)',

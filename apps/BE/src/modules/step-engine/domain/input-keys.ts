@@ -52,6 +52,8 @@ export const INPUT_KEYS = {
   ownerFaceOption: 'owner.faceOption',
   ownerPromptAdjustment: 'owner.promptAdjustment',
   ownerCompetitorTags: 'owner.competitorTags',
+  /** ④ 입력 대기에서 기다리는 입력(리프 고르기, P2-06 — step_run_input 행은 없다) */
+  ownerCategorySelection: 'owner.categorySelection',
   // 설정(그 단계가 읽는 키만)
   settingsCosts: 'settings.costs',
   settingsPricing: 'settings.pricing',
@@ -61,6 +63,10 @@ export const INPUT_KEYS = {
   settingsDefaultWidth: 'settings.sourcing.defaultWidth',
   settingsExcludeBackOrder: 'settings.sourcing.excludeBackOrder',
   settingsDefaultShippingYen: 'settings.sourcing.defaultShippingYen',
+  // ④ 카테고리(P2-06): 매핑표·아동·제외 품목 카테고리 말
+  settingsCategoryLeafMapping: 'settings.category.leafMapping',
+  settingsChildCategoryWords: 'settings.safety.childCategoryWords',
+  settingsExcludedCategoryWords: 'settings.safety.excludedCategoryWords',
   // 판정 기준 데이터(P2-04)
   fxCostJpy: 'fx.costJpy',
   fxCustomsJpy: 'fx.customsJpy',
@@ -105,6 +111,7 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'owner.faceOption': '얼굴 옵션',
   'owner.promptAdjustment': '프롬프트 조정',
   'owner.competitorTags': '경쟁 태그',
+  'owner.categorySelection': '리프 카테고리 선택',
   'settings.costs': '비용 설정',
   'settings.pricing': '가격 설정',
   'settings.notice': '고시 설정',
@@ -113,6 +120,9 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'settings.sourcing.defaultWidth': '기본 폭 설정',
   'settings.sourcing.excludeBackOrder': '取り寄せ 제외 설정',
   'settings.sourcing.defaultShippingYen': '기본 송료 설정',
+  'settings.category.leafMapping': '카테고리 매핑표 설정',
+  'settings.safety.childCategoryWords': '아동 카테고리 말 설정',
+  'settings.safety.excludedCategoryWords': '판매 제외 품목 카테고리 말 설정',
   // 판정 기준 데이터(P2-04)
   'fx.costJpy': '원가 환율',
   'fx.customsJpy': '과세환율(엔)',

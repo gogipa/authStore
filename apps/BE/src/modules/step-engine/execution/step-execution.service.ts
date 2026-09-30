@@ -28,7 +28,7 @@ import type {
   StepRunContext,
   StepRunner,
 } from '../contracts/step-runner.js';
-import { changedInputKeys, fingerprint } from '../domain/fingerprint.js';
+import { changedInputKeys, fingerprint, NULL_VALUE_HASH } from '../domain/fingerprint.js';
 import { endTimeFor, waitedSeconds } from '../domain/run-time.js';
 import type { StepCode } from '../domain/steps.js';
 import type { CandidateWarning } from '../domain/warnings.js';
@@ -1064,6 +1064,65 @@ export class StepExecutionService {
       select: { content: true },
     });
     return pinnedAiFromRun(run, snapshot?.content ?? null, runner);
+  }
+
+  /**
+   * 입력 대기 중인 실행의 입력 기록 일부를 지금 값으로 다시 쓴다(P2-06 Proposed — ④ 성별 재확인, F-CA-05·P2-06 규칙 14).
+   * 입력 대기 중 시작 조건이 바뀌면 원래 '재실행 필요'지만(F-CW-18), 같은 실행에서 이어 가는 예외(④ 성별)는 이 실행의 입력
+   * 행(값 해시·출처)과 시작 지문을 새 값으로 맞춘다 — 그러지 않으면 끝 지문이 달라 방금 고른 ④가 '재실행 필요'로 남는다.
+   * 호출자가 후보 행을 잠근 트랜잭션 안에서 부른다. 입력 대기가 아니면 409 STEP_RUN_NOT_WAITING_INPUT.
+   */
+  async refreshWaitingInputs(
+    scope: StepEngineTx,
+    stepRunId: number,
+    inputKeys: readonly string[],
+  ): Promise<void> {
+    const run = await scope.tx.stepRun.findUniqueOrThrow({ where: { id: stepRunId } });
+    if (run.status !== 'WAITING_INPUT') throw new ApiException('STEP_RUN_NOT_WAITING_INPUT');
+    const runner = this.registry.get(run.stepCode as StepCode);
+    if (!runner) throw new Error(`실행기가 없습니다: ${run.stepCode}`);
+    const candidate = await scope.tx.candidate.findUniqueOrThrow({
+      where: { id: run.candidateId },
+    });
+    const rows = await loadStepRows(scope.tx, run.candidateId);
+    const current = await readResolvedInputs(
+      runner,
+      inputContextOf(scope.tx, candidate, this.settings.current(), rows),
+    );
+    const stored = await loadInputRows(scope.tx, run.id);
+    const refreshed = new Set(inputKeys);
+    for (const key of refreshed) {
+      const now = current.find((input) => input.inputKey === key);
+      const existing = stored.find((row) => row.inputKey === key);
+      const [next] = inputRowsOf(run.id, now ? [now] : []);
+      if (existing && next) {
+        await scope.tx.stepRunInput.update({
+          where: { id: existing.id },
+          data: {
+            sourceType: next.sourceType,
+            sourceStepRunId: next.sourceStepRunId,
+            isStartCondition: next.isStartCondition,
+            valueHash: next.valueHash,
+          },
+        });
+      } else if (existing) {
+        await scope.tx.stepRunInput.delete({ where: { id: existing.id } });
+      } else if (next) {
+        await scope.tx.stepRunInput.create({ data: next });
+      }
+    }
+    // 시작 지문: 새로 쓴 키는 지금 값, 나머지는 시작 때 값(행이 없던 선택 입력은 null 해시)
+    const startHashes: Record<string, string> = {};
+    for (const input of current) {
+      if (!input.isStartCondition) continue;
+      startHashes[input.inputKey] = refreshed.has(input.inputKey)
+        ? input.valueHash
+        : (stored.find((row) => row.inputKey === input.inputKey)?.valueHash ?? NULL_VALUE_HASH);
+    }
+    await scope.tx.stepRun.update({
+      where: { id: run.id },
+      data: { inputFingerprintStart: fingerprint(startHashes) },
+    });
   }
 
   /**

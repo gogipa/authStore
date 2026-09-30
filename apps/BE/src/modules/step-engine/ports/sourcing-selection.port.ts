@@ -55,6 +55,21 @@ export interface SourcingTargetSkus {
   pointsTotalPt: number | null;
 }
 
+/**
+ * ② 버전의 소싱 선택 상품 장르·상품유형(P2-06 Proposed — ④ 입력 '② 장르·상품유형'). 고른 페이지 스냅샷
+ * (`rakuten_item.genre_id`·`genre_path`·`product_type`) 값이다. URL 후보에서 장르를 얻지 못했으면 `genreId`가 null이다.
+ */
+export interface SourcingGenreView {
+  sourcingStepRunId: number;
+  rakutenItemId: number;
+  /** 리프 장르 id. 없으면 null(장르 없음 — ④는 성별 경로 전체 목록을 보인다) */
+  genreId: number | null;
+  /** 루트 → 리프 장르 id 경로(`genre_path` 사본에서). 경로가 없으면 `genreId` 하나 또는 빈 배열 */
+  genreIdPath: number[];
+  /** 상품유형(ERD §7.1-6 — 정하는 방법이 문서에 없어 M1은 늘 null일 수 있다) */
+  productType: string | null;
+}
+
 export interface SourcingSelectionReader {
   /** ② 버전 하나(step_run id)의 소싱 선택. 선택이 없으면 null */
   read(db: Db, sourcingStepRunId: number): Promise<SourcingSelectionView | null>;
@@ -66,4 +81,6 @@ export interface SourcingSelectionReader {
     sourcingStepRunId: number,
     gender: 'MALE' | 'FEMALE',
   ): Promise<SourcingTargetSkus | null>;
+  /** 소싱 선택 상품의 장르·상품유형(P2-06 Proposed, 선택 메서드). 선택이 없으면 null */
+  readGenre?(db: Db, sourcingStepRunId: number): Promise<SourcingGenreView | null>;
 }

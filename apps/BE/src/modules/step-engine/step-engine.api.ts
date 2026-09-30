@@ -11,6 +11,7 @@ import type { ReferenceInputChange } from '../settings/forwarder-rate-tables/rat
 import type { CandidateCreationExtension } from './ports/candidate-creation.extension.js';
 import type { GenderInputListener } from './ports/gender-input.port.js';
 import type {
+  SourcingGenreView,
   SourcingSelectionReader,
   SourcingSelectionView,
   SourcingTargetSkus,
@@ -43,6 +44,11 @@ export type ResumeWaitingInput =
  * P2-05:
  * - `readSourcingTargetSkus(sourcingStepRunId, gender, db?)`: ② 버전의 목표 사이즈별 SKU·재고 칸(③ 판정 입력). sourcing이
  *   등록한 읽기 함수의 선택 메서드(`readTargetSkus`)를 부른다
+ * P2-06:
+ * - `readSourcingGenre(sourcingStepRunId, db?)`: ② 버전의 소싱 선택 상품 장르·상품유형(④ 입력). 읽기 함수의 선택 메서드
+ *   `readGenre`를 부른다
+ * - `refreshWaitingRunInputs(scope, stepRunId, inputKeys)`: 입력 대기 중인 실행의 입력 기록(값 해시·출처)·시작 지문을 지금
+ *   값으로 다시 쓴다(④ 성별 재확인 — 같은 실행에서 이어 가는 예외, F-CA-05)
  */
 @Injectable()
 export class StepEngineApi {
@@ -98,6 +104,24 @@ export class StepEngineApi {
   ): Promise<SourcingTargetSkus | null> {
     const reader = this.ports.sourcingSelectionReader;
     return reader?.readTargetSkus ? reader.readTargetSkus(db, sourcingStepRunId, gender) : null;
+  }
+
+  /** ② 버전의 소싱 선택 상품 장르·상품유형(P2-06 — ④ 입력). 읽기 함수가 없거나 선택이 없으면 null */
+  async readSourcingGenre(
+    sourcingStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<SourcingGenreView | null> {
+    const reader = this.ports.sourcingSelectionReader;
+    return reader?.readGenre ? reader.readGenre(db, sourcingStepRunId) : null;
+  }
+
+  /** 입력 대기 실행의 입력 기록 일부를 지금 값으로(P2-06 — ④ 성별 재확인). 호출자 트랜잭션 안(후보 행 잠금) */
+  refreshWaitingRunInputs(
+    scope: StepEngineTx,
+    stepRunId: number,
+    inputKeys: readonly string[],
+  ): Promise<void> {
+    return this.executions.refreshWaitingInputs(scope, stepRunId, inputKeys);
   }
 
   resumeWaiting(stepRunId: number, input: ResumeWaitingInput = {}): Promise<StepRun> {

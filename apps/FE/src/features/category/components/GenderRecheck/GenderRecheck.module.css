@@ -1,0 +1,49 @@
+/* SCR-04 ④ '성별 재확인'(Judgement.dc.html): 라벨 16px 줄(라벨 + 출처 캡션) · 라디오 32px 줄 · 안내 글(보드 그대로). */
+.recheck {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.head {
+  min-height: 16px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+.source {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.options {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.note {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+.error {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-failed);
+}

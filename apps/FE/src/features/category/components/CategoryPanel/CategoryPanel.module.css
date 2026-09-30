@@ -1,0 +1,121 @@
+/*
+ * SCR-04 ④ 카테고리(Judgement.dc.html #category): 패널 한 장에 [왼쪽 330px: 리프 카테고리 라디오 | 가운데: 성별 재확인 ·
+ * 성별·카테고리 일치 | 오른쪽: KC 면제 성인용 확인 · 아동 카테고리 아님 · 확정/다음]. 라디오 줄 32px(고른 줄은 accent 테두리 +
+ * accent-soft 바탕). 성별 경로 전체 목록은 스크롤 목록(수백 개일 수 있다 — 지시서 §8).
+ */
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.panel {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  box-sizing: border-box;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.leafColumn {
+  width: 330px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  min-height: 16px;
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+.list,
+.scrollList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.scrollList {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.row,
+.rowSelected {
+  min-height: 32px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.rowSelected {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.allRow {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.middleColumn,
+.rightColumn {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.middleColumn {
+  gap: var(--space-2);
+}
+
+.bottom {
+  margin-top: auto;
+  display: flex;
+}
+
+.chipRow {
+  display: flex;
+  padding-top: var(--space-1);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.reason {
+  text-align: right;
+}
+
+.next {
+  margin-top: auto;
+  align-self: flex-end;
+  padding-top: var(--space-2);
+}

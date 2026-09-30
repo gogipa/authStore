@@ -5,6 +5,7 @@ import { DEFAULT_SETTINGS } from '../defaults/default-settings.js';
 import {
   type AiEngineModelPair,
   type AppSettings,
+  type CategoryLeafMapping,
   type DispatchDeliveryCompanySetting,
   DUTY_HS_HEADINGS,
   NOTICE_BLOCK_CONDITIONS,
@@ -100,6 +101,25 @@ const dispatchCompany: JSONSchemaType<DispatchDeliveryCompanySetting> = {
   },
 };
 
+/** 네이버 리프 카테고리 id 모양(P2-06 Proposed): 숫자 20자까지(commerce_category.category_id varchar(20)) */
+export const CATEGORY_ID_PATTERN = '^[0-9]{1,20}$';
+
+const categoryLeafMapping: JSONSchemaType<CategoryLeafMapping> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['genreId', 'leafCategoryIds'],
+  properties: {
+    genreId: { type: 'integer', minimum: 1, maximum: 2_147_483_647 },
+    productType: nullable({ type: 'string', minLength: 1, maxLength: 64 }),
+    leafCategoryIds: {
+      type: 'array',
+      minItems: 1,
+      maxItems: 100,
+      items: { type: 'string', pattern: CATEGORY_ID_PATTERN },
+    },
+  },
+};
+
 const schema: JSONSchemaType<AppSettings> = {
   type: 'object',
   additionalProperties: false,
@@ -110,6 +130,7 @@ const schema: JSONSchemaType<AppSettings> = {
     'sourcing',
     'keywords',
     'safety',
+    'category',
     'notice',
     'delivery',
     'ai',
@@ -347,6 +368,8 @@ const schema: JSONSchemaType<AppSettings> = {
         'wheeledShoeWords',
         'seniorShoeWords',
         'personBlockWords',
+        'childCategoryWords',
+        'excludedCategoryWords',
       ],
       properties: {
         childShoeMaxSizeMm: { type: 'integer', minimum: 0, maximum: 400 },
@@ -355,6 +378,16 @@ const schema: JSONSchemaType<AppSettings> = {
         wheeledShoeWords: wordList,
         seniorShoeWords: wordList,
         personBlockWords: wordList,
+        childCategoryWords: wordList,
+        excludedCategoryWords: wordList,
+      },
+    },
+    category: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['leafMapping'],
+      properties: {
+        leafMapping: { type: 'array', items: categoryLeafMapping, maxItems: 1000 },
       },
     },
     notice: {

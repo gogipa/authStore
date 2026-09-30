@@ -1,0 +1,86 @@
+[
+  {
+    "categoryId": "50000830",
+    "name": "러닝화",
+    "wholeCategoryName": "패션잡화>남성신발>운동화>러닝화",
+    "exceptionalCategories": [],
+    "removed": false
+  },
+  {
+    "categoryId": "50000831",
+    "name": "워킹화",
+    "wholeCategoryName": "패션잡화>남성신발>운동화>워킹화",
+    "exceptionalCategories": ["KC_CERTIFICATION"],
+    "removed": false
+  },
+  {
+    "categoryId": "50000832",
+    "name": "스니커즈",
+    "wholeCategoryName": "패션잡화>남성신발>운동화>스니커즈",
+    "exceptionalCategories": [],
+    "removed": false
+  },
+  {
+    "categoryId": "50000840",
+    "name": "러닝화",
+    "wholeCategoryName": "패션잡화>여성신발>운동화>러닝화",
+    "exceptionalCategories": [],
+    "removed": false
+  },
+  {
+    "categoryId": "50000841",
+    "name": "워킹화",
+    "wholeCategoryName": "패션잡화>여성신발>운동화>워킹화",
+    "exceptionalCategories": [],
+    "removed": false
+  },
+  {
+    "categoryId": "50000842",
+    "name": "스니커즈",
+    "wholeCategoryName": "패션잡화>여성신발>운동화>스니커즈",
+    "exceptionalCategories": [],
+    "removed": false
+  },
+  {
+    "categoryId": "50000850",
+    "name": "주니어러닝화",
+    "wholeCategoryName": "패션잡화>남성신발>운동화>주니어러닝화",
+    "exceptionalCategories": [],
+    "removed": false
+  },
+  {
+    "categoryId": "50000851",
+    "name": "키즈운동화",
+    "wholeCategoryName": "패션잡화>여성신발>운동화>키즈운동화",
+    "exceptionalCategories": [],
+    "removed": false
+  },
+  {
+    "categoryId": "50000860",
+    "name": "트레이닝화",
+    "wholeCategoryName": "패션잡화>남성신발>운동화>트레이닝화",
+    "exceptionalCategories": ["CHILD_CERTIFICATION"],
+    "removed": false
+  },
+  {
+    "categoryId": "50000870",
+    "name": "바퀴운동화",
+    "wholeCategoryName": "패션잡화>남성신발>기능화>바퀴운동화",
+    "exceptionalCategories": [],
+    "removed": false
+  },
+  {
+    "categoryId": "50000880",
+    "name": "마라톤화",
+    "wholeCategoryName": "패션잡화>남성신발>운동화>마라톤화",
+    "exceptionalCategories": [],
+    "removed": true
+  },
+  {
+    "categoryId": "50000990",
+    "name": "숄더백",
+    "wholeCategoryName": "패션잡화>여성가방>숄더백",
+    "exceptionalCategories": [],
+    "removed": false
+  }
+]

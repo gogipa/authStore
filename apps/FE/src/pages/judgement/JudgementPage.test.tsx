@@ -3,10 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { errorResponse, jsonResponse, stubApi } from '@/test/apiStub';
 import { callUsageList } from '@/test/fixtures/callUsage';
+import { categoryDecision, categorySelectionResult } from '@/test/fixtures/category';
 import { domesticPriceEntry, fxLatest, naverLinks, priceJudgement } from '@/test/fixtures/pricing';
 import { sourcingComparison } from '@/test/fixtures/sourcing';
 import { candidateDetail, gateList, page, stepRail } from '@/test/fixtures/stepEngine';
 import { renderRoute } from '@/test/renderRoute';
+import type { CategoryDecisionDetail } from '@/features/category';
 import type { PriceJudgementDetail } from '@/features/pricing';
 
 const CANDIDATE_ID = 1;
@@ -17,11 +19,20 @@ function setup({
   compared = true,
   pricingStatus = 'COMPLETED',
   links = naverLinks(),
+  category = null,
+  categoryStatus = 'NOT_RUN',
+  gender = 'MALE',
+  genderSource = 'STEP2',
 }: {
   judgement?: PriceJudgementDetail | null;
   compared?: boolean;
   pricingStatus?: 'COMPLETED' | 'WAITING_INPUT' | 'NOT_RUN';
   links?: ReturnType<typeof naverLinks>;
+  /** ④ 결정(없으면 404 STEP_OUTPUT_NOT_FOUND) */
+  category?: CategoryDecisionDetail | null;
+  categoryStatus?: 'COMPLETED' | 'WAITING_INPUT' | 'NOT_RUN';
+  gender?: 'MALE' | 'FEMALE';
+  genderSource?: 'STEP2' | 'OWNER';
 } = {}) {
   const api = stubApi({
     'GET /call-usage': () => jsonResponse(callUsageList(38)),
@@ -33,12 +44,22 @@ function setup({
           sourceKeyword: compared ? '아식스 젤카야노14' : null,
           itemCode: 'shop-a:10000123',
           resumeStepCode: 'PRICING',
+          gender,
+          genderSource,
         }),
       ),
     [`GET /candidates/${CANDIDATE_ID}/steps`]: () =>
       jsonResponse(
-        stepRail({ SOURCING: { status: 'COMPLETED' }, PRICING: { status: pricingStatus } }),
+        stepRail({
+          SOURCING: { status: 'COMPLETED' },
+          PRICING: { status: pricingStatus },
+          CATEGORY: { status: categoryStatus },
+        }),
       ),
+    [`GET /candidates/${CANDIDATE_ID}/category-decision`]: () =>
+      category
+        ? jsonResponse(category)
+        : errorResponse(404, 'STEP_OUTPUT_NOT_FOUND', '아직 ④ 카테고리를 실행하지 않았습니다.'),
     [`GET /candidates/${CANDIDATE_ID}/gates`]: () => jsonResponse(gateList()),
     [`GET /candidates/${CANDIDATE_ID}/price-judgement`]: () =>
       judgement
@@ -262,5 +283,89 @@ describe('③ 판정 화면(SCR-04, P2-05)', () => {
     expect(screen.queryByRole('region', { name: '사이즈별 판정' })).not.toBeInTheDocument();
     const confirm = within(screen.getByRole('region', { name: '소싱 확정' }));
     expect(confirm.getByRole('button', { name: '소싱 확정(G2)' })).toBeDisabled();
+  });
+});
+
+describe('④ 카테고리 구역(SCR-04 #category, P2-06)', () => {
+  const categorySection = () => within(screen.getByRole('region', { name: '④ 카테고리' }));
+
+  it("실행 전: 자리 문구와 '실행'(POST …/steps/CATEGORY/runs)", async () => {
+    const api = setup();
+    api.on(`POST /candidates/${CANDIDATE_ID}/steps/CATEGORY/runs`, () =>
+      jsonResponse({ stepRunId: 120, candidateId: CANDIDATE_ID }, 202),
+    );
+    await renderJudgement();
+    const section = categorySection();
+    expect(
+      await section.findByText('④ 카테고리를 실행하면 리프 카테고리 후보가 여기에 나옵니다.'),
+    ).toBeInTheDocument();
+    await userEvent.click(section.getByRole('button', { name: '실행' }));
+    await waitFor(() =>
+      expect(
+        api.requests.filter(
+          (r) =>
+            r.method === 'POST' &&
+            new URL(r.url).pathname === `/api/v1/candidates/${CANDIDATE_ID}/steps/CATEGORY/runs`,
+        ),
+      ).toHaveLength(1),
+    );
+  });
+
+  it('입력 대기: 리프 라디오 · 성별 재확인(출처 ② 자동 판단) · 고르면 PUT → 결정·레일을 다시 읽는다', async () => {
+    const api = setup({ category: categoryDecision(), categoryStatus: 'WAITING_INPUT' });
+    api.on('PUT /category-decisions/21/selection', () => jsonResponse(categorySelectionResult()));
+    await renderJudgement();
+    const section = categorySection();
+    const running = await section.findByRole('radio', {
+      name: '패션잡화 > 남성신발 > 운동화 > 러닝화',
+    });
+    expect(section.getByRole('radiogroup', { name: '성별 재확인' })).toBeInTheDocument();
+    expect(section.getByText('출처 ② 자동 판단')).toBeInTheDocument();
+    expect(section.getByRole('radio', { name: '남성' })).toBeEnabled();
+    const before = api.requests.filter(
+      (r) =>
+        r.method === 'GET' &&
+        new URL(r.url).pathname === `/api/v1/candidates/${CANDIDATE_ID}/category-decision`,
+    ).length;
+    await userEvent.click(running);
+    await userEvent.click(section.getByRole('button', { name: '이 카테고리로 확정' }));
+    await waitFor(() =>
+      expect(
+        api.requests.filter(
+          (r) =>
+            r.method === 'GET' &&
+            new URL(r.url).pathname === `/api/v1/candidates/${CANDIDATE_ID}/category-decision`,
+        ).length,
+      ).toBeGreaterThan(before),
+    );
+  });
+
+  it("완료: 성별 재확인은 꺼지고 이유를 보이며 '다음: ⑤ 썸네일' 링크, 후보 성별이 바뀌었으면 경고 띠", async () => {
+    setup({
+      category: categoryDecision({
+        stepStatus: 'COMPLETED',
+        leafCategoryId: '50000830',
+        wholeCategoryName: '패션잡화>남성신발>운동화>러닝화',
+        genderPathMatch: true,
+        exceptionDecision: 'PASS',
+        decidedAt: '2026-09-28T05:07:00.000Z',
+      }),
+      categoryStatus: 'COMPLETED',
+      gender: 'FEMALE',
+      genderSource: 'OWNER',
+    });
+    await renderJudgement();
+    const section = categorySection();
+    const next = await section.findByRole('link', { name: '다음: ⑤ 썸네일' });
+    expect(next).toHaveAttribute('href', `/candidates/${CANDIDATE_ID}/thumbnail`);
+    expect(section.getByRole('radio', { name: '남성' })).toBeDisabled();
+    expect(
+      section.getByText('④가 입력 대기일 때 바꿀 수 있습니다. ④를 다시 실행한 뒤 바꿔 주세요.'),
+    ).toBeInTheDocument();
+    expect(
+      section.getByText(
+        '후보 성별이 바뀌어 고른 카테고리와 맞지 않을 수 있습니다. ④를 다시 실행해 카테고리를 다시 골라 주세요.',
+      ),
+    ).toBeInTheDocument();
   });
 });

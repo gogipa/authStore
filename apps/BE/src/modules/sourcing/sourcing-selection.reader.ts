@@ -1,6 +1,8 @@
 import type { Prisma } from '../../generated/prisma/client.js';
 import type { AppSettings } from '../settings/schema/settings.types.js';
+import { idPathFromNamePath } from '../integrations/rakuten/rakuten-genre.service.js';
 import type {
+  SourcingGenreView,
   SourcingSelectionReader,
   SourcingSelectionView,
   SourcingTargetSkus,
@@ -134,6 +136,32 @@ export async function readSourcingTargetSkus(
 }
 
 /**
+ * ② 버전의 소싱 선택 상품 장르·상품유형(P2-06 Proposed — ④ 입력 '② 장르·상품유형'). 고른 페이지 스냅샷
+ * `rakuten_item`의 `genre_id`·`genre_path`(`558885:靴 > 110983:メンズ靴` 사본 → id 경로)·`product_type`. 선택이 없으면 null.
+ */
+export async function readSourcingGenre(
+  db: Db,
+  sourcingStepRunId: number,
+): Promise<SourcingGenreView | null> {
+  const selection = await readSourcingSelection(db, sourcingStepRunId);
+  if (!selection) return null;
+  const item = await db.rakutenItem.findUniqueOrThrow({
+    where: { id: selection.rakutenItemId },
+    select: { id: true, genreId: true, genrePath: true, productType: true },
+  });
+  const path = idPathFromNamePath(item.genrePath) ?? [];
+  const genreIdPath =
+    path.length > 0 ? path : item.genreId !== null ? [item.genreId] : ([] as number[]);
+  return {
+    sourcingStepRunId,
+    rakutenItemId: item.id,
+    genreId: item.genreId ?? genreIdPath.at(-1) ?? null,
+    genreIdPath,
+    productType: item.productType,
+  };
+}
+
+/**
  * step-engine에 등록할 읽기 함수(`StepEngineApi.registerSourcingSelectionReader`). 목표 사이즈 SKU 읽기(P2-05)는 버전
  * 설정 사본에 빠진 값을 지금 설정으로 채우므로 설정 읽기를 받는다.
  */
@@ -144,6 +172,7 @@ export function createSourcingSelectionReader(
     read: readSourcingSelection,
     readTargetSkus: (db, sourcingStepRunId, gender) =>
       readSourcingTargetSkus(db, sourcingStepRunId, gender, currentSettings()),
+    readGenre: readSourcingGenre,
   };
 }
 

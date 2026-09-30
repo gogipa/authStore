@@ -332,6 +332,25 @@ export const ERROR_CODES = {
   },
   /** 05-3 §5.1: 요금표 id 없음 */
   RATE_TABLE_NOT_FOUND: { status: 404, message: '요금표를 찾을 수 없습니다.' },
+  // ── category ④ 카테고리(P2-06, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 경로의 결정 id 없음 */
+  CATEGORY_DECISION_NOT_FOUND: { status: 404, message: '카테고리 결정을 찾을 수 없습니다.' },
+  /** 05-3 §5.1: 보여 준 후보 목록(category_options)에 없는 리프·캐시에서 사라진 리프(details.reason) */
+  CATEGORY_NOT_IN_OPTIONS: { status: 422, message: '보여 드린 목록에 없는 카테고리입니다.' },
+  /** 05-3 §5.1: 후보 성별과 카테고리 경로의 성별이 다름(F-CA-06) */
+  CATEGORY_GENDER_MISMATCH: {
+    status: 409,
+    message: '후보 성별과 카테고리(남성·여성)가 맞지 않습니다.',
+  },
+  /** 05-3 §5.1: CHILD_CERTIFICATION·아동 카테고리(F-CA-07) */
+  CATEGORY_CHILD_BLOCKED: { status: 409, message: '아동 카테고리는 고를 수 없습니다.' },
+  /** 05-3 §5.1: CON-08 판매 제외 품목 카테고리(F-CA-09) */
+  CATEGORY_EXCLUDED_ITEM: { status: 409, message: '판매 제외 품목 카테고리입니다.' },
+  /** 05-3 §5.1: KC_CERTIFICATION 리프인데 'KC 면제 성인용 확인'이 없음(F-CA-08) */
+  KC_EXEMPT_CONFIRMATION_REQUIRED: {
+    status: 409,
+    message: "KC 인증 예외 카테고리입니다. 'KC 면제 성인용 확인'을 체크해 주세요.",
+  },
   INTERNAL_ERROR: {
     status: 500,
     message: '앱 안에서 오류가 났습니다. 다시 해 보고, 계속되면 로그를 확인해 주세요.',

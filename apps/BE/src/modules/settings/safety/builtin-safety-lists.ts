@@ -9,6 +9,10 @@ import {
   BUILTIN_WHEELED_SHOE_WORDS as COMMON_WHEELED_SHOE_WORDS,
   CHILD_SHOE_SIZE_FLOOR_MM,
 } from '../../../common/child-shoe/child-shoe.rules.js';
+import {
+  BUILTIN_CHILD_CATEGORY_WORDS as COMMON_CHILD_CATEGORY_WORDS,
+  BUILTIN_EXCLUDED_CATEGORY_WORDS as COMMON_EXCLUDED_CATEGORY_WORDS,
+} from '../../../common/rules/category-words.js';
 import type { NoticeBlockCondition } from '../schema/settings.types.js';
 
 /**
@@ -28,6 +32,12 @@ export const BUILTIN_WHEELED_SHOE_WORDS: readonly string[] = COMMON_WHEELED_SHOE
 
 /** 고령자용 신발 단어(F-BS-12, P2-01 Proposed). `safety.seniorShoeWords`에 모두 있어야 한다 */
 export const BUILTIN_SENIOR_SHOE_WORDS: readonly string[] = COMMON_SENIOR_SHOE_WORDS;
+
+/** 아동 카테고리 말(F-CA-07, P2-06 Proposed). `safety.childCategoryWords`에 모두 있어야 한다(원본 common/rules) */
+export const BUILTIN_CHILD_CATEGORY_WORDS: readonly string[] = COMMON_CHILD_CATEGORY_WORDS;
+
+/** CON-08 판매 제외 품목 카테고리 말(F-CA-09, P2-06 Proposed). `safety.excludedCategoryWords`에 모두 있어야 한다 */
+export const BUILTIN_EXCLUDED_CATEGORY_WORDS: readonly string[] = COMMON_EXCLUDED_CATEGORY_WORDS;
 
 /** 라쿠텐 검색 NGKeyword의 아동 단어(PRD §8.2). `sourcing.ngKeywords`에 모두 있어야 한다 */
 export const BUILTIN_NG_KEYWORD_CHILD_WORDS: readonly string[] = ['キッズ', 'ジュニア', 'ベビー'];

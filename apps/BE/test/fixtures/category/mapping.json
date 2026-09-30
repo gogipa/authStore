@@ -1,0 +1,23 @@
+{
+  "runningGenreId": 208025,
+  "sneakerGenreId": 208026,
+  "leafMapping": [
+    {
+      "genreId": 208025,
+      "productType": null,
+      "leafCategoryIds": [
+        "50000830",
+        "50000831",
+        "50000840",
+        "50000841",
+        "50000850",
+        "50000880",
+        "50000990"
+      ]
+    },
+    {
+      "genreId": 208026,
+      "leafCategoryIds": ["50000832", "50000842"]
+    }
+  ]
+}

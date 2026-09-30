@@ -4,6 +4,12 @@
  * 이 파일의 경로와 mappers/*.ts만 고친다.
  */
 
+import { GENDER_SHOE_PATH_PREFIX } from '../../../common/rules/category-gender.js';
+import {
+  BUILTIN_CHILD_CATEGORY_WORDS,
+  BUILTIN_EXCLUDED_CATEGORY_WORDS,
+} from '../../../common/rules/category-words.js';
+
 /** 동기화 대상 8개(05-2 CommerceMetaSyncTarget enum 순서 = 실행 순서. CATEGORY가 맨 앞이라 먼저 돈다) */
 export const META_SYNC_TARGETS = [
   'CATEGORY',
@@ -55,11 +61,11 @@ export const META_SYNC_LATEST_LOCATION = '/api/v1/commerce-meta-sync-runs/latest
 export type ShoeGender = 'MALE' | 'FEMALE';
 export const SHOE_GENDERS = ['MALE', 'FEMALE'] as const satisfies readonly ShoeGender[];
 
-/** 성별 신발 경로(PRD §8.7 RG-04, F-CA-02·04). `whole_category_name`이 이 글자로 시작하는 리프만 쓴다 */
-export const GENDER_PATH_PREFIX: Readonly<Record<ShoeGender, string>> = {
-  MALE: '패션잡화>남성신발>',
-  FEMALE: '패션잡화>여성신발>',
-};
+/**
+ * 성별 신발 경로(PRD §8.7 RG-04, F-CA-02·04). `whole_category_name`이 이 글자로 시작하는 리프만 쓴다.
+ * 원본은 공용 규칙 `common/rules/category-gender.ts`(P2-06 — ④·최종 승인 검사가 같은 표를 쓴다)
+ */
+export const GENDER_PATH_PREFIX: Readonly<Record<ShoeGender, string>> = GENDER_SHOE_PATH_PREFIX;
 
 /** commerce_meta_document.kind(ck_cmd_kind) */
 export const META_DOCUMENT_KINDS = [
@@ -82,10 +88,13 @@ export const CHILD_CERTIFICATION = 'CHILD_CERTIFICATION';
  * - 아동: 아동화(만 13세 이하)는 구매대행 금지(CON-08, 어린이제품법)
  * - 바퀴 달린 운동화·고령자용 신발: 보수적 기본 제외(PRD §8 CON-08 표)
  */
-export const CATEGORY_BLOCK_WORDS = {
-  CHILD_CATEGORY: ['아동', '키즈', '주니어', '유아', '베이비'],
-  CON08_EXCLUDED: ['바퀴', '롤러', '힐리스', '실버', '효도'],
-} as const;
+export const CATEGORY_BLOCK_WORDS: Readonly<
+  Record<'CHILD_CATEGORY' | 'CON08_EXCLUDED', readonly string[]>
+> = {
+  // 원본은 공용 `common/rules/category-words.ts`(P2-06 — 설정 safety.childCategoryWords·excludedCategoryWords의 내장 목록)
+  CHILD_CATEGORY: BUILTIN_CHILD_CATEGORY_WORDS,
+  CON08_EXCLUDED: BUILTIN_EXCLUDED_CATEGORY_WORDS,
+};
 
 export type CategoryBlockReason = 'CHILD_CERTIFICATION' | keyof typeof CATEGORY_BLOCK_WORDS;
 

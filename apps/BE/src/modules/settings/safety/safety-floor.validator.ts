@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
 import type { AppSettings } from '../schema/settings.types.js';
 import {
+  BUILTIN_CHILD_CATEGORY_WORDS,
   BUILTIN_CHILD_KEYWORDS,
+  BUILTIN_EXCLUDED_CATEGORY_WORDS,
   BUILTIN_NG_KEYWORD_CHILD_WORDS,
   BUILTIN_PERSON_BLOCK_WORDS,
   BUILTIN_SENIOR_SHOE_WORDS,
@@ -20,6 +22,8 @@ export const SAFETY_ITEMS = {
   SENIOR_SHOE_WORD_REMOVED: '고령자 신발 단어 빼기',
   NG_KEYWORD_CHILD_WORD_REMOVED: '제외어(NGKeyword) 아동 단어 빼기',
   PERSON_BLOCK_WORD_REMOVED: '실존 인물 차단어 빼기',
+  CHILD_CATEGORY_WORD_REMOVED: '아동 카테고리 말 빼기',
+  EXCLUDED_CATEGORY_WORD_REMOVED: '판매 제외 품목 카테고리 말 빼기',
   NOTICE_REQUIRED_BLOCK_REMOVED: '고지 필수 블록 빼기',
   NOTICE_REQUIRED_BLOCK_EDITED: '고지 필수 블록 고치기',
   CHILD_SHOE_SIZE_LOWERED: '아동화 의심 기준 낮추기',
@@ -89,6 +93,26 @@ export function validateSafetyFloor(settings: AppSettings): SafetyViolation[] {
       item: 'PERSON_BLOCK_WORD_REMOVED',
       field: '/safety/personBlockWords',
       message: `내장 실존 인물 차단어 '${word}'는 뺄 수 없습니다. 더하기만 됩니다.`,
+    });
+  }
+  for (const word of missingWords(
+    BUILTIN_CHILD_CATEGORY_WORDS,
+    settings.safety.childCategoryWords,
+  )) {
+    out.push({
+      item: 'CHILD_CATEGORY_WORD_REMOVED',
+      field: '/safety/childCategoryWords',
+      message: `내장 아동 카테고리 말 '${word}'는 뺄 수 없습니다. 더하기만 됩니다.`,
+    });
+  }
+  for (const word of missingWords(
+    BUILTIN_EXCLUDED_CATEGORY_WORDS,
+    settings.safety.excludedCategoryWords,
+  )) {
+    out.push({
+      item: 'EXCLUDED_CATEGORY_WORD_REMOVED',
+      field: '/safety/excludedCategoryWords',
+      message: `내장 판매 제외 품목 카테고리 말 '${word}'는 뺄 수 없습니다. 더하기만 됩니다.`,
     });
   }
 

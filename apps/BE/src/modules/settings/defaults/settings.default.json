@@ -147,7 +147,12 @@
       "차은우",
       "장원영",
       "카리나"
-    ]
+    ],
+    "childCategoryWords": ["아동", "키즈", "주니어", "유아", "베이비"],
+    "excludedCategoryWords": ["바퀴", "롤러", "힐리스", "실버", "효도"]
+  },
+  "category": {
+    "leafMapping": []
   },
   "notice": {
     "basisDate": "2026-09-24",

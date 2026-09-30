@@ -278,6 +278,16 @@ export interface SafetySettings {
   seniorShoeWords: string[];
   /** 실존 인물·그룹·연예인 차단어(IM-07). 내장 단어는 뺄 수 없고 더하기만 된다 */
   personBlockWords: string[];
+  /**
+   * 아동 카테고리 말(P2-06 Proposed, F-CA-07): 네이버 카테고리 이름·경로에 들어 있으면 ④에서 고를 수 없다(후보 목록에서도
+   * 뺀다). 내장 말(common/rules/category-words.ts)은 뺄 수 없고 더하기만 된다
+   */
+  childCategoryWords: string[];
+  /**
+   * CON-08 판매 제외 품목 카테고리 말(P2-06 Proposed, F-CA-09 — 바퀴 달린 운동화·고령자용 신발). 들어 있으면 ④에서 고를 수
+   * 없다. 내장 말은 뺄 수 없고 더하기만 된다
+   */
+  excludedCategoryWords: string[];
 }
 
 /** 구매대행 고지 블록 한 줄(PRD §8.5 CT-04) */
@@ -337,6 +347,28 @@ export interface AiSettings {
   models: Record<AiEngineCode, AiEngineModelPair>;
 }
 
+/**
+ * 매핑표 한 줄(P2-06 Proposed, PRD §8.7 카테고리 확정 1 '설정 매핑표(라쿠텐 장르·상품유형 → 네이버 리프 후보)').
+ * ② 상품의 장르(또는 그 조상 장르)가 `genreId`이고, `productType`이 있으면 ② 상품유형도 같을 때 맞는다.
+ */
+export interface CategoryLeafMapping {
+  /** 라쿠텐 장르 id(② `rakuten_item.genre_id` 또는 장르 경로의 조상). 가장 가까운(깊은) 장르의 줄을 쓴다 */
+  genreId: number;
+  /** ② 상품유형(`rakuten_item.product_type`). 없거나 null이면 상품유형과 관계없이 맞는다 */
+  productType?: string | null;
+  /**
+   * 네이버 리프 카테고리 id(`commerce_category.category_id`, 메타 동기화 뒤 SCR-11·`GET /commerce-categories`에서 찾는다).
+   * 두 성별을 섞어 넣어도 된다 — ④가 후보 성별 경로(패션잡화>남성신발>… / …여성신발>…)로 거른다
+   */
+  leafCategoryIds: string[];
+}
+
+/** ④ 카테고리(P2-06 Proposed — 06-4 §2.2). 아동·제외 품목 말은 안전 목록이라 `safety`에 둔다 */
+export interface CategorySettings {
+  /** 매핑표. 비었거나 맞는 줄이 없으면 성별 경로의 신발 리프 전체를 후보로 보인다(F-CA-04) */
+  leafMapping: CategoryLeafMapping[];
+}
+
 /** 설정 JSON 전체(schemaVersion "1") */
 export interface AppSettings {
   schemaVersion: SettingsSchemaVersion;
@@ -345,6 +377,8 @@ export interface AppSettings {
   sourcing: SourcingSettings;
   keywords: KeywordSettings;
   safety: SafetySettings;
+  /** P2-06: ④ 카테고리 매핑표 */
+  category: CategorySettings;
   notice: NoticeSettings;
   /** P1-09: 발송 택배사 코드 목록(GET /dispatch-delivery-companies) */
   delivery: DeliverySettings;

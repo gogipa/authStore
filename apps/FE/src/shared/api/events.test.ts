@@ -251,6 +251,8 @@ describe('진행 알림 이름', () => {
       ['step-engine', 'getCandidateResumeTarget'],
       ['step-engine', 'listAttentionCandidateSteps'],
       ['step-engine', 'getStepRun'],
+      // 그 후보의 ④ 카테고리 결정도(P2-06 — 성별이 바뀌면 ③·⑥-3·⑦과 함께 후보를 다시 뽑는다)
+      ['category', 'getCategoryDecision', { candidateId: 12 }],
     ]);
     // step-run.status-changed → 그 후보 레일·이력·바뀐 입력·상세·목록 + 그 실행 한 건(P1-05)
     expect(
@@ -308,6 +310,22 @@ describe('진행 알림 이름', () => {
       'getSourcingComparison',
       { candidateId: 12 },
     ]);
+    expect(pricingRun).not.toContainEqual(['category', 'getCategoryDecision', { candidateId: 12 }]);
+    // ④ 실행이면 그 후보의 카테고리 결정도(P2-06)
+    expect(
+      EVENT_INVALIDATIONS['step-run.status-changed']?.({
+        stepRunId: 43,
+        candidateId: 12,
+        stepCode: 'CATEGORY',
+        version: 1,
+        executionMode: 'STEP',
+        stepChainId: null,
+        status: 'WAITING_INPUT',
+        waitingReasonCode: 'CATEGORY_SELECTION_REQUIRED',
+        pendingInputs: ['owner.categorySelection'],
+        occurredAt: '2026-09-28T00:00:00.000Z',
+      }),
+    ).toContainEqual(['category', 'getCategoryDecision', { candidateId: 12 }]);
     // continuous-run.stopped·gate.passed·gate.invalidated → 게이트 목록·상세·레일·목록·이어서 할 곳(P1-06)
     const gateKeys = [
       ['step-engine', 'listCandidateGates', { candidateId: 12 }],

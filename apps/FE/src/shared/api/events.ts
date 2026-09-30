@@ -101,6 +101,9 @@ export type EventInvalidations = {
  *   응답으로 캐시를 고친다.
  * - P2-05: `step-run.status-changed`가 ③(PRICING)이면 그 후보의 판정(`getPriceJudgement`)·국내 기준가 이력. `gate.passed`·
  *   `gate.invalidated` → 그 후보 판정도(G2 줄·확정한 값). 국내 기준가 입력·'비교 없이 확정'은 응답 뒤 훅이 무효화한다.
+ * - P2-06: `step-run.status-changed`가 ④(CATEGORY)이면 그 후보의 카테고리 결정(`getCategoryDecision` — 입력 대기·완료·성별
+ *   재확인으로 다시 뽑은 후보). `candidate-step.changed`(어느 단계든) → 그 후보의 카테고리 결정도(성별이 바뀌면 ③·⑥-3·⑦의
+ *   '재실행 필요'와 함께 온다). 리프 고르기·성별 재확인은 응답 뒤 훅이 무효화한다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -159,6 +162,7 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
   'candidate-step.changed': ({ candidateId }) => [
     ...stepEngineStepKeys(candidateId),
     qk('step-engine', 'getStepRun'),
+    qk('category', 'getCategoryDecision', { candidateId }),
   ],
   'step-run.status-changed': ({ candidateId, stepRunId, stepChainId, stepCode }) => [
     ...stepEngineStepKeys(candidateId),
@@ -172,6 +176,7 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
           qk('pricing', 'listDomesticPrices', { candidateId }),
         ]
       : []),
+    ...(stepCode === 'CATEGORY' ? [qk('category', 'getCategoryDecision', { candidateId })] : []),
   ],
   'continuous-run.stopped': ({ candidateId, stepChainId }) => [
     qk('step-engine', 'getContinuousRun', { stepChainId }),

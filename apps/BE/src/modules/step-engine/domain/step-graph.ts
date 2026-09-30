@@ -91,8 +91,14 @@ export const STEP_INPUT_SPECS: Record<StepCode, readonly StepInputSpec[]> = {
     settingsKey(K.settingsPricing),
     ownerRuntime(K.ownerDomesticPrice),
   ],
-  // ② 장르·상품유형, 성별
-  CATEGORY: [prev(K.sourcingGenre, 'SOURCING'), cand(K.candidateGender)],
+  // ② 장르·상품유형, 성별, 매핑표·아동·제외 품목 카테고리 말 설정(P2-06)
+  CATEGORY: [
+    prev(K.sourcingGenre, 'SOURCING'),
+    cand(K.candidateGender),
+    settingsKey(K.settingsCategoryLeafMapping),
+    settingsKey(K.settingsChildCategoryWords),
+    settingsKey(K.settingsExcludedCategoryWords),
+  ],
   // ② 원본 이미지 / 실행 중: 레퍼런스 선택·얼굴 옵션·프롬프트 조정
   THUMBNAIL: [
     prev(K.sourcingImages, 'SOURCING'),

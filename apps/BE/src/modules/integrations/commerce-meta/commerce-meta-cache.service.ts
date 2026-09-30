@@ -44,6 +44,27 @@ export class CommerceMetaCacheService implements MetaLeafSource {
     return row ? withBlockReason(row) : null;
   }
 
+  /** 여러 리프 카테고리(사라진 행도 준다 — `removedAt`으로 판단). 없는 id는 빠진다. 전체 경로 순(P2-06 ④ 매핑 후보) */
+  async findCategories(categoryIds: readonly string[]): Promise<CommerceCategoryView[]> {
+    if (categoryIds.length === 0) return [];
+    const rows = await this.prisma.commerceCategory.findMany({
+      where: { categoryId: { in: [...new Set(categoryIds)] } },
+    });
+    return rows.map(withBlockReason).sort(compareWholeCategoryName);
+  }
+
+  /**
+   * 사라지지 않은 카테고리가 하나라도 있는가(P2-06 ④ 시작 조건 — 비었으면 409 COMMERCE_META_NOT_SYNCED(details.target=CATEGORY),
+   * `listCommerceCategories`와 같은 기준)
+   */
+  async hasActiveCategories(): Promise<boolean> {
+    const row = await this.prisma.commerceCategory.findFirst({
+      where: { removedAt: null },
+      select: { id: true },
+    });
+    return row !== null;
+  }
+
   /**
    * 성별 신발 경로(`패션잡화>남성신발>`·`패션잡화>여성신발>`)의 리프(사라진 행 제외), 전체 경로 순.
    * 아동·CON-08 제외 품목도 `blockReason`과 함께 준다. 고를 수 있는 것만 보려면 `blockReason === null`.
