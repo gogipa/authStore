@@ -73,10 +73,26 @@ export type EventInvalidations = {
  *   (제외되면 그 후보의 단계가 모아 보기에서 빠진다). `candidate-step.changed` → 후보 목록(단계 점)·그 후보 상세·
  *   이어서 할 곳·재실행 필요 모아 보기. 키는 features/step-engine의 `stepEngineKeys`와 같은 모양이다
  *   (shared는 features를 부르지 않아 여기서 qk로 만든다).
+ * - P1-05: `step-run.status-changed`·`candidate-step.changed` → 그 후보의 단계 레일·버전 이력·바뀐 입력, 실행 한 건,
+ *   그 후보 상세·목록·재실행 필요 모아 보기(+ 이어서 할 곳). `settings.reloaded`가 재실행 필요 단계를 만들었으면
+ *   (`rerunRequiredStepCount` > 0) step-engine 태그 전체도 다시 읽는다(설정 변경 전파).
  */
+function stepEngineStepKeys(candidateId: number): QueryKey[] {
+  return [
+    qk('step-engine', 'listCandidateSteps', { candidateId }),
+    qk('step-engine', 'listCandidateStepRuns', { candidateId }),
+    qk('step-engine', 'getCandidateStepStaleDiff', { candidateId }),
+    qk('step-engine', 'getCandidate', { candidateId }),
+    qk('step-engine', 'listCandidates'),
+    qk('step-engine', 'getCandidateResumeTarget'),
+    qk('step-engine', 'listAttentionCandidateSteps'),
+  ];
+}
+
 export const EVENT_INVALIDATIONS: EventInvalidations = {
   'call-usage.changed': () => [qk('integrations', 'getCallUsage')],
-  'settings.reloaded': () => [['settings']],
+  'settings.reloaded': ({ rerunRequiredStepCount }) =>
+    rerunRequiredStepCount > 0 ? [['settings'], ['step-engine']] : [['settings']],
   'candidate.status-changed': ({ candidateId }) => [
     qk('step-engine', 'listCandidates'),
     qk('step-engine', 'getCandidate', { candidateId }),
@@ -86,10 +102,12 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     qk('step-engine', 'listAttentionCandidateSteps'),
   ],
   'candidate-step.changed': ({ candidateId }) => [
-    qk('step-engine', 'listCandidates'),
-    qk('step-engine', 'getCandidate', { candidateId }),
-    qk('step-engine', 'getCandidateResumeTarget'),
-    qk('step-engine', 'listAttentionCandidateSteps'),
+    ...stepEngineStepKeys(candidateId),
+    qk('step-engine', 'getStepRun'),
+  ],
+  'step-run.status-changed': ({ candidateId, stepRunId }) => [
+    ...stepEngineStepKeys(candidateId),
+    qk('step-engine', 'getStepRun', { stepRunId }),
   ],
 };
 

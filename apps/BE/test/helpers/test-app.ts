@@ -1,4 +1,5 @@
 import type { AddressInfo } from 'node:net';
+import type { ModuleMetadata } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module.js';
@@ -26,6 +27,8 @@ export interface CreateTestAppOptions {
    * DB를 비우거나 파일을 놓을 때 쓴다. Prisma는 첫 쿼리 때 접속하므로 여기서 써도 된다.
    */
   beforeInit?: (prisma: PrismaService) => Promise<void>;
+  /** AppModule 옆에 더 붙일 테스트 모듈(예: 가짜 실행기 FakeStepRunnersModule, P1-05) */
+  imports?: ModuleMetadata['imports'];
 }
 
 /**
@@ -35,7 +38,9 @@ export interface CreateTestAppOptions {
 export async function createTestApp(options: CreateTestAppOptions = {}): Promise<TestApp> {
   const clock = new FakeClock(TEST_START_MS);
   const fetch = new FakeFetch(clock);
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+  const moduleRef = await Test.createTestingModule({
+    imports: [AppModule, ...(options.imports ?? [])],
+  })
     .overrideProvider(HTTP_FETCH)
     .useValue(fetch.fn)
     .overrideProvider(CLOCK)

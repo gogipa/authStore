@@ -76,6 +76,23 @@ describe('StepRail 자리(칩·게이트)', () => {
     expect(rail.getByRole('button', { name: '재실행 필요 단계 모두 실행' })).toBeDisabled();
   });
 
+  it('재실행 필요 행 아래에 바뀐 입력 이름, URL 후보는 맨 위에 수동·비교 안 함(P1-05)', () => {
+    const rail = renderRail({
+      statuses: { THUMBNAIL: { status: 'RERUN_REQUIRED' } },
+      staleInputs: { THUMBNAIL: ['owner.referenceSelection'] },
+      badges: (
+        <>
+          <span>수동</span>
+          <span>비교 안 함</span>
+        </>
+      ),
+    });
+    expect(rail.getByText('바뀐 입력: 레퍼런스 선택')).toBeInTheDocument();
+    expect(rail.getByRole('link', { name: /썸네일/ })).toHaveTextContent('재실행 필요');
+    expect(rail.getByText('수동')).toBeInTheDocument();
+    expect(rail.getByText('비교 안 함')).toBeInTheDocument();
+  });
+
   it('실패(중단됨)은 failureKind로 보인다', () => {
     const rail = renderRail({
       statuses: { SOURCING: { status: 'FAILED', failureKind: 'INTERRUPTED' } },

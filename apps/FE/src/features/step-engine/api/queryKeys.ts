@@ -1,8 +1,10 @@
 import { qk } from '@/shared/api/queryKeys';
+import type { StepCode } from '@/shared/lib/steps';
 import type {
   ListAttentionStepsParams,
   ListCandidatesParams,
   ListStatusHistoryParams,
+  ListStepRunsParams,
 } from '../model/types';
 
 /** step-engine 태그 전체. 후보를 바꾸는 요청(만들기·제외·다시 작업·성별)이 끝나면 이 키로 무효화한다. */
@@ -25,4 +27,15 @@ export const stepEngineKeys = {
   statusHistoryAll: qk('step-engine', 'listCandidateStatusHistory'),
   statusHistory: (candidateId: number, params: ListStatusHistoryParams = {}) =>
     qk('step-engine', 'listCandidateStatusHistory', { candidateId, ...params }),
+  // ── 단계 실행(P1-05) ──
+  candidateStepsAll: qk('step-engine', 'listCandidateSteps'),
+  candidateSteps: (candidateId: number) => qk('step-engine', 'listCandidateSteps', { candidateId }),
+  stepRunsAll: qk('step-engine', 'listCandidateStepRuns'),
+  stepRuns: (candidateId: number, stepCode: StepCode, params: ListStepRunsParams = {}) =>
+    qk('step-engine', 'listCandidateStepRuns', { candidateId, stepCode, ...params }),
+  stepRunAll: qk('step-engine', 'getStepRun'),
+  stepRun: (stepRunId: number) => qk('step-engine', 'getStepRun', { stepRunId }),
+  staleDiffAll: qk('step-engine', 'getCandidateStepStaleDiff'),
+  staleDiff: (candidateId: number, stepCode: StepCode) =>
+    qk('step-engine', 'getCandidateStepStaleDiff', { candidateId, stepCode }),
 };

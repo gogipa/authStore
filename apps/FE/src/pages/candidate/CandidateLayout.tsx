@@ -2,12 +2,25 @@ import { Outlet, useMatch, useParams } from 'react-router';
 import {
   CandidateDetailHeader,
   CandidateHeader,
+  candidateGateViews,
+  CONTENT_GROUP_CODES,
+  contentGroupStatus,
   parseCandidateId,
+  railByCode,
   useCandidate,
+  useCandidateSteps,
 } from '@/features/step-engine';
-import { isStepScreen } from '@/shared/lib/steps';
-import { Banner, ButtonLink, PageHeader } from '@/shared/ui';
-import { StepRail } from './StepRail';
+import { isStepScreen, type GateCode, type StepCode } from '@/shared/lib/steps';
+import {
+  Banner,
+  Button,
+  ButtonLink,
+  Chip,
+  DisabledReason,
+  PageHeader,
+  type GateState,
+} from '@/shared/ui';
+import { StepRail, type RailStepStatus } from './StepRail';
 import styles from './CandidateLayout.module.css';
 
 function BackToList() {
@@ -18,12 +31,15 @@ function BackToList() {
  * 후보 작업(SCR-12): 후보 머리 + [단계 레일 | 단계 본문(<Outlet/>)].
  * 단계 화면(SCR-03~08)은 자식 경로로 이 틀 안에 그려진다. 틀은 eager(05-4 §4).
  * 후보 머리는 `getCandidate`로 채운다(P1-04). 없는 후보(404 CANDIDATE_NOT_FOUND·정수 아닌 id)는 틀 안에
- * '후보를 찾을 수 없습니다' + '후보 목록'(05-1 route맵 §3-3). 레일의 단계 상태·게이트는 P1-05·P1-06이 채운다.
+ * '후보를 찾을 수 없습니다' + '후보 목록'(05-1 route맵 §3-3).
+ * 레일(P1-05): 단계 상태·실패(중단됨)·재실행 사유는 `listCandidateSteps`, ⑥ 줄은 하위 단계 묶음 규칙, URL 후보는
+ * '수동'·'비교 안 함' 배지. 게이트는 후보 머리와 같은 표시(P1-06 `listCandidateGates`가 오면 바꾼다).
  */
 export function CandidateLayout() {
   const { candidateId: rawId = '' } = useParams();
   const candidateId = parseCandidateId(rawId);
   const candidate = useCandidate(candidateId);
+  const rail = useCandidateSteps(candidateId);
   const match = useMatch('/candidates/:candidateId/:screen');
   const screen = match?.params.screen;
   const currentScreen = isStepScreen(screen) ? screen : undefined;
@@ -39,6 +55,27 @@ export function CandidateLayout() {
     );
   }
 
+  const items = rail.data?.items ?? [];
+  const byCode = railByCode(items);
+  const statuses: Partial<Record<StepCode, RailStepStatus>> = {};
+  const staleInputs: Partial<Record<StepCode, readonly string[]>> = {};
+  for (const item of items) {
+    statuses[item.stepCode] = {
+      status: item.status,
+      failureKind: item.currentRun?.failureKind ?? null,
+    };
+    if (item.status === 'RERUN_REQUIRED') staleInputs[item.stepCode] = item.staleInputs;
+  }
+  const groupStatuses = rail.data
+    ? { content: { status: contentGroupStatus(CONTENT_GROUP_CODES.map((c) => byCode[c])) } }
+    : undefined;
+  const gates = candidate.data
+    ? (Object.fromEntries(
+        candidateGateViews(candidate.data).map((view) => [view.gate, view.state]),
+      ) as Partial<Record<GateCode, GateState>>)
+    : undefined;
+  const rerunCount = items.filter((item) => item.status === 'RERUN_REQUIRED').length;
+
   return (
     <>
       {candidate.data ? (
@@ -52,7 +89,34 @@ export function CandidateLayout() {
       )}
       {candidate.isError ? <Banner tone="warning">{candidate.error.message}</Banner> : null}
       <div className={styles.body}>
-        <StepRail candidateId={String(candidateId)} currentScreen={currentScreen} />
+        <StepRail
+          candidateId={String(candidateId)}
+          currentScreen={currentScreen}
+          statuses={rail.data ? statuses : undefined}
+          groupStatuses={groupStatuses}
+          staleInputs={staleInputs}
+          gates={gates}
+          badges={
+            candidate.data?.creationPath === 'RAKUTEN_URL' ? (
+              <>
+                <Chip tone="neutral">수동</Chip>
+                <Chip tone="outline">비교 안 함</Chip>
+              </>
+            ) : undefined
+          }
+          footer={
+            <>
+              <Button size="sm" disabled aria-describedby="rail-rerun-why">
+                재실행 필요 단계 모두 실행
+              </Button>
+              <DisabledReason id="rail-rerun-why" tone="muted">
+                {rerunCount === 0
+                  ? '재실행 필요 단계가 없습니다'
+                  : '연속 실행은 아직 준비 중입니다'}
+              </DisabledReason>
+            </>
+          }
+        />
         <div className={styles.stepBody}>
           <Outlet />
         </div>

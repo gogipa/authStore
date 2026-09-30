@@ -43,12 +43,13 @@ describe('진행 알림 이름', () => {
     >();
   });
 
-  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 후보 이벤트 2개(P1-04)', () => {
+  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 후보 이벤트 2개(P1-04), 단계 실행(P1-05)', () => {
     expect(Object.keys(EVENT_INVALIDATIONS)).toEqual([
       'call-usage.changed',
       'settings.reloaded',
       'candidate.status-changed',
       'candidate-step.changed',
+      'step-run.status-changed',
     ]);
     expect(EVENT_INVALIDATIONS['call-usage.changed']?.(callUsageChanged())).toEqual([
       ['integrations', 'getCallUsage'],
@@ -65,6 +66,16 @@ describe('진행 알림 이름', () => {
         }),
       ).toEqual([['settings']]);
     }
+    // 설정 변경이 재실행 필요 단계를 만들었으면 step-engine 태그 전체도(P1-05)
+    expect(
+      EVENT_INVALIDATIONS['settings.reloaded']?.({
+        settingsSnapshotId: 4,
+        changedKeys: ['costs.targetMarginPct'],
+        valid: true,
+        errors: [],
+        rerunRequiredStepCount: 2,
+      }),
+    ).toEqual([['settings'], ['step-engine']]);
     // candidate.status-changed → 목록·그 후보 상세·상태별 수·이어서 할 곳·그 후보 이력·재실행 필요 모아 보기
     expect(
       EVENT_INVALIDATIONS['candidate.status-changed']?.({
@@ -93,10 +104,36 @@ describe('진행 알림 이름', () => {
         staleSince: '2026-09-28T00:00:00.000Z',
       }),
     ).toEqual([
-      ['step-engine', 'listCandidates'],
+      ['step-engine', 'listCandidateSteps', { candidateId: 12 }],
+      ['step-engine', 'listCandidateStepRuns', { candidateId: 12 }],
+      ['step-engine', 'getCandidateStepStaleDiff', { candidateId: 12 }],
       ['step-engine', 'getCandidate', { candidateId: 12 }],
+      ['step-engine', 'listCandidates'],
       ['step-engine', 'getCandidateResumeTarget'],
       ['step-engine', 'listAttentionCandidateSteps'],
+      ['step-engine', 'getStepRun'],
+    ]);
+    // step-run.status-changed → 그 후보 레일·이력·바뀐 입력·상세·목록 + 그 실행 한 건(P1-05)
+    expect(
+      EVENT_INVALIDATIONS['step-run.status-changed']?.({
+        stepRunId: 40,
+        candidateId: 12,
+        stepCode: 'SOURCING',
+        version: 2,
+        executionMode: 'STEP',
+        stepChainId: null,
+        status: 'COMPLETED',
+        occurredAt: '2026-09-28T00:00:00.000Z',
+      }),
+    ).toEqual([
+      ['step-engine', 'listCandidateSteps', { candidateId: 12 }],
+      ['step-engine', 'listCandidateStepRuns', { candidateId: 12 }],
+      ['step-engine', 'getCandidateStepStaleDiff', { candidateId: 12 }],
+      ['step-engine', 'getCandidate', { candidateId: 12 }],
+      ['step-engine', 'listCandidates'],
+      ['step-engine', 'getCandidateResumeTarget'],
+      ['step-engine', 'listAttentionCandidateSteps'],
+      ['step-engine', 'getStepRun', { stepRunId: 40 }],
     ]);
   });
 });
@@ -143,7 +180,8 @@ describe('connectProgressEvents', () => {
     const source = FakeEventSource.latest();
 
     source.emit('unknown.event', { x: 1 });
-    source.emit('step-run.status-changed', { candidateId: 1 });
+    // 표에 없는 M1 이벤트(P1-05가 step-run.status-changed를 표에 더해 다른 이벤트로 본다)
+    source.emit('keyword-collection.progress', { keywordSnapshotId: 1 });
     source.emitRaw('call-usage.changed', '{not json');
 
     expect(invalidate).not.toHaveBeenCalled();

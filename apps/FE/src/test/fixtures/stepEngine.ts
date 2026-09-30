@@ -145,3 +145,97 @@ export function attentionItem(
 export function resumeTarget(patch: Partial<ResumeTarget> & { candidateId: number }): ResumeTarget {
   return { candidateStatus: 'WORKING', stepCode: null, stepStatus: null, gate: null, ...patch };
 }
+
+// ── 단계 실행(P1-05) ────────────────────────────────────────────────────────
+type RailItem = components['schemas']['CandidateStepRailItem'];
+type StepRunSummary = components['schemas']['StepRunSummary'];
+type StepRunVersionItem = components['schemas']['StepRunVersionItem'];
+type StepActionState = components['schemas']['StepActionState'];
+
+export const ENABLED: StepActionState = { enabled: true, disabledReason: null };
+
+export function disabled(code: string, message: string): StepActionState {
+  return { enabled: false, disabledReason: { code, message } };
+}
+
+/** 단계 실행 한 번(05-2 StepRunSummary) */
+export function stepRunSummary(
+  patch: Partial<StepRunSummary> & { id: number; stepCode: StepCode },
+): StepRunSummary {
+  return {
+    candidateId: 13,
+    version: 1,
+    executionMode: 'STEP',
+    ownerAction: null,
+    baseStepRunId: null,
+    stepChainId: null,
+    settingsSnapshotId: 1,
+    aiEngine: null,
+    aiModel: null,
+    aiCliVersion: null,
+    status: 'COMPLETED',
+    failureKind: null,
+    errorCode: null,
+    errorMessage: null,
+    rerunReasonInputs: [],
+    waitingSince: null,
+    waitSecondsTotal: 0,
+    startedAt: '2026-09-28T04:38:00.000Z',
+    endedAt: '2026-09-28T04:40:00.000Z',
+    ...patch,
+  };
+}
+
+/** 레일 한 칸(05-2 CandidateStepRailItem). 상태가 미실행이 아니면 현재 실행 v1을 붙인다 */
+export function railItem(
+  patch: Partial<RailItem> & { stepCode: StepCode },
+  runPatch: Partial<StepRunSummary> = {},
+): RailItem {
+  const status = patch.status ?? 'NOT_RUN';
+  const index = STEP_CODES.indexOf(patch.stepCode);
+  const runId = 100 + index;
+  const currentRun =
+    status === 'NOT_RUN'
+      ? null
+      : stepRunSummary({
+          id: runId,
+          stepCode: patch.stepCode,
+          status: status === 'RERUN_REQUIRED' ? 'COMPLETED' : status,
+          endedAt:
+            status === 'RUNNING' || status === 'WAITING_INPUT' ? null : '2026-09-28T04:40:00.000Z',
+          waitingSince: status === 'WAITING_INPUT' ? '2026-09-28T04:40:00.000Z' : null,
+          ...runPatch,
+        });
+  return {
+    id: index + 1,
+    status,
+    currentStepRunId: currentRun?.id ?? null,
+    lastVersion: currentRun ? 1 : 0,
+    staleInputs: [],
+    staleSince: status === 'RERUN_REQUIRED' ? AT : null,
+    updatedAt: AT,
+    currentRun,
+    inputs: [],
+    actions: {
+      run: ENABLED,
+      continuousRun: ENABLED,
+      edit: disabled('INVALID_STEP_CODE', '이 단계는 값을 직접 고칠 수 없습니다.'),
+    },
+    warnings: [],
+    ...patch,
+  };
+}
+
+/** 단계 레일 10칸(주지 않은 단계는 미실행·실행 가능) */
+export function stepRail(items: Partial<Record<StepCode, Partial<RailItem>>> = {}) {
+  return {
+    items: STEP_CODES.map((stepCode) => railItem({ stepCode, ...(items[stepCode] ?? {}) })),
+  };
+}
+
+/** 버전 이력 한 줄 */
+export function versionItem(
+  patch: Partial<StepRunVersionItem> & { id: number; version: number; stepCode: StepCode },
+): StepRunVersionItem {
+  return { ...stepRunSummary(patch), isCurrent: false, ...patch };
+}

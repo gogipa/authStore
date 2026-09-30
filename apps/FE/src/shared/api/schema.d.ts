@@ -101,7 +101,7 @@ export interface paths {
         };
         /**
          * 단계 레일
-         * @description 단계 10개(페이징 없음): 상태·현재 버전·입력 출처·재실행 사유, 실행·연속 실행·수정 버튼의 켜짐과 꺼진 이유, G2 전 AI 비용 경고(PRE_G2_AI_COST). 꺼진 이유(disabledReason.code)는 실행 API의 409 코드와 같은 계산을 한 곳에서 한다.
+         * @description 단계 10개(페이징 없음): 상태·현재 버전·입력 출처·재실행 사유, 실행·연속 실행·수정 버튼의 켜짐과 꺼진 이유, G2 전 AI 비용 경고(PRE_G2_AI_COST). 꺼진 이유(disabledReason.code)는 실행 API의 409 코드와 같은 계산을 한 곳에서 한다. P1-05 — run은 startCandidateStepRun과 같은 검사(INVALID_STEP_CODE·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED·SETTINGS_INVALID·STEP_ALREADY_RUNNING·STEP_LOCKED_BY_RUNNING_STEP·STEP_START_CONDITION_UNMET·GATE_NOT_PASSED), edit은 오너 수정 EDIT와 같은 검사, continuousRun은 run 검사 + G2 전 ②·③ 밖이면 CONTINUOUS_RUN_BEFORE_G2(연속 실행 API는 P1-06).
          */
         get: operations["listCandidateSteps"];
         put?: never;
@@ -130,7 +130,7 @@ export interface paths {
         put?: never;
         /**
          * 단계 하나 실행·다시 실행
-         * @description 단계 하나를 실행한다(execution_mode=STEP). 입력이 같아도 새 버전을 만든다(F-BS-19). 다음 단계를 자동으로 시작하지 않는다(⑥ 묶음만 예외). REGISTER는 422 INVALID_STEP_CODE — G4는 POST /candidates/{candidateId}/registrations. 진행은 SSE step-run.status-changed. 공통 오류 — 404 CANDIDATE_NOT_FOUND, 422 INVALID_STEP_CODE·VALIDATION_FAILED, 409 STEP_START_CONDITION_UNMET(fieldErrors에 빠진 입력 키)·STEP_ALREADY_RUNNING·STEP_LOCKED_BY_RUNNING_STEP·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED. 단계별 — SOURCING 422 RAKUTEN_QUERY_INVALID, 409 SECRET_NOT_CONFIGURED·DAILY_LIMIT_REACHED·EXTERNAL_CALL_COOLDOWN(Retry-After); PRICING 409 FX_RATE_UNAVAILABLE, 422 COUPON_NOT_ALLOWED; CATEGORY 409 COMMERCE_META_NOT_SYNCED; NOTICE_HTML 409 PROFILE_INCOMPLETE(details.missingFields); UPLOAD 409 GATE_NOT_PASSED(G3)·SECRET_NOT_CONFIGURED·(M2) TEMP_CANDIDATE_NOT_ALLOWED. 경고 — THUMBNAIL·COPY·NOTICE_RAW PRE_G2_AI_COST, TAGS CATEGORY_UNDECIDED. AI 엔진(D-16) — AI 엔진을 쓰는 단계는 시작 때 설정의 선택 엔진·모델과 CLI 버전을 실행 기록(aiEngine·aiModel·aiCliVersion)에 고정한다. 선택 엔진의 최신 점검(ai_cli_check)이 미설치·로그인 풀림·계약 테스트 실패·지원 밖 버전이면 409 AI_ENGINE_UNAVAILABLE(details.engineCode·reason·settingsPath)로 거절하고 다른 엔진으로 넘어가지 않는다. 실행 중 엔진 실패는 HTTP 오류가 아니라 StepRun FAILED(errorCode=AI_ENGINE_UNAVAILABLE)와 SSE step-run.status-changed로 알린다.
+         * @description 단계 하나를 실행한다(execution_mode=STEP). 입력이 같아도 새 버전을 만든다(F-BS-19). 다음 단계를 자동으로 시작하지 않는다(⑥ 묶음만 예외). REGISTER는 422 INVALID_STEP_CODE — G4는 POST /candidates/{candidateId}/registrations. 진행은 SSE step-run.status-changed. 공통 오류 — 404 CANDIDATE_NOT_FOUND, 422 INVALID_STEP_CODE·VALIDATION_FAILED, 409 STEP_START_CONDITION_UNMET(fieldErrors에 빠진 입력 키)·STEP_ALREADY_RUNNING·STEP_LOCKED_BY_RUNNING_STEP·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED. 단계별 — SOURCING 422 RAKUTEN_QUERY_INVALID, 409 SECRET_NOT_CONFIGURED·DAILY_LIMIT_REACHED·EXTERNAL_CALL_COOLDOWN(Retry-After); PRICING 409 FX_RATE_UNAVAILABLE, 422 COUPON_NOT_ALLOWED; CATEGORY 409 COMMERCE_META_NOT_SYNCED; NOTICE_HTML 409 PROFILE_INCOMPLETE(details.missingFields); UPLOAD 409 GATE_NOT_PASSED(G3)·SECRET_NOT_CONFIGURED·(M2) TEMP_CANDIDATE_NOT_ALLOWED. 경고 — THUMBNAIL·COPY·NOTICE_RAW PRE_G2_AI_COST, TAGS CATEGORY_UNDECIDED. AI 엔진(D-16) — AI 엔진을 쓰는 단계는 시작 때 설정의 선택 엔진·모델과 CLI 버전을 실행 기록(aiEngine·aiModel·aiCliVersion)에 고정한다. 선택 엔진의 최신 점검(ai_cli_check)이 미설치·로그인 풀림·계약 테스트 실패·지원 밖 버전이면 409 AI_ENGINE_UNAVAILABLE(details.engineCode·reason·settingsPath)로 거절하고 다른 엔진으로 넘어가지 않는다. 실행 중 엔진 실패는 HTTP 오류가 아니라 StepRun FAILED(errorCode=AI_ENGINE_UNAVAILABLE)와 SSE step-run.status-changed로 알린다. P1-05 구현 결정(Proposed, 05-1 §7.2) — 입력 대기 중인 단계에 새 실행 요청은 새 실행을 열지 않고 409 STEP_ALREADY_RUNNING(details.status=WAITING_INPUT), 실행기가 아직 없는 단계는 422 INVALID_STEP_CODE(details.reason=NO_RUNNER), 로드된 설정이 없으면 503 SETTINGS_INVALID. ⑥ 묶음은 시작 조건·잠금에 걸리는 뒤 단계를 건너뛰고(예 ⑥-1 실패 → ⑥-2는 실행, ⑥-3은 시작 안 함) 묶음을 끝낸다.
          */
         post: operations["startCandidateStepRun"];
         delete?: never;
@@ -199,7 +199,7 @@ export interface paths {
         put?: never;
         /**
          * 오너 수정 새 버전 만들기
-         * @description 값 편집(EDIT)·그대로 유지(KEEP_AS_IS)·이전 버전 다시 고르기(RESTORE_VERSION)를 새 step_run(OWNER_EDIT)으로 남긴다(표 B). 새 버전 + 산출물 + 포인터 + 뒷단계 전파를 한 트랜잭션으로 쓴다. TAGS 편집만 202(규칙 필터·restricted-tags 재검증 뒤 SSE). EDIT 허용 단계는 COPY·NOTICE_RAW·NOTICE_HTML(fields)·TAGS(add·remove), KEEP_AS_IS는 RERUN_REQUIRED인 COPY만, RESTORE_VERSION은 REGISTER를 뺀 전 단계. 공통 오류 — 409 VERSION_NOT_CURRENT·STEP_ALREADY_RUNNING·STEP_LOCKED_BY_RUNNING_STEP·CANDIDATE_LOCKED, 422 INVALID_STEP_CODE. EDIT — 422 FIELD_NOT_EDITABLE·EVIDENCE_URL_REQUIRED·ORIGIN_CODE_NOT_ALLOWED·VALIDATION_FAILED(헤드라인 40자, 셀링포인트 3~5개), TAGS 422 FINAL_TAG_LIMIT_EXCEEDED. KEEP_AS_IS — 422 KEEP_AS_IS_NOT_ALLOWED, 409 STEP_NOT_RERUN_REQUIRED. RESTORE_VERSION — 409 STEP_NOT_COMPLETED·STEP_RUN_ALREADY_CURRENT·ANCHOR_KEY_MISMATCH. 상품명 100자 초과는 저장하고 경고만 준다.
+         * @description 값 편집(EDIT)·그대로 유지(KEEP_AS_IS)·이전 버전 다시 고르기(RESTORE_VERSION)를 새 step_run(OWNER_EDIT)으로 남긴다(표 B). 새 버전 + 산출물 + 포인터 + 뒷단계 전파를 한 트랜잭션으로 쓴다. TAGS 편집만 202(규칙 필터·restricted-tags 재검증 뒤 SSE). EDIT 허용 단계는 COPY·NOTICE_RAW·NOTICE_HTML(fields)·TAGS(add·remove), KEEP_AS_IS는 RERUN_REQUIRED인 COPY만, RESTORE_VERSION은 REGISTER를 뺀 전 단계. 공통 오류 — 409 VERSION_NOT_CURRENT·STEP_ALREADY_RUNNING·STEP_LOCKED_BY_RUNNING_STEP·CANDIDATE_LOCKED, 422 INVALID_STEP_CODE. EDIT — 422 FIELD_NOT_EDITABLE·EVIDENCE_URL_REQUIRED·ORIGIN_CODE_NOT_ALLOWED·VALIDATION_FAILED(헤드라인 40자, 셀링포인트 3~5개), TAGS 422 FINAL_TAG_LIMIT_EXCEEDED. KEEP_AS_IS — 422 KEEP_AS_IS_NOT_ALLOWED, 409 STEP_NOT_RERUN_REQUIRED. RESTORE_VERSION — 409 STEP_NOT_COMPLETED·STEP_RUN_ALREADY_CURRENT·ANCHOR_KEY_MISMATCH. 상품명 100자 초과는 저장하고 경고만 준다. P1-05 구현 결정(Proposed, 05-1 §7.2) — baseStepRunId가 이 후보·단계의 실행이 아니면 404 STEP_RUN_NOT_FOUND, 열린 실행(실행중·입력 대기)이 있으면 409 STEP_ALREADY_RUNNING. EDIT·RESTORE_VERSION의 새 버전은 바탕 버전의 입력(step_run_input)을 그대로 가져가고, 지금 입력과 다르면 곧바로 RERUN_REQUIRED(rerunReasonInputs)로 둔다. KEEP_AS_IS는 지금 입력으로 새 지문을 남기고 user_action_log OWNER_CONFIRMED, EDIT·RESTORE_VERSION은 OWNER_EDITED를 남긴다.
          */
         post: operations["createCandidateStepOwnerEdit"];
         delete?: never;
@@ -3624,7 +3624,7 @@ export interface components {
             status: components["schemas"]["StepRunStatus"];
             /** @description 이번 수정으로 재실행 필요가 된 뒷단계 */
             staleDownstreamSteps: components["schemas"]["StepCode"][];
-            /** @description RESTORE_VERSION으로 함께 되돌린 단계 */
+            /** @description RESTORE_VERSION이 뒷단계로 전파해 재실행 필요가 된 단계(staleDownstreamSteps와 같다). 그 밖 동작은 빈 배열(P1-05 Proposed — 다른 단계를 함께 되돌리지 않는다) */
             propagatedSteps: components["schemas"]["StepCode"][];
             warnings: components["schemas"]["CandidateWarning"][];
         };
@@ -8102,6 +8102,15 @@ export interface operations {
             409: components["responses"]["Conflict"];
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
+            /** @description SETTINGS_INVALID — 로드된 설정 스냅샷이 없어 실행 기록(settings_snapshot_id)을 만들 수 없음(P1-05) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     getStepRun: {
@@ -8205,6 +8214,15 @@ export interface operations {
             409: components["responses"]["Conflict"];
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
+            /** @description SETTINGS_INVALID — 로드된 설정 스냅샷이 없음(새 버전의 settings_snapshot_id, P1-05) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     startCandidateContinuousRun: {

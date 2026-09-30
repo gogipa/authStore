@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { Link } from 'react-router';
+import { inputKeyLabels } from '@/features/step-engine';
 import { cx } from '@/shared/lib/cx';
 import {
   GATE_LABEL,
@@ -37,6 +38,10 @@ export interface StepRailProps {
   gates?: Partial<Record<GateCode, GateState>>;
   /** 레일 아래 자리: '재실행 필요 단계 모두 실행' 버튼과 꺼진 이유(P1-05). */
   footer?: ReactNode;
+  /** 재실행 필요 사유(바뀐 입력 이름, candidate_step.stale_inputs). 행 아래 '바뀐 입력: …'으로 보인다(F-CW-11) */
+  staleInputs?: Partial<Record<StepCode, readonly string[]>>;
+  /** 레일 맨 위 배지 자리: URL로 만든 후보의 '수동'·'비교 안 함'(F-CW-12) */
+  badges?: ReactNode;
 }
 
 function rowScreen(row: RailRow): StepScreen | undefined {
@@ -69,6 +74,7 @@ function UnknownGate({ gate }: { gate: GateCode }) {
  * 단계 레일(공통부품_마크업.md §G). 행과 순서는 shared/lib/steps.ts의 STEP_RAIL에서 만든다.
  * 현재 화면을 맡는 첫 행에 aria-current="step"을 단다(판정 화면이면 ③, 콘텐츠면 ⑥, 최종 승인이면 ⑧).
  * 행 오른쪽에 StatusChip, 게이트 줄에 GateBadge를 그린다. 값이 없으면 칩을 그리지 않는다.
+ * 재실행 필요 행 아래에 바뀐 입력 이름(P1-05), 맨 위에 URL 후보 배지를 둔다.
  */
 export function StepRail({
   candidateId,
@@ -77,6 +83,8 @@ export function StepRail({
   groupStatuses,
   gates,
   footer,
+  staleInputs,
+  badges,
 }: StepRailProps) {
   const currentIndex = currentScreen
     ? STEP_RAIL.findIndex((row) => rowScreen(row) === currentScreen)
@@ -84,6 +92,7 @@ export function StepRail({
 
   return (
     <nav aria-label="단계" className={styles.rail}>
+      {badges !== undefined ? <div className={styles.badges}>{badges}</div> : null}
       {STEP_RAIL.map((row, index) => {
         if (row.kind === 'gate') {
           const state = gates?.[row.gate];
@@ -106,19 +115,26 @@ export function StepRail({
         const sub = row.kind === 'step' && row.sub;
         const rowStatus = row.kind === 'group' ? groupStatuses?.[row.screen] : statuses?.[row.code];
 
+        const stale = row.kind === 'step' ? staleInputs?.[row.code] : undefined;
         return (
-          <Link
-            key={row.kind === 'step' ? row.code : row.no}
-            to={to}
-            aria-current={current ? 'step' : undefined}
-            className={cx(styles.row, sub && styles.sub, current && styles.current)}
-          >
-            {sub ? null : <span className={styles.no}>{row.no}</span>}
-            <span className={styles.label}>{sub ? `${row.no} ${row.label}` : row.label}</span>
-            {rowStatus ? (
-              <StatusChip status={rowStatus.status} detail={rowStatus.failureKind} />
+          <Fragment key={row.kind === 'step' ? row.code : row.no}>
+            <Link
+              to={to}
+              aria-current={current ? 'step' : undefined}
+              className={cx(styles.row, sub && styles.sub, current && styles.current)}
+            >
+              {sub ? null : <span className={styles.no}>{row.no}</span>}
+              <span className={styles.label}>{sub ? `${row.no} ${row.label}` : row.label}</span>
+              {rowStatus ? (
+                <StatusChip status={rowStatus.status} detail={rowStatus.failureKind} />
+              ) : null}
+            </Link>
+            {stale && stale.length > 0 ? (
+              <span className={cx(styles.stale, sub && styles.staleSub)}>
+                바뀐 입력: {inputKeyLabels(stale)}
+              </span>
             ) : null}
-          </Link>
+          </Fragment>
         );
       })}
       {footer !== undefined ? <div className={styles.footer}>{footer}</div> : null}

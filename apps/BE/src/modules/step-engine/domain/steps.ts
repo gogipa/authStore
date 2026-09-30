@@ -156,8 +156,8 @@ const node = (partial: Partial<StepGraphNode>): StepGraphNode => ({
 
 /**
  * 단계 입력 그래프(PRD §5.3 '단계별 입력과 산출물' 표의 시작 조건). 앞 단계 산출물과 후보 필드만 적었다.
- * 설정 키·오너 입력은 P1-05가 입력 키 단위로 넓힌다(입력 지문·재실행 필요 전파). '지금 실행 가능'(runnable.ts)과
- * 실행 중 잠금(앞·뒤 단계)이 이 표를 쓴다.
+ * 입력 키 단위(설정 키·오너 입력 포함)는 step-graph.ts의 `STEP_INPUT_SPECS`가 넓힌다(P1-05: 입력 지문·재실행 필요 전파).
+ * '지금 실행 가능'(runnable.ts)과 실행 중 잠금(앞·뒤 단계)이 이 표를 쓴다.
  */
 export const STEP_GRAPH: Record<StepCode, StepGraphNode> = {
   // 라쿠텐 검색어 또는 URL, (다시 실행이면) 앵커 키, 재고 판정 설정
@@ -178,9 +178,12 @@ export const STEP_GRAPH: Record<StepCode, StepGraphNode> = {
   COPY: node({ requires: ['SOURCING'] }),
   // ② 소싱 선택·속성·설명·선택 색상
   NOTICE_RAW: node({ requires: ['SOURCING'] }),
-  // ⑥-1, ⑥-2, ③ 판매 사이즈, 후보 성별, 프로필·템플릿 설정
+  // ⑥-1, ⑥-2, ③ 판매 사이즈, 후보 성별, 프로필·템플릿 설정, (선택) ④ 리프 카테고리.
+  // 상품명(⑥-3 산출물)이 ④를 읽는다(RG-04). PRD §5.3 표에는 없어 선택 입력으로 둔다: ④ 없이도 실행하고,
+  // ④가 바뀌면 ⑥-3이 재실행 필요가 된다(ERD §7.2-10, P1-05 Proposed)
   NOTICE_HTML: node({
     requires: ['COPY', 'NOTICE_RAW', 'PRICING'],
+    optional: ['CATEGORY'],
     candidateFields: [CANDIDATE_INPUT_KEYS.gender],
   }),
   // 시드 키워드·② 모델명·상품유형, 후보 성별, (선택) ④ 리프 경로

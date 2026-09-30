@@ -29,3 +29,25 @@ export type ListAttentionStepsParams = NonNullable<
 export type ListStatusHistoryParams = NonNullable<
   operations['listCandidateStatusHistory']['parameters']['query']
 >;
+
+// ── 단계 실행(P1-05) ────────────────────────────────────────────────────────
+export type StepStatusValue = components['schemas']['StepStatus'];
+export type StepRunSummary = components['schemas']['StepRunSummary'];
+export type StepRunDetail = components['schemas']['StepRunDetail'];
+export type StepRunInputItem = components['schemas']['StepRunInputItem'];
+export type StepRunVersionItem = components['schemas']['StepRunVersionItem'];
+export type StepRunVersionPage = components['schemas']['StepRunVersionPage'];
+export type StepActionState = components['schemas']['StepActionState'];
+export type CandidateStepActions = components['schemas']['CandidateStepActions'];
+export type CandidateStepRailItem = components['schemas']['CandidateStepRailItem'];
+export type CandidateStepRail = components['schemas']['CandidateStepRail'];
+export type StepRunAccepted = components['schemas']['StepRunAccepted'];
+export type StepRunStartRequest = components['schemas']['StepRunStartRequest'];
+export type StepStaleDiff = components['schemas']['StepStaleDiff'];
+export type StepStaleInputDiff = components['schemas']['StepStaleInputDiff'];
+export type StepOwnerEditRequest = components['schemas']['StepOwnerEditRequest'];
+export type StepOwnerEditResult = components['schemas']['StepOwnerEditResult'];
+/** GET /candidates/{candidateId}/steps/{stepCode}/runs 쿼리 */
+export type ListStepRunsParams = NonNullable<
+  operations['listCandidateStepRuns']['parameters']['query']
+>;

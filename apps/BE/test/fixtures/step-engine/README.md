@@ -1,4 +1,4 @@
-# step-engine fixture (P1-04)
+# step-engine fixture (P1-04·P1-05)
 
 후보 e2e(`test/step-engine/*.e2e-spec.ts`, `autostore_test`)가 쓰는 DB 행 만들기 함수다. 예시 값은 화면시안_명세 §4(아식스 젤카야노 14 · 크림/블랙 등)에서 가져왔고 실제 상품이 아니다. 비밀값·개인 값은 없다.
 
@@ -8,5 +8,8 @@
 | `keyword.factory.ts`           | `keyword_snapshot`(붙여넣기·완료) + `keyword`(고름·안 고름·아동화 제외)                                                                                                                                                                                                                                                                                                                   |
 | `settings-snapshot.factory.ts` | step_run에 필요한 설정 스냅샷 1행(고정 해시, 앱이 만든 스냅샷과 섞이지 않음)                                                                                                                                                                                                                                                                                                              |
 | `truncate.ts`                  | step-engine·keywords 표와 ② 스냅샷 표를 `TRUNCATE … RESTART IDENTITY CASCADE`로 비운다(삭제 금지·추가만 트리거가 있어 deleteMany는 쓸 수 없다)                                                                                                                                                                                                                                            |
+| `fake-runners.ts`              | P1-05 가짜 실행기 `FakeStepRunner`·`FakeStepWorld`. 단계마다 PRD §5.3 표의 입력 키(`STEP_INPUT_SPECS`)를 선언하고, 호출마다 결과 대본(COMPLETE·WAIT·FAIL·THROW·HOLD — 풀어 줄 때까지 대기)을 따른다. 입력 값은 테스트가 바꾸는 메모리 표(`world.set(candidateId, inputKey, value)`)에서, 앞 단계 산출물은 그 단계 현재 완료 버전의 산출물에서 읽는다. 실제 외부·AI를 부르지 않는다        |
+| `fake-runners.module.ts`       | `FakeStepRunnersModule`: ②~⑧ 9단계 + ⑨(재시작 훅 `onInterrupted`만) 가짜를 `@StepRunnerFor`로 등록. `createTestApp({ imports: [FakeStepRunnersModule] })`로 끼우고, 비동기 완료는 `app.get(StepExecutor).whenIdle()`로 기다린다(sleep 금지)                                                                                                                                               |
+| `step-run.factory.ts`          | `insertStepRun`: 닫힌·열린 `step_run`과 `step_run_input`을 직접 넣고 `candidate_step` 포인터를 옮긴다(재시작·잠금·열린 실행 유일 제약 상태). 앱을 띄운 뒤에 넣는다(앱이 켜질 때 재시작 정리가 RUNNING을 닫는다)                                                                                                                                                                           |
 
 - 단위 테스트(`src/modules/step-engine/**/*.spec.ts`)는 DB 대신 `test/helpers/fake-prisma.ts`(메모리 Prisma)를 Nest DI로 끼운다.

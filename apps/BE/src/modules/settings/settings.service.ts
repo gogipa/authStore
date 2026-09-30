@@ -168,6 +168,7 @@ export class SettingsService implements OnApplicationBootstrap {
         if (loaded.ok) {
           const saved = await this.saveSnapshot(loaded, prevRow?.content ?? null);
           this.adopt(saved.row.id, loaded.settings);
+          this.runAfterCommit(saved.afterCommit);
           this.logger.log(
             `설정 파일 검사 통과: 스냅샷 #${saved.row.id}(${saved.created ? '새로 만듦' : '같은 내용'}), 바뀐 키 ${saved.changedKeys.length}개`,
           );
@@ -234,6 +235,7 @@ export class SettingsService implements OnApplicationBootstrap {
         errors: [],
         rerunRequiredStepCount: saved.rerunRequiredStepCount,
       });
+      this.runAfterCommit(saved.afterCommit);
       return {
         created: saved.created,
         result: {
@@ -304,9 +306,12 @@ export class SettingsService implements OnApplicationBootstrap {
     created: boolean;
     changedKeys: string[];
     rerunRequiredStepCount: number;
+    /** 커밋 뒤 부를 일(전파가 맡긴 SSE) */
+    afterCommit: (() => void)[];
   }> {
     const changedKeys = prevContent === null ? [] : diffSettingsKeys(prevContent, loaded.settings);
     const propagateKeys = changedKeys.filter((key) => !isAiSettingsKey(key));
+    const afterCommit: (() => void)[] = [];
     return this.prisma.$transaction(async (tx) => {
       const now = new Date();
       const existing = await tx.settingsSnapshot.findUnique({
@@ -334,9 +339,22 @@ export class SettingsService implements OnApplicationBootstrap {
         });
       }
       const rerunRequiredStepCount =
-        propagateKeys.length > 0 ? await this.propagator(propagateKeys, tx) : 0;
-      return { row, created: !existing, changedKeys, rerunRequiredStepCount };
+        propagateKeys.length > 0
+          ? await this.propagator(propagateKeys, tx, (fn) => afterCommit.push(fn))
+          : 0;
+      return { row, created: !existing, changedKeys, rerunRequiredStepCount, afterCommit };
     });
+  }
+
+  /** 설정 트랜잭션 커밋 뒤 전파가 맡긴 일(SSE)을 부른다. 하나가 실패해도 나머지는 부른다 */
+  private runAfterCommit(callbacks: readonly (() => void)[]): void {
+    for (const fn of callbacks) {
+      try {
+        fn();
+      } catch (error) {
+        this.logger.error({ err: error }, '설정 변경 뒤 작업(SSE 등)이 실패했습니다');
+      }
+    }
   }
 
   private toReloadError(loaded: LoadedFailed): ApiException {

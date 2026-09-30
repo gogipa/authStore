@@ -12,6 +12,7 @@ import { SettingsService } from '../../settings/settings.service.js';
 import { checkRakutenQuery } from '../../sourcing/domain/rakuten-query.rules.js';
 import { resumeTarget } from '../domain/resume.js';
 import { canRunStep } from '../domain/runnable.js';
+import { asStartCandidate } from '../execution/start-conditions.js';
 import {
   ATTENTION_STEP_STATUSES,
   CANDIDATE_STATUSES,
@@ -45,11 +46,11 @@ import {
   type CandidateCreationExtension,
 } from '../ports/candidate-creation.extension.js';
 import { GATE_VALIDITY, toGateFlags, type GateValidityPort } from '../ports/gate-validity.port.js';
+import { PAGE_DATA, type PageDataPort } from '../ports/page-data.port.js';
 import { CandidateGuardService } from './candidate-guard.service.js';
 import { CandidateIdentityService, type ItemColorKey } from './candidate-identity.service.js';
 import { CandidateStatusService } from './candidate-status.service.js';
 import {
-  loadCurrentSelection,
   loadLatestSelections,
   toDetail,
   toHistoryItem,
@@ -94,6 +95,7 @@ export class CandidateService {
     @Inject(GATE_VALIDITY) private readonly gateValidity: GateValidityPort,
     @Inject(CANDIDATE_CREATION_EXTENSION)
     private readonly creationExtension: CandidateCreationExtension | null,
+    @Inject(PAGE_DATA) private readonly pageData: PageDataPort,
   ) {}
 
   // ── 만들기 ────────────────────────────────────────────────────────────────
@@ -219,9 +221,7 @@ export class CandidateService {
       for (const candidate of all) {
         const map = toStepStatusMap(steps.get(candidate.id) ?? []);
         const gates = toGateFlags(await this.gateValidity.evaluate(this.prisma, candidate.id));
-        if (
-          canRunStep(stepCode, candidate as Candidate & { status: CandidateStatus }, map, gates)
-        ) {
+        if (canRunStep(stepCode, asStartCandidate(candidate), map, gates)) {
           runnable.push(candidate);
         }
       }
@@ -286,7 +286,7 @@ export class CandidateService {
     const [gates, latest, current, approved, openChain] = await Promise.all([
       this.gateValidity.evaluate(db, candidateId),
       loadLatestSelections(db, [candidateId]),
-      loadCurrentSelection(db, sourcingRunId),
+      this.pageData.collectedAt(db, sourcingRunId ?? null),
       db.registration.findFirst({
         where: { stepRun: { candidateId } },
         orderBy: [{ approvedAt: 'desc' }, { id: 'desc' }],
@@ -302,7 +302,7 @@ export class CandidateService {
       stepRows,
       gates,
       latestSelection: latest.get(candidateId) ?? null,
-      currentSelection: current,
+      pageDataCollectedAt: current,
       approvedAt: approved?.approvedAt ?? null,
       openChain,
       now: this.transactions.now(),

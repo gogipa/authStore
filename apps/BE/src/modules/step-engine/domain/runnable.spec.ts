@@ -32,12 +32,15 @@ describe('단계 그래프(PRD §5.3 시작 조건)', () => {
   });
 
   it('앞·뒤 단계(직접·간접)', () => {
+    // ⑥-3은 ④를 선택 입력으로 읽는다(상품명, ERD §7.2-10 P1-05 Proposed)
     expect([...upstreamSteps('NOTICE_HTML')].sort()).toEqual(
-      ['COPY', 'NOTICE_RAW', 'PRICING', 'SOURCING'].sort(),
+      ['CATEGORY', 'COPY', 'NOTICE_RAW', 'PRICING', 'SOURCING'].sort(),
     );
     expect([...downstreamSteps('THUMBNAIL')].sort()).toEqual(['REGISTER', 'UPLOAD']);
     expect(downstreamSteps('SOURCING').size).toBe(9);
-    expect([...downstreamSteps('CATEGORY')].sort()).toEqual(['REGISTER', 'TAGS']);
+    expect([...downstreamSteps('CATEGORY')].sort()).toEqual(
+      ['NOTICE_HTML', 'REGISTER', 'TAGS', 'UPLOAD'].sort(),
+    );
   });
 });
 
@@ -47,7 +50,7 @@ describe('checkStepRunnable — 입력 고르기(F-CW-22, 규칙 13)', () => {
     expect(checkStepRunnable('PRICING', candidate(), steps(), NO_GATES)).toEqual({
       code: 'STEP_START_CONDITION_UNMET',
       stepCode: 'PRICING',
-      missingInputs: ['step.SOURCING'],
+      missingInputs: ['sourcing.targetSkus'],
     });
   });
 

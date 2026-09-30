@@ -6,6 +6,7 @@ import {
   EXCLUDED_REASON_LABEL,
   parseCandidateId,
   STEP_NAME,
+  StepTable,
   stepStatusOf,
   useCandidate,
   useCandidates,
@@ -24,7 +25,6 @@ import { isStepCode, stepPath, type StepCode } from '@/shared/lib/steps';
 import {
   Banner,
   Button,
-  ButtonLink,
   Chip,
   DisabledReason,
   FilterToggleGroup,
@@ -147,7 +147,7 @@ function InputPicker({ stepCode }: { stepCode: StepCode }) {
   );
 }
 
-/** 고른 후보: 후보 머리(제외·다시 작업) + 단계 표 자리(P1-05) */
+/** 고른 후보: 후보 머리(제외·다시 작업) + 단계 표(P1-05) */
 function SelectedCandidate({ candidateId }: { candidateId: number }) {
   const candidate = useCandidate(candidateId);
   const exclude = useExcludeCandidate();
@@ -183,23 +183,7 @@ function SelectedCandidate({ candidateId }: { candidateId: number }) {
           {w.message}
         </Banner>
       ))}
-      <section aria-labelledby="steps-title" className={styles.steps}>
-        <div className={styles.stepsHead}>
-          <h2 id="steps-title" className={styles.sectionTitle}>
-            단계
-          </h2>
-          <span className={styles.caption}>
-            단계마다 따로 실행하고, 다음 단계는 자동으로 시작하지 않습니다. 실행 중인 단계가 있으면
-            그 결과를 읽는 단계와 앞 단계는 끝날 때까지 잠깁니다.
-          </span>
-        </div>
-        <Panel aria-label="단계 표">
-          <p className={styles.hint}>단계별 실행·버전 이력은 후보 작업 화면에서 봅니다.</p>
-          <div>
-            <ButtonLink to={`/candidates/${detail.id}`}>후보 작업 열기</ButtonLink>
-          </div>
-        </Panel>
-      </section>
+      <StepTable detail={detail} />
     </>
   );
 }
@@ -255,7 +239,7 @@ function CandidateActions({
  * SCR-12 후보 작업 목록(CandidateWork.dc.html)의 M1 부분.
  * - 왼쪽: '후보' 목록과 필터(전체·작업중·승인대기·제외 + 수, URL `?status=`). 줄마다 표시명·상태·이어 할 단계와 그 상태 칩,
  *   URL 후보는 '수동'·'비교 안 함'. 'URL로 만들기'는 자리만(P2-02가 잇는다).
- * - 오른쪽: `?candidateId=`의 후보 머리(후보 제외·다시 작업)와 단계 표 자리(P1-05), `?runnableStep=`이면 '입력 고르기'.
+ * - 오른쪽: `?candidateId=`의 후보 머리(후보 제외·다시 작업)와 단계 표(StepTable, P1-05), `?runnableStep=`이면 '입력 고르기'.
  * 임시 후보 줄·여러 후보 같은 단계 실행은 M2라 만들지 않는다.
  */
 export function CandidatesPage() {

@@ -82,3 +82,24 @@
   padding-top: var(--space-1);
   border-top: 1px solid var(--color-line);
 }
+
+/* 레일 맨 위 배지(URL 후보 '수동'·'비교 안 함', F-CW-12). */
+.badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px; /* 보드 값. 토큰 없음. */
+  padding: var(--space-1) var(--space-2) var(--space-2);
+}
+
+/* 재실행 필요 사유(바뀐 입력 이름): 행 이름과 줄 맞춤(40px). */
+.stale {
+  padding: 0 var(--space-2) var(--space-1) 40px;
+  font: var(--type-caption);
+  color: var(--color-rerun);
+  overflow-wrap: anywhere;
+}
+
+.staleSub {
+  padding-left: 40px;
+}

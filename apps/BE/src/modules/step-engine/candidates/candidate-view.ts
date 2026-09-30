@@ -198,7 +198,8 @@ export interface DetailParts {
   stepRows: readonly Pick<CandidateStep, 'stepCode' | 'status'>[];
   gates: CandidateGateValidity;
   latestSelection: SourcingSelection | null;
-  currentSelection: SourcingSelection | null;
+  /** 현재 ② 버전의 페이지 수집 시각(PageDataPort, P1-05) */
+  pageDataCollectedAt: Date | null;
   approvedAt: Date | null;
   openChain: StepChain | null;
   now: Date;
@@ -208,7 +209,7 @@ export interface DetailParts {
 
 export function toDetail(parts: DetailParts): CandidateDetailDto {
   const { candidate, gates } = parts;
-  const collectedAt = parts.currentSelection?.collectedAt ?? null;
+  const collectedAt = parts.pageDataCollectedAt;
   const pageDataStale =
     collectedAt !== null &&
     parts.now.getTime() > collectedAt.getTime() + parts.validityHours * 3_600_000;

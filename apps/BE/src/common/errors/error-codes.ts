@@ -94,6 +94,62 @@ export const ERROR_CODES = {
     status: 409,
     message: '이 후보의 기준 모델·색상과 다릅니다. 다른 모델·색상은 새 후보로 만들어 주세요.',
   },
+  // ── step-engine 단계 실행(P1-05, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 실행 id 없음 */
+  STEP_RUN_NOT_FOUND: { status: 404, message: '실행 기록을 찾을 수 없습니다.' },
+  /** 05-3 §5.1: 후보의 그 단계 산출물 없음(details.stepCode) */
+  STEP_OUTPUT_NOT_FOUND: { status: 404, message: '아직 {단계}를 실행하지 않았습니다.' },
+  /** 05-3 §5.1: 알 수 없는 stepCode, REGISTER, 그 동작이 없는 단계(실행기가 없는 단계 포함, P1-05 Proposed) */
+  INVALID_STEP_CODE: {
+    status: 422,
+    message: '이 단계는 여기서 실행하거나 고칠 수 없습니다.',
+  },
+  /** 05-3 §5.1: (M2) TEMP 후보의 ⑧·⑨·승인 */
+  TEMP_CANDIDATE_NOT_ALLOWED: {
+    status: 409,
+    message: '임시 후보는 업로드·등록할 수 없습니다. 먼저 라쿠텐 상품에 연결해 주세요.',
+  },
+  /** 05-3 §5.1: 시작 조건 미충족(fieldErrors에 입력 키, details.stepCode) */
+  STEP_START_CONDITION_UNMET: { status: 409, message: '시작에 필요한 값이 없습니다: {빠진 입력}.' },
+  /** 05-3 §5.1: 같은 후보·단계에 열린 실행(실행중·입력대기, uq_step_run_one_open) */
+  STEP_ALREADY_RUNNING: { status: 409, message: '이 단계가 이미 실행 중입니다.' },
+  /** 05-3 §5.1: 필요한 단계·고른 버전이 완료·최신이 아님(details.stepCode·status) */
+  STEP_NOT_COMPLETED: {
+    status: 409,
+    message: '{단계}가 아직 완료되지 않았습니다(지금: {상태}).',
+  },
+  /** 05-3 §5.1: 비교 보기·그대로 유지 대상이 아님 */
+  STEP_NOT_RERUN_REQUIRED: {
+    status: 409,
+    message: "'재실행 필요' 상태인 단계에서만 할 수 있습니다.",
+  },
+  /** 05-3 §5.1: 실행 중 오너 입력을 닫힌·실행중 버전에 보냄 */
+  STEP_RUN_NOT_WAITING_INPUT: {
+    status: 409,
+    message: '이 실행은 입력을 기다리고 있지 않습니다. 바꾸려면 다시 실행하거나 수정해 주세요.',
+  },
+  /** 05-3 §5.1: 현재 버전을 다시 고름 */
+  STEP_RUN_ALREADY_CURRENT: { status: 409, message: '이미 지금 쓰고 있는 버전입니다.' },
+  /** 05-3 §5.1: baseStepRunId·basisStepRunId·expected*가 현재 버전과 다름 */
+  VERSION_NOT_CURRENT: {
+    status: 409,
+    message: '화면을 연 뒤 값이 바뀌었습니다. 새로 고친 뒤 다시 해 주세요.',
+  },
+  /** 05-3 §5.1: COPY가 아닌 단계(ck_step_run_keep_copy_only) */
+  KEEP_AS_IS_NOT_ALLOWED: {
+    status: 422,
+    message: "'그대로 유지'는 ⑥-1 카피에서만 쓸 수 있습니다.",
+  },
+  /** 05-3 §5.1: 허용 목록 밖 필드 키 */
+  FIELD_NOT_EDITABLE: { status: 422, message: '이 항목은 직접 고칠 수 없습니다.' },
+  /** 05-3 §5.1: 필요한 게이트가 없거나 무효(details.gate) */
+  GATE_NOT_PASSED: { status: 409, message: '{게이트}를 먼저 통과해 주세요.' },
+  /** 05-3 §5.1: G2 유효 전 연속 실행 시작이 SOURCING·PRICING이 아님(F-CW-15). 레일 continuousRun 꺼진 이유(P1-06 API) */
+  CONTINUOUS_RUN_BEFORE_G2: {
+    status: 409,
+    message:
+      '소싱 확정(G2) 전에는 ②·③부터만 연속 실행할 수 있습니다. 다른 단계는 하나씩 실행해 주세요.',
+  },
   /** 05-3 §5.1: 키워드 id 없음 */
   KEYWORD_NOT_FOUND: { status: 404, message: '키워드를 찾을 수 없습니다.' },
   /** 05-3 §5.1: keyword.selected_at 없음 */
@@ -120,15 +176,15 @@ export type ErrorCode = keyof typeof ERROR_CODES;
 
 /**
  * 05-3 문구의 `{…}` 자리를 채운다(05-3 §5 '{…}는 details로 채운다').
- * 값이 없는 자리는 그대로 둔다. 자리 바로 뒤의 조사 '이/가'는 값의 끝 글자 받침에 맞춘다
- * (예: '{대상}이' → '데이터랩이', '라쿠텐 상품 페이지가').
+ * 값이 없는 자리는 그대로 둔다. 자리 바로 뒤의 조사 '이/가'·'을/를'·'은/는'은 값의 끝 글자 받침에 맞춘다
+ * (예: '{대상}이' → '데이터랩이', '라쿠텐 상품 페이지가', '{게이트}를' → 'G3 썸네일 선택을').
  */
 export function formatErrorMessage(
   code: ErrorCode,
   vars: Record<string, string | number> = {},
 ): string {
   return ERROR_CODES[code].message.replace(
-    /\{([^{}]+)\}(이|가)?/g,
+    /\{([^{}]+)\}(이|가|을|를|은|는)?/g,
     (whole, key: string, particle: string | undefined) => {
       if (!(key in vars)) return whole;
       const value = String(vars[key]);
@@ -137,9 +193,20 @@ export function formatErrorMessage(
   );
 }
 
-/** 한글 끝 글자에 받침이 있으면 '이', 없으면 '가'. 한글이 아니면 문구의 조사를 그대로 쓴다. */
+/** 받침 있음·없음에 쓰는 조사 짝 */
+const PARTICLE_PAIRS: Record<string, readonly [withFinal: string, withoutFinal: string]> = {
+  이: ['이', '가'],
+  가: ['이', '가'],
+  을: ['을', '를'],
+  를: ['을', '를'],
+  은: ['은', '는'],
+  는: ['은', '는'],
+};
+
+/** 한글 끝 글자에 받침이 있으면 '이·을·은', 없으면 '가·를·는'. 한글이 아니면 문구의 조사를 그대로 쓴다. */
 function subjectParticle(value: string, fallback: string): string {
   const last = value.charCodeAt(value.length - 1);
-  if (last < 0xac00 || last > 0xd7a3) return fallback;
-  return (last - 0xac00) % 28 === 0 ? '가' : '이';
+  const pair = PARTICLE_PAIRS[fallback];
+  if (!pair || last < 0xac00 || last > 0xd7a3) return fallback;
+  return (last - 0xac00) % 28 === 0 ? pair[1] : pair[0];
 }

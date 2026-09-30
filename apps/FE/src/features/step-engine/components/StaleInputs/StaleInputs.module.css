@@ -1,0 +1,71 @@
+/* '재실행 필요' 사유 줄(CandidateWork.dc.html '바뀐 입력: 레퍼런스 선택'). 토큰 변수만 쓴다. */
+.stale {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.reason {
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+.diff {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunk);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font: var(--type-caption);
+  color: var(--color-ink);
+}
+
+.key {
+  font: var(--type-body-strong);
+}
+
+.changed {
+  color: var(--color-rerun);
+}
+
+.same {
+  color: var(--color-ink-faint);
+}
+
+.versions {
+  font: var(--type-id);
+  color: var(--color-ink-muted);
+}
+
+.hint {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+.error {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-failed);
+}

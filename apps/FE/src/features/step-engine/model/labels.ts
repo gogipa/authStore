@@ -61,14 +61,5 @@ export const FAILURE_KIND_LABEL: Record<StepFailureKind, string> = {
   INTERRUPTED: '앱 종료로 중단',
 };
 
-/** 바뀐 입력 이름(candidate_step.stale_inputs)의 글자. 모르는 키는 키 그대로 보인다 */
-const INPUT_KEY_LABEL: Record<string, string> = {
-  'candidate.gender': '성별',
-  'candidate.rakutenQuery': '검색어',
-  'candidate.sourceUrl': '상품 URL',
-  'candidate.anchorKey': '앵커 키',
-};
-
-export function inputKeyLabel(key: string): string {
-  return INPUT_KEY_LABEL[key] ?? key;
-}
+/** 입력 키 화면 이름(P1-05 model/inputLabels.ts로 옮겼다) */
+export { inputKeyLabel, inputKeyLabels } from './inputLabels';

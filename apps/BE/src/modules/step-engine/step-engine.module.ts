@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { DiscoveryModule } from '@nestjs/core';
 import { IntegrationsModule } from '../integrations/integrations.module.js';
 import { SettingsModule } from '../settings/settings.module.js';
+import { CandidateStepRailController } from './candidate-step-rail.controller.js';
 import { CandidateGenderService } from './candidates/candidate-gender.service.js';
 import { CandidateGuardService } from './candidates/candidate-guard.service.js';
 import { CandidateIdentityService } from './candidates/candidate-identity.service.js';
@@ -9,9 +11,21 @@ import { CandidateStepsController } from './candidates/candidate-steps.controlle
 import { CandidateService } from './candidates/candidate.service.js';
 import { CandidatesController } from './candidates/candidates.controller.js';
 import { StepEngineTransactions } from './candidates/step-engine-tx.js';
+import { StepExecutionService } from './execution/step-execution.service.js';
+import { StepExecutor } from './execution/step-executor.js';
+import { OwnerEditService } from './owner-edits/owner-edit.service.js';
+import { AI_ENGINE_RESOLVER, noAiEngineResolver } from './ports/ai-engine-resolver.port.js';
 import { CANDIDATE_CREATION_EXTENSION } from './ports/candidate-creation.extension.js';
 import { GATE_VALIDITY, LatestPassGateValidity } from './ports/gate-validity.port.js';
 import { GENDER_INPUT_LISTENERS } from './ports/gender-input.port.js';
+import { PAGE_DATA, SourcingSelectionPageData } from './ports/page-data.port.js';
+import { PropagationService } from './propagation/propagation.service.js';
+import { StaleDiffService } from './rail/stale-diff.service.js';
+import { StepRailService } from './rail/step-rail.service.js';
+import { RestartRecoveryService } from './recovery/restart-recovery.service.js';
+import { StepRunnerRegistry } from './runner/step-runner.registry.js';
+import { StepEngineApi } from './step-engine.api.js';
+import { StepRunsController } from './step-runs.controller.js';
 
 /**
  * 핵심: 후보·단계 실행(StepRun)·버전·입력 지문·게이트·연속 실행. 단계 모듈을 부르고 앞 단계 산출물을 넘긴다(03-ADR-003).
@@ -25,10 +39,23 @@ import { GENDER_INPUT_LISTENERS } from './ports/gender-input.port.js';
  *   후보의 성별을 비울 때는 ck_candidate_ready 때문에 먼저 작업중(STEP_NOT_CURRENT)으로 되돌린다
  * - 포트: `GATE_VALIDITY`(P1-06이 지문 비교로 바꾼다), `CANDIDATE_CREATION_EXTENSION`(P2-02가 ② URL_CREATE를 채운다),
  *   `GENDER_INPUT_LISTENERS`(열린 ②·④에 성별을 넘긴다, P2-03·P2-06)
+ *
+ * P1-05(단계 실행 엔진): 실행·버전·입력 지문·재실행 필요 전파·오너 수정·재시작 정리·단계 레일.
+ * - 단계 모듈 규약: contracts/step-runner.ts(`StepRunner`·`@StepRunnerFor`)와 `StepEngineApi`(입력 대기 이어 가기·끝내기,
+ *   완료 뒤 오너 입력 변경, 현재 완료 버전). 실행기는 `StepRunnerRegistry`가 DiscoveryService로 모은다(단계 모듈 import 없음)
+ * - 단일 진입점: `StepExecutionService.start(candidateId, stepCode, { mode, ownerInputs, stepChainId })`
+ *   (연속 실행 P1-06·일괄 M2·CLI M3도 이것을 부른다). 비동기 실행은 `StepExecutor`(M1 직렬, 테스트 `whenIdle()`)
+ * - 포트: `AI_ENGINE_RESOLVER`(시작 INSERT 전 AI 엔진 고정, P1-10), `PAGE_DATA`(② 페이지 수집 시각, P2-02)
+ * - 설정 변경 전파: `PropagationService`가 onModuleInit에서 SettingsService.setRerunPropagator로 끼운다
  */
 @Module({
-  imports: [SettingsModule, IntegrationsModule],
-  controllers: [CandidatesController, CandidateStepsController],
+  imports: [SettingsModule, IntegrationsModule, DiscoveryModule],
+  controllers: [
+    CandidatesController,
+    CandidateStepsController,
+    CandidateStepRailController,
+    StepRunsController,
+  ],
   providers: [
     StepEngineTransactions,
     CandidateGuardService,
@@ -36,9 +63,20 @@ import { GENDER_INPUT_LISTENERS } from './ports/gender-input.port.js';
     CandidateIdentityService,
     CandidateGenderService,
     CandidateService,
+    StepRunnerRegistry,
+    StepExecutor,
+    PropagationService,
+    StepExecutionService,
+    OwnerEditService,
+    RestartRecoveryService,
+    StepRailService,
+    StaleDiffService,
+    StepEngineApi,
     { provide: GATE_VALIDITY, useClass: LatestPassGateValidity },
     { provide: CANDIDATE_CREATION_EXTENSION, useValue: null },
     { provide: GENDER_INPUT_LISTENERS, useValue: [] },
+    { provide: AI_ENGINE_RESOLVER, useValue: noAiEngineResolver },
+    { provide: PAGE_DATA, useClass: SourcingSelectionPageData },
   ],
   exports: [
     StepEngineTransactions,
@@ -47,6 +85,7 @@ import { GENDER_INPUT_LISTENERS } from './ports/gender-input.port.js';
     CandidateIdentityService,
     CandidateGenderService,
     GATE_VALIDITY,
+    StepEngineApi,
   ],
 })
 export class StepEngineModule {}

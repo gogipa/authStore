@@ -92,6 +92,69 @@ describe('error-codes', () => {
     );
   });
 
+  it('P1-05 단계 실행 코드는 05-3 §5.1 문구·상태 그대로다', () => {
+    const expected: Record<string, { status: number; message: string }> = {
+      STEP_RUN_NOT_FOUND: { status: 404, message: '실행 기록을 찾을 수 없습니다.' },
+      STEP_OUTPUT_NOT_FOUND: { status: 404, message: '아직 {단계}를 실행하지 않았습니다.' },
+      INVALID_STEP_CODE: { status: 422, message: '이 단계는 여기서 실행하거나 고칠 수 없습니다.' },
+      TEMP_CANDIDATE_NOT_ALLOWED: {
+        status: 409,
+        message: '임시 후보는 업로드·등록할 수 없습니다. 먼저 라쿠텐 상품에 연결해 주세요.',
+      },
+      STEP_START_CONDITION_UNMET: {
+        status: 409,
+        message: '시작에 필요한 값이 없습니다: {빠진 입력}.',
+      },
+      STEP_ALREADY_RUNNING: { status: 409, message: '이 단계가 이미 실행 중입니다.' },
+      STEP_NOT_COMPLETED: {
+        status: 409,
+        message: '{단계}가 아직 완료되지 않았습니다(지금: {상태}).',
+      },
+      STEP_NOT_RERUN_REQUIRED: {
+        status: 409,
+        message: "'재실행 필요' 상태인 단계에서만 할 수 있습니다.",
+      },
+      STEP_RUN_NOT_WAITING_INPUT: {
+        status: 409,
+        message: '이 실행은 입력을 기다리고 있지 않습니다. 바꾸려면 다시 실행하거나 수정해 주세요.',
+      },
+      STEP_RUN_ALREADY_CURRENT: { status: 409, message: '이미 지금 쓰고 있는 버전입니다.' },
+      VERSION_NOT_CURRENT: {
+        status: 409,
+        message: '화면을 연 뒤 값이 바뀌었습니다. 새로 고친 뒤 다시 해 주세요.',
+      },
+      KEEP_AS_IS_NOT_ALLOWED: {
+        status: 422,
+        message: "'그대로 유지'는 ⑥-1 카피에서만 쓸 수 있습니다.",
+      },
+      FIELD_NOT_EDITABLE: { status: 422, message: '이 항목은 직접 고칠 수 없습니다.' },
+      GATE_NOT_PASSED: { status: 409, message: '{게이트}를 먼저 통과해 주세요.' },
+      CONTINUOUS_RUN_BEFORE_G2: {
+        status: 409,
+        message:
+          '소싱 확정(G2) 전에는 ②·③부터만 연속 실행할 수 있습니다. 다른 단계는 하나씩 실행해 주세요.',
+      },
+    };
+    for (const [code, def] of Object.entries(expected)) {
+      expect(ERROR_CODES[code as keyof typeof ERROR_CODES]).toEqual(def);
+    }
+  });
+
+  it("조사 '을/를'·'은/는'도 받침에 맞춘다(한글이 아니면 문구 그대로)", () => {
+    expect(formatErrorMessage('GATE_NOT_PASSED', { 게이트: 'G3 썸네일 선택' })).toBe(
+      'G3 썸네일 선택을 먼저 통과해 주세요.',
+    );
+    expect(formatErrorMessage('STEP_OUTPUT_NOT_FOUND', { 단계: '② 소싱' })).toBe(
+      '아직 ② 소싱을 실행하지 않았습니다.',
+    );
+    expect(formatErrorMessage('STEP_OUTPUT_NOT_FOUND', { 단계: '⑦ 태그' })).toBe(
+      '아직 ⑦ 태그를 실행하지 않았습니다.',
+    );
+    expect(formatErrorMessage('GATE_NOT_PASSED', { 게이트: 'G3' })).toBe(
+      'G3를 먼저 통과해 주세요.',
+    );
+  });
+
   it('formatErrorMessage는 {…} 자리를 채우고 모르는 자리는 그대로 둔다', () => {
     expect(formatErrorMessage('DAILY_LIMIT_REACHED', { 대상: '라쿠텐 상품 페이지', n: 110 })).toBe(
       '오늘 라쿠텐 상품 페이지 조회 한도(110건)를 다 썼습니다. 내일 0시(한국 시간)에 다시 됩니다.',
