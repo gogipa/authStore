@@ -46,7 +46,16 @@ export type RakutenPageFixture =
   | 'out-of-genre'
   | 'no-genre'
   | 'excluded-word-chuko'
-  | 'no-item-code';
+  | 'no-item-code'
+  // P2-03 비교표(anchor-match12-p1.json 행의 itemUrl과 짝)
+  | 'shop-a'
+  | 'shop-b'
+  | 'shop-c'
+  | 'shop-low-stock'
+  | 'women-sizes'
+  | 'width-variants'
+  | 'hidden-sku'
+  | 'jan-mismatch';
 
 /** 상품 페이지 주소(item.rakuten.co.jp/<샵>/<상품>/) → fixture. 상품 조각은 itemCode(`샵:관리번호`)와 일부러 다르다 */
 export const PAGE_URLS: Readonly<Record<RakutenPageFixture, string>> = {
@@ -59,6 +68,14 @@ export const PAGE_URLS: Readonly<Record<RakutenPageFixture, string>> = {
   'no-genre': 'https://item.rakuten.co.jp/shop-g/no-genre-item/',
   'excluded-word-chuko': 'https://item.rakuten.co.jp/shop-u2/used-kayano14/',
   'no-item-code': 'https://item.rakuten.co.jp/shop-e/kayano14-cream-black/',
+  'shop-a': 'https://item.rakuten.co.jp/shop-a/10000123/',
+  'shop-b': 'https://item.rakuten.co.jp/shop-b/20000456/',
+  'shop-c': 'https://item.rakuten.co.jp/shop-c/30003/',
+  'shop-low-stock': 'https://item.rakuten.co.jp/shop-l/20101/',
+  'women-sizes': 'https://item.rakuten.co.jp/shop-f/20105/',
+  'width-variants': 'https://item.rakuten.co.jp/shop-w/20103/',
+  'hidden-sku': 'https://item.rakuten.co.jp/shop-h/20104/',
+  'jan-mismatch': 'https://item.rakuten.co.jp/shop-j/20102/',
 };
 
 /** EUC-JP 페이지 바이트(받은 그대로) */

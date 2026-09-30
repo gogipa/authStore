@@ -76,6 +76,12 @@
       "searchCacheHours": 6,
       "maxRetries": 3,
       "genreCacheDays": 30
+    },
+    "points": {
+      "pointRateIncludesBase": true,
+      "rounding": "PER_PROGRAM",
+      "spuMultiplier": 0,
+      "kRank": 0.5
     }
   },
   "keywords": {

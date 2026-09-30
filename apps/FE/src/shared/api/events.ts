@@ -93,6 +93,9 @@ export type EventInvalidations = {
  * - P2-02: `sourcing.search-completed` → 그 후보의 ② 비교표(`getSourcingComparison`). `sourcing.row-updated`·
  *   `sourcing.page-fetch-finished`(data에 후보 id가 없다) → 비교표 전체. `step-run.status-changed`가 ②(SOURCING)면 그 후보의
  *   비교표도 다시 읽는다(URL로 만들기·재조회·성인용 확인 뒤 ②가 끝날 때 머리 행이 바뀐다).
+ * - P2-03: 비교표 queryKey가 조회 조건을 더 가진다(`{ candidateId, stepRunId, includeNoMatch, sort }`) — 위 키는 부분 일치로
+ *   모두 닿는다. `gate.invalidated` → 그 후보 비교표도(다른 샵을 고르면 G2가 무효가 된다 — '다른 샵을 고르면 판정(G2)을 다시
+ *   통과해야 합니다'). 행 수정(PATCH)은 SSE 없이 응답으로 캐시를 고친다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -164,7 +167,10 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     ...gateKeys(candidateId),
   ],
   'gate.passed': ({ candidateId }) => gateKeys(candidateId),
-  'gate.invalidated': ({ candidateId }) => gateKeys(candidateId),
+  'gate.invalidated': ({ candidateId }) => [
+    ...gateKeys(candidateId),
+    qk('sourcing', 'getSourcingComparison', { candidateId }),
+  ],
   'auth.failed': () => [qk('system', 'getAuthStatus')],
   'ai-cli-check.completed': ({ engineCode }) => [
     qk('system', 'getLatestAiCliChecks'),

@@ -12,7 +12,7 @@ import { StepEngineApi } from '../step-engine/step-engine.api.js';
 import { detectGender } from './gender-signal.js';
 import { RakutenItemFetcher } from './rakuten-item-fetcher.js';
 import { RakutenItemRepository, type RakutenItemWithSkus } from './rakuten-item.repository.js';
-import { anchorKeyOfHead } from './sourcing.step-runner.js';
+import { anchorKeyOfHead } from './sourcing-rows.js';
 import {
   SOURCING_WAITING_REASONS,
   sourcingParamsOf,

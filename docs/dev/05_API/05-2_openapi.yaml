@@ -593,7 +593,7 @@ paths:
     put:
       operationId: setCandidateGender
       summary: 후보 성별 직접 입력
-      description: candidate.gender를 오너 입력(gender_source=OWNER)으로 바꾼다. ② 입력 대기의 성별 고르기와 ④ 재확인도 이 API 하나로 한다. 열린 ②가 성별을 기다리면 sourcing_comparison.owner_gender로 넘겨 이어 가고, 열린 ④면 category_decision.gender로 카테고리 후보를 다시 뽑는다. 값이 바뀌면 PRICING·NOTICE_HTML·TAGS를 재실행 필요로 바꾸고 affectedSteps로 알린다. 같은 값이면 전파 없음. 오류 — 409 STEP_LOCKED_BY_RUNNING_STEP·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED, 422 VALIDATION_FAILED.
+      description: candidate.gender를 오너 입력(gender_source=OWNER)으로 바꾼다. ② 입력 대기의 성별 고르기와 ④ 재확인도 이 API 하나로 한다. 열린 ②가 성별을 기다리면 sourcing_comparison.owner_gender로 넘겨 이어 가고(P2-03 — 앵커가 있는 검색·비교 버전이 입력 대기면 owner_gender를 쓰고 검증 행을 새 성별의 목표 사이즈로 다시 계산하며, 성별을 몰라 페이지 조회 전에 멈춘 버전은 조회를 이어 간다 — resumedStepRunIds에 그 ② 실행), 열린 ④면 category_decision.gender로 카테고리 후보를 다시 뽑는다. 값이 바뀌면 PRICING·NOTICE_HTML·TAGS를 재실행 필요로 바꾸고 affectedSteps로 알린다. 같은 값이면 전파 없음. 오류 — 409 STEP_LOCKED_BY_RUNNING_STEP·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED, 422 VALIDATION_FAILED.
       tags:
       - step-engine
       x-milestone: M1
@@ -2038,6 +2038,8 @@ paths:
 
         (M2) 행의 쿠폰 상세·위험 플래그는 ERD §6.2 컬럼.
 
+        P2-03 구현 결정(Proposed, 05-1 §7.3): 실질가 순이면 검증 행 안에서 재고 통과(`stockPass=true`) 행이 먼저이고 재고 부족·판정 전 행은 그 뒤(실질가가 낮아도 — ''재고 사이즈가 3개보다 적은 샵은 뺍니다''), 같은 값이면 검색 순위(수동 행은 뒤) → 행 id. `searchRank`·`fetchOrder` 정렬에서도 미검증 행은 뒤다(검증 행 안·미검증 행 안에서 각각 정렬 — P2-02 구현 유지). 앵커 전(탐색 모드)은 NO_MATCH가 없어 모든 행이 보인다.
+
         '
       tags:
       - sourcing
@@ -2095,6 +2097,8 @@ paths:
 
         이어서 동일 상품 분류와 페이지 조회(최대 10페이지, 재고 통과 3개면 멈춤)가 돌아 202를 돌려주고, 진행은 SSE `sourcing.row-updated`·`sourcing.page-fetch-finished`로 알린다. 같은 앵커를 다시 보내면 같은 결과다.
 
+        P2-03 구현 결정(Proposed, 05-1 §7.3): 202 전(한 트랜잭션) — 본문 422 → 404 → 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → 409 STEP_RUN_NOT_WAITING_INPUT(비교를 하지 않은 버전 포함) → SEARCH_PICK의 `anchorItemCode`가 이 비교표 행이 아니면 422 → 후보에 확정된 앵커 키와 다르면 409 `ANCHOR_KEY_MISMATCH`(색상 코드를 비우면 후보의 색상 코드) → 이 버전에 이미 앵커가 있으면 같은 앵커는 같은 202(작업을 다시 돌리지 않는다), 다른 앵커는 409 `ANCHOR_KEY_MISMATCH`(한 버전의 앵커는 한 번 — 바꾸려면 ② 다시 실행). SEARCH_PICK의 型番·색상 코드는 그 행 상품명(없으면 그 행 페이지의 メーカー型番)에서 뽑고, 요청의 `anchorColorCode`가 있으면 그 값. 행 분류와 성별 신호(cid → 장르 경로 → 상품명)는 202 전에 끝난다. 202 뒤(백그라운드): 일치 20개 미만이면 검색 page=2(6시간 캐시, 실패하면 넘어감) → AI 동일 상품 판정 보조(NEEDS_REVIEW 행, 참고만) → 성별을 모르면 페이지 조회 전에 멈춤(`PUT /candidates/{candidateId}/gender`가 이어 간다) → 페이지 조회 반복(SEARCH_PICK 앵커 상품 먼저 — 그 JAN이 재대조 기준) → 제외 판단(반복이 PAGE_CAP·NO_MORE_ROWS로 끝났을 때만: 같은 상품일 수 있는 행 — 일치·확인 필요·오너 ''같은 상품'' — 이 0 → ANCHOR_NO_MATCH(''확인 필요'' 행만 있으면 오너가 이어 가도록 제외하지 않는다), 읽은 행이 있는데 재고 통과 0 → INSUFFICIENT_STOCK, ②는 입력 대기 그대로). 하루 상한·쉼은 202 뒤 반복의 멈춤 사유(DAILY_LIMIT·BLOCKED)로 알린다.
+
         '
       tags:
       - sourcing
@@ -2136,7 +2140,7 @@ paths:
           description: '`SOURCING_COMPARISON_NOT_FOUND`'
         '409':
           $ref: '#/components/responses/Conflict'
-          description: '`STEP_RUN_NOT_WAITING_INPUT` — 닫힌·실행중 버전. `ANCHOR_KEY_MISMATCH` — 확정된 앵커 키와 다름. `DAILY_LIMIT_REACHED`, `EXTERNAL_CALL_COOLDOWN`. `CANDIDATE_LOCKED`, `CANDIDATE_EXCLUDED`'
+          description: '`STEP_RUN_NOT_WAITING_INPUT` — 닫힌·실행중 버전. `ANCHOR_KEY_MISMATCH` — 확정된 앵커 키와 다름. `DAILY_LIMIT_REACHED`, `EXTERNAL_CALL_COOLDOWN`(P2-03 Proposed: 202 전에는 내지 않는다 — 앵커 저장·분류는 페이지를 읽지 않고, 202 뒤 조회 반복이 `DAILY_LIMIT`·`BLOCKED`로 멈춘다). `CANDIDATE_LOCKED`, `CANDIDATE_EXCLUDED`'
         '422':
           $ref: '#/components/responses/Unprocessable'
           description: '`VALIDATION_FAILED` — anchorInputMethod별 필수값 누락'
@@ -2149,6 +2153,8 @@ paths:
       description: '바꾼 필드만 받는다(쿠폰 금액·샵·이벤트 배율·동일 상품 판단, (M2) 송료 직접 입력·쿠폰 상세). 저장 뒤 포인트·실질가를 다시 계산해 행과 실질가 순 `rankedRowIds`를 돌려준다.
 
         (M2) `shippingYen`을 넣으면 `shippingSource=OWNER_INPUT`이 된다.
+
+        P2-03 구현 결정(Proposed, 05-1 §7.3): M1은 (M2) 칸(`shippingYen`·`couponPercent`·`couponMinAmountYen`·`couponCombinable`·`couponPageUrl`)을 422 `VALIDATION_FAILED`로 받지 않는다(조용히 버리지 않는다). 쿠폰·배율을 바꾸면 검증 행만 포인트·실질가를 다시 계산하고(대표 SKU가·송료는 그대로), `ownerMatchDecision`은 선택 가능 여부(같은 상품 판단)만 바꾼다. 검사: 422 → 404 → 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → 409 STEP_RUN_NOT_WAITING_INPUT.
 
         '
       tags:
@@ -2186,10 +2192,10 @@ paths:
           description: '`SOURCING_COMPARISON_ROW_NOT_FOUND`'
         '409':
           $ref: '#/components/responses/Conflict'
-          description: '`STEP_RUN_NOT_WAITING_INPUT` — 닫힌 버전의 행. `CANDIDATE_LOCKED`'
+          description: '`STEP_RUN_NOT_WAITING_INPUT` — 닫힌 버전의 행. `CANDIDATE_LOCKED`, `CANDIDATE_EXCLUDED`'
         '422':
           $ref: '#/components/responses/Unprocessable'
-          description: '`VALIDATION_FAILED` — 음수, 빈 본문'
+          description: '`VALIDATION_FAILED` — 음수, 빈 본문, (M2) 칸(P2-03 Proposed)'
         '500':
           $ref: '#/components/responses/InternalError'
   /sourcing-comparison-rows/{rowId}/stock-checks:
@@ -2197,6 +2203,8 @@ paths:
       operationId: requestSourcingRowStockCheck
       summary: 미검증 행 재고 확인
       description: '그 행의 상품 페이지만 읽는다(누를 때마다 하루 상한 1건). `rakuten_item`(fetch_reason=STOCK_CHECK)을 만들고 행의 `rakuten_item_id`를 잇는다. 결과는 SSE `sourcing.row-updated`.
+
+        P2-03 구현 결정(Proposed, 05-1 §7.3): 202 전 검사 — 404 → 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → 409 STEP_RUN_NOT_WAITING_INPUT → 앵커가 없으면 409 `ANCHOR_NOT_FIXED`(앵커 색상을 몰라 재고를 판정할 수 없다) → 같은 행 진행 중 409 `ALREADY_IN_PROGRESS`(`details.job=STOCK_CHECK`·`rowId`) → 하루 상한·쉼 409. 이미 검증한 행도 다시 읽는다(새 스냅샷). 페이지가 점검·파싱 실패면 행을 수동 확인으로 두고(미검증 그대로), 202 뒤에 상한·쉼에 닿으면 행을 바꾸지 않는다. 규칙으로 불확실하면 AI 보조 한 번(참고).
 
         '
       tags:
@@ -2232,14 +2240,14 @@ paths:
           description: '`SOURCING_COMPARISON_ROW_NOT_FOUND`'
         '409':
           $ref: '#/components/responses/Conflict'
-          description: '`ALREADY_IN_PROGRESS`(details.job=STOCK_CHECK). `DAILY_LIMIT_REACHED`(RAKUTEN_PAGE), `EXTERNAL_CALL_COOLDOWN`. `STEP_RUN_NOT_WAITING_INPUT`'
+          description: '`ALREADY_IN_PROGRESS`(details.job=STOCK_CHECK). `DAILY_LIMIT_REACHED`(RAKUTEN_PAGE), `EXTERNAL_CALL_COOLDOWN`. `STEP_RUN_NOT_WAITING_INPUT`. `ANCHOR_NOT_FIXED` — 앵커 없음(P2-03 Proposed). `CANDIDATE_LOCKED`, `CANDIDATE_EXCLUDED`'
         '500':
           $ref: '#/components/responses/InternalError'
   /sourcing-comparisons/{sourcingComparisonId}/rows:
     post:
       operationId: addSourcingComparisonManualRow
       summary: URL 상품을 비교표 '수동' 행으로 넣기
-      description: '`POST /rakuten-items`로 읽은 스냅샷(`rakutenItemId`)을 `sourcing_comparison_row`(row_source=MANUAL)로 넣는다. API 행은 ②가 만들고 이 경로는 수동 행만. 넣은 뒤 재고 판정·실질가·선택은 API 행과 같다.'
+      description: '`POST /rakuten-items`로 읽은 스냅샷(`rakutenItemId`)을 `sourcing_comparison_row`(row_source=MANUAL)로 넣는다. API 행은 ②가 만들고 이 경로는 수동 행만. 넣은 뒤 재고 판정·실질가·선택은 API 행과 같다. P2-03 구현 결정(Proposed, 05-1 §7.3): 검사 순서 422 본문 → 404 비교표·스냅샷 → 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → 409 STEP_RUN_NOT_WAITING_INPUT → 409 `ANCHOR_NOT_FIXED` → 422 `RAKUTEN_ITEM_EXCLUDED_WORD` → 409 `ROW_ALREADY_EXISTS`(details.rowId). 수동 행은 API 값이 없어 검색 순위·가격·pointRate·postageFlag가 null이고 포인트는 기본 1배 + 샵·이벤트 + SPU만(배율 출처 M0 S2 전), 송료는 페이지 SKU postageIncluded로 정한다. 외부 호출 없음.'
       tags:
       - sourcing
       x-milestone: M1
@@ -2272,7 +2280,7 @@ paths:
           description: '`SOURCING_COMPARISON_NOT_FOUND`, `RAKUTEN_ITEM_NOT_FOUND`'
         '409':
           $ref: '#/components/responses/Conflict'
-          description: '`ROW_ALREADY_EXISTS` — 같은 itemCode 행. `ANCHOR_NOT_FIXED` — 앵커 없음. `STEP_RUN_NOT_WAITING_INPUT`'
+          description: '`ROW_ALREADY_EXISTS` — 같은 itemCode 행. `ANCHOR_NOT_FIXED` — 앵커 없음. `STEP_RUN_NOT_WAITING_INPUT`. `CANDIDATE_LOCKED`, `CANDIDATE_EXCLUDED`'
         '422':
           $ref: '#/components/responses/Unprocessable'
           description: '`RAKUTEN_ITEM_EXCLUDED_WORD` — 상품명 제외어. `VALIDATION_FAILED`'
@@ -2326,6 +2334,8 @@ paths:
 
         다른 샵으로 바꾸면 G2 지문이 바뀌어 `g2Invalidated=true`(SSE `gate.invalidated`).
 
+        P2-03 구현 결정(Proposed, 05-1 §7.3): 앵커 전(탐색 모드)에는 고를 수 없다 — 409 `ANCHOR_NOT_FIXED`(F-SO-11 ''앵커를 고르기 전에는 G2로 갈 수 없다''). 검사 순서: 422 본문 → 404 비교표·행 → 다른 비교표의 행 422 → 닫힌 버전에서 이미 고른 행이면 200 같은 응답 → 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → 409 STEP_RUN_NOT_WAITING_INPUT → 409 ANCHOR_NOT_FIXED → 409 ROW_NOT_VERIFIED → 409 GENDER_REQUIRED → 409 ROW_STOCK_INSUFFICIENT → 409 ANCHOR_KEY_MISMATCH(같은 상품이 아님: 오너 판단이 없으면 규칙 MATCH이고 JAN·メーカー型番 재대조가 어긋나지 않아야 한다 / 색상 코드를 얻지 못함 `details.reason=COLOR_CODE_MISSING` / 확정 앵커와 다름) → 409 ADULT_CONFIRMATION_REQUIRED(고른 행 페이지의 아동화 신호를 머리 행 `childSizeSuspect`·`genreScope`에 남긴 뒤 막는다 — 확인을 켤 수 있게) → 409 CANDIDATE_DUPLICATE. 고르는 행은 확정 성별(오너 → 고른 상품 페이지의 cid·장르·상품명 → 앵커 때 판단)로 재고·실질가를 다시 계산한다. `selectedColor`는 고른 페이지의 앵커 색상 SKU 라벨(없으면 앵커 라벨). `staleDownstreamSteps` = 이 트랜잭션에서 재실행 필요로 바뀐 뒷단계. 후보 앵커 키는 처음 고를 때 확정한다(型番 정규화값 + 색상 코드).
+
         '
       tags:
       - sourcing
@@ -2358,7 +2368,7 @@ paths:
           description: '`SOURCING_COMPARISON_NOT_FOUND`, `SOURCING_COMPARISON_ROW_NOT_FOUND`'
         '409':
           $ref: '#/components/responses/Conflict'
-          description: '`ROW_NOT_VERIFIED`, `ROW_STOCK_INSUFFICIENT`, `ANCHOR_KEY_MISMATCH`, `ADULT_CONFIRMATION_REQUIRED`, `GENDER_REQUIRED`, `CANDIDATE_DUPLICATE`(details.existingCandidateId), `STEP_RUN_NOT_WAITING_INPUT`, `CANDIDATE_LOCKED`'
+          description: '`ROW_NOT_VERIFIED`, `ROW_STOCK_INSUFFICIENT`, `ANCHOR_KEY_MISMATCH`, `ANCHOR_NOT_FIXED` — 앵커 전 탐색 모드(P2-03, F-SO-11), `ADULT_CONFIRMATION_REQUIRED`, `GENDER_REQUIRED`, `CANDIDATE_DUPLICATE`(details.existingCandidateId), `STEP_RUN_NOT_WAITING_INPUT`, `CANDIDATE_LOCKED`, `CANDIDATE_EXCLUDED`'
         '422':
           $ref: '#/components/responses/Unprocessable'
           description: '`VALIDATION_FAILED` — rowId 없음·다른 비교표의 행'
@@ -12179,7 +12189,7 @@ components:
           $ref: '#/components/schemas/SourcingComparisonRow'
         rankedRowIds:
           type: array
-          description: 검증 행의 실질가 낮은 순 id
+          description: 검증 행의 실질가 낮은 순 id(재고 통과 행 먼저, 재고 부족·판정 전 행은 뒤 — P2-03 Proposed)
           items:
             type: integer
             minimum: 1

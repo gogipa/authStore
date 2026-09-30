@@ -310,7 +310,11 @@ describe('진행 알림 이름', () => {
         previousGatePassId: 3,
         changedBasisKeys: ['salePrices.250'],
       }),
-    ).toEqual(gateKeys);
+    ).toEqual([
+      ...gateKeys,
+      // P2-03: 다른 샵을 고르면 G2가 무효 → 그 후보 비교표도 다시 읽는다
+      ['sourcing', 'getSourcingComparison', { candidateId: 12 }],
+    ]);
   });
 });
 

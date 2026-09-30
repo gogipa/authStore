@@ -15,7 +15,11 @@ import {
   isActiveItemColorViolation,
 } from '../candidates/candidate-identity.service.js';
 import { CandidateStatusService } from '../candidates/candidate-status.service.js';
-import { StepEngineTransactions, type StepEngineTx } from '../candidates/step-engine-tx.js';
+import {
+  StepEngineTransactions,
+  type Db,
+  type StepEngineTx,
+} from '../candidates/step-engine-tx.js';
 import type {
   AiEngineFix,
   CandidateEffects,
@@ -305,7 +309,8 @@ export class StepExecutionService {
   /**
    * 호출자 트랜잭션 안에서 단계 버전 하나를 열고(`openRun`) 곧바로 결과로 닫는다(`closeRun`) — 외부 호출 없이 결과를 정할 수
    * 있는 경우만(P2-02: 'URL로 만들기' 후보의 ② URL_CREATE 버전을 후보 만들기와 같은 트랜잭션에 쓴다, 05-2 createCandidate).
-   * 시작 조건·잠금 검사는 실행 API와 같다. AI 단계는 쓸 수 없다(엔진 고정을 트랜잭션 밖에서 해야 한다).
+   * 시작 조건·잠금 검사는 실행 API와 같다. AI 단계여도 이 결과는 AI를 부르지 않으므로 엔진을 고정하지 않는다(ai_* NULL —
+   * P2-03 Proposed: ② SOURCING이 AI 단계가 되어 'URL로 만들기'가 이것을 쓴다. AI를 불러야 하면 `start`를 쓴다).
    */
   async recordInlineRun(
     scope: StepEngineTx,
@@ -314,7 +319,6 @@ export class StepExecutionService {
     outcomeFor: (run: StepRun) => Promise<StepOutcome>,
   ): Promise<StepRun> {
     const runner = this.assertRunnableCode(stepCode);
-    if (runner.usesAi) throw new Error(`AI 단계(${stepCode})는 트랜잭션 안에서 실행할 수 없습니다`);
     const candidate = await this.guard.lockForUpdate(scope.tx, candidateId);
     const rows = await loadStepRows(scope.tx, candidateId);
     const steps = stepStatusMapOf(rows);
@@ -1021,6 +1025,23 @@ export class StepExecutionService {
       });
       return updated;
     });
+  }
+
+  /**
+   * 실행에 고정한 AI 문맥(P2-03 — 입력 대기 중 백그라운드 작업이 그 실행의 엔진으로 AI를 부른다). stepRunId·candidateId를
+   * 채워 준다(call_log). 고정하지 않은 실행·실행기 없음이면 null
+   */
+  async pinnedAiForRun(db: Db, stepRunId: number): Promise<PinnedAiContext | null> {
+    const run = await db.stepRun.findUnique({ where: { id: stepRunId } });
+    if (!run) return null;
+    const runner = this.registry.get(run.stepCode as StepCode);
+    if (!runner) return null;
+    const snapshot = await db.settingsSnapshot.findUnique({
+      where: { id: run.settingsSnapshotId },
+      select: { content: true },
+    });
+    const pinned = pinnedAiFromRun(run, snapshot?.content ?? null, runner);
+    return pinned ? { ...pinned.context, stepRunId: run.id, candidateId: run.candidateId } : null;
   }
 
   /** 이미 고정한 실행의 AI 문맥(step_run.ai_* + 그 실행의 설정 스냅샷 ai 섹션) */

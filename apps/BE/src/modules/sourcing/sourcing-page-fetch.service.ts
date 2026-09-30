@@ -29,6 +29,8 @@ export interface SourcingPageFetchInput<R extends PageFetchTargetRow> {
   judgeStock(row: R, snapshot: FetchedSnapshot): boolean | Promise<boolean>;
   /** 한 행을 읽을 때마다(스냅샷 연결·SSE sourcing.row-updated는 P2-03) */
   onFetched?(row: R, outcome: PageFetchOutcome<FetchedSnapshot>): void | Promise<void>;
+  /** 가격 순서보다 먼저 읽을 행(P2-03: SEARCH_PICK 앵커 상품) */
+  firstRowIds?: readonly number[];
 }
 
 /** 한 페이지만 쓸 수 없는 실패(점검·파싱 실패·응답 없음·itemCode 못 찾음) — 멈추지 않고 그 행을 수동 확인으로 넘긴다 */
@@ -58,6 +60,7 @@ export class SourcingPageFetchService {
       targetPassed: sourcing.pageFetchTargetCandidates,
       maxPages: sourcing.pageFetchMaxPages,
       defaultShippingYen: sourcing.defaultShippingYen,
+      firstRowIds: input.firstRowIds,
       fetchPage: async (loopRow) => {
         const row = byId.get(loopRow.rowId)!;
         const outcome = await this.fetchOne(row, input);

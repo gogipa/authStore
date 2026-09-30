@@ -82,6 +82,11 @@ import { StepRunsController } from './step-runs.controller.js';
  * (호출자 트랜잭션 안에서 버전 하나를 열고 곧바로 닫기)·`readSourcingSelection`. 재조회 `POST /candidates/{id}/refetch`
  * (`StepExecutionService.startRefetch`: ② 재조회 모드 → ③ 이력이 있으면 이어서 ③, execution_mode=STEP). 실행기 규약에
  * 선택 메서드 `beforeStart`(시작 전 단계별 409·422)와 `persist`의 커밋 뒤 훅, 입력 대기 중간 산출물(`output`)을 더했다.
+ *
+ * P2-03(② 소싱 비교표): `GENDER_INPUT_LISTENERS`는 `StepModulePorts.genderInputListeners`(단계 모듈이 앱 시작 때
+ * `StepEngineApi.registerGenderInputListener`로 더한다). `StepEngineApi.pinnedAiOf(stepRunId)`: 입력 대기 중 백그라운드 작업
+ * (② 앵커 뒤 AI 동일 상품 판정 보조)이 그 실행에 고정한 엔진으로 AI를 부른다. `recordInlineRun`은 AI 단계도 받는다
+ * (AI를 부르지 않는 결과만 — ai_* NULL, ② SOURCING이 AI 단계가 되어 'URL로 만들기'가 이것을 쓴다).
  */
 @Module({
   imports: [SettingsModule, IntegrationsModule, SystemModule, DiscoveryModule],
@@ -122,7 +127,11 @@ import { StepRunsController } from './step-runs.controller.js';
       inject: [StepModulePorts],
       useFactory: delegatingCreationExtension,
     },
-    { provide: GENDER_INPUT_LISTENERS, useValue: [] },
+    {
+      provide: GENDER_INPUT_LISTENERS,
+      inject: [StepModulePorts],
+      useFactory: (ports: StepModulePorts) => ports.genderInputListeners,
+    },
     { provide: AI_ENGINE_RESOLVER, useClass: SelectedAiEngineResolver },
     { provide: PAGE_DATA, useClass: SourcingSelectionPageData },
   ],

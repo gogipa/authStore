@@ -38,6 +38,14 @@ export const PRICE_RULE_METHODS = [
 ] as const;
 export type PriceRuleMethod = (typeof PRICE_RULE_METHODS)[number];
 
+/**
+ * 실질가 포인트 내림 방식(PRD §8.2 RK-06, P2-03 — F-SO-23)
+ * - PER_PROGRAM: 프로그램별 내림 Σ floor(base × r / 100) — 기본
+ * - SIMPLE: 단순식 floor((SKU가_대표 − 쿠폰) × Σr / 110)
+ */
+export const POINT_ROUNDINGS = ['PER_PROGRAM', 'SIMPLE'] as const;
+export type PointRounding = (typeof POINT_ROUNDINGS)[number];
+
 /** 관세율 표의 HS 4단위(PRD §8.3: 6401 8%, 6402~6405 13%) */
 export const DUTY_HS_HEADINGS = ['6401', '6402', '6403', '6404', '6405'] as const;
 export type DutyHsHeading = (typeof DUTY_HS_HEADINGS)[number];
@@ -171,6 +179,23 @@ export interface SourcingSettings {
   pageFetchDailyLimit: number;
   /** 라쿠텐 API(Item Search·IchibaGenre) 호출 값(P2-02 Proposed — 06-4 §2.2) */
   rakutenApi: RakutenApiSettings;
+  /** 실질가 포인트 계산 기준값(F-SO-23, P2-03 Proposed — 06-4 §2.2) */
+  points: SourcingPointSettings;
+}
+
+/**
+ * 실질가 포인트 계산 기준값(PRD §8.2 RK-06·§17 표, F-SO-22·23, P2-03). 순위용이다 — 마진 판정의 포인트 가치(k_margin)는
+ * `costs.pointValueFactorForMargin`(0 고정)이라 여기 없다. 배율은 '배'(1.5 = 1.5배), 소수 넷째 자리까지(numeric(7,4)).
+ */
+export interface SourcingPointSettings {
+  /** API `pointRate`에 기본 1배가 들어 있다고 본다(true면 상품 추가분 = pointRate − 1). 기본 true(보수적, M0 S2 확인) */
+  pointRateIncludesBase: boolean;
+  /** 포인트 내림 방식. 기본 PER_PROGRAM */
+  rounding: PointRounding;
+  /** SPU 배율(오너 설정, 카드 계열은 근사). 기본 0 */
+  spuMultiplier: number;
+  /** 순위용 포인트 가치 k_rank(0~1). 기본 0.5(②-5) */
+  kRank: number;
 }
 
 /**

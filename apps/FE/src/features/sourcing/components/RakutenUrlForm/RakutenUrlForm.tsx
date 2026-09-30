@@ -3,7 +3,7 @@ import { useCreateCandidate } from '@/features/step-engine';
 import { isApiRequestError } from '@/shared/api/errors';
 import { cx } from '@/shared/lib/cx';
 import { Button, DisabledReason, Radio, Select, TextField } from '@/shared/ui';
-import { useFetchRakutenItem, useRakutenItem } from '../../api/queries';
+import { useAddManualRow, useFetchRakutenItem, useRakutenItem } from '../../api/queries';
 import {
   colorOptionsOf,
   entryCheckNotice,
@@ -36,6 +36,12 @@ export interface RakutenUrlFormProps {
   note?: ReactNode;
   /** 아래 줄 오른쪽(보드: '성인용 상품 확인' 220px) */
   aside?: ReactNode;
+  /**
+   * '비교표에 넣기'(수동 행, P2-03 F-SO-34)를 받을 비교표. 없거나 `tableBlockedReason`이 있으면 그 방법을 끄고 이유를 보인다
+   */
+  tableComparisonId?: number | null;
+  /** '비교표에 넣기'를 쓸 수 없는 이유(앵커 전·입력 대기 아님 등) */
+  tableBlockedReason?: string | null;
 }
 
 /**
@@ -44,7 +50,8 @@ export interface RakutenUrlFormProps {
  * - 제외어(中古·キッズ 등)가 든 상품은 후보를 만들지 않고 문구를 보인다(입구 검사·422 RAKUTEN_ITEM_EXCLUDED_WORD 모두)
  * - 409 CANDIDATE_DUPLICATE면 `details.existingCandidateId` 후보를 연다
  * - 아동화 의심·대상 외 장르는 막지 않고 알린다 — 후보를 만든 뒤 ②가 '성인용 상품 확인' 입력 대기로 멈춘다
- * - '비교표에 넣기'(수동 행)는 비교표·앵커와 함께 P2-03이 붙인다(지금은 꺼진 이유를 보인다)
+ * - '비교표에 넣기'(수동 행, P2-03 F-SO-34): 넣기 → 읽은 상품 → '비교표에 넣기'(`addSourcingComparisonManualRow`). 앵커 전·입력
+ *   대기가 아닌 버전이면 그 방법을 끄고 이유를 보인다
  */
 export function RakutenUrlForm({
   label,
@@ -55,6 +62,8 @@ export function RakutenUrlForm({
   onOpenCandidate,
   note,
   aside,
+  tableComparisonId = null,
+  tableBlockedReason = null,
 }: RakutenUrlFormProps) {
   const uid = useId();
   const inputId = `rakuten-url-${uid}`;
@@ -62,11 +71,21 @@ export function RakutenUrlForm({
   const reasonId = `rakuten-url-why-${uid}`;
   const tableReasonId = `rakuten-url-table-why-${uid}`;
   const [url, setUrl] = useState('');
-  // '비교표에 넣기'는 P2-03 전까지 고를 수 없다(라디오를 끄고 이유를 보인다)
-  const mode: UrlPasteMode = 'CREATE';
+  // '비교표에 넣기'(P2-03): 비교표가 앵커를 정하고 입력을 기다릴 때만. 보드 기본 선택도 '비교표에 넣기'다
+  const tableReason =
+    tableBlockedReason ?? (tableComparisonId === null ? TABLE_MODE_NOT_READY : null);
+  const tableEnabled = modes.includes('TABLE') && tableReason === null;
+  const [modeChoice, setModeChoice] = useState<UrlPasteMode | null>(null);
+  const mode: UrlPasteMode =
+    modes.length === 1
+      ? modes[0]!
+      : modeChoice === 'TABLE' && !tableEnabled
+        ? 'CREATE'
+        : (modeChoice ?? (tableEnabled ? 'TABLE' : 'CREATE'));
   const [colorChoice, setColorChoice] = useState<string | null>(null);
   const fetchItem = useFetchRakutenItem();
   const createCandidate = useCreateCandidate();
+  const addRow = useAddManualRow();
   const fetched = fetchItem.data ?? null;
   const item = useRakutenItem(fetched?.rakutenItem.id ?? null);
   const colors = colorOptionsOf(item.data ?? fetched?.rakutenItem);
@@ -79,8 +98,17 @@ export function RakutenUrlForm({
   const submit = () => {
     if (submitDisabled) return;
     createCandidate.reset();
+    addRow.reset();
     setColorChoice(null);
     fetchItem.mutate(url.trim());
+  };
+
+  const addToTable = () => {
+    if (!fetched || tableComparisonId === null) return;
+    addRow.mutate({
+      sourcingComparisonId: tableComparisonId,
+      rakutenItemId: fetched.rakutenItem.id,
+    });
   };
 
   const create = () => {
@@ -108,6 +136,11 @@ export function RakutenUrlForm({
         ? createCandidate.error.message
         : '후보를 만들지 못했습니다.'
       : null;
+  const addError = addRow.error
+    ? isApiRequestError(addRow.error)
+      ? addRow.error.message
+      : '비교표에 넣지 못했습니다.'
+    : null;
   const excluded = fetched?.checks.excludedWords ?? [];
   const notice = fetched ? entryCheckNotice(fetched.checks) : null;
 
@@ -149,9 +182,9 @@ export function RakutenUrlForm({
                   name={`rakuten-url-mode-${uid}`}
                   label={MODE_LABEL[m]}
                   checked={mode === m}
-                  disabled={m === 'TABLE'}
-                  aria-describedby={m === 'TABLE' ? tableReasonId : undefined}
-                  readOnly
+                  disabled={m === 'TABLE' && !tableEnabled}
+                  aria-describedby={m === 'TABLE' && !tableEnabled ? tableReasonId : undefined}
+                  onChange={() => setModeChoice(m)}
                 />
               ))}
             </div>
@@ -165,9 +198,9 @@ export function RakutenUrlForm({
           {fetchItem.isPending ? '읽는 중…' : '넣기'}
         </Button>
       </div>
-      {modes.includes('TABLE') ? (
+      {modes.includes('TABLE') && !tableEnabled && tableReason ? (
         <DisabledReason id={tableReasonId} tone="muted">
-          {TABLE_MODE_NOT_READY}
+          {tableReason}
         </DisabledReason>
       ) : null}
       {reason ? <DisabledReason id={reasonId}>{reason}</DisabledReason> : null}
@@ -189,6 +222,15 @@ export function RakutenUrlForm({
             <span role="alert" className={styles.error}>
               {excludedWordsText(excluded)}
             </span>
+          ) : mode === 'TABLE' ? (
+            <div className={styles.createRow}>
+              {addRow.isSuccess ? (
+                <span className={styles.notice}>비교표에 &apos;수동&apos; 행으로 넣었습니다.</span>
+              ) : null}
+              <Button disabled={addRow.isPending || addRow.isSuccess} onClick={addToTable}>
+                {addRow.isPending ? '넣는 중…' : '비교표에 넣기'}
+              </Button>
+            </div>
           ) : (
             <>
               {notice ? <span className={styles.notice}>{notice}</span> : null}
@@ -232,6 +274,11 @@ export function RakutenUrlForm({
           {createError ? (
             <span role="alert" className={styles.error}>
               {createError}
+            </span>
+          ) : null}
+          {addError ? (
+            <span role="alert" className={styles.error}>
+              {addError}
             </span>
           ) : null}
         </div>

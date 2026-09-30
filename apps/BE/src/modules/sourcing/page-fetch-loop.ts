@@ -43,6 +43,11 @@ export interface PageFetchLoopOptions<S> {
   fetchPage(row: PageFetchRow, order: number): Promise<PageFetchOutcome<S>>;
   /** 재고 통과 판정(P2-03이 넣는다) */
   judgeStock(row: PageFetchRow, snapshot: S): boolean | Promise<boolean>;
+  /**
+   * 가격 순서보다 먼저 읽을 행(P2-03 Proposed: SEARCH_PICK 앵커 상품 — 그 페이지의 JAN이 다른 행 재대조의 기준이다).
+   * 앵커 일치 행이어야 하고, 준 순서대로 앞에 둔다
+   */
+  firstRowIds?: readonly number[];
 }
 
 export interface PageFetchLoopResult {
@@ -60,15 +65,22 @@ export function fetchPriority(row: PageFetchRow, defaultShippingYen: number): nu
   return price + shipping;
 }
 
-/** 조회 순서(앵커 일치 행만, 순수 함수) */
+/** 조회 순서(앵커 일치 행만, 순수 함수). `firstRowIds`(앵커 상품 등)는 준 순서대로 맨 앞 */
 export function orderRowsForFetch(
   rows: readonly PageFetchRow[],
   defaultShippingYen: number,
+  firstRowIds: readonly number[] = [],
 ): PageFetchRow[] {
+  const first = (row: PageFetchRow) => {
+    const i = firstRowIds.indexOf(row.rowId);
+    return i < 0 ? Number.MAX_SAFE_INTEGER : i;
+  };
   return rows
     .filter((row) => row.anchorMatch === 'MATCH')
     .map((row, i) => ({ row, i }))
     .sort((a, b) => {
+      const pinned = first(a.row) - first(b.row);
+      if (pinned !== 0) return pinned;
       const diff =
         fetchPriority(a.row, defaultShippingYen) - fetchPriority(b.row, defaultShippingYen);
       if (diff !== 0) return diff;
@@ -83,7 +95,7 @@ export function orderRowsForFetch(
 export async function runPageFetchLoop<S>(
   options: PageFetchLoopOptions<S>,
 ): Promise<PageFetchLoopResult> {
-  const queue = orderRowsForFetch(options.rows, options.defaultShippingYen);
+  const queue = orderRowsForFetch(options.rows, options.defaultShippingYen, options.firstRowIds);
   const fetched: PageFetchLoopResult['fetched'] = [];
   let passedCount = 0;
   const done = (stopReason: PageFetchStopReason): PageFetchLoopResult => ({

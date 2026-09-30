@@ -1,4 +1,4 @@
-/* SCR-03 검색 조건(Sourcing.dc.html): [검색어 칸 | 장르 · 고정], 앵커 줄, 아동화 필터 안내. 패널 안쪽 16, 사이 12. */
+/* SCR-03 검색 조건(Sourcing.dc.html): [검색어 칸 | 장르 · 고정 | 성별 확인], 앵커 줄(AnchorPanel), 아동화 필터 안내. 패널 안쪽 16, 사이 12. */
 .panel {
   display: flex;
   flex-direction: column;
@@ -49,26 +49,6 @@
 .id {
   font: var(--type-id);
   color: var(--color-ink-muted);
-}
-
-.anchorRow {
-  min-height: 24px;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-ink-muted);
-}
-
-.anchorChip {
-  display: inline-flex;
-  align-items: center;
-  height: 22px;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-sunk);
-  font: var(--type-id);
-  color: var(--color-ink);
-  white-space: nowrap;
 }
 
 .caption {

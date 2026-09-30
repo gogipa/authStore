@@ -295,6 +295,22 @@ export const ERROR_CODES = {
   SOURCING_COMPARISON_NOT_FOUND: { status: 404, message: '비교표를 찾을 수 없습니다.' },
   /** 05-3 §5.1: 소싱 선택(itemCode) 없음 */
   SOURCING_SELECTION_REQUIRED: { status: 409, message: '② 소싱에서 상품을 먼저 골라 주세요.' },
+  // ── sourcing ② 소싱 비교표(P2-03, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 행 id 없음 */
+  SOURCING_COMPARISON_ROW_NOT_FOUND: { status: 404, message: '비교표 행을 찾을 수 없습니다.' },
+  /** 05-3 §5.1: 미검증 행 선택 */
+  ROW_NOT_VERIFIED: {
+    status: 409,
+    message: "재고를 확인하지 않은 상품은 고를 수 없습니다. '재고 확인'을 눌러 주세요.",
+  },
+  /** 05-3 §5.1: stock_pass=false 행 선택 */
+  ROW_STOCK_INSUFFICIENT: { status: 409, message: '목표 사이즈 재고가 모자란 상품입니다.' },
+  /** 05-3 §5.1: 같은 itemCode 행(UNIQUE(sourcing_comparison_id, item_code)) */
+  ROW_ALREADY_EXISTS: { status: 409, message: '같은 상품이 비교표에 이미 있습니다.' },
+  /** 05-3 §5.1: 성별 없이 소싱 선택 */
+  GENDER_REQUIRED: { status: 409, message: '후보 성별을 먼저 골라 주세요.' },
+  /** 05-3 §5.1: 앵커가 없는데 수동 행 추가·재고 확인·선택(P2-03 — 선택·재고 확인은 05-2에 더함) */
+  ANCHOR_NOT_FIXED: { status: 409, message: '기준 모델·색상을 먼저 정해 주세요.' },
   INTERNAL_ERROR: {
     status: 500,
     message: '앱 안에서 오류가 났습니다. 다시 해 보고, 계속되면 로그를 확인해 주세요.',

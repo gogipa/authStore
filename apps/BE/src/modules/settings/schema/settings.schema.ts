@@ -10,6 +10,7 @@ import {
   NOTICE_BLOCK_CONDITIONS,
   type NoticeBlock,
   NPAY_FEE_GRADES,
+  POINT_ROUNDINGS,
   PRICE_RULE_METHODS,
   type SettingsSchemaVersion,
   type SizeRangeMm,
@@ -241,6 +242,7 @@ const schema: JSONSchemaType<AppSettings> = {
         'defaultShippingYen',
         'pageFetchDailyLimit',
         'rakutenApi',
+        'points',
       ],
       properties: {
         genreId: { type: 'integer', minimum: 1, maximum: 2_147_483_647 },
@@ -279,6 +281,18 @@ const schema: JSONSchemaType<AppSettings> = {
             // 429·503 다시 보내기: 3회보다 많이 할 수 없다(PRD §8.2 '최대 3회')
             maxRetries: { type: 'integer', minimum: 0, maximum: 3 },
             genreCacheDays: { type: 'integer', minimum: 1, maximum: 365 },
+          },
+        },
+        // P2-03(Proposed, 06-4 §2.2): 실질가 포인트 기준값. 배율은 numeric(7,4) 범위·소수 넷째 자리까지
+        points: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['pointRateIncludesBase', 'rounding', 'spuMultiplier', 'kRank'],
+          properties: {
+            pointRateIncludesBase: { type: 'boolean' },
+            rounding: { type: 'string', enum: POINT_ROUNDINGS },
+            spuMultiplier: { type: 'number', minimum: 0, maximum: 100, multipleOf: 0.0001 },
+            kRank: { type: 'number', minimum: 0, maximum: 1, multipleOf: 0.0001 },
           },
         },
       },

@@ -4,6 +4,7 @@ import type {
   CandidateCreationExtension,
   UrlCandidateCreationInput,
 } from './candidate-creation.extension.js';
+import type { GenderInputListener } from './gender-input.port.js';
 import type { SourcingSelectionReader } from './sourcing-selection.port.js';
 
 /**
@@ -11,12 +12,18 @@ import type { SourcingSelectionReader } from './sourcing-selection.port.js';
  * 않는다(엔진 → 단계 방향만): 단계 모듈이 `StepEngineApi.register…`로 자기 구현을 넘기고, 엔진은 여기서 꺼내 부른다.
  * - 후보 만들기 확장(`CANDIDATE_CREATION_EXTENSION`, P1-04 포트): sourcing이 'URL로 만들기' ② URL_CREATE를 채운다
  * - ② 소싱 선택 읽기(`SourcingSelectionReader`): sourcing이 등록하고 ③·⑤·⑥이 `StepEngineApi.readSourcingSelection`으로 쓴다
- * 둘째 등록은 앱 시작을 멈춘다(한 자리에 구현 하나).
+ * - 오너 성별 입력 리스너(`GenderInputListener`, P2-03): 열린 ②(④)가 성별을 기다리면 이어 간다. 여럿을 차례로 부른다
+ * 앞 둘은 둘째 등록이 앱 시작을 멈춘다(한 자리에 구현 하나).
  */
 @Injectable()
 export class StepModulePorts {
   private creation: CandidateCreationExtension | null = null;
   private selection: SourcingSelectionReader | null = null;
+  /**
+   * 오너 성별 입력 리스너(`GENDER_INPUT_LISTENERS`의 값 — 같은 배열을 넘긴다, P2-03 Proposed). 단계 모듈(② P2-03·④ P2-06)이
+   * 앱 시작 때 `StepEngineApi.registerGenderInputListener`로 더한다
+   */
+  readonly genderInputListeners: GenderInputListener[] = [];
 
   registerCandidateCreationExtension(extension: CandidateCreationExtension): void {
     if (this.creation) throw new Error('후보 만들기 확장이 이미 등록되어 있습니다');
@@ -26,6 +33,11 @@ export class StepModulePorts {
   registerSourcingSelectionReader(reader: SourcingSelectionReader): void {
     if (this.selection) throw new Error('소싱 선택 읽기가 이미 등록되어 있습니다');
     this.selection = reader;
+  }
+
+  registerGenderInputListener(listener: GenderInputListener): void {
+    if (this.genderInputListeners.includes(listener)) return;
+    this.genderInputListeners.push(listener);
   }
 
   get candidateCreationExtension(): CandidateCreationExtension | null {

@@ -82,13 +82,24 @@ export interface ComparisonSort {
   direction: 'asc' | 'desc';
 }
 
-/** 행 정렬(05-2 getSourcingComparison): 미검증 행은 늘 뒤, 값이 없는 행은 그 안에서 뒤, 같으면 id */
+/**
+ * 행 정렬(05-2 getSourcingComparison): 미검증 행은 늘 뒤, 실질가 순이면 재고 통과 행 먼저, 값이 없는 행은 그 안에서 뒤,
+ * 같으면 검색 순위(수동 행은 뒤) → id(P2-03 Proposed — ranking.ts `compareByEffectivePrice`와 같은 규칙)
+ */
 export function sortRows<
-  R extends { id: number; isVerified: boolean } & Record<ComparisonSortField, number | null>,
+  R extends { id: number; isVerified: boolean; stockPass: boolean | null } & Record<
+    ComparisonSortField,
+    number | null
+  >,
 >(rows: readonly R[], sort: readonly ComparisonSort[]): R[] {
   const keys = sort.length > 0 ? sort : [{ field: 'effectivePriceYen', direction: 'asc' } as const];
+  const byPrice = keys[0]?.field === 'effectivePriceYen';
   return [...rows].sort((a, b) => {
     if (a.isVerified !== b.isVerified) return a.isVerified ? -1 : 1;
+    // 실질가 순이면 재고 통과 행이 먼저(재고 부족 샵은 순위에서 뺀다 — ranking.ts와 같다)
+    if (byPrice && (a.stockPass === true) !== (b.stockPass === true)) {
+      return a.stockPass === true ? -1 : 1;
+    }
     for (const key of keys) {
       const av = a[key.field];
       const bv = b[key.field];
@@ -96,6 +107,11 @@ export function sortRows<
       if (av === null) return 1;
       if (bv === null) return -1;
       return key.direction === 'asc' ? av - bv : bv - av;
+    }
+    if (a.searchRank !== b.searchRank) {
+      if (a.searchRank === null) return 1;
+      if (b.searchRank === null) return -1;
+      return a.searchRank - b.searchRank;
     }
     return a.id - b.id;
   });

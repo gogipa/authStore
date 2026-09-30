@@ -32,8 +32,12 @@ export const URL_PASTE_NOTE =
 /** URL 입력칸 자리 글(소스에 https 주소를 두지 않는다 — FE 규칙 15) */
 export const URL_PLACEHOLDER = 'item.rakuten.co.jp/{샵}/{상품}/';
 
-/** '비교표에 넣기'가 꺼진 이유(P2-02 Proposed — 비교표·앵커는 P2-03이 붙인다) */
-export const TABLE_MODE_NOT_READY = '비교표에 넣기는 아직 준비 중입니다';
+/** '비교표에 넣기'가 꺼진 이유(비교표가 없음 — 검색·비교 ②를 먼저 실행) */
+export const TABLE_MODE_NOT_READY = '② 소싱 검색·비교를 먼저 실행해 주세요';
+/** '비교표에 넣기'가 꺼진 이유(앵커 전 — P2-03 409 ANCHOR_NOT_FIXED) */
+export const TABLE_MODE_NEEDS_ANCHOR = '기준 모델·색상(앵커)을 정한 뒤 넣을 수 있습니다';
+/** '비교표에 넣기'가 꺼진 이유(② 버전이 입력 대기가 아님) */
+export const TABLE_MODE_CLOSED = '입력을 기다리는 ② 버전에만 넣을 수 있습니다';
 
 /** '성인용 상품 확인' 라벨(보드 그대로, F-SO-06) */
 export const ADULT_CONFIRM_LABEL = '성인용 상품 확인';
@@ -161,7 +165,7 @@ export function adultConfirmationOf(
   return { required, confirmedAt, canConfirm, maxMm };
 }
 
-/** 비교 칸 요약 글(P2-02: 행 수·탐색 모드·URL 후보. 비교표 행은 P2-03이 그린다) */
+/** 비교 칸 요약 글(행이 없을 때·URL 후보 — 비교표 행은 ComparisonTable이 그린다, P2-03) */
 export function comparisonSummaryText(
   head: Pick<SourcingComparisonDetail, 'comparisonPerformed' | 'exploreMode' | 'rows'> | undefined,
 ): string {

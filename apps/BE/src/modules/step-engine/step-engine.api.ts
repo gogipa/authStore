@@ -6,7 +6,9 @@ import { StepEngineTransactions, type Db, type StepEngineTx } from './candidates
 import type { StepOutcome } from './contracts/step-runner.js';
 import type { StepCode } from './domain/steps.js';
 import { StepExecutionService } from './execution/step-execution.service.js';
+import type { PinnedAiContext } from '../integrations/ai-engine/ai-executor.types.js';
 import type { CandidateCreationExtension } from './ports/candidate-creation.extension.js';
+import type { GenderInputListener } from './ports/gender-input.port.js';
 import type {
   SourcingSelectionReader,
   SourcingSelectionView,
@@ -32,6 +34,10 @@ export type ResumeWaitingInput =
  *   (② 'URL로 만들기' URL_CREATE — 후보 만들기와 같은 트랜잭션). 외부 호출 없이 결과를 정할 때만
  * - `registerCandidateCreationExtension(ext)`·`registerSourcingSelectionReader(reader)`: 단계 모듈이 앱 시작 때 끼운다
  * - `readSourcingSelection(sourcingStepRunId, db?)`: ② 버전의 소싱 선택(③·⑤·⑥이 쓴다). 등록 전·선택 없음이면 null
+ * P2-03:
+ * - `registerGenderInputListener(listener)`: 오너 성별 입력(PUT …/gender)을 열린 단계에 넘기는 리스너(②·④)
+ * - `pinnedAiOf(stepRunId, db?)`: 그 실행에 시작 때 고정한 AI 문맥(엔진·모델·CLI 버전 + 설정 스냅샷의 모델). 입력 대기 중
+ *   백그라운드 작업(② 앵커 뒤 AI 동일 상품 판정 보조)이 `AiExecutor.run`에 넘긴다. AI를 고정하지 않은 실행이면 null
  */
 @Injectable()
 export class StepEngineApi {
@@ -59,6 +65,14 @@ export class StepEngineApi {
 
   registerSourcingSelectionReader(reader: SourcingSelectionReader): void {
     this.ports.registerSourcingSelectionReader(reader);
+  }
+
+  registerGenderInputListener(listener: GenderInputListener): void {
+    this.ports.registerGenderInputListener(listener);
+  }
+
+  pinnedAiOf(stepRunId: number, db: Db = this.prisma): Promise<PinnedAiContext | null> {
+    return this.executions.pinnedAiForRun(db, stepRunId);
   }
 
   async readSourcingSelection(

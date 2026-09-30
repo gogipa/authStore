@@ -74,6 +74,8 @@ export interface RefetchOutput {
   /** 비교를 하지 않은 버전이면 새 페이지로 다시 정한 송료 */
   shippingYen: number | null;
   shippingSource: 'FREE' | 'DEFAULT_ESTIMATE' | null;
+  /** 이 재조회 실행의 설정 사본(P2-03 — 고른 행의 재고·실질가를 다시 계산한다). 없으면 앞 버전 사본 */
+  params?: Record<string, unknown>;
 }
 
 /** 입력 대기를 끝낼 때(성인용 확인 등) — 산출물은 이미 있다 */
@@ -93,7 +95,11 @@ export function isSourcingOutput(value: unknown): value is SourcingOutput {
   );
 }
 
-/** 적용한 소싱 설정 실효값 사본(sourcing_comparison.params — ERD). P2-03이 k_rank·SPU 등을 더한다 */
+/**
+ * 적용한 소싱 설정 실효값 사본(sourcing_comparison.params — ERD, P2-03 규칙 10): 목표 범위·최소 사이즈 수·기본 폭·取り寄せ
+ * 제외·기본 송료·K·M·아동화 기준 mm + 포인트(k_rank·SPU·내림 방식·pointRate 기본 1배 포함). 버전 안의 재고·실질가 계산은
+ * 이 사본으로 한다(`comparisonParamsOf`)
+ */
 export function sourcingParamsOf(settings: Readonly<AppSettings>): Record<string, unknown> {
   const s = settings.sourcing;
   return {
@@ -108,6 +114,69 @@ export function sourcingParamsOf(settings: Readonly<AppSettings>): Record<string
     pageFetchTargetCandidates: s.pageFetchTargetCandidates,
     pageFetchMaxPages: s.pageFetchMaxPages,
     childShoeMaxSizeMm: settings.safety.childShoeMaxSizeMm,
+    kRank: s.points.kRank,
+    spuMultiplier: s.points.spuMultiplier,
+    pointRounding: s.points.rounding,
+    pointRateIncludesBase: s.points.pointRateIncludesBase,
+  };
+}
+
+/** 버전 안 계산에 쓰는 설정 값(params 사본, 빠진 값은 지금 설정 — P2-02가 만든 버전은 포인트 값이 없다) */
+export interface ComparisonParams {
+  targetSizeMm: Record<'MALE' | 'FEMALE', { min: number; max: number }>;
+  minSizeCount: number;
+  defaultWidth: string;
+  excludeBackOrder: boolean;
+  defaultShippingYen: number;
+  pageFetchTargetCandidates: number;
+  pageFetchMaxPages: number;
+  kRank: number;
+  spuMultiplier: number;
+  pointRounding: 'PER_PROGRAM' | 'SIMPLE';
+  pointRateIncludesBase: boolean;
+}
+
+function isRange(value: unknown): value is { min: number; max: number } {
+  if (!value || typeof value !== 'object') return false;
+  const v = value as { min?: unknown; max?: unknown };
+  return Number.isInteger(v.min) && Number.isInteger(v.max);
+}
+
+export function comparisonParamsOf(
+  params: unknown,
+  settings: Readonly<AppSettings>,
+): ComparisonParams {
+  const p = (params && typeof params === 'object' ? params : {}) as Record<string, unknown>;
+  const s = settings.sourcing;
+  const num = (key: string, fallback: number): number => {
+    const v = p[key];
+    return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+  };
+  const bool = (key: string, fallback: boolean): boolean => {
+    const v = p[key];
+    return typeof v === 'boolean' ? v : fallback;
+  };
+  const target = (p.targetSizeMm ?? {}) as Record<string, unknown>;
+  const male = target.MALE;
+  const female = target.FEMALE;
+  return {
+    targetSizeMm: {
+      MALE: isRange(male) ? male : s.targetSizeMm.MALE,
+      FEMALE: isRange(female) ? female : s.targetSizeMm.FEMALE,
+    },
+    minSizeCount: num('minSizeCount', s.minSizeCount),
+    defaultWidth: typeof p.defaultWidth === 'string' ? p.defaultWidth : s.defaultWidth,
+    excludeBackOrder: bool('excludeBackOrder', s.excludeBackOrder),
+    defaultShippingYen: num('defaultShippingYen', s.defaultShippingYen),
+    pageFetchTargetCandidates: num('pageFetchTargetCandidates', s.pageFetchTargetCandidates),
+    pageFetchMaxPages: num('pageFetchMaxPages', s.pageFetchMaxPages),
+    kRank: num('kRank', s.points.kRank),
+    spuMultiplier: num('spuMultiplier', s.points.spuMultiplier),
+    pointRounding:
+      p.pointRounding === 'SIMPLE' || p.pointRounding === 'PER_PROGRAM'
+        ? p.pointRounding
+        : s.points.rounding,
+    pointRateIncludesBase: bool('pointRateIncludesBase', s.points.pointRateIncludesBase),
   };
 }
 
@@ -117,6 +186,11 @@ export const SOURCING_WAITING_REASONS = {
   ANCHOR: { code: 'SOURCING_ANCHOR_REQUIRED', pending: ['owner.anchor'] },
   /** 앵커가 있어 페이지 조회·최종 후보 선택을 기다린다(P2-03) */
   SELECTION: { code: 'SOURCING_SELECTION_REQUIRED', pending: ['owner.sourcingSelection'] },
+  /**
+   * 성별을 판단하지 못해 목표 사이즈를 정할 수 없다(F-SO-19, P2-03 Proposed). 앵커 뒤 백그라운드 작업이 알아내므로 실행 상태는
+   * 바꾸지 않고(입력 대기 그대로) 화면이 비교표 머리(`detectedGender`·후보 성별)로 판단한다 — 코드는 문서용
+   */
+  GENDER: { code: 'SOURCING_GENDER_REQUIRED', pending: ['candidate.gender'] },
   /** 아동화 의심·대상 외 장르 → '성인용 상품 확인' */
   ADULT: {
     code: 'ADULT_PRODUCT_CONFIRMATION_REQUIRED',

@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { childShoeRulesOf, judgeChildShoe } from '../../common/child-shoe/child-shoe.rules.js';
 import { ApiException } from '../../common/errors/api.exception.js';
 import { ProgressEventsService } from '../../common/events/progress-events.service.js';
 import { SECRET_STORE, type SecretStore } from '../../common/secrets/secret-store.port.js';
@@ -13,10 +12,9 @@ import {
 } from '../integrations/rakuten/rakuten-keys.js';
 import {
   RAKUTEN_SEARCH_PORT,
-  type RakutenSearchItem,
   type RakutenSearchPort,
 } from '../integrations/rakuten/rakuten-search.port.js';
-import type { AppSettings } from '../settings/schema/settings.types.js';
+import { SettingsService } from '../settings/settings.service.js';
 import type { AnchorKeyInput } from '../step-engine/candidates/candidate-identity.service.js';
 import {
   type CandidateEffects,
@@ -32,10 +30,13 @@ import {
 } from '../step-engine/contracts/step-runner.js';
 import { readSettingsPath, settingsPathOf } from '../step-engine/domain/input-keys.js';
 import { STEP_INPUT_SPECS } from '../step-engine/domain/step-graph.js';
+import { AnchorService } from './anchor.service.js';
 import { checkRakutenQuery } from './domain/rakuten-query.rules.js';
 import { keywordFromItemName } from './item-code.resolver.js';
 import { normalizeModelCode } from './page-json.parser.js';
 import { RakutenItemFetcher } from './rakuten-item-fetcher.js';
+import { SourcingComparisonRepository } from './sourcing-comparison.repository.js';
+import { anchorKeyOfHead, filterSearchRows } from './sourcing-rows.js';
 import { parseRakutenItemUrl } from './rakuten-url.js';
 import {
   copyComparison,
@@ -49,7 +50,6 @@ import {
   isSourcingOutput,
   type RefetchOutput,
   type SearchCompareOutput,
-  type SearchRowDraft,
   SOURCING_WAITING_REASONS,
   sourcingParamsOf,
 } from './sourcing-output.js';
@@ -57,6 +57,8 @@ import { latestSelectionBase } from './sourcing-selection.reader.js';
 import { excludedWordException, shippingForColor } from './url-candidate.rules.js';
 
 type Db = Prisma.TransactionClient;
+
+export { anchorKeyOfHead, filterSearchRows, toRowDraft } from './sourcing-rows.js';
 
 /** 실행 중 오너 입력 칸(05-2 StepRunOwnerInputs.searchKeyword) */
 const SEARCH_KEYWORD_FIELD = 'ownerInputs.searchKeyword';
@@ -83,57 +85,13 @@ export function sourcingFailureOf(error: unknown): Extract<StepOutcome, { kind: 
   throw error;
 }
 
-/** 검색 결과 한 건 → 비교표 API 행 초안 */
-export function toRowDraft(item: RakutenSearchItem, rank: number, fetchedAt: Date): SearchRowDraft {
-  return {
-    searchRank: rank,
-    itemCode: item.itemCode,
-    shopCode: item.shopCode,
-    shopName: item.shopName,
-    itemName: item.itemName,
-    itemUrl: item.itemUrl,
-    apiItemPriceYen: item.itemPrice,
-    apiItemPriceMin3Yen: item.itemPriceMin3,
-    apiPointRate: item.pointRate,
-    apiPostageFlag: item.postageFlag,
-    reviewCount: item.reviewCount,
-    reviewAverage: item.reviewAverage,
-    shipOverseas: item.shipOverseasFlag === null ? null : item.shipOverseasFlag === 1,
-    apiCollectedAt: fetchedAt.toISOString(),
-  };
-}
-
-/**
- * 검색 결과에서 비교표 행으로 둘 것(F-SO-04, P2-02 규칙 5): 상품명에 아동 단어(P2-01 공통 규칙 — 바퀴·고령자 단어 포함)가 있으면
- * 저장하지 않는다. 같은 itemCode는 한 번만(ERD UNIQUE). 검색 순위는 원래 순서(뺀 행 자리는 비운다).
- */
-export function filterSearchRows(
-  items: readonly RakutenSearchItem[],
-  settings: Readonly<AppSettings>,
-  fetchedAt: Date,
-): { rows: SearchRowDraft[]; excluded: number } {
-  const rules = childShoeRulesOf(settings);
-  const seen = new Set<string>();
-  const rows: SearchRowDraft[] = [];
-  let excluded = 0;
-  items.forEach((item, i) => {
-    if (judgeChildShoe({ texts: [item.itemName] }, rules).excluded) {
-      excluded += 1;
-      return;
-    }
-    if (seen.has(item.itemCode)) return;
-    seen.add(item.itemCode);
-    rows.push(toRowDraft(item, i + 1, fetchedAt));
-  });
-  return { rows, excluded };
-}
-
 /**
  * ② 소싱 실행기(`stepCode='SOURCING'`, F-BS-15 규약, P2-02). SourcingModule이 providers에 넣으면 step-engine 레지스트리가
  * 앱 시작 때 찾는다(엔진 → 단계 방향만). 앞 단계 값·설정은 엔진이 넘긴 입력(ctx)만 읽는다.
  * 세 동작(PRD §5.3):
  * - 검색·비교(`run`): 검색어 검사 → Item Search(6시간 캐시) → 상품명 아동 단어 행 빼기 → `sourcing_comparison` + API 행 →
- *   SSE `sourcing.search-completed` → 앵커 입력 대기(앵커가 이미 있으면 선택 대기 — P2-03이 앵커 분류·페이지 조회·선택을 붙인다)
+ *   SSE `sourcing.search-completed` → 앵커 입력 대기(앵커가 이미 있으면 선택 대기 + 커밋 뒤 앵커 뒤 작업 — P2-03
+ *   `AnchorService`: 분류·page 2·페이지 조회·재고·실질가. 선택은 `SelectionService`가 ②를 완료로 닫는다)
  * - URL로 만들기: 후보 만들기 트랜잭션 안에서 `UrlCandidateExtension`이 `StepEngineApi.recordInlineRun`으로 버전을 쓴다
  * - 재조회(`refetch`): 고른 상품 페이지 1건만 새로 읽어(fetch_reason=REFETCH) 새 버전 + 행·쿠폰 복사
  * 시작 전 검사(`beforeStart`): 검색어 형식 422, 키 409, 재조회면 선택 없음 409·페이지 하루 상한·쉼 409.
@@ -142,8 +100,13 @@ export function filterSearchRows(
 @Injectable()
 export class SourcingStepRunner implements StepRunner {
   readonly stepCode = 'SOURCING' as const;
-  /** ② 자체는 AI를 부르지 않는다(동일 상품 AI 보조 F-BS-38은 P2-03 — 05-1 표 A 분류는 열린질문 P2-03) */
-  readonly usesAi = false;
+  /**
+   * AI 단계(05-1 표 A — 동일 상품 AI 보조 F-BS-38, P2-03). 시작 때 선택 엔진을 쓸 수 없으면 409 AI_ENGINE_UNAVAILABLE이고
+   * step_run.ai_*를 고정한다. AI는 앵커 뒤 백그라운드 작업이 `StepEngineApi.pinnedAiOf`로 부른다. 'URL로 만들기'
+   * (`recordInlineRun`)는 AI를 부르지 않아 ai_* NULL(열린질문 P2-03 — 보조 기능 하나로 ② 전체가 막히는지 오너 검토)
+   */
+  readonly usesAi = true;
+  readonly aiModelKind = 'TEXT' as const;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -152,6 +115,9 @@ export class SourcingStepRunner implements StepRunner {
     private readonly events: ProgressEventsService,
     private readonly gateway: ExternalHttpGateway,
     @Inject(SECRET_STORE) private readonly secrets: SecretStore,
+    private readonly anchors: AnchorService,
+    private readonly comparisons: SourcingComparisonRepository,
+    private readonly settings: SettingsService,
   ) {}
 
   // ── 입력 ────────────────────────────────────────────────────────────────
@@ -364,6 +330,7 @@ export class SourcingStepRunner implements StepRunner {
       adultProductConfirmedAt: base.adultProductConfirmedAt?.toISOString() ?? null,
       shippingYen: shipping?.shippingYen ?? null,
       shippingSource: shipping?.shippingSource ?? null,
+      params: sourcingParamsOf(ctx.settings),
     };
     if (checks.adultConfirmationRequired && base.adultProductConfirmedAt === null) {
       return {
@@ -393,11 +360,16 @@ export class SourcingStepRunner implements StepRunner {
       const head = await insertSearchCompare(tx, stepRunId, output);
       const run = await tx.stepRun.findUniqueOrThrow({
         where: { id: stepRunId },
-        select: { candidateId: true },
+        select: { candidateId: true, candidate: { select: { sourceKeywordId: true } } },
       });
       const rowCount = await tx.sourcingComparisonRow.count({
         where: { sourcingComparisonId: head.id },
       });
+      // 앵커가 확정된 후보의 다시 실행(P2-03): 앵커 입력 없이 분류 → (커밋 뒤) page 2·페이지 조회로 이어 간다
+      if (head.anchorInputMethod !== null) {
+        await this.anchors.prepareAnchored(tx, head, run.candidate);
+        hooks?.afterCommit(() => this.anchors.startJob(head.id));
+      }
       hooks?.afterCommit(() => {
         this.events.publish(
           'sourcing.search-completed',
@@ -417,7 +389,32 @@ export class SourcingStepRunner implements StepRunner {
       await insertUrlCreate(tx, stepRunId, output);
       return;
     }
-    await insertRefetch(tx, stepRunId, output);
+    const head = await insertRefetch(tx, stepRunId, output);
+    if (head.comparisonPerformed) await this.recalculateSelected(tx, head.id, output.rakutenItemId);
+  }
+
+  /** 재조회 버전의 고른 행: 새 스냅샷으로 재고·실질가·재대조를 다시 계산한다(P2-03 — 선택은 그대로) */
+  private async recalculateSelected(tx: Tx, headId: number, rakutenItemId: number): Promise<void> {
+    const head = await tx.sourcingComparison.findUniqueOrThrow({
+      where: { id: headId },
+      include: { stepRun: { include: { candidate: true } } },
+    });
+    const row = await tx.sourcingComparisonRow.findFirst({
+      where: { sourcingComparisonId: headId, isSelected: true },
+      select: { id: true },
+    });
+    const item = await tx.rakutenItem.findUnique({
+      where: { id: rakutenItemId },
+      include: { skus: { orderBy: { id: 'asc' } } },
+    });
+    if (!row || !item) return;
+    const ctx = await this.comparisons.contextOf(
+      tx,
+      head,
+      head.stepRun.candidate,
+      this.settings.current(),
+    );
+    await this.comparisons.applySnapshot(tx, row.id, item, ctx);
   }
 
   /** 이전 버전 다시 고르기(RESTORE_VERSION): 머리 행·행 복사. 소싱 선택이 있는 버전이면 후보의 선택을 그 값으로 */
@@ -460,23 +457,4 @@ export class SourcingStepRunner implements StepRunner {
     const head = await findComparisonByRun(db, stepRunId);
     return head ? anchorKeyOfHead(head) : null;
   }
-}
-
-/**
- * 머리 행의 앵커 → 후보 앵커 키(型番이 있으면 型番 **정규화값**(candidate.anchor_model_code — ERD), 없으면 앵커 상품 —
- * ck_candidate_anchor_one). 색상 코드가 없으면 null
- */
-export function anchorKeyOfHead(head: {
-  anchorModelCodeNorm: string | null;
-  anchorModelCode: string | null;
-  anchorItemCode: string | null;
-  anchorColorCode: string | null;
-}): AnchorKeyInput | null {
-  if (!head.anchorColorCode) return null;
-  const model = head.anchorModelCodeNorm ?? normalizeModelCode(head.anchorModelCode);
-  if (model) return { anchorModelCode: model, anchorColorCode: head.anchorColorCode };
-  if (head.anchorItemCode) {
-    return { anchorItemCode: head.anchorItemCode, anchorColorCode: head.anchorColorCode };
-  }
-  return null;
 }

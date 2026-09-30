@@ -7,6 +7,7 @@ import type {
   AnchorPreset,
   RefetchOutput,
   SearchCompareOutput,
+  SearchRowDraft,
   UrlCreateOutput,
 } from './sourcing-output.js';
 
@@ -44,15 +45,57 @@ export function findComparisonByRun(db: Tx, stepRunId: number): Promise<Sourcing
   return db.sourcingComparison.findUnique({ where: { stepRunId } });
 }
 
-/** 검색·비교 버전(SEARCH_COMPARE): 머리 행 + API 행(아동 단어 행은 이미 뺐다) */
+/** 검색 결과 한 행 → API 행 INSERT 값(P2-03 앵커 뒤 page=2 행도 같은 모양) */
+export function apiRowCreateData(
+  sourcingComparisonId: number,
+  row: SearchRowDraft,
+): Prisma.SourcingComparisonRowCreateManyInput {
+  return {
+    sourcingComparisonId,
+    rowSource: 'API',
+    searchRank: smallint(row.searchRank),
+    itemCode: row.itemCode.slice(0, 128),
+    shopCode: row.shopCode.slice(0, 64),
+    shopName: row.shopName?.slice(0, 255) ?? null,
+    itemName: row.itemName,
+    itemUrl: row.itemUrl.slice(0, 2048),
+    apiItemPriceYen: row.apiItemPriceYen,
+    apiItemPriceMin3Yen: row.apiItemPriceMin3Yen,
+    apiPointRate: smallint(row.apiPointRate),
+    apiPostageFlag: smallint(row.apiPostageFlag),
+    reviewCount: row.reviewCount,
+    reviewAverage: reviewAverage(row.reviewAverage),
+    shipOverseas: row.shipOverseas,
+    apiCollectedAt: new Date(row.apiCollectedAt),
+  };
+}
+
+/**
+ * 검색·비교 버전(SEARCH_COMPARE): 머리 행 + API 행(아동 단어 행은 이미 뺐다). 같은 후보의 앞 비교 버전이 있으면(② 다시
+ * 실행, P2-03 — ERD §7.2-12) `base_sourcing_comparison_id`로 잇고 같은 itemCode 행의 쿠폰·샵·이벤트 배율을 기본값으로
+ * 옮기며, 앞 버전의 수동 행(오너가 넣은 상품)을 가져온다(선택 표시는 빼고)
+ */
 export async function insertSearchCompare(
   tx: Tx,
   stepRunId: number,
   output: SearchCompareOutput,
 ): Promise<SourcingComparison> {
+  const run = await tx.stepRun.findUniqueOrThrow({
+    where: { id: stepRunId },
+    select: { candidateId: true },
+  });
+  const base = await tx.sourcingComparison.findFirst({
+    where: {
+      comparisonPerformed: true,
+      stepRun: { candidateId: run.candidateId, stepCode: 'SOURCING', id: { lt: stepRunId } },
+    },
+    orderBy: { stepRunId: 'desc' },
+    include: { rows: { orderBy: { id: 'asc' } } },
+  });
   const head = await tx.sourcingComparison.create({
     data: {
       stepRunId,
+      baseSourcingComparisonId: base?.id ?? null,
       action: 'SEARCH_COMPARE',
       searchKeyword: output.searchKeyword.slice(0, 128),
       sourceUrl: output.sourceUrl,
@@ -63,28 +106,42 @@ export async function insertSearchCompare(
   });
   if (output.rows.length > 0) {
     await tx.sourcingComparisonRow.createMany({
-      data: output.rows.map((row) => ({
-        sourcingComparisonId: head.id,
-        rowSource: 'API',
-        searchRank: smallint(row.searchRank),
-        itemCode: row.itemCode.slice(0, 128),
-        shopCode: row.shopCode.slice(0, 64),
-        shopName: row.shopName?.slice(0, 255) ?? null,
-        itemName: row.itemName,
-        itemUrl: row.itemUrl.slice(0, 2048),
-        apiItemPriceYen: row.apiItemPriceYen,
-        apiItemPriceMin3Yen: row.apiItemPriceMin3Yen,
-        apiPointRate: smallint(row.apiPointRate),
-        apiPostageFlag: smallint(row.apiPostageFlag),
-        reviewCount: row.reviewCount,
-        reviewAverage: reviewAverage(row.reviewAverage),
-        shipOverseas: row.shipOverseas,
-        apiCollectedAt: new Date(row.apiCollectedAt),
-      })),
+      data: output.rows.map((row) => apiRowCreateData(head.id, row)),
       skipDuplicates: true,
     });
   }
+  if (base) await carryOverRows(tx, head.id, base.rows);
   return head;
+}
+
+/** 앞 버전의 행별 쿠폰·배율(같은 itemCode)과 수동 행을 새 버전으로(P2-03) */
+async function carryOverRows(
+  tx: Tx,
+  sourcingComparisonId: number,
+  baseRows: readonly SourcingComparisonRow[],
+): Promise<void> {
+  const current = await tx.sourcingComparisonRow.findMany({
+    where: { sourcingComparisonId },
+    select: { id: true, itemCode: true },
+  });
+  const byCode = new Map(current.map((r) => [r.itemCode, r.id]));
+  for (const row of baseRows) {
+    const id = byCode.get(row.itemCode);
+    if (id !== undefined) {
+      if (row.couponYen !== 0 || !row.shopEventMultiplier.isZero()) {
+        await tx.sourcingComparisonRow.update({
+          where: { id },
+          data: { couponYen: row.couponYen, shopEventMultiplier: row.shopEventMultiplier },
+        });
+      }
+      continue;
+    }
+    if (row.rowSource === 'MANUAL') {
+      await tx.sourcingComparisonRow.create({
+        data: { ...rowCopy(row, sourcingComparisonId), isSelected: false, fetchOrder: null },
+      });
+    }
+  }
 }
 
 /** URL로 만들기 버전(URL_CREATE): 비교 안 함, 행 0개, 소싱 선택 = URL 상품(ck_sc_url_no_compare·ck_sc_selection_uncompared) */
@@ -159,7 +216,8 @@ function headCopy(
 
 /**
  * 재조회 버전(REFETCH, F-SO-17): 앞 버전의 머리 행·행과 행별 쿠폰·배율을 복사하고, 고른 상품만 새 페이지 스냅샷으로 바꾼다.
- * - 비교를 한 버전: `is_selected` 행의 rakuten_item_id를 새 스냅샷으로(재고·실질가 다시 계산은 P2-03 재고 판정이 붙인다)
+ * - 비교를 한 버전: `is_selected` 행의 rakuten_item_id를 새 스냅샷으로(재고·실질가 다시 계산은 실행기 persist가
+ *   `SourcingComparisonRepository.applySnapshot`으로 한다 — P2-03)
  * - 비교를 하지 않은 버전(URL로 만들기와 그 재조회): selected_rakuten_item_id·송료를 새 값으로. action은 REFETCH
  *   (ck_sc_url_no_compare는 URL_CREATE에만 걸려 REFETCH는 comparison_performed=false를 그대로 둘 수 있다)
  */
@@ -174,6 +232,7 @@ export async function insertRefetch(
   });
   const data = headCopy(base, stepRunId);
   data.action = 'REFETCH';
+  if (output.params) data.params = output.params as Prisma.InputJsonValue;
   data.childSizeSuspect = output.childSizeSuspect;
   data.genreScope = output.genreScope;
   data.adultProductConfirmedAt = output.adultProductConfirmedAt

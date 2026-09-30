@@ -15,6 +15,7 @@ import { parseRakutenItemUrl } from '../../src/modules/sourcing/rakuten-url.js';
 import { StepExecutor } from '../../src/modules/step-engine/execution/step-executor.js';
 import { StepEngineApi } from '../../src/modules/step-engine/step-engine.api.js';
 import { createTestApp, type TestApp, truncate } from '../helpers/test-app.js';
+import { seedUsableAiEngine } from '../support/fake-ai-engines.js';
 import { FakePricingRunner, FakePricingRunnerModule } from '../support/fake-pricing-runner.js';
 import { InMemorySecretStore } from '../support/in-memory-secret-store.js';
 import {
@@ -178,6 +179,8 @@ describe('② 라쿠텐 연동 API(e2e, 가짜 라쿠텐, P2-02)', () => {
   beforeEach(async () => {
     await idle();
     await truncate(t.prisma, TABLES);
+    // ② SOURCING은 AI 단계(P2-03 — F-BS-38)라 선택 엔진을 쓸 수 있는 점검 행이 있어야 시작한다
+    await seedUsableAiEngine(t.prisma);
     server.reset();
     pricing.reset();
     t.fetch.reset();

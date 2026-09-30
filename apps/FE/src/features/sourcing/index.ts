@@ -2,17 +2,71 @@
  * sourcing 도메인(OpenAPI 태그 `sourcing`)의 공개 API. 밖에서는 `@/features/sourcing`으로만 가져온다.
  * P2-02: 라쿠텐 검색어 검사·URL 상품 읽기·스냅샷·성인용 상품 확인 훅(queryKey `['sourcing', operationId, params]`),
  * ② 비교표 머리 조회(행 수·성인용 확인 상태), 검색어 칸·URL 붙여넣기 부품, 화면 문구.
- * 비교표·앵커·재고 확인·수동 행·선택은 P2-03이 더한다. 후보 만들기·단계 실행·재조회는 `@/features/step-engine`에 있다.
+ * P2-03: 비교표 조회 조건(queryKey `['sourcing','getSourcingComparison',{ candidateId, stepRunId, includeNoMatch, sort }]`),
+ * 앵커·행 수정·재고 확인·수동 행·선택 훅, 비교표 화면 모델(model/comparison). 후보 만들기·단계 실행·재조회·성별은
+ * `@/features/step-engine`에 있다.
  */
 export {
   SOURCING_TAG_KEY,
   sourcingKeys,
+  useAddManualRow,
   useConfirmAdultProduct,
   useFetchRakutenItem,
+  useFixSourcingAnchor,
+  useInvalidateSourcing,
   useRakutenItem,
+  useRequestStockCheck,
+  useSelectSourcingRow,
   useSourcingComparison,
+  useUpdateSourcingRow,
   useValidateRakutenQuery,
 } from './api/queries';
+export type {
+  ComparisonQueryOptions,
+  SourcingAnchorRequest,
+  SourcingRowPatch,
+} from './api/queries';
+export {
+  ANCHOR_LOCKED_NOTE,
+  anchorLabel,
+  anchorMatchView,
+  applyRecalculation,
+  comparisonCaption,
+  comparisonGender,
+  comparisonParams,
+  GENDER_LABEL,
+  isComparisonEditable,
+  itemFactsText,
+  itemNameMarks,
+  kRankText,
+  multiplierText,
+  needsOwnerDecision,
+  pointBreakdownText,
+  pointMultiplier,
+  reviewText,
+  rowIdentityText,
+  selectBlockedReason,
+  selectionNote,
+  shipOverseasText,
+  SIZE_STATUS_LABEL,
+  sizeStockMismatchText,
+  sizeStockOf,
+  targetRangeText,
+  targetSizeCount,
+  unverifiedGroupText,
+  verifiedGroupText,
+} from './model/comparison';
+export type {
+  AnchorMatchTone,
+  CandidateGenderLike,
+  ComparisonGender,
+  ComparisonParams,
+  SizeStatus,
+  SourcingComparisonRow,
+  SourcingJobAccepted,
+  SourcingRowRecalculation,
+  SourcingSelectionResult,
+} from './model/comparison';
 export { RAKUTEN_QUERY_CHECK_DELAY_MS, useRakutenQueryCheck } from './api/useRakutenQueryCheck';
 export type { RakutenQueryCheck } from './api/useRakutenQueryCheck';
 export {
@@ -30,6 +84,8 @@ export {
   queryViolationText,
   RAKUTEN_GENRE_NAME,
   RAKUTEN_QUERY_MAX_HALF_WIDTH,
+  TABLE_MODE_CLOSED,
+  TABLE_MODE_NEEDS_ANCHOR,
   TABLE_MODE_NOT_READY,
   URL_PASTE_CAPTION,
   URL_PASTE_NOTE,
