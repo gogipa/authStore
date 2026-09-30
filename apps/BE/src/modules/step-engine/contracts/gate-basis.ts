@@ -100,3 +100,12 @@ export const GATE_BASIS_META = 'autostore:gate-basis';
 
 /** 공급자 클래스 표시: `@GateBasisFor('G2') @Injectable() export class PricingGateBasis implements GateBasisProvider` */
 export const GateBasisFor = (gate: 'G2' | 'G3') => SetMetadata(GATE_BASIS_META, gate);
+
+/** 테스트 대역 게이트 공급자 표시 키 */
+export const GATE_BASIS_TEST_DOUBLE_META = 'autostore:gate-basis-test-double';
+
+/**
+ * 테스트 대역 게이트 공급자 표시(P2-05 Proposed — 테스트 전용, `StepRunnerTestDouble`과 같은 방식). 같은 게이트에 운영
+ * 공급자(pricing의 G2 등)와 이 표시를 단 가짜 공급자가 함께 있으면 가짜를 쓴다. 운영 코드는 쓰지 않는다.
+ */
+export const GateBasisTestDouble = () => SetMetadata(GATE_BASIS_TEST_DOUBLE_META, true);

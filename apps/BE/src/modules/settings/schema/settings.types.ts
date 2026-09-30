@@ -128,6 +128,18 @@ export interface SimplifiedDutySettings {
   ratePct: number;
 }
 
+/**
+ * 배대지 검수·포장비(F-PJ-06 '검수·포장비를 더해 배대지 비용을 내며, 포함 여부는 설정(기본 포함)', P2-05 Proposed —
+ * 금액 키는 문서에 없어 새로 뒀다). 요금표 운임에 검수·포장이 빠진 배대지면 오너가 금액을 넣는다(기본 0원이라 PRD §8.3
+ * 예시·시안 값이 그대로 나온다). 요금표가 없을 때의 기본 배대지비(15,000원)는 검수·포장을 포함한 가정값이라 더하지 않는다
+ */
+export interface ForwarderHandlingFeeSettings {
+  /** 검수·포장비를 배대지 비용 C_fwd에 더한다. 기본 true */
+  included: boolean;
+  /** 검수·포장비(원, 1켤레). 기본 0 */
+  amountKrw: number;
+}
+
 /** 판정 가정값(PRD §8.3) + 과세 사이즈 판매(F-ST-02) */
 export interface PricingSettings {
   /** 면세 기준(미화). 150 */
@@ -140,6 +152,13 @@ export interface PricingSettings {
   shoeBox: ShoeBoxSettings;
   /** 관세율 */
   dutyRatePctByHsHeading: Record<DutyHsHeading, number>;
+  /**
+   * 과세 사이즈 관세에 쓸 HS 4단위(P2-05 Proposed — 상품별 HS 판정 방법이 문서에 없다, ERD §7.1-8). 기본 6404
+   * (고무·플라스틱 밑창 + 섬유 갑피, 13%). 판정 스냅샷 params에 적용 값이 남는다
+   */
+  dutyHsHeading: DutyHsHeading;
+  /** 검수·포장비(P2-05 Proposed) */
+  forwarderHandlingFee: ForwarderHandlingFeeSettings;
   /** FTA·RCEP 협정세율 적용. 기본 false(원산지 증빙 필요) */
   applyFtaRates: boolean;
   simplifiedDuty: SimplifiedDutySettings;

@@ -13,6 +13,7 @@ import type { GenderInputListener } from './ports/gender-input.port.js';
 import type {
   SourcingSelectionReader,
   SourcingSelectionView,
+  SourcingTargetSkus,
 } from './ports/sourcing-selection.port.js';
 import { StepModulePorts } from './ports/step-module-ports.js';
 import { PropagationService } from './propagation/propagation.service.js';
@@ -39,6 +40,9 @@ export type ResumeWaitingInput =
  * - `registerGenderInputListener(listener)`: 오너 성별 입력(PUT …/gender)을 열린 단계에 넘기는 리스너(②·④)
  * - `pinnedAiOf(stepRunId, db?)`: 그 실행에 시작 때 고정한 AI 문맥(엔진·모델·CLI 버전 + 설정 스냅샷의 모델). 입력 대기 중
  *   백그라운드 작업(② 앵커 뒤 AI 동일 상품 판정 보조)이 `AiExecutor.run`에 넘긴다. AI를 고정하지 않은 실행이면 null
+ * P2-05:
+ * - `readSourcingTargetSkus(sourcingStepRunId, gender, db?)`: ② 버전의 목표 사이즈별 SKU·재고 칸(③ 판정 입력). sourcing이
+ *   등록한 읽기 함수의 선택 메서드(`readTargetSkus`)를 부른다
  */
 @Injectable()
 export class StepEngineApi {
@@ -82,6 +86,18 @@ export class StepEngineApi {
   ): Promise<SourcingSelectionView | null> {
     const reader = this.ports.sourcingSelectionReader;
     return reader ? reader.read(db, sourcingStepRunId) : null;
+  }
+
+  /**
+   * ② 버전의 소싱 선택 상품에서 목표 사이즈별 SKU·재고 칸(P2-05 — ③ 판정 입력). 읽기 함수가 없거나 선택이 없으면 null
+   */
+  async readSourcingTargetSkus(
+    sourcingStepRunId: number,
+    gender: 'MALE' | 'FEMALE',
+    db: Db = this.prisma,
+  ): Promise<SourcingTargetSkus | null> {
+    const reader = this.ports.sourcingSelectionReader;
+    return reader?.readTargetSkus ? reader.readTargetSkus(db, sourcingStepRunId, gender) : null;
   }
 
   resumeWaiting(stepRunId: number, input: ResumeWaitingInput = {}): Promise<StepRun> {

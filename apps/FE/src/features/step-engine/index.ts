@@ -8,6 +8,7 @@
  * 게이트 목록으로 그리는 게이트 배지.
  * P1-10: 'AI 엔진 설정으로' 링크(선택 AI 엔진을 쓸 수 없을 때, F-BS-76). StepStatusBar의 'AI 생성 · 엔진' 칩과 `error`.
  * P2-02: 고른 상품 재조회(`useRefetchCandidate`), 단계 표 ② 줄의 '재조회'(하루 조회 상한이면 끈다).
+ * P2-05: '비교 없이 확정' 체크·해제(`useConfirmNoComparisonMutation`·`useRevokeNoComparisonMutation`).
  */
 export {
   useAttentionSteps,
@@ -118,3 +119,4 @@ export {
   AiEngineSettingsLinkFor,
   AiEngineSettingsLinkForError,
 } from './components/AiEngineSettingsLink/AiEngineSettingsLink';
+export { useConfirmNoComparisonMutation, useRevokeNoComparisonMutation } from './api/noComparison';

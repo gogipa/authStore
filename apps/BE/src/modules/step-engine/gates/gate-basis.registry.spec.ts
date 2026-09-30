@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import {
   g2Basis,
   GateBasisFor,
+  GateBasisTestDouble,
   type GateBasis,
   type GateBasisProvider,
   type GateBlocker,
@@ -38,7 +39,26 @@ class OtherG2Provider extends BaseProvider {
   }
 }
 
+@GateBasisFor('G2')
+@GateBasisTestDouble()
+@Injectable()
+class FakeG2Provider extends BaseProvider {
+  constructor() {
+    super('G2');
+  }
+}
+
 describe('GateBasisRegistry(P1-06 게이트 규약 등록)', () => {
+  it('테스트 대역(@GateBasisTestDouble)은 운영 공급자를 바꿔 낀다(P2-05)', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [GateBasisRegistry, G2Provider, FakeG2Provider],
+    }).compile();
+    await moduleRef.init();
+    expect(moduleRef.get(GateBasisRegistry).get('G2')).toBeInstanceOf(FakeG2Provider);
+    await moduleRef.close();
+  });
+
   it('@GateBasisFor를 단 provider를 DiscoveryService로 모은다(없는 게이트는 null)', async () => {
     @Module({ providers: [G2Provider] })
     class PricingLike {}

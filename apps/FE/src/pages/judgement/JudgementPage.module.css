@@ -1,0 +1,322 @@
+/*
+ * SCR-04 ③ 판정 · 소싱 확정(Judgement.dc.html). ③·④ 구역은 h2(20px) + 상태 줄, 가격 요약은 5칸 격자(패널),
+ * 본문은 [왼쪽 532px: 국내 기준가 · 사이즈별 판정 | 오른쪽: 비용 분해 · 소싱 확정]. 표 규칙은 화면시안_명세 §3.
+ */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.stepHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.stepTitle {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+/* 화면 ID 칩(SCR-03 비교표 제목 옆과 같은 모양 — 보드에는 없다, P2-05 Proposed) */
+.screenId {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunk);
+  color: var(--color-ink);
+  font: var(--type-id);
+}
+
+.bar {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.reason {
+  align-self: flex-end;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.cell {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.cellLabel {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+
+.cellValue {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.big {
+  font: var(--type-heading);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.small {
+  font: var(--type-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+
+.couponBox,
+.couponBoxLocked {
+  width: 80px;
+  height: 32px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.couponBoxLocked {
+  border-color: var(--color-line);
+  background: var(--color-surface-sunk);
+}
+
+.unit {
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+.couponInput {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+  font: var(--type-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+  text-align: right;
+}
+
+.couponInput:disabled {
+  color: var(--color-ink-muted);
+}
+
+.columns {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.left {
+  width: 532px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.right {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.panelHead {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.panelTitle {
+  margin: 0;
+  font: var(--type-heading);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.body {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.caption {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.confirmRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.error {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-failed);
+}
+
+.placeholder {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius-md);
+  font: var(--type-body);
+  color: var(--color-ink-muted);
+}
+
+.sizeSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sizeHead {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.table {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.tr {
+  display: grid;
+  grid-template-columns: 72px 84px 88px 96px 104px minmax(0, 1fr);
+  align-items: center;
+  height: 40px;
+  box-sizing: border-box;
+  border-top: 1px solid var(--color-line);
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.tr > span {
+  padding: 0 var(--space-3);
+  min-width: 0;
+}
+
+.th {
+  height: 36px;
+  border-top: none;
+  background: var(--color-surface-sunk);
+  font: var(--type-label);
+  color: var(--color-ink-muted);
+}
+
+.num {
+  font: var(--type-num);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.th .num {
+  font: var(--type-label);
+}
+
+.dutyCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.dutyFree,
+.taxable,
+.boundary {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font: var(--type-label);
+  white-space: nowrap;
+}
+
+.dutyFree {
+  background: var(--color-done-soft);
+  color: var(--color-done);
+}
+
+.taxable {
+  background: var(--color-failed-soft);
+  color: var(--color-failed);
+}
+
+.boundary {
+  background: var(--color-waiting-soft);
+  color: var(--color-waiting);
+}
+
+.muted {
+  color: var(--color-ink-muted);
+}

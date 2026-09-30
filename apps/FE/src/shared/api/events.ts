@@ -99,6 +99,8 @@ export type EventInvalidations = {
  * - P2-04: `fx-rate.updated`(새 최신 환율·수집 실패·±20% 차이) → 환율 최신값(`getLatestFxRates`)·이력(`listFxRates` 전체).
  *   새 최신값이 ③을 재실행 필요로 만들면 그 후보마다 `candidate-step.changed`가 따로 온다. 요금표 가져오기는 SSE가 없고
  *   응답으로 캐시를 고친다.
+ * - P2-05: `step-run.status-changed`가 ③(PRICING)이면 그 후보의 판정(`getPriceJudgement`)·국내 기준가 이력. `gate.passed`·
+ *   `gate.invalidated` → 그 후보 판정도(G2 줄·확정한 값). 국내 기준가 입력·'비교 없이 확정'은 응답 뒤 훅이 무효화한다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -164,15 +166,25 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     ...(stepChainId != null ? [qk('step-engine', 'getContinuousRun', { stepChainId })] : []),
     qk('step-engine', 'listCandidateGates', { candidateId }),
     ...(stepCode === 'SOURCING' ? [qk('sourcing', 'getSourcingComparison', { candidateId })] : []),
+    ...(stepCode === 'PRICING'
+      ? [
+          qk('pricing', 'getPriceJudgement', { candidateId }),
+          qk('pricing', 'listDomesticPrices', { candidateId }),
+        ]
+      : []),
   ],
   'continuous-run.stopped': ({ candidateId, stepChainId }) => [
     qk('step-engine', 'getContinuousRun', { stepChainId }),
     ...gateKeys(candidateId),
   ],
-  'gate.passed': ({ candidateId }) => gateKeys(candidateId),
+  'gate.passed': ({ candidateId }) => [
+    ...gateKeys(candidateId),
+    qk('pricing', 'getPriceJudgement', { candidateId }),
+  ],
   'gate.invalidated': ({ candidateId }) => [
     ...gateKeys(candidateId),
     qk('sourcing', 'getSourcingComparison', { candidateId }),
+    qk('pricing', 'getPriceJudgement', { candidateId }),
   ],
   'auth.failed': () => [qk('system', 'getAuthStatus')],
   'ai-cli-check.completed': ({ engineCode }) => [

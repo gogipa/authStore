@@ -311,6 +311,17 @@ export const ERROR_CODES = {
   GENDER_REQUIRED: { status: 409, message: '후보 성별을 먼저 골라 주세요.' },
   /** 05-3 §5.1: 앵커가 없는데 수동 행 추가·재고 확인·선택(P2-03 — 선택·재고 확인은 05-2에 더함) */
   ANCHOR_NOT_FIXED: { status: 409, message: '기준 모델·색상을 먼저 정해 주세요.' },
+  // ── pricing ③ 판정·step-engine 비교 없이 확정(P2-05, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 비교표 행이 있는 후보(② 비교를 한 버전)에 판정 쿠폰 칸(`ownerInputs.couponYen`) */
+  COUPON_NOT_ALLOWED: {
+    status: 422,
+    message: '비교표가 있는 후보는 비교표 행에서 쿠폰을 넣어 주세요.',
+  },
+  /** 05-3 §5.1: G2를 통과한 뒤 '비교 없이 확정' 해제(P2-05 Proposed — G2가 지금 유효할 때만) */
+  GATE_ALREADY_PASSED: {
+    status: 409,
+    message: '이미 소싱 확정(G2)을 통과해 체크를 풀 수 없습니다.',
+  },
   // ── pricing 환율·settings 요금표(P2-04, 05-3 §5.1 문구 그대로) ──
   /** 05-3 §5.1: 원가·과세 환율 없음(③ 시작 — `FxRatesService.getLatestForJudgement`, details.missing) */
   FX_RATE_UNAVAILABLE: { status: 409, message: '환율이 없습니다. 설정에서 환율을 넣어 주세요.' },

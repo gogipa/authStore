@@ -1,0 +1,64 @@
+{
+  "description": "과세·경계 사이즈(US-08 AC2): ¥23,000 → V_usd 148.29 과세·경계. 요금표 1.5kg 구간 ¥2,000(부피 나눗수 6000 → 청구무게 1.452kg) → C_ship_intl 17,520, CV 219,000, 관세 13% + 부가세 10% = 53,217(간이세율 18%면 39,420). 면세 경계 ¥22,490(145.00, 면세·경계) / ¥22,491(145.01, 과세)",
+  "settings": "DEFAULT",
+  "input": {
+    "sizes": [
+      { "sizeMm": 250, "rakutenSkuId": null, "skuPriceYen": 22490 },
+      { "sizeMm": 255, "rakutenSkuId": null, "skuPriceYen": 22491 },
+      { "sizeMm": 260, "rakutenSkuId": null, "skuPriceYen": 23000 }
+    ],
+    "shippingYen": 0,
+    "couponYen": 0,
+    "fx": { "costPerUnit": "8.76", "customsJpyPerUnit": "8.76", "customsUsdPerUnit": "1358.72" },
+    "forwarder": {
+      "id": 1,
+      "tiers": [
+        {
+          "weightMaxKg": 1.0,
+          "fee": 1500,
+          "currency": "JPY",
+          "volumetricDivisor": 6000,
+          "volumetricAppliesWhen": null
+        },
+        {
+          "weightMaxKg": 1.5,
+          "fee": 2000,
+          "currency": "JPY",
+          "volumetricDivisor": 6000,
+          "volumetricAppliesWhen": "ALWAYS"
+        },
+        {
+          "weightMaxKg": 3.0,
+          "fee": 3000,
+          "currency": "JPY",
+          "volumetricDivisor": 6000,
+          "volumetricAppliesWhen": null
+        }
+      ]
+    },
+    "pRefKrw": 400000,
+    "pointsPt": null
+  },
+  "expected": {
+    "chargeableWeightKg": "1.452",
+    "cShipIntlKrw": 17520,
+    "sizes": {
+      "250": { "vUsd": "145.00", "isDutyFree": true, "isBoundary": true, "cTaxKrw": 0 },
+      "255": {
+        "vUsd": "145.01",
+        "isDutyFree": false,
+        "isBoundary": true,
+        "unsellableReason": "TAXABLE"
+      },
+      "260": {
+        "vUsd": "148.29",
+        "isDutyFree": false,
+        "isBoundary": true,
+        "customsValueKrw": 219000,
+        "cTaxKrw": 53217,
+        "simplifiedCTaxKrw": 39420,
+        "unsellableReason": "TAXABLE"
+      }
+    }
+  }
+}

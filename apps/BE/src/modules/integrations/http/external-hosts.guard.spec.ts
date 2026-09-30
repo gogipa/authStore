@@ -10,6 +10,8 @@ import { allAllowedHosts } from './external-targets.js';
 const EXCEPTIONS: Record<string, string> = {
   '127.0.0.1': '앱 자신(로컬 보안 Origin 비교·FE 개발 서버 Origin 기본값)',
   localhost: '앱 자신(로컬 보안 Origin 비교·FE 개발 서버 Origin 기본값)',
+  'search.shopping.naver.com':
+    '네이버쇼핑 검색 링크(P2-05 F-PJ-12) — 앱은 URL만 만들어 화면에 주고 부르지 않는다(오너가 새 탭으로 연다)',
 };
 
 const SRC = join(BE_ROOT, 'src');

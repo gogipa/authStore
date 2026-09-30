@@ -1,0 +1,25 @@
+{
+  "description": "모드 B 게이트(F-PJ-17): 목표 마진 0 · 최소 이익 0이면 P_min이 모드 A 순이익 0 근처라, 비싼 사이즈(¥12,000)는 판매가 135,600원에서 모드 B 순이익이 음수 → MODE_B_NEGATIVE로 빠지고 남은 사이즈로 판매가를 다시 계산한다(2회)",
+  "settings": { "costs": { "targetMarginPct": 0, "minProfitKrw": 0 } },
+  "input": {
+    "sizes": [
+      { "sizeMm": 250, "rakutenSkuId": null, "skuPriceYen": 10000 },
+      { "sizeMm": 255, "rakutenSkuId": null, "skuPriceYen": 10000 },
+      { "sizeMm": 260, "rakutenSkuId": null, "skuPriceYen": 10000 },
+      { "sizeMm": 265, "rakutenSkuId": null, "skuPriceYen": 12000 }
+    ],
+    "shippingYen": 0,
+    "couponYen": 0,
+    "fx": { "costPerUnit": "8.76", "customsJpyPerUnit": "8.76", "customsUsdPerUnit": "1358.72" },
+    "forwarder": null,
+    "pRefKrw": 137000,
+    "pointsPt": null
+  },
+  "expected": {
+    "salePriceKrw": 135600,
+    "gateRounds": 2,
+    "modeBNegative": [265],
+    "sellable": [250, 255, 260],
+    "isSaleCandidate": true
+  }
+}

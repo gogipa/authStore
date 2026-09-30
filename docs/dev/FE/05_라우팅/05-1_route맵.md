@@ -46,6 +46,7 @@
      P2-02(Proposed): 이 주소의 '입력 고르기' 위에 '검색어로 시작'(`createCandidate` SEARCH_QUERY → ② 실행 → `/candidates/:id/sourcing`)과 'URL로 바로 후보 만들기'(id `rakuten-url`, `fetchRakutenItem` → 색상 → `createCandidate` RAKUTEN_URL → 그 후보 ② 화면, 중복이면 기존 후보)를 둔다. SCR-12 목록 머리 'URL로 만들기'는 `/candidates?runnableStep=SOURCING#rakuten-url`로 간다.
    - 상태 필터(`status`)도 search params로 둔다. 새로고침·뒤로 가기에 남는다.
 5. **재작명 없음**: 경로 조각은 화면 이름(시안 파일 이름)에서 왔고 API 경로와 섞지 않는다. API 경로·operationId는 05-2 그대로 쓴다.
+6. **SCR-04가 더 읽는 것(P2-05 Proposed)**: 틀 공통 + 표의 연산에 더해 `getSourcingComparison`(② 현재 버전이 비교를 했는지 — 쿠폰 칸·'비교 없이 확정'을 URL 후보에만 보이려고)과 `getForwarderRateTable`(비용 분해 배대지 줄의 요금표 버전 'v2026-09')을 부른다. '실행'·'다시 실행'은 틀 공통 `startCandidateStepRun`(URL 후보면 `ownerInputs.couponYen`), '소싱 확정(G2)'은 `passCandidateGate`(G2)다.
 
 ## 4. M2 연산 (시안에만 있고 M1에서 만들지 않음)
 

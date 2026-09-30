@@ -1,7 +1,17 @@
 import { Module } from '@nestjs/common';
 import { AppConfigService } from '../../common/config/app-config.service.js';
 import { IntegrationsModule } from '../integrations/integrations.module.js';
+import { SettingsModule } from '../settings/settings.module.js';
 import { StepEngineModule } from '../step-engine/step-engine.module.js';
+import { DomesticPricesController } from './domestic-prices.controller.js';
+import { DomesticPricesService } from './domestic-prices.service.js';
+import { PricingG2GateBasis } from './g2-basis.provider.js';
+import { NaverShoppingLinksController } from './naver-shopping-links.controller.js';
+import { NaverShoppingLinksService } from './naver-shopping-links.service.js';
+import { PriceJudgementController } from './price-judgement.controller.js';
+import { PriceJudgementService } from './price-judgement.service.js';
+import { PricingSnapshotRepository } from './pricing-snapshot.repository.js';
+import { PricingStepRunner } from './pricing-step.runner.js';
 import {
   defaultFxCollectSchedule,
   FX_COLLECT_SCHEDULE,
@@ -20,12 +30,31 @@ import { FxRatesService } from './fx/fx-rates.service.js';
  * - 새 최신값의 '재실행 필요' 전파는 step-engine 공개 창구 `StepEngineApi.referenceInputsChanged`로 한다(candidate_step을
  *   직접 고치지 않는다). SSE `fx-rate.updated`는 common 진행 알림으로 커밋 뒤 보낸다
  * - 활성 배대지 요금표는 settings 소유(`ForwarderRateTablesService.activeForJudgement()`)
+ *
+ * P2-05 ③ 가격 판정:
+ * - `PricingStepRunner`(`@StepRunnerFor('PRICING')`): ② 선택·목표 사이즈 SKU는 `StepEngineApi`로만 읽고(sourcing import
+ *   없음), 순수 계산 `calc/price-judgement.calc.ts`(`judgePrice`) → 판정 스냅샷(`PricingSnapshotRepository`). 완료·후보 제외·
+ *   뒷단계 재실행 필요는 step-engine 끝 트랜잭션 한 번으로 묶인다(03-2 §4)
+ * - `PricingG2GateBasis`(`@GateBasisFor('G2')`): G2 지문·막힌 이유(판매 후보 아님·비교 없이 확정 없음)
+ * - API: `GET …/price-judgement`, `POST·GET …/domestic-prices`, `GET …/naver-shopping-links`
+ *   ('비교 없이 확정'은 step-engine `NoComparisonController`)
  */
 @Module({
-  imports: [IntegrationsModule, StepEngineModule],
-  controllers: [FxRatesController],
+  imports: [IntegrationsModule, SettingsModule, StepEngineModule],
+  controllers: [
+    FxRatesController,
+    PriceJudgementController,
+    DomesticPricesController,
+    NaverShoppingLinksController,
+  ],
   providers: [
     FxRatesService,
+    PricingSnapshotRepository,
+    PricingStepRunner,
+    PricingG2GateBasis,
+    PriceJudgementService,
+    DomesticPricesService,
+    NaverShoppingLinksService,
     FxCollectorService,
     {
       provide: FX_COLLECT_SCHEDULE,

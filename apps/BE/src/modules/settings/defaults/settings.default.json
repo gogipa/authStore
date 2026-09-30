@@ -43,6 +43,11 @@
       "6404": 13,
       "6405": 13
     },
+    "dutyHsHeading": "6404",
+    "forwarderHandlingFee": {
+      "included": true,
+      "amountKrw": 0
+    },
     "applyFtaRates": false,
     "simplifiedDuty": {
       "enabled": false,

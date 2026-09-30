@@ -1,0 +1,75 @@
+/* SCR-04 '국내 기준가'(Judgement.dc.html): 머리 32px(제목 + 네이버쇼핑 링크), [금액 칸 + '직접 입력' | 근거 링크 | 저장], 안내 캡션. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.head {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-heading);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.grow {
+  flex-grow: 1;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font: var(--type-body-strong);
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.price {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  width: 232px;
+  flex-shrink: 0;
+}
+
+.url {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.note {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.error {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-failed);
+}

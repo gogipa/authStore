@@ -1,0 +1,23 @@
+{
+  "description": "최소 사이즈(F-PJ-18): 판매 가능 2개(¥12,000 ×2) + 과세 1개(¥23,000), 최소 기준 3 → 판매 후보 아님 + 사유",
+  "settings": "DEFAULT",
+  "input": {
+    "sizes": [
+      { "sizeMm": 250, "rakutenSkuId": null, "skuPriceYen": 12000 },
+      { "sizeMm": 255, "rakutenSkuId": null, "skuPriceYen": 12000 },
+      { "sizeMm": 260, "rakutenSkuId": null, "skuPriceYen": 23000 }
+    ],
+    "shippingYen": 0,
+    "couponYen": 0,
+    "fx": { "costPerUnit": "8.76", "customsJpyPerUnit": "8.76", "customsUsdPerUnit": "1358.72" },
+    "forwarder": null,
+    "pRefKrw": 169000,
+    "pointsPt": null
+  },
+  "expected": {
+    "sellableSizeCount": 2,
+    "isSaleCandidate": false,
+    "salePriceKrw": 167300,
+    "exclusionReason": "판매 가능 사이즈가 2개로 최소 기준 3개보다 적습니다. 판매 불가: 과세 1개."
+  }
+}

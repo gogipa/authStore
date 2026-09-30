@@ -1,0 +1,26 @@
+{
+  "description": "사이즈별 SKU가가 다른 상품: ¥12,000(P_min 153,100) ×2 + ¥12,200(P_min 155,300) ×1. OPTION_PRICE → 판매가 153,100 · 옵션가 0·2,200, MAX_SKU_SINGLE → 155,300(판매 가능 P_min 중 가장 큰 값), REF_MINUS_100(국내가 169,000) → 168,900",
+  "settings": "DEFAULT",
+  "input": {
+    "sizes": [
+      { "sizeMm": 250, "rakutenSkuId": null, "skuPriceYen": 12000 },
+      { "sizeMm": 255, "rakutenSkuId": null, "skuPriceYen": 12000 },
+      { "sizeMm": 260, "rakutenSkuId": null, "skuPriceYen": 12200 }
+    ],
+    "shippingYen": 0,
+    "couponYen": 0,
+    "fx": { "costPerUnit": "8.76", "customsJpyPerUnit": "8.76", "customsUsdPerUnit": "1358.72" },
+    "forwarder": null,
+    "pRefKrw": 169000,
+    "pointsPt": null
+  },
+  "expected": {
+    "pMinKrw": { "250": 153100, "255": 153100, "260": 155300 },
+    "OPTION_PRICE": {
+      "salePriceKrw": 153100,
+      "optionPriceKrw": { "250": 0, "255": 0, "260": 2200 }
+    },
+    "MAX_SKU_SINGLE": { "salePriceKrw": 155300 },
+    "REF_MINUS_100": { "salePriceKrw": 168900 }
+  }
+}

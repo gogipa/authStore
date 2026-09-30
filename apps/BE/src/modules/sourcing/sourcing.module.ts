@@ -1,6 +1,7 @@
 import { Module, type OnModuleInit } from '@nestjs/common';
 import { IntegrationsModule } from '../integrations/integrations.module.js';
 import { SettingsModule } from '../settings/settings.module.js';
+import { SettingsService } from '../settings/settings.service.js';
 import { StepEngineModule } from '../step-engine/step-engine.module.js';
 import { StepEngineApi } from '../step-engine/step-engine.api.js';
 import { AdultConfirmationService } from './adult-confirmation.service.js';
@@ -23,7 +24,7 @@ import { SourcingComparisonsController } from './sourcing-comparisons.controller
 import { SourcingComparisonsService } from './sourcing-comparisons.service.js';
 import { SourcingGenderListener } from './sourcing-gender.listener.js';
 import { SourcingPageFetchService } from './sourcing-page-fetch.service.js';
-import { sourcingSelectionReader } from './sourcing-selection.reader.js';
+import { createSourcingSelectionReader } from './sourcing-selection.reader.js';
 import { SourcingStepRunner } from './sourcing.step-runner.js';
 import { StockCheckService } from './stock-check.service.js';
 import { UrlCandidateExtension } from './url-candidate.extension.js';
@@ -76,11 +77,14 @@ export class SourcingModule implements OnModuleInit {
     private readonly api: StepEngineApi,
     private readonly urlExtension: UrlCandidateExtension,
     private readonly genderListener: SourcingGenderListener,
+    private readonly settings: SettingsService,
   ) {}
 
   onModuleInit(): void {
     this.api.registerCandidateCreationExtension(this.urlExtension);
-    this.api.registerSourcingSelectionReader(sourcingSelectionReader);
+    this.api.registerSourcingSelectionReader(
+      createSourcingSelectionReader(() => this.settings.current()),
+    );
     this.api.registerGenderInputListener(this.genderListener);
   }
 }

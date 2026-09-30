@@ -663,6 +663,15 @@ export class StepExecutionService {
     });
     if (block) throw toApiException(block);
     const settings = this.settings.current();
+    // 시작 조건 행 준비(P2-05 Proposed): 실행 body의 오너 입력을 입력 지문 전에 시작 조건 행으로 넣는다(③ URL 후보 쿠폰)
+    await runner.prepareInputs?.({
+      db: scope.tx,
+      candidate,
+      settings,
+      ownerInputs: input.ownerInputs,
+      refetch: input.refetch,
+      executionMode: input.mode,
+    });
     const inputs = await readResolvedInputs(
       runner,
       inputContextOf(scope.tx, candidate, settings, rows),

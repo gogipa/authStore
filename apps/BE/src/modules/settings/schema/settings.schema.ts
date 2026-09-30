@@ -181,6 +181,8 @@ const schema: JSONSchemaType<AppSettings> = {
         'defaultForwarderFeeKrw',
         'shoeBox',
         'dutyRatePctByHsHeading',
+        'dutyHsHeading',
+        'forwarderHandlingFee',
         'applyFtaRates',
         'simplifiedDuty',
         'priceRule',
@@ -206,6 +208,16 @@ const schema: JSONSchemaType<AppSettings> = {
           additionalProperties: false,
           required: [...DUTY_HS_HEADINGS],
           properties: { '6401': pct, '6402': pct, '6403': pct, '6404': pct, '6405': pct },
+        },
+        dutyHsHeading: { type: 'string', enum: DUTY_HS_HEADINGS },
+        forwarderHandlingFee: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['included', 'amountKrw'],
+          properties: {
+            included: { type: 'boolean' },
+            amountKrw: { type: 'integer', minimum: 0, maximum: 1_000_000 },
+          },
         },
         applyFtaRates: { type: 'boolean' },
         simplifiedDuty: {

@@ -290,6 +290,24 @@ describe('진행 알림 이름', () => {
         occurredAt: '2026-09-28T00:00:00.000Z',
       }),
     ).toContainEqual(['step-engine', 'getContinuousRun', { stepChainId: 7 }]);
+    // ③ 실행이면 그 후보의 판정·국내 기준가 이력도(P2-05)
+    const pricingRun = EVENT_INVALIDATIONS['step-run.status-changed']?.({
+      stepRunId: 42,
+      candidateId: 12,
+      stepCode: 'PRICING',
+      version: 2,
+      executionMode: 'STEP',
+      stepChainId: null,
+      status: 'COMPLETED',
+      occurredAt: '2026-09-28T00:00:00.000Z',
+    });
+    expect(pricingRun).toContainEqual(['pricing', 'getPriceJudgement', { candidateId: 12 }]);
+    expect(pricingRun).toContainEqual(['pricing', 'listDomesticPrices', { candidateId: 12 }]);
+    expect(pricingRun).not.toContainEqual([
+      'sourcing',
+      'getSourcingComparison',
+      { candidateId: 12 },
+    ]);
     // continuous-run.stopped·gate.passed·gate.invalidated → 게이트 목록·상세·레일·목록·이어서 할 곳(P1-06)
     const gateKeys = [
       ['step-engine', 'listCandidateGates', { candidateId: 12 }],
@@ -315,7 +333,7 @@ describe('진행 알림 이름', () => {
         gatePassId: 3,
         passedAt: '2026-09-28T00:00:00.000Z',
       }),
-    ).toEqual(gateKeys);
+    ).toEqual([...gateKeys, ['pricing', 'getPriceJudgement', { candidateId: 12 }]]);
     expect(
       EVENT_INVALIDATIONS['gate.invalidated']?.({
         candidateId: 12,
@@ -327,6 +345,8 @@ describe('진행 알림 이름', () => {
       ...gateKeys,
       // P2-03: 다른 샵을 고르면 G2가 무효 → 그 후보 비교표도 다시 읽는다
       ['sourcing', 'getSourcingComparison', { candidateId: 12 }],
+      // P2-05: 판정 화면의 소싱 확정(G2) 줄
+      ['pricing', 'getPriceJudgement', { candidateId: 12 }],
     ]);
   });
 });

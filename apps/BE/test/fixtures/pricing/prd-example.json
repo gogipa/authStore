@@ -1,0 +1,46 @@
+{
+  "description": "PRD §8.3 테스트 기대값(NFR-06). ¥12,000 · 송료 0 · 쿠폰 0 · FX_base 8.76 · FX_cJPY 8.76(100엔 876) · FX_cUSD 1,358.72 · C_fwd 15,000(요금표 없음) · C_misc 3,000 · 3.0% + 3.63% · 마진 10% · Π_min 5,000 · δ 1% · 모드 A. 판매 사이즈 5개(화면시안_명세 §4 예시)",
+  "settings": "DEFAULT",
+  "input": {
+    "sizes": [
+      { "sizeMm": 250, "rakutenSkuId": null, "skuPriceYen": 12000 },
+      { "sizeMm": 255, "rakutenSkuId": null, "skuPriceYen": 12000 },
+      { "sizeMm": 260, "rakutenSkuId": null, "skuPriceYen": 12000 },
+      { "sizeMm": 265, "rakutenSkuId": null, "skuPriceYen": 12000 },
+      { "sizeMm": 275, "rakutenSkuId": null, "skuPriceYen": 12000 }
+    ],
+    "shippingYen": 0,
+    "couponYen": 0,
+    "fx": { "costPerUnit": "8.76", "customsJpyPerUnit": "8.76", "customsUsdPerUnit": "1358.72" },
+    "forwarder": null,
+    "pRefKrw": 169000,
+    "pointsPt": 1090
+  },
+  "expected": {
+    "cGoodsKrw": 107748,
+    "goodsBaseKrw": 105120,
+    "cardSurchargeKrw": 2628,
+    "vUsd": "77.37",
+    "isDutyFree": true,
+    "dutyFreeLimitYen": 22490,
+    "twoPairTaxable": true,
+    "twoPairUsd": "154.73",
+    "isBoundary": false,
+    "cFwdKrw": 15000,
+    "fwdAssumed": true,
+    "pMinKrw": 153100,
+    "profitAtPMin": 15365,
+    "profitBAtPMin": 4206,
+    "salePriceKrw": 167300,
+    "saleFeeKrw": 5019,
+    "npayFeeKrw": 6073,
+    "cMktKrw": 11092,
+    "vatAKrw": 3042,
+    "profitAKrw": 27418,
+    "marginRateA": "0.1639",
+    "profitBKrw": 16259,
+    "sellableSizeCount": 5,
+    "isSaleCandidate": true,
+    "modeBPMinApprox": 168000
+  }
+}

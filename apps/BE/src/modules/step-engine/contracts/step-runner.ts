@@ -209,6 +209,13 @@ export interface StepRunner {
   /** 시작 전 단계별 검사(선택, P2-02). 던지면 실행을 만들지 않는다 — `StepStartContext` */
   beforeStart?(ctx: StepStartContext): Promise<void>;
   /**
+   * 시작 조건 행 준비(선택, P2-05 Proposed — C4 §3.1). 시작 트랜잭션 안, 엔진의 잠금·단계 실행 가능 검사 **뒤**, `readInputs`
+   * **전**에 부른다. 실행 body의 오너 입력을 시작 조건 행으로 넣을 때 쓴다(③ URL 후보 쿠폰 `ownerInputs.couponYen` →
+   * `pricing_coupon_input` 새 행 → `owner.coupon` 입력 지문, ERD §7.2-19). 그 단계에 맞지 않는 입력이면 던진다(422
+   * COUPON_NOT_ALLOWED 등 — 실행을 만들지 않고, 넣은 행도 되돌린다). DB 쓰기는 이 트랜잭션 안에서만, 외부 호출 금지
+   */
+  prepareInputs?(ctx: StepStartContext): Promise<void>;
+  /**
    * 오너 수정·그대로 유지·이전 버전 다시 고르기: `fromStepRunId`의 산출물을 `toStepRunId`로 복사한다(버전에 딸린 오너
    * 입력 행 포함). `edit`은 EDIT의 body(fields 또는 add·remove) — 필드별 규칙(FIELD_NOT_EDITABLE 등)은 실행기가 던진다.
    * 다시 고른 버전이 후보 값(② 소싱 선택 등)을 바꾸면 효과를 돌려준다.

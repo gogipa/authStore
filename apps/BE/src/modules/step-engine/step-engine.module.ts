@@ -32,6 +32,8 @@ import { GENDER_INPUT_LISTENERS } from './ports/gender-input.port.js';
 import { PAGE_DATA, SourcingSelectionPageData } from './ports/page-data.port.js';
 import { delegatingCreationExtension, StepModulePorts } from './ports/step-module-ports.js';
 import { CandidateRefetchController } from './candidates/candidate-refetch.controller.js';
+import { NoComparisonController } from './no-comparison/no-comparison.controller.js';
+import { NoComparisonService } from './no-comparison/no-comparison.service.js';
 import { PropagationService } from './propagation/propagation.service.js';
 import { StaleDiffService } from './rail/stale-diff.service.js';
 import { StepRailService } from './rail/step-rail.service.js';
@@ -99,6 +101,7 @@ import { StepRunsController } from './step-runs.controller.js';
     CandidateContinuousRunsController,
     ContinuousRunsController,
     CandidateRefetchController,
+    NoComparisonController,
   ],
   providers: [
     StepModulePorts,
@@ -121,6 +124,7 @@ import { StepRunsController } from './step-runs.controller.js';
     GateValidityService,
     GateService,
     ContinuousRunService,
+    NoComparisonService,
     { provide: GATE_VALIDITY, useExisting: GateValidityService },
     {
       provide: CANDIDATE_CREATION_EXTENSION,

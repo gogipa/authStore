@@ -1,8 +1,12 @@
 import type { Prisma } from '../../generated/prisma/client.js';
+import type { AppSettings } from '../settings/schema/settings.types.js';
 import type {
   SourcingSelectionReader,
   SourcingSelectionView,
+  SourcingTargetSkus,
 } from '../step-engine/ports/sourcing-selection.port.js';
+import { comparisonParamsOf } from './sourcing-output.js';
+import { judgeStock } from './stock-judgement.js';
 
 type Db = Prisma.TransactionClient;
 
@@ -67,6 +71,81 @@ export async function readSourcingSelection(
 }
 
 export const sourcingSelectionReader: SourcingSelectionReader = { read: readSourcingSelection };
+
+/**
+ * ② 버전의 소싱 선택 상품에서 목표 사이즈별 SKU·재고 칸(P2-05 Proposed — ③ 판정 입력 '② 목표 사이즈 SKU가·재고').
+ * ② 재고 판정(`judgeStock` — 앵커 색상·기본 폭·목표 범위·取り寄せ 제외)을 **그 ② 버전의 설정 사본**(`comparisonParamsOf`,
+ * 빠진 값은 지금 설정)으로 다시 돌린다. 성별은 부르는 쪽(③ 입력 `candidate.gender`)이 준다. 선택이 없으면 null.
+ * 비교를 한 버전이면 고른 행의 포인트 합계(참고치)도 준다.
+ */
+export async function readSourcingTargetSkus(
+  db: Db,
+  sourcingStepRunId: number,
+  gender: 'MALE' | 'FEMALE',
+  settings: Readonly<AppSettings>,
+): Promise<SourcingTargetSkus | null> {
+  const selection = await readSourcingSelection(db, sourcingStepRunId);
+  if (!selection) return null;
+  const head = await db.sourcingComparison.findUniqueOrThrow({
+    where: { id: selection.sourcingComparisonId },
+    select: { params: true },
+  });
+  const item = await db.rakutenItem.findUniqueOrThrow({
+    where: { id: selection.rakutenItemId },
+    include: { skus: { orderBy: { id: 'asc' } } },
+  });
+  const rules = comparisonParamsOf(head.params, settings);
+  const judged = judgeStock({
+    skus: item.skus,
+    itemBackOrderFlag: item.backOrderFlag,
+    color: {
+      anchorColorCode: selection.anchorColorCode,
+      anchorColorLabel: selection.anchorColorLabel,
+    },
+    gender,
+    rules: {
+      targetSizeMm: rules.targetSizeMm,
+      minSizeCount: rules.minSizeCount,
+      defaultWidth: rules.defaultWidth,
+      excludeBackOrder: rules.excludeBackOrder,
+    },
+  });
+  const priceOf = new Map(item.skus.map((sku) => [sku.id, sku.taxIncludedPriceYen]));
+  const row = selection.comparisonPerformed
+    ? await db.sourcingComparisonRow.findFirst({
+        where: { sourcingComparisonId: selection.sourcingComparisonId, isSelected: true },
+        select: { pointsTotalPt: true },
+      })
+    : null;
+  const sizes = (judged?.sizes ?? []).map((size) => ({
+    sizeMm: size.sizeMm,
+    status: size.status,
+    rakutenSkuId: size.skuId,
+    taxIncludedPriceYen: size.skuId !== null ? (priceOf.get(size.skuId) ?? null) : null,
+  }));
+  return {
+    sourcingStepRunId,
+    rakutenItemId: item.id,
+    gender,
+    sizes,
+    inStockSizeCount: sizes.filter((size) => size.status === 'IN_STOCK').length,
+    pointsTotalPt: row?.pointsTotalPt ?? null,
+  };
+}
+
+/**
+ * step-engine에 등록할 읽기 함수(`StepEngineApi.registerSourcingSelectionReader`). 목표 사이즈 SKU 읽기(P2-05)는 버전
+ * 설정 사본에 빠진 값을 지금 설정으로 채우므로 설정 읽기를 받는다.
+ */
+export function createSourcingSelectionReader(
+  currentSettings: () => Readonly<AppSettings>,
+): SourcingSelectionReader {
+  return {
+    read: readSourcingSelection,
+    readTargetSkus: (db, sourcingStepRunId, gender) =>
+      readSourcingTargetSkus(db, sourcingStepRunId, gender, currentSettings()),
+  };
+}
 
 /**
  * 재조회할 바탕 버전(F-SO-17): 이 후보의 ② 버전 중 소싱 선택이 있는 가장 최근 버전(완료·재실행 필요). `beforeRunId`를 주면

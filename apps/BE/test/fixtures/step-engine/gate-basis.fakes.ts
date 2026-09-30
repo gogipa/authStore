@@ -7,6 +7,7 @@ import {
   g2Basis,
   g3Basis,
   GateBasisFor,
+  GateBasisTestDouble,
   type GateBasis,
   type GateBasisProvider,
   type GateBlocker,
@@ -121,6 +122,7 @@ abstract class FakeGateBasisBase {
 }
 
 @GateBasisFor('G2')
+@GateBasisTestDouble()
 @Injectable()
 export class FakeG2GateBasis extends FakeGateBasisBase implements GateBasisProvider {
   readonly gate = 'G2' as const;
@@ -180,6 +182,7 @@ export class FakeG2GateBasis extends FakeGateBasisBase implements GateBasisProvi
 }
 
 @GateBasisFor('G3')
+@GateBasisTestDouble()
 @Injectable()
 export class FakeG3GateBasis extends FakeGateBasisBase implements GateBasisProvider {
   readonly gate = 'G3' as const;
@@ -231,7 +234,8 @@ export class FakeG3GateBasis extends FakeGateBasisBase implements GateBasisProvi
 }
 
 /**
- * 가짜 게이트 공급자 모듈: `createTestApp({ imports: [FakeGateBasisModule] })`(가짜 실행기와 함께 쓰면
+ * 가짜 게이트 공급자 모듈(둘 다 테스트 대역 `@GateBasisTestDouble` — 운영 G2 공급자(pricing, P2-05)가 있어도 가짜를 쓴다):
+ * `createTestApp({ imports: [FakeGateBasisModule] })`(가짜 실행기와 함께 쓰면
  * `[FakeStepRunnersModule, FakeGateBasisModule]`). GateBasisRegistry가 DiscoveryService로 찾는다.
  */
 @Module({

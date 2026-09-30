@@ -287,13 +287,13 @@ export interface paths {
         get?: never;
         /**
          * '비교 없이 확정' 체크
-         * @description URL 후보의 '비교 없이 확정'을 체크한다(웹 화면 전용 기록). candidate.no_comparison_confirmed_at + user_action_log(OWNER_CONFIRMED). 이미 체크돼 있으면 기존 시각을 그대로 돌려준다. 비교한 후보면 409 CONFIRMATION_NOT_APPLICABLE.
+         * @description URL 후보의 '비교 없이 확정'을 체크한다(웹 화면 전용 기록). candidate.no_comparison_confirmed_at + user_action_log(OWNER_CONFIRMED). 이미 체크돼 있으면 기존 시각을 그대로 돌려준다. 비교한 후보면 409 CONFIRMATION_NOT_APPLICABLE. P2-05 Proposed — '비교하지 않은 후보' = ② 현재 버전의 소싱 선택이 comparison_performed=false(URL로 만들기·그 재조회). ② 산출물이 없어도 409 CONFIRMATION_NOT_APPLICABLE. 잠긴 후보 409 CANDIDATE_LOCKED, 제외 후보 409 CANDIDATE_EXCLUDED.
          */
         put: operations["confirmCandidateNoComparison"];
         post?: never;
         /**
          * '비교 없이 확정' 체크 해제
-         * @description '비교 없이 확정' 체크를 푼다(no_comparison_confirmed_at = NULL). 이미 풀려 있으면 그대로 204. G2를 통과한 뒤에는 409 GATE_ALREADY_PASSED.
+         * @description '비교 없이 확정' 체크를 푼다(no_comparison_confirmed_at = NULL). 이미 풀려 있으면 그대로 204. G2를 통과한 뒤에는 409 GATE_ALREADY_PASSED. P2-05 Proposed — '통과한 뒤' = G2 최신 통과의 지문이 지금 유효할 때(③을 다시 돌려 G2가 이미 무효면 풀 수 있다). 풀면 user_action_log(OWNER_EDITED, detail.action=REVOKED). 잠긴 후보 409 CANDIDATE_LOCKED, 제외 후보 409 CANDIDATE_EXCLUDED.
          */
         delete: operations["revokeCandidateNoComparison"];
         options?: never;
@@ -1080,6 +1080,7 @@ export interface paths {
          * 국내 기준가 입력
          * @description 국내 기준가(판매가 + 고객 배송비 총액)를 새 행으로 더한다(`domestic_price`, 추가만). ③이 국내 기준가를 기다리면 입력으로 이어 가고, 판정을 마친 뒤면 ③을 재실행 필요로 바꾼다(`pricingStepStatus`).
          *     (M2) 셀라파인더 행을 고르면 `sourceKind=SELLAFINDER` + `domesticPriceImportRowId`(ERD §6.2).
+         *     P2-05 구현(Proposed, 05-1 §7.3 'P2-05 구현 결정'): M1은 `sourceKind=MANUAL`만 받는다 — `SELLAFINDER`·`domesticPriceImportRowId`는 422 `VALIDATION_FAILED`(fieldErrors). ③이 입력 대기면 행을 넣고 커밋한 뒤 이어 계산한다(`pricingStepStatus=RUNNING`, 이어 가지 못한 드문 경합이면 `WAITING_INPUT` 그대로). ③이 입력 대기인데 ②·⑥-3이 실행 중이면 409 `STEP_LOCKED_BY_RUNNING_STEP`(행을 넣지 않는다). 완료 뒤 입력은 값(금액)이 바뀔 때만 `RERUN_REQUIRED`(바뀐 입력 `owner.domesticPrice`)이고 같은 금액이면 `COMPLETED` 그대로다. 행은 늘 새로 넣는다(추가만).
          */
         post: operations["createDomesticPrice"];
         delete?: never;
@@ -1119,6 +1120,7 @@ export interface paths {
          * ③ 판정 결과와 사이즈별 비용 분해
          * @description 현재 버전 또는 `?stepRunId=` 버전의 `price_judgement` + `price_judgement_size`.
          *     `pageValidUntil` = `rakuten_page_collected_at` + 설정 6시간(계산). 가정값 배지는 `fwdAssumed`·`shippingEstimated`. 판정에 쓴 환율 3종을 함께 준다(F-PJ-21).
+         *     P2-05 구현(Proposed, 05-1 §7.3 'P2-05 구현 결정'): 판정 시간 = 설정 `safety.judgementValidityHours`(6시간 초과 불가). 입력 대기·실패·실행 전 버전은 판정 스냅샷이 없어 404 `STEP_OUTPUT_NOT_FOUND`다. `params`는 설정 값(비율은 퍼센트 수 — `cardSurchargePct` 2.5 = 2.5%)과 판정 입력 사본(`fx.*PerUnit`, `sourcing.{stepRunId, comparisonPerformed, …}`, `domesticPrice`, `forwarder.{fallbackReason, handlingFeeKrw}`, `unjudgedSizes`)이다. 모드 A 순이익·마진율(`profitAKrw`·`marginRateA`)과 모드 B 순이익(`profitBKrw`)은 사이즈별 판매가 기준이고, 판매 불가 사이즈는 판매가가 없어 null이다(모드 B로 빠진 사이즈는 빠질 때 본 가격).
          *     (M2) 세일 종료 임박 경고(`warnings`)와 정상가 기준 P_min은 저장 열이 없어 S5 제안으로 둔다.
          */
         get: operations["getPriceJudgement"];
@@ -3525,7 +3527,7 @@ export interface components {
         StepRunOwnerInputs: {
             /** @description SOURCING — 라쿠텐 검색어(sourcing_comparison.search_keyword). 없으면 후보 검색어·앵커 */
             searchKeyword?: string;
-            /** @description PRICING — 쿠폰 엔(pricing_coupon_input.coupon_yen). 비교표 없는 URL 후보만, 그 밖은 422 COUPON_NOT_ALLOWED */
+            /** @description PRICING — 쿠폰 엔(pricing_coupon_input.coupon_yen). 비교표 없는 URL 후보만, 그 밖은 422 COUPON_NOT_ALLOWED. P2-05 Proposed — 입력 지문을 만들기 전에(시작 트랜잭션 안) pricing_coupon_input 새 행으로 넣고 최신 행을 시작 조건 owner.coupon으로 읽는다(ERD §7.2-19). 시작이 막히면 행도 되돌린다 */
             couponYen?: number;
             /**
              * @description THUMBNAIL — 얼굴 옵션(generation_run.face_option)
@@ -5154,7 +5156,7 @@ export interface components {
             domesticPriceImportRowId?: number | null;
         };
         DomesticPriceCreateRequest: {
-            /** @description 국내 기준가 총액(원) */
+            /** @description 국내 기준가 총액(원). P2-05 Proposed — 상한은 저장 열(domestic_price.p_ref_krw integer) 범위, 넘으면 422 VALIDATION_FAILED */
             pRefKrw: number;
             /** @description 출처 설명(예: '네이버쇼핑 전체 최저가') */
             sourceLabel?: string | null;
@@ -5296,6 +5298,15 @@ export interface components {
             /** @description (M2) 정상가 기준 최소 판매가(F-SO-42). 정상가를 못 구하면 null */
             regularPricePMinKrw?: number | null;
         };
+        /** @description 판정하지 않은 목표 사이즈 한 칸(P2-05 Proposed) */
+        PriceJudgementUnjudgedSize: {
+            sizeMm: number;
+            /**
+             * @description SOLD_OUT=품절, BACK_ORDER=取り寄せ(제외), NONE=없음
+             * @enum {string}
+             */
+            stockStatus: "SOLD_OUT" | "BACK_ORDER" | "NONE";
+        };
         /** @description ③ 판정 스냅샷(price_judgement)과 사이즈 행 */
         PriceJudgementDetail: {
             id: number;
@@ -5360,6 +5371,8 @@ export interface components {
             /** Format: date-time */
             judgedAt: string;
             sizes: components["schemas"]["PriceJudgementSizeBreakdown"][];
+            /** @description P2-05 Proposed — 판정하지 않은 목표 사이즈(② 재고 칸 품절·取り寄せ·없음, 재고는 있으나 SKU가를 모르는 사이즈는 NONE). `price_judgement_size`는 재고 있는 목표 사이즈만 두므로 화면 사이즈 표의 '제외' 줄을 이것으로 그린다. 판정 때 `params.unjudgedSizes` 사본에서 준다(사이즈 오름차순) */
+            unjudgedSizes: components["schemas"]["PriceJudgementUnjudgedSize"][];
             /** @description (M2) 판정 경고(세일 종료 임박 SALE_ENDING_SOON 등, F-PJ-25) */
             warnings?: {
                 code: string;
