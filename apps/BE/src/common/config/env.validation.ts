@@ -58,6 +58,14 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsIn(ON_OFF)
   COMMERCE_META_AUTO_SYNC: OnOff = 'on';
+
+  /**
+   * 앱을 켤 때 AI 엔진 감지 + 선택 엔진 계약 테스트(P1-10 규칙 13). off면 돌지 않는다(개발 중 구독 쿼터 아끼기).
+   * off면 점검 기록이 없어 AI 단계 시작이 409 AI_ENGINE_UNAVAILABLE(NOT_CHECKED)로 막힌다 — 'AI 엔진'에서 연결 테스트를 한다
+   */
+  @IsOptional()
+  @IsIn(ON_OFF)
+  AI_ENGINE_STARTUP_CHECK: OnOff = 'on';
 }
 
 export function validateEnv(raw: Record<string, unknown>): EnvironmentVariables {

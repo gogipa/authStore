@@ -1,5 +1,6 @@
 import { SetMetadata } from '@nestjs/common';
 import type { Candidate, Prisma, StepRun } from '../../../generated/prisma/client.js';
+import type { PinnedAiContext } from '../../integrations/ai-engine/ai-executor.types.js';
 import type { AppSettings } from '../../settings/schema/settings.types.js';
 import type { AnchorKeyInput } from '../candidates/candidate-identity.service.js';
 import type {
@@ -67,7 +68,7 @@ export interface StepInputContext {
   completedRunId(stepCode: StepCode): number | null;
 }
 
-/** AI 엔진 고정 값(D-16 R9·R11, P1-10이 채운다). AI를 쓰지 않는 단계는 null */
+/** step_run에 남기는 AI 엔진 고정 값(D-16 R9·R11, P1-10). AI를 쓰지 않는 단계는 null */
 export interface AiEngineFix {
   aiEngine: 'CLAUDE' | 'AGY' | 'CODEX';
   aiModel: string;
@@ -104,7 +105,14 @@ export interface StepRunContext {
   resume: { data: unknown } | null;
   /** 비동기 오너 수정(⑦ 태그 편집) */
   ownerEdit: OwnerEditRunInput | null;
+  /** 이 실행에 고정한 엔진·모델·CLI 버전(step_run.ai_*). AI를 쓰지 않는 단계는 null */
   aiEngine: AiEngineFix | null;
+  /**
+   * AI 실행 문맥(P1-10 규칙 10): 단계 모듈은 이것으로만 `AiExecutor.run(ctx.pinnedAi, task, schema, input)`을 부른다.
+   * 엔진·텍스트/비전 모델은 이 실행의 설정 스냅샷 `ai` 섹션 값이고 stepRunId·candidateId가 채워져 있다(call_log).
+   * 실행 도중 설정이 바뀌어도 이 값은 그대로다. AI를 쓰지 않는 단계는 null
+   */
+  pinnedAi: PinnedAiContext | null;
 }
 
 /**
@@ -143,10 +151,21 @@ export interface CandidateStatusEffect {
   registrationId?: number | null;
 }
 
+/** AI 단계의 주 작업 종류(P1-10 Proposed): step_run.ai_model에 텍스트·비전 중 어느 모델을 남길지 정한다 */
+export type StepAiModelKind = 'TEXT' | 'VISION';
+
 export interface StepRunner {
   readonly stepCode: StepCode;
-  /** AI를 쓰는가(PRE_G2_AI_COST 경고의 근거, 시작 때 AI 엔진 고정 P1-10) */
+  /**
+   * AI를 쓰는가(PRE_G2_AI_COST 경고의 근거). true면 시작 때 선택 엔진 사용 가능 판정(409 AI_ENGINE_UNAVAILABLE) →
+   * `--version` 감지 → step_run.ai_*를 INSERT 때 고정한다(P1-10 규칙 10·11)
+   */
   readonly usesAi: boolean;
+  /**
+   * AI 단계의 주 작업 종류(없으면 TEXT, P1-10 Proposed — 문서 초안의 `aiUsage: NONE|TEXT|VISION`을 P1-05 `usesAi`에 맞춰
+   * 나눴다). 이 종류의 모델이 설정에 없으면 시작을 409 AI_ENGINE_UNAVAILABLE(MODEL_NOT_SET)로 막는다
+   */
+  readonly aiModelKind?: StepAiModelKind;
   /** 시작 조건·실행 중 오너 입력을 읽는다(값 포함). 트랜잭션 안에서 불릴 수 있다 — DB 읽기만, 외부 호출 금지 */
   readInputs(ctx: StepInputContext): Promise<StepInput[]>;
   /** 실행(트랜잭션 밖). 외부·AI 호출은 여기서만 */

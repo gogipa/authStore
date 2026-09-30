@@ -1,4 +1,5 @@
 import type { components } from '@/shared/api/schema';
+import { AI_ENGINE_LABEL } from '@/shared/lib/aiEngine';
 
 export type SettingsView = components['schemas']['SettingsView'];
 export type SettingsReloadResult = components['schemas']['SettingsReloadResult'];
@@ -67,12 +68,8 @@ export function readSellTaxableSizes(content: Content): boolean | null {
   return typeof value === 'boolean' ? value : null;
 }
 
-/** 엔진 화면 이름(05-2 AiEngineOption.displayName) */
-export const AI_ENGINE_DISPLAY_NAME: Readonly<Record<AiEngineCode, string>> = {
-  CLAUDE: 'Claude Code',
-  AGY: 'Antigravity CLI',
-  CODEX: 'Codex',
-};
+/** 엔진 화면 이름(05-2 AiEngineOption.displayName). 원본은 shared/lib/aiEngine(P1-10)의 AI_ENGINE_LABEL */
+export const AI_ENGINE_DISPLAY_NAME: Readonly<Record<AiEngineCode, string>> = AI_ENGINE_LABEL;
 
 function isAiEngineCode(value: unknown): value is AiEngineCode {
   return typeof value === 'string' && value in AI_ENGINE_DISPLAY_NAME;

@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "title": { "type": "string", "maxLength": 80 },
+    "bullets": { "type": "array", "items": { "type": "string" }, "maxItems": 5 },
+    "note": { "type": ["string", "null"] }
+  },
+  "required": ["title", "bullets", "note"],
+  "additionalProperties": false
+}

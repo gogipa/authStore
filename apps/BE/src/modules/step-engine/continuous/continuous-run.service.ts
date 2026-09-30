@@ -21,7 +21,11 @@ import {
   loadStepRows,
   stepStatusMapOf,
 } from '../execution/step-run-store.js';
-import { AI_ENGINE_RESOLVER, type AiEngineResolver } from '../ports/ai-engine-resolver.port.js';
+import {
+  AI_ENGINE_RESOLVER,
+  type AiEnginePreparation,
+  type AiEngineResolver,
+} from '../ports/ai-engine-resolver.port.js';
 import { GATE_VALIDITY, toGateFlags, type GateValidityPort } from '../ports/gate-validity.port.js';
 import { toStepRunSummary } from '../rail/step-run-view.js';
 import { StepRunnerRegistry } from '../runner/step-runner.registry.js';
@@ -83,7 +87,7 @@ export class ContinuousRunService implements OnModuleInit {
     private readonly settings: SettingsService,
     private readonly events: ProgressEventsService,
     @Inject(GATE_VALIDITY) private readonly gates: GateValidityPort,
-    @Inject(AI_ENGINE_RESOLVER) private readonly resolveAiEngine: AiEngineResolver,
+    @Inject(AI_ENGINE_RESOLVER) private readonly aiResolver: AiEngineResolver,
   ) {}
 
   onModuleInit(): void {
@@ -100,6 +104,15 @@ export class ContinuousRunService implements OnModuleInit {
     const kind: ChainKind = body.kind;
     const startStepCode = kind === 'FROM_HERE' ? parseStartStepCode(body.startStepCode) : null;
     await this.guard.findOr404(this.prisma, candidateId);
+    // AI 엔진(P1-10 규칙 11): 묶음에 AI 단계가 있으면 트랜잭션 **전에** 선택 엔진을 준비한다. 사용 가능 판정·--version
+    // 감지(spawn)를 트랜잭션에 넣지 않는다. 쓸 수 없음(409)은 트랜잭션 안의 같은 자리(다른 시작 검사 뒤)에서 던진다 —
+    // step_chain을 만들지 않는다
+    let prepared: AiEnginePreparation | undefined;
+    {
+      const rows = await loadStepRows(this.prisma, candidateId);
+      const gates = toGateFlags(await this.gates.evaluate(this.prisma, candidateId));
+      if (this.aiStepOf(kind, startStepCode, rows, gates.G2)) prepared = await this.prepareAiSoft();
+    }
     try {
       return await this.transactions.run(async (scope) => {
         const candidate = await this.guard.lockForUpdate(scope.tx, candidateId);
@@ -133,11 +146,15 @@ export class ContinuousRunService implements OnModuleInit {
           );
           if (block) throw toApiException(block);
         }
-        await this.assertAiEngine(candidateId, kind, startStepCode, rows, gates.G2);
+        if (this.aiStepOf(kind, startStepCode, rows, gates.G2)) {
+          if (prepared && 'error' in prepared) throw prepared.error;
+          // 트랜잭션 전 읽기와 달라진 드문 경우만 여기서 준비한다
+          if (!prepared) prepared = { prepared: await this.aiResolver.prepare() };
+        }
         const chain = await scope.tx.stepChain.create({
           data: { candidateId, kind, startStepCode, startedAt: scope.now },
         });
-        const result = await this.advanceInScope(scope, chain);
+        const result = await this.advanceInScope(scope, chain, prepared);
         if (result.kind !== 'run') throw this.startRejection(candidate, rows, kind, gates, result);
         return {
           stepChainId: chain.id,
@@ -165,16 +182,15 @@ export class ContinuousRunService implements OnModuleInit {
   }
 
   /**
-   * AI 엔진 확인(D-16, P1-10 훅): 묶음이 돌 수 있는 단계 중 AI를 쓰는 단계가 있으면 그 단계로 선택 엔진을 확인한다
-   * (쓸 수 없으면 훅이 409 AI_ENGINE_UNAVAILABLE을 던진다). 각 단계는 시작할 때 엔진을 다시 고정한다.
+   * AI 엔진 확인 대상(D-16, P1-10): 묶음이 돌 수 있는 단계 중 AI를 쓰는 첫 단계(없으면 null). 있으면 시작 때 선택 엔진을
+   * 확인한다(쓸 수 없으면 409 AI_ENGINE_UNAVAILABLE). 각 단계는 시작할 때 엔진을 다시 고정한다.
    */
-  private async assertAiEngine(
-    candidateId: number,
+  private aiStepOf(
     kind: ChainKind,
     startStepCode: StepCode | null,
     rows: readonly CandidateStep[],
     g2Valid: boolean,
-  ): Promise<void> {
+  ): StepCode | null {
     const steps = stepStatusMapOf(rows);
     const segment = chainSegment({ kind, startStepCode }).filter(
       (code) => g2Valid || code === 'SOURCING' || code === 'PRICING',
@@ -185,8 +201,20 @@ export class ContinuousRunService implements OnModuleInit {
             (code) => code === startStepCode || stepStatusOf(steps, code) !== 'COMPLETED',
           )
         : segment.filter((code) => stepStatusOf(steps, code) === 'RERUN_REQUIRED');
-    const aiStep = candidates.find((code) => this.registry.get(code)?.usesAi === true);
-    if (aiStep) await this.resolveAiEngine({ candidateId, stepCode: aiStep });
+    return candidates.find((code) => this.registry.get(code)?.usesAi === true) ?? null;
+  }
+
+  /**
+   * 이어 가기 전(트랜잭션 밖) 선택 엔진 준비. 묶음 단계에 AI 실행기가 하나라도 있으면 준비해 두고, 쓸 수 없음은 오류로
+   * 들고 간다 — 다음 단계가 AI 단계일 때만 그 오류로 멈춘다(AI를 쓰지 않는 단계는 그대로 이어 간다).
+   */
+  private async prepareAiSoft(): Promise<AiEnginePreparation | undefined> {
+    if (!CHAIN_STEPS.some((code) => this.registry.get(code)?.usesAi === true)) return undefined;
+    try {
+      return { prepared: await this.aiResolver.prepare() };
+    } catch (error) {
+      return { error };
+    }
   }
 
   /** 첫 행동이 실행이 아니면(곧바로 멈춤) 시작을 거절하는 오류 */
@@ -220,13 +248,19 @@ export class ContinuousRunService implements OnModuleInit {
   /** 묶음 안 실행이 끝났다 → 다음 행동(새 트랜잭션). 실패해도 던지지 않는다(묶음을 닫는다) */
   async advance(stepChainId: number): Promise<void> {
     try {
+      const open = await this.prisma.stepChain.findUnique({
+        where: { id: stepChainId },
+        select: { endedAt: true },
+      });
+      if (!open || open.endedAt) return;
+      const ai = await this.prepareAiSoft();
       await this.transactions.run(async (scope) => {
         const peek = await scope.tx.stepChain.findUnique({ where: { id: stepChainId } });
         if (!peek || peek.endedAt) return;
         await this.guard.lockForUpdate(scope.tx, peek.candidateId);
         const chain = await scope.tx.stepChain.findUniqueOrThrow({ where: { id: stepChainId } });
         if (chain.endedAt) return;
-        const result = await this.advanceInScope(scope, chain);
+        const result = await this.advanceInScope(scope, chain, ai);
         if (result.kind === 'stop') await this.close(scope, chain, result.reason, result.stepCode);
       });
     } catch (error) {
@@ -244,7 +278,11 @@ export class ContinuousRunService implements OnModuleInit {
   }
 
   /** 다음 행동을 정해 적용한다(건너뛰기는 기록하고 계속, 실행은 시작하고 끝). 멈춤은 호출자가 닫는다 */
-  private async advanceInScope(scope: StepEngineTx, chain: StepChain): Promise<AdvanceResult> {
+  private async advanceInScope(
+    scope: StepEngineTx,
+    chain: StepChain,
+    ai: AiEnginePreparation | undefined,
+  ): Promise<AdvanceResult> {
     const skipped = [...chain.skippedStepCodes] as StepCode[];
     for (let guard = 0; guard <= CHAIN_STEPS.length + 1; guard += 1) {
       const state = await this.loadState(scope, chain, skipped);
@@ -263,6 +301,7 @@ export class ContinuousRunService implements OnModuleInit {
         const started = await this.executions.startChainRun(scope, chain.candidateId, action.run, {
           stepChainId: chain.id,
           refetch: action.refetch,
+          ai,
         });
         return { kind: 'run', stepRunId: started.run.id, stepCode: action.run };
       } catch (error) {

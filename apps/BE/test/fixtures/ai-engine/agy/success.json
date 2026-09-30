@@ -1,0 +1,10 @@
+{
+  "status": "SUCCESS",
+  "model": "gemini-3.8-flash-medium",
+  "structured_output": {
+    "title": "가볍고 쿠션이 좋은 러닝화",
+    "bullets": ["메시 갑피", "EVA 미드솔"],
+    "note": null
+  },
+  "warnings": []
+}

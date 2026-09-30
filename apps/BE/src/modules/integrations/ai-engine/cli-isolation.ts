@@ -56,6 +56,13 @@ export interface CliInvocation {
   shell: boolean | string | undefined;
 }
 
+/**
+ * 검사 방식. `invoke` = 구조화 호출(모든 규약), `probe` = 비용 없는 감지 호출(`--version`·`auth status`·`login status`).
+ * 감지 호출은 모델을 쓰지 않고 claude 전역 설정 차단 옵션을 받지 않는 하위 명령이라 그 두 검사만 뺀다(P1-10 Proposed).
+ * 실행 파일 이름·셸 없음·빈 작업 폴더(저장소 밖)·환경변수 허용 목록은 감지 호출에도 그대로 본다.
+ */
+export type CliInvocationMode = 'invoke' | 'probe';
+
 export class CliIsolationError extends Error {
   constructor(readonly violations: string[]) {
     super(`AI CLI 격리 규약 위반: ${violations.join(' / ')}`);
@@ -85,7 +92,10 @@ function isInside(parent: string, child: string): boolean {
 }
 
 /** 위반 목록(없으면 빈 배열) */
-export function checkIsolatedCliInvocation(inv: CliInvocation): string[] {
+export function checkIsolatedCliInvocation(
+  inv: CliInvocation,
+  mode: CliInvocationMode = 'invoke',
+): string[] {
   const v: string[] = [];
   const name = basename(inv.bin);
   if (!(AI_CLI_BINARIES as readonly string[]).includes(name)) {
@@ -114,7 +124,7 @@ export function checkIsolatedCliInvocation(inv: CliInvocation): string[] {
   }
 
   // --model 명시
-  if (modelValue(args) === null) v.push('--model을 적어야 한다');
+  if (mode === 'invoke' && modelValue(args) === null) v.push('--model을 적어야 한다');
 
   // 환경변수 화이트리스트
   for (const key of Object.keys(inv.env)) {
@@ -126,7 +136,7 @@ export function checkIsolatedCliInvocation(inv: CliInvocation): string[] {
   }
 
   // claude 전역 설정 차단
-  if (name === 'claude') {
+  if (mode === 'invoke' && name === 'claude') {
     const blocked = CLAUDE_GLOBAL_SETTINGS_BLOCKERS.some((set) =>
       set.every((f) => hasFlag(args, f)),
     );
@@ -139,8 +149,11 @@ export function checkIsolatedCliInvocation(inv: CliInvocation): string[] {
   return v;
 }
 
-/** 격리 규약을 어기면 CliIsolationError. P1-10 어댑터는 spawn 전에 이것을 부른다 */
-export function assertIsolatedCliInvocation(inv: CliInvocation): void {
-  const violations = checkIsolatedCliInvocation(inv);
+/** 격리 규약을 어기면 CliIsolationError. P1-10 실행기(IsolatedCliRunner)가 spawn 직전에 부른다 */
+export function assertIsolatedCliInvocation(
+  inv: CliInvocation,
+  mode: CliInvocationMode = 'invoke',
+): void {
+  const violations = checkIsolatedCliInvocation(inv, mode);
   if (violations.length > 0) throw new CliIsolationError(violations);
 }

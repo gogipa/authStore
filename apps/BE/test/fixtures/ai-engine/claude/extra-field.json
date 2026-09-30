@@ -1,0 +1,11 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "duration_ms": 4100,
+  "num_turns": 1,
+  "result": "",
+  "structured_output": { "title": "러닝화", "bullets": ["가볍다"], "note": null, "price": "12000" },
+  "session_id": "00000000-0000-4000-8000-000000000005",
+  "total_cost_usd": 0
+}

@@ -4,7 +4,13 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
+import { AI_ENGINE_ADAPTERS } from '../src/modules/integrations/ai-engine/ai-engine.port.js';
+import { SettingsService } from '../src/modules/settings/settings.service.js';
+import { writeSettingsFileAtomically } from '../src/modules/settings/settings-file.loader.js';
+import { DEFAULT_SETTINGS } from '../src/modules/settings/defaults/default-settings.js';
+import { AI_ENGINE_STARTUP_CHECK } from '../src/modules/system/ai-cli-checks/ai-engine-startup.check.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
+import { createFakeAiEngines } from './support/fake-ai-engines.js';
 
 const ENVELOPE_KEYS = ['code', 'message', 'status', 'timestamp', 'path'];
 const CHECK_KEYS = [
@@ -32,7 +38,13 @@ describe('apps/BE e2e (autostore_test)', () => {
   const http = () => request(app.getHttpServer());
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    // 진짜 AI CLI를 부르지 않게 앱 시작 AI 점검을 끄고 어댑터를 가짜로 바꾼다(P1-10)
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(AI_ENGINE_STARTUP_CHECK)
+      .useValue({ enabled: false })
+      .overrideProvider(AI_ENGINE_ADAPTERS)
+      .useValue(createFakeAiEngines().adapters)
+      .compile();
     app = moduleRef.createNestApplication<NestExpressApplication>({ bufferLogs: true });
     await configureApp(app);
     await app.listen(0, '127.0.0.1');
@@ -73,7 +85,7 @@ describe('apps/BE e2e (autostore_test)', () => {
       });
     });
 
-    it('엔진마다 가장 최근 1건을 주고, 설정 스냅샷의 ai.engine을 선택 엔진으로 표시한다', async () => {
+    it('엔진마다 가장 최근 1건을 주고, 현재 설정(설정 파일 ai.engine)을 선택 엔진으로 표시한다', async () => {
       await prisma.aiCliCheck.createMany({
         data: [
           {
@@ -114,15 +126,17 @@ describe('apps/BE e2e (autostore_test)', () => {
           },
         ],
       });
-      await prisma.settingsSnapshot.create({
-        data: {
-          contentSha256: 'a'.repeat(64),
-          schemaVersion: '1',
-          appVersion: '0.1.0',
-          fileManifest: {},
-          content: { ai: { engine: 'CODEX' } },
-        },
-      });
+      // P1-10: 선택 엔진은 SettingsService(설정 파일 ai 섹션)에서 읽는다 — 파일을 바꾸고 다시 읽는다
+      const settings = app.get(SettingsService);
+      const codexSettings = {
+        ...DEFAULT_SETTINGS,
+        ai: { ...DEFAULT_SETTINGS.ai, engine: 'CODEX' as const },
+      };
+      await writeSettingsFileAtomically(
+        process.env.APP_DATA_DIR!,
+        `${JSON.stringify(codexSettings, null, 2)}\n`,
+      );
+      await settings.reload();
 
       const res = await http().get('/api/v1/ai-cli-checks/latest').expect(200);
       const body = res.body as {

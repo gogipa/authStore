@@ -141,6 +141,14 @@ export class SettingsService implements OnApplicationBootstrap {
     return this.requireCurrent().snapshotId;
   }
 
+  /** 진행 중인 시작 검사·다시 읽기가 끝날 때까지(없으면 곧바로). 앱 시작 AI 엔진 점검이 선택 엔진을 읽기 전에 기다린다(P1-10) */
+  async whenIdle(): Promise<void> {
+    await this.queue.then(
+      () => undefined,
+      () => undefined,
+    );
+  }
+
   /** 설정 파일 검사 결과(마지막 시작 검사·다시 읽기) */
   status(): SettingsStatus {
     return { valid: this.check.valid, errors: [...this.check.errors] };

@@ -298,6 +298,36 @@ describe('StepTable — SCR-12 단계 표(P1-05)', () => {
     );
   });
 
+  it("시작 409 AI_ENGINE_UNAVAILABLE이면 문구 옆 'AI 엔진 설정으로' 링크(P1-10, F-BS-76). 다른 409에는 없다", async () => {
+    const api = stub();
+    api.on(`POST /candidates/${ID}/steps/CATEGORY/runs`, () =>
+      jsonResponse(
+        {
+          code: 'AI_ENGINE_UNAVAILABLE',
+          message:
+            "선택한 AI 엔진(Claude Code)을 지금 쓸 수 없습니다(설치되지 않음). 'AI 엔진' 설정에서 확인해 주세요.",
+          status: 409,
+          timestamp: '2026-09-28T05:00:00+09:00',
+          path: '/api/v1',
+          details: {
+            engineCode: 'CLAUDE',
+            reason: 'NOT_INSTALLED',
+            settingsPath: '/settings/ai-engine',
+          },
+        },
+        409,
+      ),
+    );
+    const { table } = await renderTable();
+    await userEvent.click(row(table, '카테고리').getByRole('button', { name: '실행' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/설치되지 않음/);
+    expect(within(alert).getByRole('link', { name: 'AI 엔진 설정으로' })).toHaveAttribute(
+      'href',
+      '/settings/ai-engine',
+    );
+  });
+
   it('이전 버전 다시 고르기 → RESTORE_VERSION(baseStepRunId = 고른 버전)', async () => {
     const api = stub();
     api.on(`GET /candidates/${ID}/steps/SOURCING/runs`, () =>
@@ -563,5 +593,11 @@ describe('StepTable — 커머스API 인증 실패 안내(P1-07 규칙 14)', () 
     ).toHaveAttribute('href', '/system#keys');
     const tagsNote = screen.getByText(/TAGS 실패 문구/).closest('td')!;
     expect(within(tagsNote).queryByRole('link', { name: '시스템 상태에서 키 확인' })).toBeNull();
+    // 선택 AI 엔진을 쓸 수 없어 실패한 줄은 'AI 엔진 설정으로'(P1-10, F-BS-76)
+    expect(within(tagsNote).getByRole('link', { name: 'AI 엔진 설정으로' })).toHaveAttribute(
+      'href',
+      '/settings/ai-engine',
+    );
+    expect(within(uploadNote).queryByRole('link', { name: 'AI 엔진 설정으로' })).toBeNull();
   });
 });

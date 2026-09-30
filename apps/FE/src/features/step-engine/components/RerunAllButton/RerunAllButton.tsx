@@ -1,6 +1,7 @@
 import { isApiRequestError } from '@/shared/api/errors';
 import { Button, DisabledReason } from '@/shared/ui';
 import { useStartContinuousRun } from '../../api/useContinuousRunQueries';
+import { AiEngineSettingsLinkForError } from '../AiEngineSettingsLink/AiEngineSettingsLink';
 import { NO_RERUN_TEXT, RERUN_ALL_LABEL } from '../../model/continuousRun';
 import type { ContinuousRunAccepted } from '../../model/types';
 import styles from './RerunAllButton.module.css';
@@ -69,7 +70,8 @@ export function RerunAllButton({
         <span role="alert" className={styles.error}>
           {isApiRequestError(start.error)
             ? start.error.message
-            : '연속 실행을 요청하지 못했습니다.'}
+            : '연속 실행을 요청하지 못했습니다.'}{' '}
+          <AiEngineSettingsLinkForError error={start.error} />
         </span>
       ) : null}
     </>

@@ -10,6 +10,7 @@ import { FakeStepRunnersModule } from '../fixtures/step-engine/fake-runners.modu
 import { FakeStepWorld } from '../fixtures/step-engine/fake-runners.js';
 import { truncateStepEngine } from '../fixtures/step-engine/truncate.js';
 import { createTestApp, TEST_START_MS, type TestApp } from '../helpers/test-app.js';
+import { seedUsableAiEngine } from '../support/fake-ai-engines.js';
 
 interface ErrorBody {
   code: string;
@@ -143,6 +144,8 @@ describe('단계 실행 API(step-engine, P1-05) e2e — autostore_test·가짜 �
 
   beforeAll(async () => {
     t = await createTestApp({ imports: [FakeStepRunnersModule] });
+    // 가짜 AI 단계(⑤·⑥-1·⑥-2)는 선택 엔진이 쓸 수 있어야 시작한다(P1-10 규칙 11)
+    await seedUsableAiEngine(t.prisma);
     world = t.app.get(FakeStepWorld);
     const sub = t.app
       .get(ProgressEventsService)

@@ -1,0 +1,6 @@
+{
+  "status": "SUCCESS",
+  "model": "gemini-3.8-flash-medium",
+  "structured_output": { "answer": "OK" },
+  "warnings": []
+}

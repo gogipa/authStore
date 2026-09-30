@@ -28,6 +28,7 @@ import { FakeGateBasisModule, recordGatePass } from '../fixtures/step-engine/gat
 import { insertStepRun } from '../fixtures/step-engine/step-run.factory.js';
 import { truncateStepEngine } from '../fixtures/step-engine/truncate.js';
 import { createTestApp, TEST_START_MS, type TestApp } from '../helpers/test-app.js';
+import { seedUsableAiEngine } from '../support/fake-ai-engines.js';
 
 /** setup-env.cjs가 이 파일에 준 임시 데이터 폴더 */
 const DATA_DIR = process.env.APP_DATA_DIR!;
@@ -73,6 +74,8 @@ describe('단계 실행 엔진 규칙(P1-05) e2e — 전파·끝 지문·오너 
 
   beforeAll(async () => {
     t = await createTestApp({ imports: [FakeStepRunnersModule, FakeGateBasisModule] });
+    // 가짜 AI 단계(⑤·⑥-1·⑥-2)는 선택 엔진이 쓸 수 있어야 시작한다(P1-10 규칙 11)
+    await seedUsableAiEngine(t.prisma);
     world = t.app.get(FakeStepWorld);
     const sub = t.app
       .get(ProgressEventsService)

@@ -1,0 +1,6 @@
+/* 'AI 엔진 설정으로' 링크(SystemKeyLink와 같은 모양). 토큰 변수만 쓴다. */
+.link {
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-accent);
+  white-space: nowrap;
+}

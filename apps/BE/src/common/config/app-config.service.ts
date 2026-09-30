@@ -40,6 +40,11 @@ export class AppConfigService {
     return this.config.get('COMMERCE_META_AUTO_SYNC', { infer: true }) !== 'off';
   }
 
+  /** 앱을 켤 때 AI 엔진 감지·선택 엔진 계약 테스트를 돌리는지(`AI_ENGINE_STARTUP_CHECK`, 기본 on, P1-10) */
+  get aiEngineStartupCheck(): boolean {
+    return this.config.get('AI_ENGINE_STARTUP_CHECK', { infer: true }) !== 'off';
+  }
+
   /** 개발에서만 더 허용하는 FE 개발 서버 Origin. 개발이 아니면 빈 배열. */
   get devFeOrigins(): string[] {
     if (!this.isDevelopment) return [];

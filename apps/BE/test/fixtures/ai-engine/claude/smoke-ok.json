@@ -1,0 +1,11 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "duration_ms": 2870,
+  "num_turns": 1,
+  "result": "",
+  "structured_output": { "answer": "OK" },
+  "session_id": "00000000-0000-4000-8000-000000000003",
+  "total_cost_usd": 0
+}

@@ -2,6 +2,9 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BE_ROOT } from '../../../common/config/paths.js';
+import { buildAgyArgs } from './adapters/agy.adapter.js';
+import { buildClaudeArgs } from './adapters/claude-code.adapter.js';
+import { buildCodexArgs } from './adapters/codex.adapter.js';
 import {
   assertIsolatedCliInvocation,
   checkIsolatedCliInvocation,
@@ -116,6 +119,63 @@ describe('assertIsolatedCliInvocation(F-BS-07)', () => {
   it('claude에 전역 설정 차단 옵션이 없으면 실패', () => {
     const args = claude().args.filter((a) => a !== '--safe-mode');
     expect(() => assertIsolatedCliInvocation(claude({ args }))).toThrow(/전역 설정 차단/);
+  });
+
+  it('probe(감지 호출: --version·auth status)는 --model·claude 전역 설정 옵션을 보지 않고 나머지 규약은 그대로 본다(P1-10)', () => {
+    const probe = claude({ args: ['auth', 'status'] });
+    expect(checkIsolatedCliInvocation(probe, 'probe')).toEqual([]);
+    expect(checkIsolatedCliInvocation(probe)).toEqual(
+      expect.arrayContaining(['--model을 적어야 한다', expect.stringMatching(/전역 설정 차단/)]),
+    );
+    expect(
+      checkIsolatedCliInvocation(claude({ args: ['--version'], shell: true }), 'probe'),
+    ).toContain('shell: false여야 한다');
+    expect(
+      checkIsolatedCliInvocation(claude({ args: ['--version'], cwd: filledDir }), 'probe'),
+    ).toContain('cwd가 비어 있지 않다');
+    expect(
+      checkIsolatedCliInvocation(
+        claude({ args: ['--version'], env: { PATH: '/usr/bin', OPENAI_API_KEY: 'y' } }),
+        'probe',
+      ),
+    ).toContain('env에 OPENAI_API_KEY를 넘기면 안 된다');
+  });
+
+  it('P1-10 인자 빌더 3개(텍스트·비전)가 만든 인자는 격리 검사기를 통과한다', () => {
+    const schema = { type: 'object', properties: {}, required: [], additionalProperties: false };
+    const env = { PATH: '/usr/bin:/bin', HOME: '/Users/someone' };
+    const cases: [string, string[]][] = [
+      ['claude', buildClaudeArgs({ prompt: '[지시] x', model: 'sonnet', schema, imageDir: null })],
+      [
+        'claude',
+        buildClaudeArgs({ prompt: '[지시] x', model: 'sonnet', schema, imageDir: emptyDir }),
+      ],
+      [
+        'agy',
+        buildAgyArgs({
+          prompt: '[지시] x',
+          model: 'm',
+          schema,
+          timeoutMs: 120_000,
+          imageDir: null,
+        }),
+      ],
+      [
+        'codex',
+        buildCodexArgs({
+          prompt: '[지시] x',
+          model: 'gpt-5',
+          schemaFile: '/tmp/s.json',
+          lastMessageFile: '/tmp/l.json',
+          imagePaths: ['/tmp/a.jpg'],
+        }),
+      ],
+    ];
+    for (const [bin, args] of cases) {
+      expect(checkIsolatedCliInvocation({ bin, args, cwd: emptyDir, env, shell: false })).toEqual(
+        [],
+      );
+    }
   });
 
   it('허용하지 않은 실행 파일(래퍼·다른 CLI)은 실패', () => {

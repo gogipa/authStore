@@ -64,6 +64,16 @@ describe('validateEnv', () => {
     );
   });
 
+  it('AI_ENGINE_STARTUP_CHECK: 기본 on, off로 끌 수 있고 그 밖 값은 거절한다(P1-10)', () => {
+    expect(validateEnv({ ...base }).AI_ENGINE_STARTUP_CHECK).toBe('on');
+    expect(validateEnv({ ...base, AI_ENGINE_STARTUP_CHECK: 'off' }).AI_ENGINE_STARTUP_CHECK).toBe(
+      'off',
+    );
+    expect(() => validateEnv({ ...base, AI_ENGINE_STARTUP_CHECK: 'no' })).toThrow(
+      /AI_ENGINE_STARTUP_CHECK/,
+    );
+  });
+
   it('PORT 문자열을 숫자로 바꾼다', () => {
     expect(validateEnv({ ...base, PORT: '4000' }).PORT).toBe(4000);
   });

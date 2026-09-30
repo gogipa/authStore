@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "sourceUrl": { "type": "string", "format": "uri" }
+  },
+  "required": ["sourceUrl"],
+  "additionalProperties": false
+}

@@ -17,6 +17,7 @@ import {
 } from '../fixtures/step-engine/gate-basis.fakes.js';
 import { truncateStepEngine } from '../fixtures/step-engine/truncate.js';
 import { createTestApp, TEST_START_MS, type TestApp } from '../helpers/test-app.js';
+import { seedUsableAiEngine } from '../support/fake-ai-engines.js';
 
 interface ErrorBody {
   code: string;
@@ -212,6 +213,8 @@ describe('연속 실행·게이트(step-engine, P1-06) e2e — autostore_test·�
 
   beforeAll(async () => {
     t = await createTestApp({ imports: [FakeStepRunnersModule, FakeGateBasisModule] });
+    // 가짜 AI 단계(⑤·⑥-1·⑥-2)는 선택 엔진이 쓸 수 있어야 시작한다(P1-10 규칙 11)
+    await seedUsableAiEngine(t.prisma);
     world = t.app.get(FakeStepWorld);
     gates = t.app.get(FakeGateWorld);
     const sub = t.app

@@ -1,0 +1,16 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "duration_ms": 8120,
+  "num_turns": 3,
+  "result": "",
+  "structured_output": {
+    "title": "흰색 러닝화 두 장",
+    "bullets": ["옆모습", "뒷모습"],
+    "note": null,
+    "images_seen": ["image-1.jpg", "image-2.png"]
+  },
+  "session_id": "00000000-0000-4000-8000-000000000001",
+  "total_cost_usd": 0
+}

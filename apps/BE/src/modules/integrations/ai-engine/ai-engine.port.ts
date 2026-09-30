@@ -1,6 +1,7 @@
 /**
  * AI 엔진 포트(D-16, PRD §8.9 'AI 엔진 선택', 03-2 §3).
- * 구현(ClaudeCodeAdapter·AgyAdapter·CodexAdapter)은 아직 없다. 이미지 생성 포트(ImageGenProvider)와 섞지 않는다.
+ * 구현은 `adapters/`의 ClaudeCodeAdapter·AgyAdapter·CodexAdapter(P1-10). 이미지 생성 포트(ImageGenProvider)와 섞지 않는다.
+ * 단계 모듈은 어댑터를 직접 부르지 않고 `AiExecutor.run(PinnedAiContext, …)`만 부른다.
  * 시그니처 원본: AiEngineAdapter { code, detect(), authStatus(), smokeTest(model),
  *                runStructured(task, schema, inputs, {model, timeoutMs}) }
  * 아래 결과 타입의 필드는 ai_cli_check(ERD v0.4)·05-2 AiCliCheck에서 가져왔다. 입력 타입은 Proposed(D-11).
@@ -39,7 +40,11 @@ export interface AiEngineSmokeResult {
 /** 스키마 규칙: draft-07 공통 부분집합, additionalProperties:false, 모든 필드 required(AI-02) */
 export type AiJsonSchema = Record<string, unknown>;
 
-/** Proposed: 엔진에 넘길 입력. 비전 작업은 이미지 전용 디렉터리의 파일만 넘긴다 */
+/**
+ * Proposed(06-2 §3): 엔진에 넘길 입력. 프롬프트는 실행기가 출처 블록을 검사(규칙 14)한 뒤 합친 글이다.
+ * `imagePaths`가 있으면 비전 호출이다 — 어댑터가 이번 호출 전용 이미지 폴더에 `image-1.jpg`처럼 복사해 넘기고
+ * 결과 스키마에 `images_seen`(읽은 파일 이름 목록)을 더해 확인한다(규칙 9).
+ */
 export interface AiEngineInputs {
   prompt: string;
   imagePaths?: readonly string[];
@@ -53,7 +58,7 @@ export interface AiRunOptions {
 }
 
 export interface AiStructuredResult<T> {
-  /** 앱에서 다시 검증(Ajv)한 결과(AI-02) */
+  /** 앱에서 다시 검증(Ajv)한 결과(AI-02). 비전이면 images_seen 포함(실행기가 확인한 뒤 뺀다) */
   output: T;
   model: string;
   cliVersion: string | null;
@@ -77,5 +82,8 @@ export interface AiEngineAdapter {
   ): Promise<AiStructuredResult<T>>;
 }
 
-/** 어댑터 목록 주입 토큰(엔진 3개). 실행기가 설정의 선택 엔진으로 하나를 고른다 */
+/**
+ * 어댑터 목록 주입 토큰(엔진 3개). 실행기가 실행에 고정한 엔진(`PinnedAiContext.engine`)으로 하나를 고른다.
+ * 테스트는 `overrideProvider(AI_ENGINE_ADAPTERS)`로 가짜 어댑터를 끼운다(`test/support/fake-ai-engines.ts`).
+ */
 export const AI_ENGINE_ADAPTERS = Symbol('AI_ENGINE_ADAPTERS');

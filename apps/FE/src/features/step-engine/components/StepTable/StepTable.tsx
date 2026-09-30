@@ -45,6 +45,10 @@ import type { ChainStartStepCode } from '../ContinuousRunButton/ContinuousRunBut
 import { ContinuousRunBanner } from '../ContinuousRunBanner/ContinuousRunBanner';
 import { ContinuousRunButton } from '../ContinuousRunButton/ContinuousRunButton';
 import { RerunAllButton } from '../RerunAllButton/RerunAllButton';
+import {
+  AiEngineSettingsLinkFor,
+  AiEngineSettingsLinkForError,
+} from '../AiEngineSettingsLink/AiEngineSettingsLink';
 import { StaleInputs } from '../StaleInputs/StaleInputs';
 import styles from './StepTable.module.css';
 
@@ -238,6 +242,8 @@ function StepNotes({
           </span>
           {/* 커머스API 인증 실패·키 없음(⑧·⑨·P1-08)은 시스템 상태 '키 입력'으로 잇는다(P1-07 규칙 14) */}
           {isCommerceKeyErrorCode(run.errorCode) ? <SystemKeyLink /> : null}
+          {/* 선택 AI 엔진을 쓸 수 없어 실패(P1-10 규칙 12, F-BS-76) → 'AI 엔진 설정으로' */}
+          <AiEngineSettingsLinkFor code={run.errorCode} />
         </FullRow>
       ) : null}
       {item.status === 'RERUN_REQUIRED' ? (
@@ -463,7 +469,8 @@ export function StepTable({ detail }: StepTableProps) {
       ) : null}
       {start.error ? (
         <div role="alert" className={styles.alert}>
-          {isApiRequestError(start.error) ? start.error.message : '실행을 요청하지 못했습니다.'}
+          {isApiRequestError(start.error) ? start.error.message : '실행을 요청하지 못했습니다.'}{' '}
+          <AiEngineSettingsLinkForError error={start.error} />
         </div>
       ) : null}
       {rail.isError ? <div className={styles.alert}>{rail.error.message}</div> : null}

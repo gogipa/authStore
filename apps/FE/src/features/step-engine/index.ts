@@ -6,6 +6,7 @@
  * (StepStatusBar)·바뀐 입력(StaleInputs), 입력 키 화면 이름.
  * P1-06: 연속 실행 시작·조회, 게이트 목록·통과 훅, '여기부터 연속 실행'·'재실행 필요 단계 모두 실행' 버튼, 연속 실행 띠,
  * 게이트 목록으로 그리는 게이트 배지.
+ * P1-10: 'AI 엔진 설정으로' 링크(선택 AI 엔진을 쓸 수 없을 때, F-BS-76). StepStatusBar의 'AI 생성 · 엔진' 칩과 `error`.
  */
 export {
   useAttentionSteps,
@@ -110,3 +111,8 @@ export { StepStatusBar } from './components/StepStatusBar/StepStatusBar';
 export type { StepStatusBarProps } from './components/StepStatusBar/StepStatusBar';
 export { StaleInputs } from './components/StaleInputs/StaleInputs';
 export type { StaleInputsProps } from './components/StaleInputs/StaleInputs';
+export {
+  AiEngineSettingsLink,
+  AiEngineSettingsLinkFor,
+  AiEngineSettingsLinkForError,
+} from './components/AiEngineSettingsLink/AiEngineSettingsLink';

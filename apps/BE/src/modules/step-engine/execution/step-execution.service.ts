@@ -4,6 +4,8 @@ import { formatErrorMessage } from '../../../common/errors/error-codes.js';
 import { ProgressEventsService } from '../../../common/events/progress-events.service.js';
 import type { Candidate, CandidateStep, StepRun } from '../../../generated/prisma/client.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { isAiExecutionError } from '../../integrations/ai-engine/ai-engine.errors.js';
+import type { PinnedAiContext } from '../../integrations/ai-engine/ai-executor.types.js';
 import { SettingsService } from '../../settings/settings.service.js';
 import type { AppSettings } from '../../settings/schema/settings.types.js';
 import { CandidateGenderService } from '../candidates/candidate-gender.service.js';
@@ -26,10 +28,15 @@ import { changedInputKeys, fingerprint } from '../domain/fingerprint.js';
 import { endTimeFor, waitedSeconds } from '../domain/run-time.js';
 import type { StepCode } from '../domain/steps.js';
 import type { CandidateWarning } from '../domain/warnings.js';
-import { AI_ENGINE_RESOLVER, type AiEngineResolver } from '../ports/ai-engine-resolver.port.js';
+import {
+  AI_ENGINE_RESOLVER,
+  type AiEnginePreparation,
+  type AiEngineResolver,
+} from '../ports/ai-engine-resolver.port.js';
 import { GATE_VALIDITY, toGateFlags, type GateValidityPort } from '../ports/gate-validity.port.js';
 import { PropagationService } from '../propagation/propagation.service.js';
 import { StepRunnerRegistry } from '../runner/step-runner.registry.js';
+import { pinAiEngine, pinnedAiFromRun, type PinnedAi } from './ai-engine-pin.js';
 import { asStartCandidate, missingRequiredInputs } from './start-conditions.js';
 import { checkStepRunnable, toApiException } from './step-blocks.js';
 import { publishAfterCommit } from './step-events.js';
@@ -124,6 +131,8 @@ interface PreparedRun {
   resume: StepRunContext['resume'];
   ownerEdit: OwnerEditRunInput | null;
   aiEngine: AiEngineFix | null;
+  /** AI 실행 문맥(엔진·모델 고정, P1-10). stepRunId·candidateId는 실행할 때 채운다 */
+  pinnedAi: PinnedAiContext | null;
   /** ⑥ 묶음에서 이 실행 뒤에 이어 갈 단계 */
   chainRemaining: StepCode[];
   /** 6시간 규칙의 ② 재조회(실행기 `refetch`가 있으면 그것을, 없으면 `run`을 부른다, P1-06) */
@@ -148,6 +157,16 @@ export interface OpenRunSpec {
 }
 
 function toFailure(error: unknown): Extract<StepOutcome, { kind: 'FAILED' }> {
+  // AI 실행 오류(P1-10 규칙 8·12·14): 엔진 사용 불가 → AI·AI_ENGINE_UNAVAILABLE, 결과 불신·호출 실패 → AI·AI_* 코드,
+  // 입력 차단 → INPUT_VALIDATION·AI_INPUT_BLOCKED. 다른 엔진으로 다시 부르지 않는다
+  if (isAiExecutionError(error)) {
+    return {
+      kind: 'FAILED',
+      failureKind: error.failureKind,
+      errorCode: error.errorCode,
+      errorMessage: error.userMessage,
+    };
+  }
   if (error instanceof ApiException) {
     const failureKind = EXTERNAL_ERROR_CODES.has(error.code)
       ? 'EXTERNAL_API'
@@ -212,7 +231,7 @@ export class StepExecutionService {
     private readonly propagation: PropagationService,
     private readonly events: ProgressEventsService,
     @Inject(GATE_VALIDITY) private readonly gateValidity: GateValidityPort,
-    @Inject(AI_ENGINE_RESOLVER) private readonly resolveAiEngine: AiEngineResolver,
+    @Inject(AI_ENGINE_RESOLVER) private readonly aiResolver: AiEngineResolver,
   ) {}
 
   // ── 시작 ────────────────────────────────────────────────────────────────
@@ -386,6 +405,7 @@ export class StepExecutionService {
       resume: null,
       ownerEdit: input.ownerEdit,
       aiEngine: null,
+      pinnedAi: null,
       chainRemaining: [],
       refetch: false,
     });
@@ -410,6 +430,9 @@ export class StepExecutionService {
       resume: prepared.resume,
       ownerEdit: prepared.ownerEdit,
       aiEngine: prepared.aiEngine,
+      pinnedAi: prepared.pinnedAi
+        ? { ...prepared.pinnedAi, stepRunId: run.id, candidateId: run.candidateId }
+        : null,
     };
     let outcome: StepOutcome;
     try {
@@ -480,12 +503,12 @@ export class StepExecutionService {
     stepCode: StepCode,
     input: StartInput,
   ): Promise<StartStepResult> {
-    const aiEngine = input.runner.usesAi
-      ? await this.resolveAiEngine({ candidateId, stepCode })
-      : null;
+    // AI 단계(P1-10 규칙 10·11): 사용 가능 판정과 --version 감지는 시작 트랜잭션 **전에** 끝낸다(spawn을 트랜잭션에 넣지
+    // 않는다). 쓸 수 없음(409)은 트랜잭션 안에서 잠금·시작 조건 검사 **뒤에** 던진다(다른 막힌 이유가 먼저 보이게)
+    const ai = input.runner.usesAi ? await this.prepareAiSoft() : undefined;
     try {
       return await this.transactions.run((scope) =>
-        this.openInScope(scope, candidateId, stepCode, input, aiEngine),
+        this.openInScope(scope, candidateId, stepCode, input, ai),
       );
     } catch (error) {
       if (isOneOpenRunViolation(error)) {
@@ -498,17 +521,17 @@ export class StepExecutionService {
   /**
    * 연속 실행 묶음 안의 실행 시작(P1-06): 호출자(연속 실행 서비스)의 트랜잭션 안에서 `execution_mode=CHAIN` +
    * `step_chain_id`로 새 실행을 연다(묶음 행과 같은 트랜잭션 — 첫 실행이 막히면 묶음도 남지 않는다). AI 단계는 이 단계가
-   * 시작할 때의 선택 엔진을 고정한다(P1-10 훅, 쓸 수 없으면 409 AI_ENGINE_UNAVAILABLE). `refetch`면 실행기 `refetch`를 부른다.
+   * 시작할 때의 선택 엔진을 고정한다(P1-10). 호출자가 트랜잭션 **전에** 준비한 결과(`options.ai`)를 쓴다 — 쓸 수 없음이면
+   * 그 오류(409 AI_ENGINE_UNAVAILABLE)를 던진다. 준비하지 않았으면(드문 경합) 여기서 준비한다. `refetch`면 실행기 `refetch`.
    * 호출자가 후보 행을 잠근다. uq_step_run_one_open 위반은 호출자가 409로 바꾼다.
    */
   async startChainRun(
     scope: StepEngineTx,
     candidateId: number,
     stepCode: StepCode,
-    options: { stepChainId: number; refetch?: boolean },
+    options: { stepChainId: number; refetch?: boolean; ai?: AiEnginePreparation },
   ): Promise<StartStepResult> {
     const runner = this.assertRunnableCode(stepCode);
-    const aiEngine = runner.usesAi ? await this.resolveAiEngine({ candidateId, stepCode }) : null;
     return this.openInScope(
       scope,
       candidateId,
@@ -521,8 +544,24 @@ export class StepExecutionService {
         chainRemaining: [],
         refetch: options.refetch ?? false,
       },
-      aiEngine,
+      options.ai,
     );
+  }
+
+  /** 선택 엔진 준비(트랜잭션 밖). 쓸 수 없음은 던지지 않고 오류로 들고 간다 */
+  private async prepareAiSoft(): Promise<AiEnginePreparation> {
+    try {
+      return { prepared: await this.aiResolver.prepare() };
+    } catch (error) {
+      return { error };
+    }
+  }
+
+  /** 준비 결과를 이 단계에 고정한다(쓸 수 없음이면 그 오류를 던진다). 준비하지 않았으면(드문 경합) 여기서 준비한다 */
+  private async pinFor(runner: StepRunner, ai: AiEnginePreparation | undefined): Promise<PinnedAi> {
+    if (ai && 'error' in ai) throw ai.error;
+    const prepared = ai?.prepared ?? (await this.aiResolver.prepare());
+    return pinAiEngine(runner, prepared);
   }
 
   /** 시작 트랜잭션 본체(호출자 트랜잭션 안) */
@@ -531,7 +570,7 @@ export class StepExecutionService {
     candidateId: number,
     stepCode: StepCode,
     input: StartInput,
-    aiEngine: AiEngineFix | null,
+    aiPreparation: AiEnginePreparation | undefined,
   ): Promise<StartStepResult> {
     const { runner } = input;
     const candidate = await this.guard.lockForUpdate(scope.tx, candidateId);
@@ -557,6 +596,8 @@ export class StepExecutionService {
         missingInputs: missing,
       });
     }
+    // AI 엔진 고정(P1-10 규칙 10·11): 쓸 수 없으면 409 AI_ENGINE_UNAVAILABLE — step_run을 만들지 않는다
+    const ai = runner.usesAi ? await this.pinFor(runner, aiPreparation) : null;
     const previous = await this.previousOf(scope, runner, candidateId, stepCode);
     const run = await this.openRun(scope, {
       candidate,
@@ -566,7 +607,7 @@ export class StepExecutionService {
       executionMode: input.mode,
       stepChainId: input.stepChainId,
       settingsSnapshotId: this.settings.currentSnapshotId(),
-      aiEngine,
+      aiEngine: ai?.fix ?? null,
       inputs,
     });
     await this.status.reevaluate(scope, candidateId, { stepRunId: run.id });
@@ -579,7 +620,8 @@ export class StepExecutionService {
       previous,
       resume: null,
       ownerEdit: null,
-      aiEngine,
+      aiEngine: ai?.fix ?? null,
+      pinnedAi: ai?.context ?? null,
       chainRemaining: input.chainRemaining,
       refetch: input.refetch,
     });
@@ -875,6 +917,8 @@ export class StepExecutionService {
         run.candidateId,
         run.stepCode as StepCode,
       );
+      // 시작 때 고정한 엔진·모델로 이어 간다(현재 설정을 다시 읽지 않는다, R9)
+      const ai = runner.usesAi ? await this.pinnedAiOf(scope, run, runner) : null;
       this.submitAfterCommit(scope, {
         run: updated,
         runner,
@@ -884,12 +928,26 @@ export class StepExecutionService {
         previous,
         resume: { data },
         ownerEdit: null,
-        aiEngine: null,
+        aiEngine: ai?.fix ?? null,
+        pinnedAi: ai?.context ?? null,
         chainRemaining: [],
         refetch: false,
       });
       return updated;
     });
+  }
+
+  /** 이미 고정한 실행의 AI 문맥(step_run.ai_* + 그 실행의 설정 스냅샷 ai 섹션) */
+  private async pinnedAiOf(
+    scope: StepEngineTx,
+    run: StepRun,
+    runner: StepRunner,
+  ): Promise<PinnedAi | null> {
+    const snapshot = await scope.tx.settingsSnapshot.findUnique({
+      where: { id: run.settingsSnapshotId },
+      select: { content: true },
+    });
+    return pinnedAiFromRun(run, snapshot?.content ?? null, runner);
   }
 
   /**

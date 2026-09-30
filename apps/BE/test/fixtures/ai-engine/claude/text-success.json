@@ -1,0 +1,15 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "duration_ms": 4210,
+  "num_turns": 1,
+  "result": "",
+  "structured_output": {
+    "title": "가볍고 쿠션이 좋은 러닝화",
+    "bullets": ["메시 갑피로 통기성이 좋다", "EVA 미드솔"],
+    "note": null
+  },
+  "session_id": "00000000-0000-4000-8000-000000000000",
+  "total_cost_usd": 0
+}

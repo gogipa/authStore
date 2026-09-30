@@ -239,7 +239,7 @@ paths:
       operationId: startCandidateStepRun
       summary: 단계 하나 실행·다시 실행
       description: 단계 하나를 실행한다(execution_mode=STEP). 입력이 같아도 새 버전을 만든다(F-BS-19). 다음 단계를 자동으로 시작하지 않는다(⑥ 묶음만 예외). REGISTER는 422 INVALID_STEP_CODE — G4는 POST /candidates/{candidateId}/registrations. 진행은 SSE step-run.status-changed. 공통 오류 — 404 CANDIDATE_NOT_FOUND, 422 INVALID_STEP_CODE·VALIDATION_FAILED, 409 STEP_START_CONDITION_UNMET(fieldErrors에 빠진 입력 키)·STEP_ALREADY_RUNNING·STEP_LOCKED_BY_RUNNING_STEP·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED. 단계별 — SOURCING 422 RAKUTEN_QUERY_INVALID, 409 SECRET_NOT_CONFIGURED·DAILY_LIMIT_REACHED·EXTERNAL_CALL_COOLDOWN(Retry-After); PRICING 409 FX_RATE_UNAVAILABLE, 422 COUPON_NOT_ALLOWED; CATEGORY 409 COMMERCE_META_NOT_SYNCED; NOTICE_HTML 409 PROFILE_INCOMPLETE(details.missingFields); UPLOAD 409 GATE_NOT_PASSED(G3)·SECRET_NOT_CONFIGURED·(M2) TEMP_CANDIDATE_NOT_ALLOWED. 경고 — THUMBNAIL·COPY·NOTICE_RAW PRE_G2_AI_COST, TAGS CATEGORY_UNDECIDED. AI 엔진(D-16) — AI 엔진을 쓰는 단계는 시작 때 설정의 선택 엔진·모델과 CLI 버전을 실행 기록(aiEngine·aiModel·aiCliVersion)에 고정한다. 선택 엔진의 최신 점검(ai_cli_check)이
-        미설치·로그인 풀림·계약 테스트 실패·지원 밖 버전이면 409 AI_ENGINE_UNAVAILABLE(details.engineCode·reason·settingsPath)로 거절하고 다른 엔진으로 넘어가지 않는다. 실행 중 엔진 실패는 HTTP 오류가 아니라 StepRun FAILED(errorCode=AI_ENGINE_UNAVAILABLE)와 SSE step-run.status-changed로 알린다. P1-05 구현 결정(Proposed, 05-1 §7.2) — 입력 대기 중인 단계에 새 실행 요청은 새 실행을 열지 않고 409 STEP_ALREADY_RUNNING(details.status=WAITING_INPUT), 실행기가 아직 없는 단계는 422 INVALID_STEP_CODE(details.reason=NO_RUNNER), 로드된 설정이 없으면 503 SETTINGS_INVALID. ⑥ 묶음은 시작 조건·잠금에 걸리는 뒤 단계를 건너뛰고(예 ⑥-1 실패 → ⑥-2는 실행, ⑥-3은 시작 안 함) 묶음을 끝낸다.
+        미설치·로그인 풀림·계약 테스트 실패·지원 밖 버전이면 409 AI_ENGINE_UNAVAILABLE(details.engineCode·reason·settingsPath)로 거절하고 다른 엔진으로 넘어가지 않는다. 실행 중 엔진 실패는 HTTP 오류가 아니라 StepRun FAILED(errorCode=AI_ENGINE_UNAVAILABLE)와 SSE step-run.status-changed로 알린다. P1-10 구현 결정(Proposed, 05-1 §7.2) — 선택 엔진 점검 행이 없으면 reason=NOT_CHECKED, 단계 주 작업(텍스트·비전)의 모델이 설정에 없으면 reason=MODEL_NOT_SET으로 거절한다. 지원 밖 버전(VERSION_UNSUPPORTED)은 P-13 범위가 정해질 때까지 거절하지 않고 경고만 한다. 판정은 잠금·시작 조건 검사 뒤에 하므로 다른 막힌 이유(CANDIDATE_LOCKED·STEP_START_CONDITION_UNMET 등)가 먼저 나온다. 실행 중 다른 AI 오류는 StepRun FAILED(failureKind=AI, errorCode=AI_OUTPUT_INVALID·AI_IMAGES_NOT_SEEN·AGY_ERROR·AI_CLI_FAILED·AI_TIMEOUT. 입력에 비밀·개인정보·네이버 데이터가 있으면 failureKind=INPUT_VALIDATION·AI_INPUT_BLOCKED). P1-05 구현 결정(Proposed, 05-1 §7.2) — 입력 대기 중인 단계에 새 실행 요청은 새 실행을 열지 않고 409 STEP_ALREADY_RUNNING(details.status=WAITING_INPUT), 실행기가 아직 없는 단계는 422 INVALID_STEP_CODE(details.reason=NO_RUNNER), 로드된 설정이 없으면 503 SETTINGS_INVALID. ⑥ 묶음은 시작 조건·잠금에 걸리는 뒤 단계를 건너뛰고(예 ⑥-1 실패 → ⑥-2는 실행, ⑥-3은 시작 안 함) 묶음을 끝낸다.
       tags:
       - step-engine
       x-milestone: M1
@@ -314,7 +314,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
-          description: STEP_START_CONDITION_UNMET·STEP_ALREADY_RUNNING·STEP_LOCKED_BY_RUNNING_STEP·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED·단계별 코드 · AI_ENGINE_UNAVAILABLE(D-16, details.engineCode·reason=NOT_INSTALLED·NOT_LOGGED_IN·CONTRACT_FAILED·VERSION_UNSUPPORTED·settingsPath=/settings/ai-engine)
+          description: STEP_START_CONDITION_UNMET·STEP_ALREADY_RUNNING·STEP_LOCKED_BY_RUNNING_STEP·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED·단계별 코드 · AI_ENGINE_UNAVAILABLE(D-16, details.engineCode·reason=NOT_INSTALLED·NOT_LOGGED_IN·CONTRACT_FAILED·VERSION_UNSUPPORTED(M1은 쓰지 않음)·NOT_CHECKED·MODEL_NOT_SET(P1-10 Proposed)·settingsPath=/settings/ai-engine)
         '422':
           $ref: '#/components/responses/Unprocessable'
         '500':
@@ -503,7 +503,7 @@ paths:
     post:
       operationId: startCandidateContinuousRun
       summary: 연속 실행 시작
-      description: 여기부터 연속 실행(kind=FROM_HERE, startStepCode — 표의 fromStep) 또는 재실행 필요 단계 모두 실행(RERUN_STALE). step_chain 1행을 만든다. G2 전에는 SOURCING·PRICING에서만 시작한다(F-CW-15). 완료·최신 건너뛰기, 6시간 넘은 ③ 재판정, G2·G3·G4 멈춤은 서버 규칙. 멈추면 SSE continuous-run.stopped. 오류 — 409 CONTINUOUS_RUN_ALREADY_OPEN·CONTINUOUS_RUN_BEFORE_G2·NO_RERUN_REQUIRED_STEPS·STEP_ALREADY_RUNNING·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED·AI_ENGINE_UNAVAILABLE, 422 INVALID_STEP_CODE·VALIDATION_FAILED. AI 엔진(D-16) — 묶음에 AI 엔진을 쓰는 단계가 있으면 시작 때 선택 엔진의 최신 점검을 보고, 쓸 수 없으면 409 AI_ENGINE_UNAVAILABLE로 거절한다. 묶음 안의 각 단계는 그 단계가 시작될 때의 선택 엔진을 고정해 기록한다.
+      description: 여기부터 연속 실행(kind=FROM_HERE, startStepCode — 표의 fromStep) 또는 재실행 필요 단계 모두 실행(RERUN_STALE). step_chain 1행을 만든다. G2 전에는 SOURCING·PRICING에서만 시작한다(F-CW-15). 완료·최신 건너뛰기, 6시간 넘은 ③ 재판정, G2·G3·G4 멈춤은 서버 규칙. 멈추면 SSE continuous-run.stopped. 오류 — 409 CONTINUOUS_RUN_ALREADY_OPEN·CONTINUOUS_RUN_BEFORE_G2·NO_RERUN_REQUIRED_STEPS·STEP_ALREADY_RUNNING·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED·AI_ENGINE_UNAVAILABLE, 422 INVALID_STEP_CODE·VALIDATION_FAILED. AI 엔진(D-16) — 묶음에 AI 엔진을 쓰는 단계가 있으면 시작 때 선택 엔진의 최신 점검을 보고, 쓸 수 없으면 409 AI_ENGINE_UNAVAILABLE로 거절한다(step_chain을 만들지 않는다. reason은 단계 실행과 같다 — P1-10 Proposed NOT_CHECKED·MODEL_NOT_SET 포함). 묶음 안의 각 단계는 그 단계가 시작될 때의 선택 엔진을 고정해 기록한다. 이어 가다가 AI 단계 차례에 선택 엔진을 쓸 수 없으면 묶음을 NO_RUNNABLE_STEP으로 닫는다.
       tags:
       - step-engine
       x-milestone: M1

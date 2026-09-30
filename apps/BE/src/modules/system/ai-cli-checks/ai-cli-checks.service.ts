@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import type { AiCliCheck } from '../../../generated/prisma/client.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
-import {
-  AI_ENGINE_CODES,
-  type AiEngineCode,
-  isAiEngineCode,
-} from '../../integrations/ai-engine/ai-engine.port.js';
+import { AI_ENGINE_CODES, type AiEngineCode } from '../../integrations/ai-engine/ai-engine.port.js';
+import { SettingsService } from '../../settings/settings.service.js';
 import type { AiCliCheckDto, AiCliCheckLatestListDto } from './ai-cli-check.dto.js';
 
 /** 설정 파일 기본 엔진(PRD §8.9 R3) */
@@ -13,19 +10,22 @@ export const DEFAULT_AI_ENGINE: AiEngineCode = 'CLAUDE';
 
 @Injectable()
 export class AiCliChecksService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settings: SettingsService,
+  ) {}
 
   /** GET /ai-cli-checks/latest — 엔진마다 최신 ai_cli_check 1건과 선택 엔진 표시(05-2 getLatestAiCliChecks) */
   async getLatest(): Promise<AiCliCheckLatestListDto> {
-    const [selectedEngine, ...latest] = await Promise.all([
-      this.readSelectedEngine(),
-      ...AI_ENGINE_CODES.map((engineCode) =>
+    const selectedEngine = this.readSelectedEngine();
+    const latest = await Promise.all(
+      AI_ENGINE_CODES.map((engineCode) =>
         this.prisma.aiCliCheck.findFirst({
           where: { engineCode },
           orderBy: [{ checkedAt: 'desc' }, { id: 'desc' }],
         }),
       ),
-    ]);
+    );
     return {
       selectedEngine,
       items: AI_ENGINE_CODES.map((engineCode, i) => {
@@ -40,24 +40,11 @@ export class AiCliChecksService {
   }
 
   /**
-   * 선택 엔진. 원본은 설정 JSON의 ai 섹션이고 settings_snapshot.content에 사본이 남는다(D-16).
-   * 설정 JSON 로더(settings 모듈)가 아직 없어, 가장 최근에 읽은 스냅샷의 ai.engine을 읽고
-   * 없거나 틀리면 기본값 CLAUDE를 쓴다. settings 모듈을 만들 때 그쪽 값으로 바꾼다.
+   * 선택 엔진. 원본은 설정 JSON의 ai 섹션이다(D-16). P1-03 설정 로더가 읽은 현재 설정(`SettingsService`)을 쓰고,
+   * 쓸 수 있는 설정이 없으면 기본값 CLAUDE(P1-10에서 스냅샷 직접 읽기를 바꿨다).
    */
-  private async readSelectedEngine(): Promise<AiEngineCode> {
-    const snapshot = await this.prisma.settingsSnapshot.findFirst({
-      orderBy: [{ lastLoadedAt: 'desc' }, { id: 'desc' }],
-      select: { content: true },
-    });
-    const content = snapshot?.content;
-    if (content && typeof content === 'object' && !Array.isArray(content)) {
-      const ai = (content as Record<string, unknown>).ai;
-      if (ai && typeof ai === 'object' && !Array.isArray(ai)) {
-        const engine = (ai as Record<string, unknown>).engine;
-        if (isAiEngineCode(engine)) return engine;
-      }
-    }
-    return DEFAULT_AI_ENGINE;
+  private readSelectedEngine(): AiEngineCode {
+    return this.settings.currentOrNull()?.ai.engine ?? DEFAULT_AI_ENGINE;
   }
 }
 
