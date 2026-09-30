@@ -2688,6 +2688,7 @@ export interface paths {
          * 비밀정보 입력·교체
          * @description 값을 키체인에 저장만 하고 돌려주지 않는다(204). 요청 본문은 어떤 로그(`call_log`, `user_action_log`)에도 남기지 않는다(키 이름만).
          *     커머스 키(COMMERCE_CLIENT_ID·COMMERCE_CLIENT_SECRET)를 바꾸면 토큰 캐시를 무효화한다.
+         *     Proposed(P1-07): 감사 기록은 `user_action_log` SETTING_CHANGED에 `detail = { secretKey }`만 남긴다. 허용 목록 밖 키는 본문을 보지 않고 404(저장하지 않음). 같은 값 덮어쓰기는 멱등.
          */
         put: operations["saveSecret"];
         post?: never;
@@ -2708,6 +2709,7 @@ export interface paths {
          * 커머스API 토큰·인증 상태 조회
          * @description 토큰 값은 절대 돌려주지 않는다. 실패 원인은 `call_log.error_code`(GW.AUTHN, GW.IP_NOT_ALLOWED, CLIENT_IP_NOT_ALLOWED 등)로 분류한다.
          *     (M2) IP 거부면 공인 IP가 바뀌었을 수 있다고 안내한다(F-SY-15·16). 설치본당 하나라 단수 리소스다.
+         *     Proposed(P1-07): 마지막 발급 호출은 `call_log`에서 target=COMMERCE_API이고 주소가 `/v1/oauth2/token`인 최신 행이다. 원인 분류표는 05-3 '커머스API 인증 실패 원인 분류'. 키체인을 열 수 없으면 503이 아니라 `secretsConfigured=false`로 준다.
          */
         get: operations["getAuthStatus"];
         put?: never;
@@ -2729,7 +2731,7 @@ export interface paths {
         put?: never;
         /**
          * 커머스API 토큰 다시 받기(인증 점검)
-         * @description 토큰 발급을 한 번 동기로 부른다(처리 리소스, §4). 결과는 `call_log`에 남고, 새 인증 상태를 돌려준다. 발급 실패는 SSE `auth.failed`로도 알린다.
+         * @description 토큰 발급을 한 번 동기로 부른다(처리 리소스, §4). 결과는 `call_log`에 남고, 새 인증 상태를 돌려준다. 발급 실패는 SSE `auth.failed`로도 알린다. Proposed(P1-07) — 캐시와 상관없이 부르고(이미 받는 중이면 그 결과를 같이 쓴다) 실패해도 만료 전 기존 토큰은 그대로 둔다. 발급 거절(4xx, 429 제외)은 COMMERCE_AUTH_FAILED(details.causeCategory·errorCode·httpStatus·traceId), 응답 없음·연결 오류·429·5xx는 EXTERNAL_API_ERROR(details.target·reason TIMEOUT|NETWORK_ERROR|RATE_LIMITED|SERVER_ERROR|INVALID_RESPONSE·httpStatus·traceId). 둘 다 auth.failed를 보낸다(키 없음 409·키체인 503은 호출 전이라 보내지 않는다).
          */
         post: operations["createAuthCheck"];
         delete?: never;
@@ -4372,7 +4374,7 @@ export interface components {
             /** @enum {string|null} */
             warningCode: "FX_FETCH_FAILED" | "FX_DIVERGENCE" | null;
         };
-        /** @description auth.failed — 커머스API 토큰 재발급까지 실패할 때 */
+        /** @description auth.failed — 커머스API 토큰 재발급까지 실패할 때. Proposed(P1-07) — 토큰 발급 호출이 실패했을 때(POST /auth-checks 포함), 401 GW.AUTHN 뒤 재발급한 토큰으로 다시 보낸 요청도 401일 때, 403 GW.IP_NOT_ALLOWED일 때 1건씩 */
         AuthFailedEvent: {
             /** @constant */
             target: "COMMERCE_API";
@@ -7550,7 +7552,7 @@ export interface components {
             value: string;
         };
         /**
-         * @description 커머스API 인증 실패 원인 분류(call_log.error_code로 계산). DORMANT_AUTH=휴면, SECRET_CHANGED=시크릿 변경, STORE_SUSPENDED=이용정지, IP_NOT_ALLOWED=IP 거부, UNKNOWN=모름
+         * @description 커머스API 인증 실패 원인 분류(call_log.error_code로 계산). DORMANT_AUTH=휴면, SECRET_CHANGED=시크릿 변경, STORE_SUSPENDED=이용정지, IP_NOT_ALLOWED=IP 거부, UNKNOWN=모름. 분류표(Proposed, P1-07)는 05-3 '커머스API 인증 실패 원인 분류'
          * @enum {string}
          */
         CommerceAuthCauseCategory: "DORMANT_AUTH" | "SECRET_CHANGED" | "STORE_SUSPENDED" | "IP_NOT_ALLOWED" | "UNKNOWN";

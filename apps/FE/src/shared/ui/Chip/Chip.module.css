@@ -36,3 +36,13 @@
   background: var(--color-surface-sunk);
   color: var(--color-idle);
 }
+
+.done {
+  background: var(--color-done-soft);
+  color: var(--color-done);
+}
+
+.failed {
+  background: var(--color-failed-soft);
+  color: var(--color-failed);
+}

@@ -1,0 +1,89 @@
+/* SCR-11 (2) 인증 상태(System.dc.html). */
+.muted {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.tokenRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.tokenLabel {
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.timeline {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.alert {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}
+
+.ok {
+  font: var(--type-caption);
+  color: var(--color-done);
+}
+
+/* 원인 안내 상자: 회색 바탕, radius 8, 안쪽 12, 사이 8 */
+.guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.guideTitle {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+/* 보드: dt는 ink 600, dd는 ink-muted(DefinitionList 기본과 반대) */
+.causes {
+  row-gap: var(--space-1);
+  column-gap: var(--space-4);
+}
+
+.causes dt {
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-ink);
+}
+
+.causes dd {
+  color: var(--color-ink-muted);
+}
+
+/* 지금 원인 줄: 글자를 실패 색으로(칩 '지금 원인'이 글로도 알린다) */
+.current > dt,
+.current > dd {
+  color: var(--color-failed);
+}
+
+.link {
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-accent);
+}
+
+.unknown {
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}

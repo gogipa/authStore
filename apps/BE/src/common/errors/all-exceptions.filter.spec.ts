@@ -6,6 +6,7 @@ import {
   NotFoundException,
   PayloadTooLargeException,
 } from '@nestjs/common';
+import { clearKnownSecrets, registerKnownSecret } from '../secrets/secret-mask.js';
 import { AllExceptionsFilter } from './all-exceptions.filter.js';
 import { ApiException } from './api.exception.js';
 import { formatTimestamp } from './error-response.js';
@@ -123,5 +124,47 @@ describe('formatTimestamp', () => {
     expect(formatTimestamp(new Date('2026-09-27T05:02:11.500Z'))).toMatch(
       /^2026-09-2\dT\d{2}:02:11[+-]\d{2}:\d{2}$/,
     );
+  });
+});
+
+describe('AllExceptionsFilter 비밀 가림', () => {
+  const filter = new AllExceptionsFilter();
+  const originalError = Logger.prototype.error;
+  afterAll(() => {
+    Logger.prototype.error = originalError;
+  });
+
+  it('응답 message·details·fieldErrors와 로그에서 알려진 비밀값을 지운다(규칙 5)', () => {
+    const secret = 'fake-secret-in-error-0001';
+    registerKnownSecret(secret);
+    const logged: unknown[] = [];
+    Logger.prototype.error = function (...args: unknown[]) {
+      logged.push(args);
+    };
+    try {
+      const { host, res } = mockHost('/api/v1/secrets/COMMERCE_CLIENT_SECRET');
+      filter.catch(
+        new ApiException('KEYCHAIN_UNAVAILABLE', {
+          message: `키체인 오류 ${secret}`,
+          details: {
+            note: `value=${secret}`,
+            client_secret: secret,
+            secretKey: 'COMMERCE_CLIENT_SECRET',
+          },
+          fieldErrors: [{ field: 'value', message: `bad ${secret}` }],
+        }),
+        host,
+      );
+      const body = JSON.stringify(res.body);
+      expect(body).not.toContain(secret);
+      expect(body).toContain('COMMERCE_CLIENT_SECRET');
+      expect(
+        JSON.stringify(logged, (_k, v: unknown) => (v instanceof Error ? v.message : v)),
+      ).not.toContain(secret);
+      expect(logged).toHaveLength(1);
+    } finally {
+      Logger.prototype.error = originalError;
+      clearKnownSecrets();
+    }
   });
 });

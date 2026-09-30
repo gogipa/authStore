@@ -1,10 +1,17 @@
-import { IsInt, IsString, Min } from 'class-validator';
+import { IsInt, IsString, Length, Min } from 'class-validator';
 import { ApiException } from './api.exception.js';
-import { AppValidationPipe } from './app-validation.pipe.js';
+import { AppValidationPipe, OmitRejectedValue } from './app-validation.pipe.js';
 
 class BodyDto {
   @IsString()
   name!: string;
+}
+
+@OmitRejectedValue()
+class SecretBodyDto {
+  @IsString()
+  @Length(1, 8)
+  value!: string;
 }
 
 class QueryDto {
@@ -48,5 +55,20 @@ describe('AppValidationPipe', () => {
   it('통과하면 DTO 인스턴스로 바꾼다(transform)', async () => {
     const out = await pipe.transform({ name: 'ok' }, { type: 'body', metatype: BodyDto });
     expect(out).toBeInstanceOf(BodyDto);
+  });
+  it('@OmitRejectedValue() DTO의 오류에는 rejectedValue가 없다(비밀값, 정의 밖 필드 포함)', async () => {
+    for (const body of [
+      { value: 'too-long-secret' },
+      { value: '' },
+      { value: 'ok', extra: 'x-secret' },
+    ]) {
+      const err = (await pipe
+        .transform(body, { type: 'body', metatype: SecretBodyDto })
+        .catch((e: unknown) => e)) as ApiException;
+      expect(err.code).toBe('VALIDATION_FAILED');
+      expect(err.fieldErrors?.length).toBeGreaterThan(0);
+      for (const fe of err.fieldErrors ?? []) expect(fe).not.toHaveProperty('rejectedValue');
+      expect(JSON.stringify(err.fieldErrors)).not.toMatch(/too-long-secret|x-secret/);
+    }
   });
 });

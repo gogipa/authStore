@@ -1,0 +1,12 @@
+{
+  "status": 403,
+  "headers": {
+    "GNCP-GW-Trace-ID": "fixture-trace-403-suspended"
+  },
+  "body": {
+    "code": "GW.SELLER_SUSPENDED",
+    "message": "이용이 정지된 판매자입니다.",
+    "timestamp": "2026-09-28T09:00:00.000+09:00",
+    "traceId": "fixture-trace-403-suspended"
+  }
+}

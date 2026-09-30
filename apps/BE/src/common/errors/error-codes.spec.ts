@@ -171,6 +171,35 @@ describe('error-codes', () => {
     }
   });
 
+  it('P1-07 비밀정보·인증 코드는 05-3 §5.1 문구·상태 그대로다', () => {
+    const expected: Record<string, { status: number; message: string }> = {
+      SECRET_NOT_CONFIGURED: {
+        status: 409,
+        message: '{키 이름}이 아직 없습니다. 시스템 상태 화면에서 넣어 주세요.',
+      },
+      SECRET_KEY_UNKNOWN: { status: 404, message: '알 수 없는 키 이름입니다.' },
+      KEYCHAIN_UNAVAILABLE: {
+        status: 503,
+        message: 'macOS 키체인을 열 수 없습니다. 키체인 접근을 허용한 뒤 다시 해 주세요.',
+      },
+      COMMERCE_AUTH_FAILED: {
+        status: 502,
+        message:
+          '네이버 커머스API 인증에 실패했습니다({원인}). 시스템 상태 화면의 안내를 따라 주세요.',
+      },
+      EXTERNAL_API_ERROR: {
+        status: 502,
+        message: '{대상} 응답을 받지 못했습니다({사유}). 잠시 뒤 다시 해 주세요.',
+      },
+    };
+    for (const [code, def] of Object.entries(expected)) {
+      expect(ERROR_CODES[code as keyof typeof ERROR_CODES]).toEqual(def);
+    }
+    expect(
+      formatErrorMessage('SECRET_NOT_CONFIGURED', { '키 이름': '커머스API client_id 키' }),
+    ).toBe('커머스API client_id 키가 아직 없습니다. 시스템 상태 화면에서 넣어 주세요.');
+  });
+
   it("조사 '을/를'·'은/는'도 받침에 맞춘다(한글이 아니면 문구 그대로)", () => {
     expect(formatErrorMessage('GATE_NOT_PASSED', { 게이트: 'G3 썸네일 선택' })).toBe(
       'G3 썸네일 선택을 먼저 통과해 주세요.',

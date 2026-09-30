@@ -1,0 +1,12 @@
+{
+  "status": 503,
+  "headers": {
+    "GNCP-GW-Trace-ID": "fixture-trace-503"
+  },
+  "body": {
+    "code": "GW.SERVICE_UNAVAILABLE",
+    "message": "일시적으로 서비스를 이용할 수 없습니다.",
+    "timestamp": "2026-09-28T09:00:00.000+09:00",
+    "traceId": "fixture-trace-503"
+  }
+}

@@ -11,6 +11,8 @@ export interface PanelProps {
   actions?: ReactNode;
   /** 제목이 없을 때의 이름. */
   'aria-label'?: string;
+  /** 패널 id(주소 조각 `#keys`처럼 다른 화면·안내에서 바로 가려고). */
+  id?: string;
   className?: string;
   children: ReactNode;
 }
@@ -22,12 +24,14 @@ export function Panel({
   actions,
   className,
   children,
+  id,
   'aria-label': ariaLabel,
 }: PanelProps) {
   const titleId = `panel-title-${useId()}`;
   const hasHead = title !== undefined || actions !== undefined || caption !== undefined;
   return (
     <section
+      id={id}
       className={cx(styles.panel, className)}
       aria-labelledby={title !== undefined ? titleId : undefined}
       aria-label={title === undefined ? ariaLabel : undefined}

@@ -1,0 +1,19 @@
+{
+  "status": 400,
+  "headers": {
+    "GNCP-GW-Trace-ID": "fixture-trace-api-400"
+  },
+  "body": {
+    "code": "BadRequest",
+    "message": "요청 값이 올바르지 않습니다.",
+    "timestamp": "2026-09-28T09:00:00.000+09:00",
+    "traceId": "fixture-trace-api-400",
+    "invalidInputs": [
+      {
+        "name": "originProduct.name",
+        "type": "NotBlank",
+        "message": "상품명을 입력해 주세요."
+      }
+    ]
+  }
+}

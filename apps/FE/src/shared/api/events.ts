@@ -79,6 +79,7 @@ export type EventInvalidations = {
  * - P1-06: `continuous-run.stopped`·`gate.passed`·`gate.invalidated` → 그 후보의 게이트 목록·상세·단계 레일, 후보 목록·
  *   이어서 할 곳(+ 멈춘 묶음 `getContinuousRun`). 묶음 안 실행의 `step-run.status-changed`(stepChainId)는 그 묶음도
  *   다시 읽는다(연속 실행 띠의 진행).
+ * - P1-07: `auth.failed` → 커머스API 인증 상태(`getAuthStatus`). 재발급까지 실패하면 원인 안내가 바로 바뀐다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -130,6 +131,7 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
   ],
   'gate.passed': ({ candidateId }) => gateKeys(candidateId),
   'gate.invalidated': ({ candidateId }) => gateKeys(candidateId),
+  'auth.failed': () => [qk('system', 'getAuthStatus')],
 };
 
 export const PROGRESS_EVENTS_URL = `${API_BASE_URL}/events`;

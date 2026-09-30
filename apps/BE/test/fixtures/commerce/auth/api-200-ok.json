@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "headers": {
+    "GNCP-GW-Trace-ID": "fixture-trace-api-200"
+  },
+  "body": {
+    "ok": true
+  }
+}

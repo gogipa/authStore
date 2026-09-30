@@ -7,6 +7,10 @@ export interface DefinitionItem {
   key?: Key;
   term: ReactNode;
   detail: ReactNode;
+  /** 이 줄(dt·dd 묶음)에 붙일 클래스(예: 강조한 줄). 묶음은 `display: contents`라 dt·dd 쪽을 꾸민다. */
+  className?: string;
+  /** 이 줄에 붙일 data 속성 값(테스트·상태 표시, 예: 'current') */
+  state?: string;
 }
 
 export interface DefinitionListProps {
@@ -23,7 +27,11 @@ export function DefinitionList({ items, labelWidth = 76, className }: Definition
   return (
     <dl className={cx(styles.list, className)} style={style}>
       {items.map((item, index) => (
-        <div key={item.key ?? index} className={styles.row}>
+        <div
+          key={item.key ?? index}
+          className={cx(styles.row, item.className)}
+          data-state={item.state}
+        >
           <dt className={styles.term}>{item.term}</dt>
           <dd className={styles.detail}>{item.detail}</dd>
         </div>

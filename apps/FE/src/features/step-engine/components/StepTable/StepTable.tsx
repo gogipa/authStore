@@ -1,5 +1,6 @@
 import { Fragment, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
+import { isCommerceKeyErrorCode, SystemKeyLink } from '@/features/system';
 import { isApiRequestError } from '@/shared/api/errors';
 import { formatKstTime } from '@/shared/lib/format';
 import { stepPath, type StepCode } from '@/shared/lib/steps';
@@ -235,6 +236,8 @@ function StepNotes({
             {run.failureKind ? `${FAILURE_KIND_LABEL[run.failureKind]} · ` : ''}
             {run.errorMessage ?? '실행하지 못했습니다.'}
           </span>
+          {/* 커머스API 인증 실패·키 없음(⑧·⑨·P1-08)은 시스템 상태 '키 입력'으로 잇는다(P1-07 규칙 14) */}
+          {isCommerceKeyErrorCode(run.errorCode) ? <SystemKeyLink /> : null}
         </FullRow>
       ) : null}
       {item.status === 'RERUN_REQUIRED' ? (

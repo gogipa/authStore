@@ -10,6 +10,7 @@ import {
   PayloadTooLargeException,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { redactSecrets, scrubKnownSecrets } from '../secrets/secret-mask.js';
 import { ApiException } from './api.exception.js';
 import { ERROR_CODES, type ErrorCode } from './error-codes.js';
 import { buildErrorResponse, type ErrorResponse } from './error-response.js';
@@ -21,6 +22,7 @@ import { buildErrorResponse, type ErrorResponse } from './error-response.js';
  * - JSON 파싱 실패(body-parser → 400): MALFORMED_REQUEST
  * - 본문 크기 초과: PAYLOAD_TOO_LARGE
  * - 그 밖: INTERNAL_ERROR(내부 메시지는 로그에만, 응답에는 05-3 문구만)
+ * 응답 message·details·fieldErrors와 로그에서 알려진 비밀값을 지운다(F-BS-25, secret-mask.ts).
  */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -33,8 +35,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const body = this.toBody(exception, req.originalUrl ?? req.url);
     if (body.status >= 500) {
       this.logger.error(
-        { err: exception, code: body.code, path: body.path },
-        exception instanceof Error ? exception.message : 'unknown error',
+        redactSecrets({ err: exception, code: body.code, path: body.path }),
+        scrubKnownSecrets(exception instanceof Error ? exception.message : 'unknown error'),
       );
     }
     if (exception instanceof ApiException && exception.headers) {
@@ -47,14 +49,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof ApiException) {
       return buildErrorResponse({
         code: exception.code,
-        message: exception.message,
+        message: scrubKnownSecrets(exception.message),
         status: exception.getStatus(),
-        path,
-        fieldErrors: exception.fieldErrors,
-        details: exception.details,
+        path: scrubKnownSecrets(path),
+        fieldErrors: exception.fieldErrors && redactSecrets(exception.fieldErrors),
+        details: exception.details && redactSecrets(exception.details),
       });
     }
-    return fromCode(mapHttpException(exception), path);
+    return fromCode(mapHttpException(exception), scrubKnownSecrets(path));
   }
 }
 

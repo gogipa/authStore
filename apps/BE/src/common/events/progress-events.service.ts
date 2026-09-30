@@ -3,6 +3,7 @@ import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import { filter, type Observable, Subject } from 'rxjs';
 import { AppConfigService } from '../config/app-config.service.js';
 import { REPO_ROOT } from '../config/paths.js';
+import { redactSecrets } from '../secrets/secret-mask.js';
 import type { ProgressEventDataMap, ProgressEventName } from './progress-event.types.js';
 
 /** 발행한 이벤트 한 건(SSE 프레임 전 단계) */
@@ -44,7 +45,8 @@ export class ProgressEventsService implements OnModuleDestroy {
     data: ProgressEventDataMap[N],
     options: PublishOptions = {},
   ): PublishedProgressEvent<N> {
-    const { value, redacted } = redactLocalPaths(data, this.localRoots);
+    // 비밀값(알려진 비밀·비밀 이름의 키)은 SSE에 싣지 않는다(05-1 §1.2, P1-07)
+    const { value, redacted } = redactLocalPaths(redactSecrets(data), this.localRoots);
     if (redacted) {
       this.logger.warn(`로컬 경로를 가리고 발행했습니다: ${name}`);
     }

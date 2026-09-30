@@ -1,0 +1,19 @@
+{
+  "status": 400,
+  "headers": {
+    "GNCP-GW-Trace-ID": "fixture-trace-400-invalid-client"
+  },
+  "body": {
+    "code": "GW.INVALID_CLIENT",
+    "message": "client_secret_sign 값이 올바르지 않습니다.",
+    "timestamp": "2026-09-28T09:00:00.000+09:00",
+    "traceId": "fixture-trace-400-invalid-client",
+    "invalidInputs": [
+      {
+        "name": "client_secret_sign",
+        "type": "Invalid",
+        "message": "서명이 올바르지 않습니다."
+      }
+    ]
+  }
+}

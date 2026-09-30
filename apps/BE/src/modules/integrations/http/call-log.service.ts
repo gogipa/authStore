@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { CallLog, Prisma } from '../../../generated/prisma/client.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { scrubKnownSecrets } from '../../../common/secrets/secret-mask.js';
 import { toKstDateValue } from '../../../common/time/kst.js';
 import type { CallLogTarget } from './external-targets.js';
 import { maskUrl } from './url-mask.js';
@@ -46,7 +47,8 @@ export class CallLogService {
         target: input.target,
         httpMethod: input.httpMethod ? input.httpMethod.toUpperCase().slice(0, 10) : null,
         host: input.host ? input.host.slice(0, 255) : null,
-        urlMasked: input.url ? maskUrl(input.url) : null,
+        // 이름으로 가린 뒤(maskUrl) 알려진 비밀값이 경로·다른 쿼리에 섞였으면 한 번 더 지운다(P1-07)
+        urlMasked: input.url ? scrubKnownSecrets(maskUrl(input.url)) : null,
         candidateId: input.candidateId ?? null,
         stepRunId: input.stepRunId ?? null,
       },
@@ -58,8 +60,8 @@ export class CallLogService {
     const data: Prisma.CallLogUpdateManyMutationInput = {
       httpStatus: result.httpStatus ?? null,
       succeeded: result.succeeded,
-      errorCode: result.errorCode ? result.errorCode.slice(0, 100) : null,
-      errorMessage: result.errorMessage ?? null,
+      errorCode: result.errorCode ? scrubKnownSecrets(result.errorCode).slice(0, 100) : null,
+      errorMessage: result.errorMessage ? scrubKnownSecrets(result.errorMessage) : null,
       durationMs: Math.max(0, Math.round(result.durationMs)),
       traceId: result.traceId ? result.traceId.slice(0, 100) : null,
     };

@@ -526,3 +526,42 @@ describe('StepTable — 연속 실행·게이트(P1-06)', () => {
     expect(screen.getByText('실행한 단계: ② 소싱 → ③ 판정')).toBeInTheDocument();
   });
 });
+
+describe('StepTable — 커머스API 인증 실패 안내(P1-07 규칙 14)', () => {
+  it('실패 사유가 COMMERCE_AUTH_FAILED·SECRET_NOT_CONFIGURED면 시스템 상태 키 입력으로 잇는 링크를 붙인다', async () => {
+    const api = stub();
+    const failed = (id: number, stepCode: 'UPLOAD' | 'TAGS', errorCode: string | null) =>
+      stepRunSummary({
+        id,
+        stepCode,
+        status: 'FAILED',
+        failureKind: 'EXTERNAL_API',
+        errorCode,
+        errorMessage: `${stepCode} 실패 문구`,
+      });
+    api.on(`GET /candidates/${ID}/steps`, () =>
+      jsonResponse(
+        stepRail({
+          SOURCING: { status: 'COMPLETED' },
+          UPLOAD: {
+            status: 'FAILED',
+            currentStepRunId: 107,
+            currentRun: failed(107, 'UPLOAD', 'COMMERCE_AUTH_FAILED'),
+          },
+          TAGS: {
+            status: 'FAILED',
+            currentStepRunId: 106,
+            currentRun: failed(106, 'TAGS', 'AI_ENGINE_UNAVAILABLE'),
+          },
+        }),
+      ),
+    );
+    await renderTable();
+    const uploadNote = (await screen.findByText(/UPLOAD 실패 문구/)).closest('td')!;
+    expect(
+      within(uploadNote).getByRole('link', { name: '시스템 상태에서 키 확인' }),
+    ).toHaveAttribute('href', '/system#keys');
+    const tagsNote = screen.getByText(/TAGS 실패 문구/).closest('td')!;
+    expect(within(tagsNote).queryByRole('link', { name: '시스템 상태에서 키 확인' })).toBeNull();
+  });
+});

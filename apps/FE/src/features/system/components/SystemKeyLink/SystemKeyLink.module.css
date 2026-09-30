@@ -1,0 +1,5 @@
+.link {
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-accent);
+  white-space: nowrap;
+}

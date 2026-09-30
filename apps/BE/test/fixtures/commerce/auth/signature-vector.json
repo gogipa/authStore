@@ -1,0 +1,7 @@
+{
+  "clientId": "fake-client-id-for-tests",
+  "clientSecret": "$2a$04$FakeSaltForUnitTests0e",
+  "timestamp": 1790000000000,
+  "expectedSign": "JDJhJDA0JEZha2VTYWx0Rm9yVW5pdFRlc3RzMGVGL2xlTzZkZVRObVEzYWZpaXM0WUhBMms3cHQxQWtD",
+  "source": "Python 3.9.6 + bcrypt 4.2.1: base64.standard_b64encode(bcrypt.hashpw(b'fake-client-id-for-tests_1790000000000', b'$2a$04$FakeSaltForUnitTests0e')) — 2026-09-30, 앱 코드(bcryptjs)와 따로 계산"
+}

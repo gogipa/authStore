@@ -1,0 +1,12 @@
+{
+  "status": 401,
+  "headers": {
+    "GNCP-GW-Trace-ID": "fixture-trace-401-authn"
+  },
+  "body": {
+    "code": "GW.AUTHN",
+    "message": "요청을 처리하기 위한 인증 정보가 올바르지 않습니다.",
+    "timestamp": "2026-09-28T09:00:00.000+09:00",
+    "traceId": "fixture-trace-401-authn"
+  }
+}

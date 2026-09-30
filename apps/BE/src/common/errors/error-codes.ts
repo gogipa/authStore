@@ -44,6 +44,24 @@ export const ERROR_CODES = {
     status: 500,
     message: '허용하지 않은 외부 요청이라 보내지 않았습니다.',
   },
+  // ── 비밀정보·커머스API 인증(P1-07, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 필요한 비밀 키가 키체인에 없음(details.secretKeys, {키 이름}은 SECRET_KEY_LABEL — Proposed) */
+  SECRET_NOT_CONFIGURED: {
+    status: 409,
+    message: '{키 이름}이 아직 없습니다. 시스템 상태 화면에서 넣어 주세요.',
+  },
+  /** 05-3 §5.1(system): 허용 목록 밖 secretKey */
+  SECRET_KEY_UNKNOWN: { status: 404, message: '알 수 없는 키 이름입니다.' },
+  /** 05-3 §5.1: 키체인 읽기·쓰기 실패 */
+  KEYCHAIN_UNAVAILABLE: {
+    status: 503,
+    message: 'macOS 키체인을 열 수 없습니다. 키체인 접근을 허용한 뒤 다시 해 주세요.',
+  },
+  /** 05-3 §5.1: 토큰 발급 실패(details.causeCategory·errorCode·httpStatus·traceId) */
+  COMMERCE_AUTH_FAILED: {
+    status: 502,
+    message: '네이버 커머스API 인증에 실패했습니다({원인}). 시스템 상태 화면의 안내를 따라 주세요.',
+  },
   /** 05-3 §5.1: 이미지 id 없음 */
   IMAGE_ASSET_NOT_FOUND: { status: 404, message: '이미지를 찾을 수 없습니다.' },
   /** 05-3 §5.1: DB 행은 있으나 파일 없음 */

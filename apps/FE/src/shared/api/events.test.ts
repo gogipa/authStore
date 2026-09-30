@@ -43,7 +43,7 @@ describe('진행 알림 이름', () => {
     >();
   });
 
-  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 후보 이벤트 2개(P1-04), 단계 실행(P1-05), 연속 실행·게이트(P1-06)', () => {
+  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 후보 이벤트 2개(P1-04), 단계 실행(P1-05), 연속 실행·게이트(P1-06), auth.failed(P1-07)', () => {
     expect(Object.keys(EVENT_INVALIDATIONS)).toEqual([
       'call-usage.changed',
       'settings.reloaded',
@@ -53,7 +53,17 @@ describe('진행 알림 이름', () => {
       'continuous-run.stopped',
       'gate.passed',
       'gate.invalidated',
+      'auth.failed',
     ]);
+    // 재발급까지 실패하면 인증 상태(원인 안내)를 다시 읽는다(P1-07)
+    expect(
+      EVENT_INVALIDATIONS['auth.failed']?.({
+        target: 'COMMERCE_API',
+        errorCode: 'GW.IP_NOT_ALLOWED',
+        causeCategory: 'IP_NOT_ALLOWED',
+        occurredAt: '2026-09-28T09:00:00+09:00',
+      }),
+    ).toEqual([['system', 'getAuthStatus']]);
     expect(EVENT_INVALIDATIONS['call-usage.changed']?.(callUsageChanged())).toEqual([
       ['integrations', 'getCallUsage'],
     ]);

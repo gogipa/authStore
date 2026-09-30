@@ -29,6 +29,11 @@ export interface CreateTestAppOptions {
   beforeInit?: (prisma: PrismaService) => Promise<void>;
   /** AppModule 옆에 더 붙일 테스트 모듈(예: 가짜 실행기 FakeStepRunnersModule, P1-05) */
   imports?: ModuleMetadata['imports'];
+  /**
+   * 더 바꿔 끼울 제공자(예: SECRET_STORE → 메모리 저장소, LOG_DESTINATION → 메모리 스트림, P1-07).
+   * 기본 가짜(HTTP_FETCH·CLOCK·SSE 주기)보다 뒤에 적용한다.
+   */
+  overrides?: readonly { provide: unknown; useValue: unknown }[];
 }
 
 /**
@@ -38,7 +43,7 @@ export interface CreateTestAppOptions {
 export async function createTestApp(options: CreateTestAppOptions = {}): Promise<TestApp> {
   const clock = new FakeClock(TEST_START_MS);
   const fetch = new FakeFetch(clock);
-  const moduleRef = await Test.createTestingModule({
+  let builder = Test.createTestingModule({
     imports: [AppModule, ...(options.imports ?? [])],
   })
     .overrideProvider(HTTP_FETCH)
@@ -46,8 +51,11 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
     .overrideProvider(CLOCK)
     .useValue(clock)
     .overrideProvider(SSE_HEARTBEAT_INTERVAL_MS)
-    .useValue(0)
-    .compile();
+    .useValue(0);
+  for (const o of options.overrides ?? []) {
+    builder = builder.overrideProvider(o.provide).useValue(o.useValue);
+  }
+  const moduleRef = await builder.compile();
   if (options.beforeInit) await options.beforeInit(moduleRef.get(PrismaService));
   const app = moduleRef.createNestApplication<NestExpressApplication>({ bufferLogs: true });
   await configureApp(app);
