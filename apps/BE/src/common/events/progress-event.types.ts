@@ -83,6 +83,7 @@ export type CallLogTargetCode =
   | 'COMMERCE_API'
   | 'RAKUTEN_API'
   | 'RAKUTEN_PAGE'
+  | 'RAKUTEN_IMAGE'
   | 'DATALAB'
   | 'FX_KOREAEXIM'
   | 'FX_CUSTOMS'

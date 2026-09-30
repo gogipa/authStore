@@ -1,6 +1,6 @@
 // 문서 원본(docs/dev/04_데이터베이스)과 앱 사본(apps/BE/prisma)이 어긋나지 않는지 검사한다.
 //  1) 마이그레이션 SQL: 아래 MIGRATIONS 표의 문서 파일 ↔ prisma/migrations/<폴더>/migration.sql 바이트 그대로
-//     (V1 04-4_V1__init.sql, V2부터 04-6_V2__….sql — P2-01 Proposed). 표에 없는 마이그레이션 폴더가 있어도 실패한다
+//     (V1 04-4_V1__init.sql, V2부터 04-6_V2__….sql·04-7_V3__….sql — P2-01·P3-01 Proposed). 표에 없는 마이그레이션 폴더가 있어도 실패한다
 //  2) 04-3_schema.prisma ↔ prisma/schema.prisma : generator client 블록의 허용 키(output)만 다를 수 있다
 // 사용: pnpm --filter @autostore/be db:check-sync   (어긋나면 exit 1)
 import { createHash } from 'node:crypto';
@@ -22,6 +22,7 @@ const ALLOWED_GENERATOR_KEYS = new Set(['output']);
 const MIGRATIONS = [
   { dir: '20260927000000_v1_init', doc: '04-4_V1__init.sql' },
   { dir: '20260930000000_keyword_abort_reasons', doc: '04-6_V2__keyword_abort_reasons.sql' },
+  { dir: '20261001000000_call_log_rakuten_image', doc: '04-7_V3__call_log_rakuten_image.sql' },
 ];
 const MIGRATIONS_DIR = join(BE_ROOT, 'prisma', 'migrations');
 

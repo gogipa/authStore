@@ -1,0 +1,10 @@
+{
+  "note": "⑤ 썸네일 e2e·단위 테스트용 설정 조각(P3-01). 기본 템플릿에 끼워 쓴다: thumbnail 섹션(골격 = 기본 템플릿과 같은 PRD §8.4 골격) + 차단어 추가분(safety.personBlockWords 뒤에 더한다 — 내장 목록은 그대로 둔다). 추가분은 실존 인물이 아닌 테스트용 가상 이름이다.",
+  "thumbnail": {
+    "promptTemplate": "Photorealistic studio product photo, square 1:1, {resolution} pixels.\nA fictional young Korean male model with K-pop idol styling — NOT resembling any real person or celebrity —\nholds the exact shoe from the reference images toward the camera.\nThe shoe is the hero: it fills at least 70% of the frame, centered, in sharp focus.\nReproduce the shoe exactly as in the references: same logo, stitching, colors, materials, sole pattern, laces and eyelets.\nDo not add, remove, or alter any logo or text. One shoe (or one pair) only. One person only.\nModel framing: {face_option}.\nClean light-gray background, soft studio lighting. No text, no watermark, no price, no graphics.",
+    "faceOptionDefault": "FULL_FACE",
+    "candidateCount": 2,
+    "resolutionPx": 2048
+  },
+  "personBlockWordsExtra": ["가상아이돌테스트", "Fixture Star"]
+}

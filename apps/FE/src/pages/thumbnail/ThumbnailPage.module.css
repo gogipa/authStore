@@ -1,0 +1,228 @@
+/*
+ * SCR-05 ⑤ 썸네일(Thumbnail.dc.html, P3-01). ⑤ 구역은 h2(20px) + 상태 줄, 아래 '원본 이미지' 패널(6칸 격자 — 카드 안
+ * 84px 그림 칸 · '참조 전용' 칩 · 번호·해상도 · '레퍼런스' 체크, 고른 카드는 accent 2px 테두리 + accent-soft), 그 아래
+ * [왼쪽 280px '생성 옵션' | (P3-02) 썸네일 후보]. 색·크기는 토큰 변수만(라이트 테마).
+ */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.stepHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.stepTitle {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+/* 화면 ID 칩(SCR-03·04와 같은 모양 — 보드에는 없다, P2-05 Proposed를 따른다) */
+.screenId {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunk);
+  color: var(--color-ink);
+  font: var(--type-id);
+}
+
+.bar {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.reason {
+  align-self: flex-end;
+}
+
+.placeholder {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+.note {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+/* ── 원본 이미지 ── */
+.noPerson {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.imageGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.imageCard,
+.imageCardSelected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  box-sizing: border-box;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.imageCardSelected {
+  padding: calc(var(--space-2) - 1px);
+  border: 2px solid var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.imageFrame {
+  position: relative;
+  height: 84px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunk);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.usageChip {
+  position: absolute;
+  left: var(--space-1);
+  bottom: var(--space-1);
+}
+
+.imageMeta {
+  font: var(--type-id);
+  color: var(--color-ink-muted);
+}
+
+/* ── 아래 칸: 생성 옵션(280px) | 썸네일 후보(P3-02) ── */
+.columns {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.optionsPanel {
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.faceGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.segmented {
+  display: flex;
+  height: 32px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.segment {
+  display: flex;
+  flex-grow: 1;
+}
+
+.segment + .segment .segmentLabel {
+  border-left: 1px solid var(--color-line-strong);
+}
+
+.segmentLabel,
+.segmentLabelChecked {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-2);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: var(--type-body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segmentLabelChecked {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font: var(--type-body-strong);
+}
+
+.segment input:focus-visible + .segmentLabel,
+.segment input:focus-visible + .segmentLabelChecked {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.promptBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.promptPreview {
+  margin: 0;
+  max-height: 200px;
+  overflow: auto;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunk);
+  color: var(--color-ink-muted);
+  font: var(--type-caption);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.personCheck {
+  display: flex;
+}

@@ -300,6 +300,24 @@ describe('error-codes', () => {
     );
   });
 
+  it('P3-01 썸네일 코드 3개는 05-3 §5.1 문구·상태 그대로다', () => {
+    expect(ERROR_CODES.NO_PERSON_CONFIRMATION_REQUIRED).toEqual({
+      status: 422,
+      message: "'사람·얼굴 없음'을 체크해 주세요.",
+    });
+    expect(ERROR_CODES.IMAGE_COUNT_INVALID).toEqual({
+      status: 422,
+      message: '고른 이미지 수가 맞지 않습니다(레퍼런스 1~3장, 추가이미지 9장까지).',
+    });
+    expect(ERROR_CODES.IMAGE_NOT_ALLOWED).toEqual({
+      status: 422,
+      message: '이 이미지는 여기에 쓸 수 없습니다({이유}).',
+    });
+    expect(formatErrorMessage('IMAGE_NOT_ALLOWED', { 이유: '다른 상품의 원본' })).toBe(
+      '이 이미지는 여기에 쓸 수 없습니다(다른 상품의 원본).',
+    );
+  });
+
   it('formatErrorMessage는 {…} 자리를 채우고 모르는 자리는 그대로 둔다', () => {
     expect(formatErrorMessage('DAILY_LIMIT_REACHED', { 대상: '라쿠텐 상품 페이지', n: 110 })).toBe(
       '오늘 라쿠텐 상품 페이지 조회 한도(110건)를 다 썼습니다. 내일 0시(한국 시간)에 다시 됩니다.',

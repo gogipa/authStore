@@ -369,6 +369,29 @@ export interface CategorySettings {
   leafMapping: CategoryLeafMapping[];
 }
 
+/** 얼굴 노출 수준(ERD `ck_gen_face`, 05-2 ThumbnailFaceOption, IM-07). 기본 FULL_FACE(①-4) */
+export const THUMBNAIL_FACE_OPTIONS = ['FULL_FACE', 'CHIN_CROP', 'HANDS_UPPER_BODY'] as const;
+export type ThumbnailFaceOption = (typeof THUMBNAIL_FACE_OPTIONS)[number];
+
+/**
+ * ⑤ 썸네일(P3-01 — ERD `generation_run` '⑤ 입력 기록 규칙', PRD §8.4 '기본 프롬프트 골격', 06-4 §2.2).
+ * `promptTemplate`·`faceOptionDefault`만 ⑤ 시작 조건(입력 지문)이다. 후보 수·해상도는 P3-01 Proposed 키 이름이다.
+ * 실존 인물 차단어 추가분은 안전 목록 `safety.personBlockWords`(내장 목록은 뺄 수 없다)를 그대로 쓴다.
+ */
+export interface ThumbnailSettings {
+  /**
+   * 영어 프롬프트 골격(이미지 모델에 영어가 안정적 — PRD §8.4). `{resolution}`(해상도 px)과 `{face_option}`(얼굴 노출 문장)을
+   * 반드시 한 번 이상 담는다(스키마 pattern). 오너 조정 문구는 골격 뒤에 붙는다
+   */
+  promptTemplate: string;
+  /** 얼굴 노출 기본값(F-TH-11). 기본 FULL_FACE */
+  faceOptionDefault: ThumbnailFaceOption;
+  /** 생성 후보 수 N(IM-03 기본 2, P3-02가 쓴다). 1~4 */
+  candidateCount: number;
+  /** 생성 해상도 px(PRD §16 ③ 2K = 2048, M0 S1에서 확정). 512~4096 */
+  resolutionPx: number;
+}
+
 /** 설정 JSON 전체(schemaVersion "1") */
 export interface AppSettings {
   schemaVersion: SettingsSchemaVersion;
@@ -379,6 +402,8 @@ export interface AppSettings {
   safety: SafetySettings;
   /** P2-06: ④ 카테고리 매핑표 */
   category: CategorySettings;
+  /** P3-01: ⑤ 썸네일 프롬프트 골격·얼굴 노출 기본값·후보 수·해상도 */
+  thumbnail: ThumbnailSettings;
   notice: NoticeSettings;
   /** P1-09: 발송 택배사 코드 목록(GET /dispatch-delivery-companies) */
   delivery: DeliverySettings;

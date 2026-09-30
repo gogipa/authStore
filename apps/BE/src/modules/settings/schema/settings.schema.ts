@@ -15,6 +15,7 @@ import {
   PRICE_RULE_METHODS,
   type SettingsSchemaVersion,
   type SizeRangeMm,
+  THUMBNAIL_FACE_OPTIONS,
   VAT_MODES,
 } from './settings.types.js';
 
@@ -120,6 +121,13 @@ const categoryLeafMapping: JSONSchemaType<CategoryLeafMapping> = {
   },
 };
 
+/**
+ * ⑤ 프롬프트 골격(P3-01 Proposed): `{resolution}`과 `{face_option}` 자리를 둘 다 담아야 한다(빠지면 해상도·얼굴 노출 옵션이
+ * 프롬프트에 들어가지 않는다). 여러 줄 글이라 `[\s\S]`로 본다
+ */
+export const THUMBNAIL_PROMPT_TEMPLATE_PATTERN =
+  '^(?=[\\s\\S]*\\{resolution\\})(?=[\\s\\S]*\\{face_option\\})[\\s\\S]+$';
+
 const schema: JSONSchemaType<AppSettings> = {
   type: 'object',
   additionalProperties: false,
@@ -131,6 +139,7 @@ const schema: JSONSchemaType<AppSettings> = {
     'keywords',
     'safety',
     'category',
+    'thumbnail',
     'notice',
     'delivery',
     'ai',
@@ -388,6 +397,22 @@ const schema: JSONSchemaType<AppSettings> = {
       required: ['leafMapping'],
       properties: {
         leafMapping: { type: 'array', items: categoryLeafMapping, maxItems: 1000 },
+      },
+    },
+    thumbnail: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['promptTemplate', 'faceOptionDefault', 'candidateCount', 'resolutionPx'],
+      properties: {
+        promptTemplate: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 4000,
+          pattern: THUMBNAIL_PROMPT_TEMPLATE_PATTERN,
+        },
+        faceOptionDefault: { type: 'string', enum: THUMBNAIL_FACE_OPTIONS },
+        candidateCount: { type: 'integer', minimum: 1, maximum: 4 },
+        resolutionPx: { type: 'integer', minimum: 512, maximum: 4096 },
       },
     },
     notice: {

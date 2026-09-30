@@ -4317,7 +4317,7 @@ export interface components {
              * @description call_log.target
              * @enum {string}
              */
-            target: "COMMERCE_API" | "RAKUTEN_API" | "RAKUTEN_PAGE" | "DATALAB" | "FX_KOREAEXIM" | "FX_CUSTOMS" | "NOTICE_MONITOR" | "UPDATE_CHECK" | "AI_CLAUDE_CLI" | "AI_AGY_CLI" | "AI_CODEX_CLI" | "AI_GEMINI_API" | "AI_OPENAI_API";
+            target: "COMMERCE_API" | "RAKUTEN_API" | "RAKUTEN_PAGE" | "RAKUTEN_IMAGE" | "DATALAB" | "FX_KOREAEXIM" | "FX_CUSTOMS" | "NOTICE_MONITOR" | "UPDATE_CHECK" | "AI_CLAUDE_CLI" | "AI_AGY_CLI" | "AI_CODEX_CLI" | "AI_GEMINI_API" | "AI_OPENAI_API";
             /** Format: date */
             kstDate: string;
             count: number;
@@ -7377,7 +7377,7 @@ export interface components {
          * @description 외부 호출 대상(ck_call_log_target, GEN-01 외부 호출 허용 목록과 1:1)
          * @enum {string}
          */
-        CallLogTarget: "COMMERCE_API" | "RAKUTEN_API" | "RAKUTEN_PAGE" | "DATALAB" | "FX_KOREAEXIM" | "FX_CUSTOMS" | "NOTICE_MONITOR" | "UPDATE_CHECK" | "AI_CLAUDE_CLI" | "AI_AGY_CLI" | "AI_CODEX_CLI" | "AI_GEMINI_API" | "AI_OPENAI_API";
+        CallLogTarget: "COMMERCE_API" | "RAKUTEN_API" | "RAKUTEN_PAGE" | "RAKUTEN_IMAGE" | "DATALAB" | "FX_KOREAEXIM" | "FX_CUSTOMS" | "NOTICE_MONITOR" | "UPDATE_CHECK" | "AI_CLAUDE_CLI" | "AI_AGY_CLI" | "AI_CODEX_CLI" | "AI_GEMINI_API" | "AI_OPENAI_API";
         /**
          * @description AI 호출 대상(CallLogTarget 중 AI_* 값)
          * @enum {string}

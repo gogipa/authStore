@@ -41,6 +41,8 @@ import { RakutenGenreHttpAdapter } from './rakuten/rakuten-genre.http-adapter.js
 import { RAKUTEN_GENRE_PORT } from './rakuten/rakuten-genre.port.js';
 import { RakutenGenreRepository } from './rakuten/rakuten-genre.repository.js';
 import { RakutenGenreService } from './rakuten/rakuten-genre.service.js';
+import { RakutenImageHttpAdapter } from './rakuten/rakuten-image.http-adapter.js';
+import { RAKUTEN_IMAGE_PORT } from './rakuten/rakuten-image.port.js';
 import { RakutenPageHttpAdapter } from './rakuten/rakuten-page.http-adapter.js';
 import { RAKUTEN_PAGE_PORT } from './rakuten/rakuten-page.port.js';
 import { RakutenSearchCacheRepository } from './rakuten/rakuten-search-cache.repository.js';
@@ -70,6 +72,8 @@ import {
  *   백오프 3회), `RAKUTEN_PAGE_PORT`(상품 페이지, 관문 RAKUTEN_PAGE 직렬 큐 하나·3초·하루 상한·24시간 쉼, 캐시 없음),
  *   `RAKUTEN_GENRE_PORT`(IchibaGenre) + 장르 경로 캐시 `RakutenGenreService`(rakuten_genre). 외부 응답 캐시는 integrations
  *   소유(ERD 결정 ⑭). 키는 키체인(SECRET_STORE)에서만 읽는다. sourcing 모듈이 이 포트로만 라쿠텐을 부른다.
+ * rakuten 이미지(P3-01): `RAKUTEN_IMAGE_PORT`(→ `RakutenImageHttpAdapter`, 관문 RAKUTEN_IMAGE — 이미지 CDN 허용 호스트, 직렬·1초,
+ *   하루 상한·24시간 쉼 없음, 허용 호스트 안 리다이렉트 2번까지)를 export한다. thumbnails가 ⑤ 원본 이미지를 이것으로만 받는다.
  * fx(P2-04): 환율 출처 포트 `FX_SOURCE_PORT`(원가 = `KeximAdapter` 관문 FX_KOREAEXIM, 과세 = `CustomsServiceAdapter` 관문
  *   FX_CUSTOMS)를 export한다. 원값·단위 문자열만 돌려주고 정규화·저장은 pricing이 한다. 키가 없으면 부르지 않고 call_log에
  *   실패 1행(`FxApiCaller`). 테스트는 이 토큰을 `FxFixtureAdapter`로 바꾸거나 가짜 fetch(HTTP_FETCH) 뒤에 fixture를 둔다.
@@ -120,6 +124,7 @@ import {
     RakutenSearchCacheRepository,
     { provide: RAKUTEN_SEARCH_PORT, useClass: RakutenSearchHttpAdapter },
     { provide: RAKUTEN_PAGE_PORT, useClass: RakutenPageHttpAdapter },
+    { provide: RAKUTEN_IMAGE_PORT, useClass: RakutenImageHttpAdapter },
     { provide: RAKUTEN_GENRE_PORT, useClass: RakutenGenreHttpAdapter },
     RakutenGenreRepository,
     RakutenGenreService,
@@ -152,6 +157,7 @@ import {
     DATALAB_RANK_PORT,
     RAKUTEN_SEARCH_PORT,
     RAKUTEN_PAGE_PORT,
+    RAKUTEN_IMAGE_PORT,
     RAKUTEN_GENRE_PORT,
     RakutenGenreService,
     FX_SOURCE_PORT,

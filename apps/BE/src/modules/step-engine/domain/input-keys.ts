@@ -67,6 +67,9 @@ export const INPUT_KEYS = {
   settingsCategoryLeafMapping: 'settings.category.leafMapping',
   settingsChildCategoryWords: 'settings.safety.childCategoryWords',
   settingsExcludedCategoryWords: 'settings.safety.excludedCategoryWords',
+  // ⑤ 썸네일(P3-01): 시작 조건은 이 설정 두 키뿐이다(ERD generation_run '⑤ 입력 기록 규칙')
+  settingsThumbnailPromptTemplate: 'settings.thumbnail.promptTemplate',
+  settingsThumbnailFaceOptionDefault: 'settings.thumbnail.faceOptionDefault',
   // 판정 기준 데이터(P2-04)
   fxCostJpy: 'fx.costJpy',
   fxCustomsJpy: 'fx.customsJpy',
@@ -123,6 +126,8 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'settings.category.leafMapping': '카테고리 매핑표 설정',
   'settings.safety.childCategoryWords': '아동 카테고리 말 설정',
   'settings.safety.excludedCategoryWords': '판매 제외 품목 카테고리 말 설정',
+  'settings.thumbnail.promptTemplate': '썸네일 프롬프트 골격 설정',
+  'settings.thumbnail.faceOptionDefault': '얼굴 노출 기본값 설정',
   // 판정 기준 데이터(P2-04)
   'fx.costJpy': '원가 환율',
   'fx.customsJpy': '과세환율(엔)',

@@ -3002,6 +3002,7 @@ paths:
       tags:
       - thumbnails
       x-milestone: M1
+      x-decision: 'P3-01(Proposed) — 현재 itemCode = 후보의 소싱 선택 itemCode(candidate.item_code). ORIGINAL만 받은 순서(= 페이지 media.images[] 순서, image_asset.id)로 최대 40장. 모르는 쿼리 키·sourceSection 값은 422 INVALID_QUERY_PARAMETER. isSameAnchor = 상품(앵커 型番과 source_model_code_norm, 型番이 없으면 앵커 itemCode와 source_item_code — NFKC·대문자·공백·하이픈 무시) AND 색상(둘 다 알 때만 비교 — source_color_code는 상품 SKU 색상 코드가 하나뿐일 때만 채운다). 앵커 전이면 false'
       x-features:
       - F-TH-01
       - F-TH-02
@@ -3095,6 +3096,7 @@ paths:
       tags:
       - thumbnails
       x-milestone: M1
+      x-decision: 'P3-01(Proposed) — 검사 순서: 404 STEP_RUN_NOT_FOUND(경로 id가 1 이상 정수가 아니어도) → 422 INVALID_STEP_CODE(details.reason=NOT_THUMBNAIL) → 422 IMAGE_COUNT_INVALID(1~3장이 아님 — 순서 4가 있어도 먼저) → 422 VALIDATION_FAILED(순서 1~3 밖·같은 이미지·같은 순서) → 422 NO_PERSON_CONFIRMATION_REQUIRED(true가 아님·빠짐) → 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → 409 STEP_RUN_NOT_WAITING_INPUT(입력 대기인 현재 ⑤ 버전이 아님) → 409 ALREADY_IN_PROGRESS(generation_run RUNNING, details.job=GENERATION) → 404 IMAGE_ASSET_NOT_FOUND → 422 IMAGE_NOT_ALLOWED(details.reason NOT_ORIGINAL·NOT_PRODUCT_IMAGE·OTHER_ITEM — 현재 itemCode = candidate.item_code). 같은 선택 = 최신 input_no와 (imageAssetId, sortOrder) 쌍이 모두 같음 → 새 행·감사 없이 200(inputNo 그대로). 저장하면 step_run_input owner.referenceSelection(OWNER_INPUT, 지문 밖) 값 = 레퍼런스 해시(정렬한 파일 SHA-256을 이은 값의 SHA-256)로 다시 쓰고, 감사 기록 OWNER_CONFIRMED(detail.confirmation=NO_PERSON_IN_REFERENCES)를 남긴다. ⑤는 G3 선택(P3-02)까지 입력 대기 그대로'
       x-features:
       - F-TH-04
       - F-TH-05
@@ -3144,6 +3146,7 @@ paths:
       tags:
       - thumbnails
       x-milestone: M1
+      x-decision: 'P3-01(Proposed) — 골격 = 지금 설정 thumbnail.promptTemplate({resolution} = thumbnail.resolutionPx 기본 2048, {face_option} = full face·crop at chin (face not shown)·hands and upper body only), 조정 문구는 앞뒤 공백을 빼고 한 줄 띄워 뒤에 붙인다(공백뿐이면 promptAdjusted=false). 차단어 사전 = 앱 내장 ∪ 설정 safety.personBlockWords. 비교 = NFKC·소문자, 차단어 안 공백 무시, 영문·숫자 끝은 단어 경계(BTS는 debts에 걸리지 않는다). 검사 대상은 채운 전체 프롬프트. generationAllowed = 차단어 없음 AND 이 ⑤ 버전에 확인한 레퍼런스 1~3장(실행 상태는 보지 않는다 — 생성 요청이 입력 대기를 다시 본다)'
       x-features:
       - F-TH-06
       - F-TH-10
@@ -10137,6 +10140,7 @@ components:
           - COMMERCE_API
           - RAKUTEN_API
           - RAKUTEN_PAGE
+          - RAKUTEN_IMAGE
           - DATALAB
           - FX_KOREAEXIM
           - FX_CUSTOMS
@@ -18041,6 +18045,7 @@ components:
       - COMMERCE_API
       - RAKUTEN_API
       - RAKUTEN_PAGE
+      - RAKUTEN_IMAGE
       - DATALAB
       - FX_KOREAEXIM
       - FX_CUSTOMS

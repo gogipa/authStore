@@ -1,5 +1,5 @@
 import type { StepInput } from '../contracts/step-runner.js';
-import { inputKeysFromStep } from '../domain/step-graph.js';
+import { COMPLETION_ONLY_INPUTS, inputKeysFromStep } from '../domain/step-graph.js';
 import {
   CANDIDATE_INPUT_KEYS,
   STEP_GRAPH,
@@ -75,7 +75,11 @@ export function missingStartInputs(
   for (const required of graph.requires) {
     if (stepStatusOf(steps, required) === 'COMPLETED') continue;
     const keys = inputKeysFromStep(stepCode, required);
-    missing.push(...(keys.length > 0 ? keys : [`step.${required}`]));
+    // ⑤ ← ②처럼 완료만 보는 앞 단계(P3-01)는 그 입력 이름으로 알린다
+    const completionOnly = COMPLETION_ONLY_INPUTS[stepCode]?.[required];
+    missing.push(
+      ...(keys.length > 0 ? keys : completionOnly ? [completionOnly] : [`step.${required}`]),
+    );
   }
   for (const key of graph.candidateFields) {
     if (!candidateFieldPresent(candidate, key)) missing.push(key);

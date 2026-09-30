@@ -52,6 +52,13 @@ describe('시작 조건(F-BS-16, 규칙 2, US-33 AC1)', () => {
     ).toBeNull();
   });
 
+  it('⑤는 ② 완료가 필요하다 — 빠진 입력은 소싱 선택(P3-01, ② 산출물은 지문에 넣지 않는다)', () => {
+    expect(missingStartInputs('THUMBNAIL', candidate(), steps({}))).toEqual(['sourcing.selection']);
+    expect(
+      missingStartInputs('THUMBNAIL', candidate(), steps({ SOURCING: 'WAITING_INPUT' })),
+    ).toEqual(['sourcing.selection']);
+  });
+
   it('⑤는 ③ 없이 통과한다(흐름 순서와 관계없이)', () => {
     expect(
       checkStepRunnable('THUMBNAIL', candidate(), steps({ SOURCING: 'COMPLETED' }), NO_GATES, {

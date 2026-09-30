@@ -99,9 +99,11 @@ export const STEP_INPUT_SPECS: Record<StepCode, readonly StepInputSpec[]> = {
     settingsKey(K.settingsChildCategoryWords),
     settingsKey(K.settingsExcludedCategoryWords),
   ],
-  // ② 원본 이미지 / 실행 중: 레퍼런스 선택·얼굴 옵션·프롬프트 조정
+  // 프롬프트 골격·얼굴 노출 기본값 설정(P3-01 규칙 2 — ② 완료는 시작 조건이지만 ② itemCode·원본 목록은 지문에 넣지 않는다,
+  // COMPLETION_ONLY_INPUTS) / 실행 중: 레퍼런스 선택·얼굴 옵션·프롬프트 조정
   THUMBNAIL: [
-    prev(K.sourcingImages, 'SOURCING'),
+    settingsKey(K.settingsThumbnailPromptTemplate),
+    settingsKey(K.settingsThumbnailFaceOptionDefault),
     ownerRuntime(K.ownerReferenceSelection),
     ownerRuntime(K.ownerFaceOption),
     ownerRuntime(K.ownerPromptAdjustment),
@@ -145,6 +147,18 @@ export const STEP_INPUT_SPECS: Record<StepCode, readonly StepInputSpec[]> = {
     prev(K.tagsFinal, 'TAGS'),
     prev(K.uploadResult, 'UPLOAD'),
   ],
+};
+
+/**
+ * 앞 단계 **완료만** 시작 조건으로 보고 그 산출물은 입력 지문에 넣지 않는 단계(P3-01 규칙 1·2, Proposed).
+ * ⑤는 ② 현재 버전이 완료이고 소싱 선택이 있어야 시작하지만(`STEP_GRAPH.THUMBNAIL.requires`), ② itemCode·원본 목록은 지문에
+ * 넣지 않는다 — 같은 앵커 키 안에서 샵만 바꾸면 ⑤와 G3은 그대로다(PRD §5.2 작업 단위, ERD generation_run '⑤ 입력 기록 규칙').
+ * 값은 시작 조건이 모자랄 때(409 STEP_START_CONDITION_UNMET) 알릴 입력 이름이다.
+ */
+export const COMPLETION_ONLY_INPUTS: Readonly<
+  Partial<Record<StepCode, Partial<Record<StepCode, string>>>>
+> = {
+  THUMBNAIL: { SOURCING: K.sourcingSelection },
 };
 
 /** 이 단계가 앞 단계 `from`에서 읽는 입력 키(시작 조건 오류의 fieldErrors) */

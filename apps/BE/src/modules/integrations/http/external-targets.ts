@@ -1,18 +1,22 @@
 /**
- * 외부 호출 대상 표(GEN-01 허용 목록, F-BS-06). call_log.target 13종(ERD ck_call_log_target)마다 한 줄.
+ * 외부 호출 대상 표(GEN-01 허용 목록, F-BS-06). call_log.target 14종(ERD ck_call_log_target)마다 한 줄.
  * 표에 없는 호스트는 요청도 call_log 행도 만들지 않고 거부한다(ExternalHttpGateway).
  * - 환율 두 곳(P2-04, Proposed — 열린질문 P1-01): FX_KOREAEXIM = 한국수출입은행 환율 API(oapi.koreaexim.go.kr),
  *   FX_CUSTOMS = 공공데이터포털 관세청 관세환율(apis.data.go.kr). 둘 다 공식 API라 쉼·하루 상한이 없다.
  * - NOTICE_MONITOR·UPDATE_CHECK는 M2라 비워 둔다.
  * - AI_*_CLI는 HTTP가 아니라 하위 프로세스라 호스트가 없다(격리는 ai-engine/cli-isolation.ts).
  * - AI_GEMINI_API·AI_OPENAI_API(이미지 생성 대체 경로)는 P3-02에서 정한다.
- * - 라쿠텐 상품 이미지 호스트와 그 대상은 정하지 않았다(P3-01 전에 정한다, _열린질문 P1-01).
+ * - 라쿠텐 상품 이미지(P3-01, Proposed — 열린질문 P1-01·P3-01): RAKUTEN_IMAGE = 상품 페이지 JSON `media.images[]`·
+ *   Item Search 이미지 URL의 CDN(tshop.r10s.jp·image.rakuten.co.jp·thumbnail.image.rakuten.co.jp). ⑤ 원본 이미지 받기만 쓴다.
+ *   공개 정적 파일이라 비공식 수집(24시간 쉼)으로 보지 않고, 하루 상한도 없다(RAKUTEN_PAGE 110에 넣지 않는다). 대신 직렬
+ *   큐·1초 간격으로 보낸다. 호스트는 M0 S2 실측 뒤 다시 본다. V3 마이그레이션이 CHECK에 값을 더했다(ERD v0.6).
  */
 
 export const CALL_LOG_TARGETS = [
   'COMMERCE_API',
   'RAKUTEN_API',
   'RAKUTEN_PAGE',
+  'RAKUTEN_IMAGE',
   'DATALAB',
   'FX_KOREAEXIM',
   'FX_CUSTOMS',
@@ -71,6 +75,13 @@ export const EXTERNAL_TARGETS: Readonly<Record<CallLogTarget, ExternalTargetSpec
     minIntervalMs: 3000,
     unofficial: true,
     dailyLimitKey: 'RAKUTEN_PAGE_PER_DAY',
+  },
+  RAKUTEN_IMAGE: {
+    label: '라쿠텐 상품 이미지',
+    // P3-01(Proposed): 페이지 JSON media.images[](tshop.r10s.jp·image.rakuten.co.jp)와 API 이미지(thumbnail.image.rakuten.co.jp)
+    hosts: ['tshop.r10s.jp', 'image.rakuten.co.jp', 'thumbnail.image.rakuten.co.jp'],
+    minIntervalMs: 1000,
+    unofficial: false,
   },
   DATALAB: {
     label: '데이터랩',

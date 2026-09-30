@@ -2,6 +2,7 @@
 -- 생성: prisma migrate diff --from-empty --to-schema 04-3_schema.prisma (Prisma 7.10.0) + 04-3 맨 아래 'Prisma 밖 SQL'
 -- 2026-09-27 로컬 PostgreSQL 14.20 새 DB에 ON_ERROR_STOP으로 적용 확인(ERD v0.4: 테이블 55, CHECK 258, FK 75, 부분·식 인덱스 11, 트리거 49. 적용한 DB → 스키마 migrate diff 빈 결과). 원본은 04-1_ERD.md → 04-3_schema.prisma이며 이 파일은 파생물이다.
 -- 2026-09-30 v0.5(P2-01 Proposed): ck_kws_abort_reason에 NETWORK_ERROR·APP_RESTART·INTERRUPTED를 더했다(V2 마이그레이션 04-6_V2__keyword_abort_reasons.sql, 표·열 수는 그대로).
+-- 2026-10-01 v0.6(P3-01 Proposed): ck_call_log_target에 RAKUTEN_IMAGE(라쿠텐 상품 이미지 CDN)를 더했다(V3 마이그레이션 04-7_V3__call_log_rakuten_image.sql, 표·열 수는 그대로).
 
 -- ===== 1. Prisma가 만드는 테이블·FK·UNIQUE·인덱스 =====
 -- CreateSchema
@@ -1759,7 +1760,7 @@ ALTER TABLE commerce_meta_sync_run
 -- call_log
 ALTER TABLE call_log
   ADD CONSTRAINT ck_call_log_kst CHECK (kst_date = (called_at AT TIME ZONE 'Asia/Seoul')::date),
-  ADD CONSTRAINT ck_call_log_target CHECK (target IN ('COMMERCE_API','RAKUTEN_API','RAKUTEN_PAGE','DATALAB','FX_KOREAEXIM','FX_CUSTOMS','NOTICE_MONITOR','UPDATE_CHECK','AI_CLAUDE_CLI','AI_AGY_CLI','AI_CODEX_CLI','AI_GEMINI_API','AI_OPENAI_API')),
+  ADD CONSTRAINT ck_call_log_target CHECK (target IN ('COMMERCE_API','RAKUTEN_API','RAKUTEN_PAGE','RAKUTEN_IMAGE','DATALAB','FX_KOREAEXIM','FX_CUSTOMS','NOTICE_MONITOR','UPDATE_CHECK','AI_CLAUDE_CLI','AI_AGY_CLI','AI_CODEX_CLI','AI_GEMINI_API','AI_OPENAI_API')),
   ADD CONSTRAINT ck_call_log_no_secret CHECK (url_masked IS NULL OR url_masked !~* '(accesskey|applicationid|client_secret|authkey|servicekey)=[^*&]'),
   ADD CONSTRAINT ck_call_log_numbers CHECK ((duration_ms IS NULL OR duration_ms >= 0) AND (item_count IS NULL OR item_count >= 0));
 -- user_action_log

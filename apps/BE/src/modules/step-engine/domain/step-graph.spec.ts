@@ -1,5 +1,6 @@
 import { inputKeyLabel, INPUT_KEYS, readSettingsPath, settingsKeyAffects } from './input-keys.js';
 import {
+  COMPLETION_ONLY_INPUTS,
   directReaders,
   inputKeysFromStep,
   outputKeysOf,
@@ -9,12 +10,14 @@ import {
 import { STEP_FLOW, STEP_GRAPH } from './steps.js';
 
 describe('입력 키 그래프(PRD §5.3 표, P1-05)', () => {
-  it('앞 단계 입력의 출처 단계가 STEP_GRAPH requires(필수)·optional(선택)과 같다', () => {
+  it('앞 단계 입력의 출처 단계가 STEP_GRAPH requires(필수 — 완료만 보는 앞 단계 빼고)·optional(선택)과 같다', () => {
     for (const code of STEP_FLOW) {
       const specs = STEP_INPUT_SPECS[code].filter((s) => s.source === 'PREV_STEP');
       const required = [...new Set(specs.filter((s) => s.required).map((s) => s.sourceStepCode))];
       const optional = [...new Set(specs.filter((s) => !s.required).map((s) => s.sourceStepCode))];
-      expect([code, required.sort()]).toEqual([code, [...STEP_GRAPH[code].requires].sort()]);
+      const completionOnly = Object.keys(COMPLETION_ONLY_INPUTS[code] ?? {});
+      const requires = STEP_GRAPH[code].requires.filter((r) => !completionOnly.includes(r));
+      expect([code, required.sort()]).toEqual([code, [...requires].sort()]);
       expect([code, optional.sort()]).toEqual([code, [...STEP_GRAPH[code].optional].sort()]);
     }
   });
@@ -44,6 +47,22 @@ describe('입력 키 그래프(PRD §5.3 표, P1-05)', () => {
       STEP_INPUT_SPECS.THUMBNAIL.find((s) => s.inputKey === INPUT_KEYS.ownerReferenceSelection)
         ?.isStartCondition,
     ).toBe(false);
+  });
+
+  it('⑤ 시작 조건(지문)은 설정 두 키뿐이다 — ② 완료는 완료만 본다(P3-01 규칙 1·2)', () => {
+    const thumbnail = STEP_INPUT_SPECS.THUMBNAIL;
+    expect(thumbnail.filter((s) => s.isStartCondition).map((s) => s.inputKey)).toEqual([
+      'settings.thumbnail.promptTemplate',
+      'settings.thumbnail.faceOptionDefault',
+    ]);
+    expect(thumbnail.filter((s) => s.source === 'PREV_STEP')).toEqual([]);
+    expect(STEP_GRAPH.THUMBNAIL.requires).toEqual(['SOURCING']);
+    expect(COMPLETION_ONLY_INPUTS.THUMBNAIL).toEqual({ SOURCING: 'sourcing.selection' });
+    expect(thumbnail.filter((s) => !s.isStartCondition).map((s) => s.inputKey)).toEqual([
+      'owner.referenceSelection',
+      'owner.faceOption',
+      'owner.promptAdjustment',
+    ]);
   });
 
   it('직접 읽는 단계(전파 대상): ⑤ → ⑧만, ④ → ⑥-3·⑦, ③ → ⑥-3. ⑨는 뺀다', () => {

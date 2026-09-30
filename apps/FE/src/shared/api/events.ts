@@ -104,6 +104,9 @@ export type EventInvalidations = {
  * - P2-06: `step-run.status-changed`가 ④(CATEGORY)이면 그 후보의 카테고리 결정(`getCategoryDecision` — 입력 대기·완료·성별
  *   재확인으로 다시 뽑은 후보). `candidate-step.changed`(어느 단계든) → 그 후보의 카테고리 결정도(성별이 바뀌면 ③·⑥-3·⑦의
  *   '재실행 필요'와 함께 온다). 리프 고르기·성별 재확인은 응답 뒤 훅이 무효화한다.
+ * - P3-01: `step-run.status-changed`가 ⑤(THUMBNAIL)이면 그 후보의 원본 이미지 목록(`listCandidateSourceImages` — ⑤가 원본을
+ *   받고 입력 대기가 될 때)과 ⑤ 산출물(`getCandidateThumbnail`, P3-02 훅). 레퍼런스 저장은 응답 뒤 훅이 무효화하고, 프롬프트
+ *   미리보기는 캐시하지 않는 mutation이다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -177,6 +180,12 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
         ]
       : []),
     ...(stepCode === 'CATEGORY' ? [qk('category', 'getCategoryDecision', { candidateId })] : []),
+    ...(stepCode === 'THUMBNAIL'
+      ? [
+          qk('thumbnails', 'listCandidateSourceImages', { candidateId }),
+          qk('thumbnails', 'getCandidateThumbnail', { candidateId }),
+        ]
+      : []),
   ],
   'continuous-run.stopped': ({ candidateId, stepChainId }) => [
     qk('step-engine', 'getContinuousRun', { stepChainId }),

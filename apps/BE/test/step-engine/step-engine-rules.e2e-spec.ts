@@ -171,34 +171,54 @@ describe('단계 실행 엔진 규칙(P1-05) e2e — 전파·끝 지문·오너 
       expect(after.PRICING).toBe('COMPLETED');
     });
 
-    it('입력 대기 중인 ⑤의 시작 조건이 바뀌면 step_run·candidate_step 모두 RERUN_REQUIRED(대기 시간 누적)', async () => {
+    // P3-01: ⑤는 이제 ② 산출물을 지문에 넣지 않아(설정 두 키뿐) ⑥-1(② 상품명·설명)로 본다
+    it('입력 대기 중인 ⑥-1의 시작 조건이 바뀌면 step_run·candidate_step 모두 RERUN_REQUIRED(대기 시간 누적)', async () => {
       const c = await newCandidate();
       await complete(c.id, 'SOURCING');
-      world.script('THUMBNAIL', { kind: 'WAIT', waitingReasonCode: 'REFERENCE_REQUIRED' });
-      await complete(c.id, 'THUMBNAIL');
-      const waiting = (await stepRow(c.id, 'THUMBNAIL')).currentStepRunId!;
+      world.script('COPY', { kind: 'WAIT', waitingReasonCode: 'FACT_REQUIRED' });
+      await complete(c.id, 'COPY');
+      const waiting = (await stepRow(c.id, 'COPY')).currentStepRunId!;
       expect((await t.prisma.stepRun.findUniqueOrThrow({ where: { id: waiting } })).status).toBe(
         'WAITING_INPUT',
       );
       // 입력 대기는 다른 단계를 잠그지 않는다 → ②를 다시 실행할 수 있다
       t.clock.advance(90_000);
-      world.set(c.id, 'sourcing.images', [{ sha256: 'e'.repeat(64) }]);
+      world.set(c.id, 'sourcing.itemText', '바뀐 설명');
       await complete(c.id, 'SOURCING');
       const run = await t.prisma.stepRun.findUniqueOrThrow({ where: { id: waiting } });
       expect(run).toMatchObject({
         status: 'RERUN_REQUIRED',
-        rerunReasonInputs: ['sourcing.images'],
+        rerunReasonInputs: ['sourcing.itemText'],
         waitingSince: null,
         waitSecondsTotal: 90,
       });
       expect(run.endedAt).not.toBeNull();
-      expect(await stepRow(c.id, 'THUMBNAIL')).toMatchObject({
+      expect(await stepRow(c.id, 'COPY')).toMatchObject({
         status: 'RERUN_REQUIRED',
-        staleInputs: ['sourcing.images'],
+        staleInputs: ['sourcing.itemText'],
       });
       // 닫혔으니 다시 실행할 수 있다
+      await complete(c.id, 'COPY');
+      expect((await stepRow(c.id, 'COPY')).status).toBe('COMPLETED');
+    });
+
+    it('P3-01 규칙 2: ⑤ 입력 대기 중 ② 산출물(원본 이미지·itemCode)만 바뀌면 ⑤는 그대로다(지문은 설정 두 키)', async () => {
+      const c = await newCandidate();
+      await complete(c.id, 'SOURCING');
+      world.script('THUMBNAIL', {
+        kind: 'WAIT',
+        waitingReasonCode: 'THUMBNAIL_REFERENCE_REQUIRED',
+      });
       await complete(c.id, 'THUMBNAIL');
-      expect((await stepRow(c.id, 'THUMBNAIL')).status).toBe('COMPLETED');
+      const waiting = (await stepRow(c.id, 'THUMBNAIL')).currentStepRunId!;
+      world.set(c.id, 'sourcing.images', [{ sha256: 'e'.repeat(64) }]);
+      world.set(c.id, 'sourcing.selection', { itemCode: 'shop-b:20000456' });
+      await complete(c.id, 'SOURCING');
+      expect(await stepRow(c.id, 'THUMBNAIL')).toMatchObject({
+        status: 'WAITING_INPUT',
+        currentStepRunId: waiting,
+        staleInputs: [],
+      });
     });
 
     it('④가 끝나면 ④ 없이 돈 ⑦이 재실행 필요가 된다(선택 입력)', async () => {
@@ -613,17 +633,17 @@ describe('앱 시작: 재시작 정리는 요청 전에 · 실행기가 없는 �
     });
   });
 
-  // ②(P2-02)·③(P2-05)·④(P2-06)은 운영 실행기가 있다. 아직 실행기가 없는 ⑤ THUMBNAIL(P3-01)로 본다
+  // ②(P2-02)·③(P2-05)·④(P2-06)·⑤(P3-01)는 운영 실행기가 있다. 아직 실행기가 없는 ⑥-1 COPY(P3-03)로 본다
   it('실행 요청은 422 INVALID_STEP_CODE(NO_RUNNER), 레일 run도 같은 코드로 꺼진다', async () => {
     await truncateStepEngine(t.prisma);
     const c = (await createCandidate(t.prisma, { gender: 'MALE' })).candidate;
     const res = await request(t.app.getHttpServer())
-      .post(`/api/v1/candidates/${c.id}/steps/THUMBNAIL/runs`)
+      .post(`/api/v1/candidates/${c.id}/steps/COPY/runs`)
       .set('X-AutoStore-Client', '1');
     expect(res.status).toBe(422);
     expect(res.body).toMatchObject({
       code: 'INVALID_STEP_CODE',
-      details: { stepCode: 'THUMBNAIL', reason: 'NO_RUNNER' },
+      details: { stepCode: 'COPY', reason: 'NO_RUNNER' },
     });
     const rail = await request(t.app.getHttpServer()).get(`/api/v1/candidates/${c.id}/steps`);
     const items = (
@@ -631,7 +651,7 @@ describe('앱 시작: 재시작 정리는 요청 전에 · 실행기가 없는 �
         items: { actions: { run: { disabledReason: { code: string; message: string } } } }[];
       }
     ).items;
-    expect(items[3]!.actions.run.disabledReason).toMatchObject({
+    expect(items[4]!.actions.run.disabledReason).toMatchObject({
       code: 'INVALID_STEP_CODE',
       message: (res.body as { message: string }).message,
     });

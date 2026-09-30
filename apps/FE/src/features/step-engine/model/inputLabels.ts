@@ -46,6 +46,9 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'settings.category.leafMapping': '카테고리 매핑표 설정',
   'settings.safety.childCategoryWords': '아동 카테고리 말 설정',
   'settings.safety.excludedCategoryWords': '판매 제외 품목 카테고리 말 설정',
+  // ⑤ 썸네일(P3-01, BE step-engine domain/input-keys.ts와 같다)
+  'settings.thumbnail.promptTemplate': '썸네일 프롬프트 골격 설정',
+  'settings.thumbnail.faceOptionDefault': '얼굴 노출 기본값 설정',
   // 판정 기준 데이터(P2-04, BE step-engine/domain/input-keys.ts와 같은 표) — 새 최신 환율·활성 요금표 교체
   'fx.costJpy': '원가 환율',
   'fx.customsJpy': '과세환율(엔)',

@@ -351,6 +351,16 @@ export const ERROR_CODES = {
     status: 409,
     message: "KC 인증 예외 카테고리입니다. 'KC 면제 성인용 확인'을 체크해 주세요.",
   },
+  // ── thumbnails ⑤ 썸네일 준비(P3-01, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 레퍼런스 저장 body에 '사람·얼굴 없음' 확인(noPersonConfirmed=true)이 없음(F-TH-05) */
+  NO_PERSON_CONFIRMATION_REQUIRED: { status: 422, message: "'사람·얼굴 없음'을 체크해 주세요." },
+  /** 05-3 §5.1: 고른 이미지 수 규칙 위반(레퍼런스 1~3장, P3-02 추가이미지 9장까지) */
+  IMAGE_COUNT_INVALID: {
+    status: 422,
+    message: '고른 이미지 수가 맞지 않습니다(레퍼런스 1~3장, 추가이미지 9장까지).',
+  },
+  /** 05-3 §5.1: 레퍼런스가 될 수 없는 종류·다른 itemCode 원본 등(details.reason, `{이유}`는 P3-01 Proposed 문구) */
+  IMAGE_NOT_ALLOWED: { status: 422, message: '이 이미지는 여기에 쓸 수 없습니다({이유}).' },
   INTERNAL_ERROR: {
     status: 500,
     message: '앱 안에서 오류가 났습니다. 다시 해 보고, 계속되면 로그를 확인해 주세요.',

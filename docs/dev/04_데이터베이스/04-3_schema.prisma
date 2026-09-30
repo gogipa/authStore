@@ -1632,10 +1632,11 @@ model AiCliCheck {
 //   ADD CONSTRAINT ck_cmsr_status CHECK (status IN ('RUNNING','SUCCEEDED','FAILED')),
 //   ADD CONSTRAINT ck_cmsr_finished CHECK ((status = 'RUNNING') = (finished_at IS NULL)),
 //   ADD CONSTRAINT ck_cmsr_error CHECK (status <> 'FAILED' OR error_message IS NOT NULL);
-// -- call_log
+// -- call_log (v0.6 P3-01: ck_call_log_target의 RAKUTEN_IMAGE는 V3 마이그레이션
+//    20261001000000_call_log_rakuten_image가 더한다 — 04-7_V3__call_log_rakuten_image.sql)
 // ALTER TABLE call_log
 //   ADD CONSTRAINT ck_call_log_kst CHECK (kst_date = (called_at AT TIME ZONE 'Asia/Seoul')::date),
-//   ADD CONSTRAINT ck_call_log_target CHECK (target IN ('COMMERCE_API','RAKUTEN_API','RAKUTEN_PAGE','DATALAB','FX_KOREAEXIM','FX_CUSTOMS','NOTICE_MONITOR','UPDATE_CHECK','AI_CLAUDE_CLI','AI_AGY_CLI','AI_CODEX_CLI','AI_GEMINI_API','AI_OPENAI_API')),
+//   ADD CONSTRAINT ck_call_log_target CHECK (target IN ('COMMERCE_API','RAKUTEN_API','RAKUTEN_PAGE','RAKUTEN_IMAGE','DATALAB','FX_KOREAEXIM','FX_CUSTOMS','NOTICE_MONITOR','UPDATE_CHECK','AI_CLAUDE_CLI','AI_AGY_CLI','AI_CODEX_CLI','AI_GEMINI_API','AI_OPENAI_API')),
 //   ADD CONSTRAINT ck_call_log_no_secret CHECK (url_masked IS NULL OR url_masked !~* '(accesskey|applicationid|client_secret|authkey|servicekey)=[^*&]'),
 //   ADD CONSTRAINT ck_call_log_numbers CHECK ((duration_ms IS NULL OR duration_ms >= 0) AND (item_count IS NULL OR item_count >= 0));
 // -- user_action_log

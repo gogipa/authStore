@@ -3,6 +3,7 @@ import type { AppSettings } from '../settings/schema/settings.types.js';
 import { idPathFromNamePath } from '../integrations/rakuten/rakuten-genre.service.js';
 import type {
   SourcingGenreView,
+  SourcingImagesView,
   SourcingSelectionReader,
   SourcingSelectionView,
   SourcingTargetSkus,
@@ -162,6 +163,49 @@ export async function readSourcingGenre(
 }
 
 /**
+ * ② 버전의 소싱 선택 상품 원본 이미지 출처(P3-01 Proposed — ⑤ 원본 받기). 고른 페이지 스냅샷의 `image_urls`(`media.images[]`)·
+ * 샵·정규화 型番과, SKU 색상 코드가 하나뿐이면 그 색상 코드(여럿·없으면 null). 선택이 없으면 null.
+ */
+export async function readSourcingImages(
+  db: Db,
+  sourcingStepRunId: number,
+): Promise<SourcingImagesView | null> {
+  const selection = await readSourcingSelection(db, sourcingStepRunId);
+  if (!selection) return null;
+  const item = await db.rakutenItem.findUniqueOrThrow({
+    where: { id: selection.rakutenItemId },
+    select: {
+      id: true,
+      itemCode: true,
+      shopCode: true,
+      shopName: true,
+      itemUrl: true,
+      collectedAt: true,
+      imageUrls: true,
+      modelCodeNorm: true,
+      skus: { select: { colorCode: true } },
+    },
+  });
+  const colors = [
+    ...new Set(item.skus.map((sku) => sku.colorCode).filter((c): c is string => !!c)),
+  ];
+  return {
+    sourcingStepRunId,
+    rakutenItemId: item.id,
+    itemCode: item.itemCode,
+    shopCode: item.shopCode,
+    shopName: item.shopName,
+    itemUrl: item.itemUrl,
+    collectedAt: item.collectedAt,
+    imageUrls: Array.isArray(item.imageUrls)
+      ? item.imageUrls.filter((u): u is string => typeof u === 'string' && u !== '')
+      : [],
+    modelCodeNorm: item.modelCodeNorm,
+    colorCode: colors.length === 1 ? colors[0]! : null,
+  };
+}
+
+/**
  * step-engine에 등록할 읽기 함수(`StepEngineApi.registerSourcingSelectionReader`). 목표 사이즈 SKU 읽기(P2-05)는 버전
  * 설정 사본에 빠진 값을 지금 설정으로 채우므로 설정 읽기를 받는다.
  */
@@ -173,6 +217,7 @@ export function createSourcingSelectionReader(
     readTargetSkus: (db, sourcingStepRunId, gender) =>
       readSourcingTargetSkus(db, sourcingStepRunId, gender, currentSettings()),
     readGenre: readSourcingGenre,
+    readImages: readSourcingImages,
   };
 }
 

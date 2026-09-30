@@ -1,0 +1,60 @@
+{
+  "note": "합성 fixture(실제 상품 아님) — 화면시안_명세 §4 후보 A(아식스 젤카야노 14 · 크림/블랙, shop-a:10000123)의 ② 산출물. image_urls 6개는 images/original-1~6.jpg로 답한다(가짜 fetch).",
+  "rakutenItem": {
+    "itemCode": "shop-a:10000123",
+    "shopCode": "shop-a",
+    "shopName": "라쿠텐 샵 A",
+    "itemName": "アシックス ゲルカヤノ14 1201A019-108 クリーム/ブラック メンズ",
+    "itemUrl": "https://item.rakuten.co.jp/shop-a/10000123/",
+    "modelCode": "1201A019-108",
+    "modelCodeNorm": "1201A019108",
+    "collectedAt": "2026-09-28T05:02:00.000Z",
+    "genreId": 208025,
+    "genrePath": "558885:靴 > 110983:メンズ靴 > 208025:ランニングシューズ",
+    "imageUrls": [
+      "https://tshop.r10s.jp/shop-a/cabinet/item/asics-1201a019-108_1.jpg",
+      "https://tshop.r10s.jp/shop-a/cabinet/item/asics-1201a019-108_2.jpg",
+      "https://tshop.r10s.jp/shop-a/cabinet/item/asics-1201a019-108_3.jpg",
+      "https://tshop.r10s.jp/shop-a/cabinet/item/asics-1201a019-108_4.jpg",
+      "https://image.rakuten.co.jp/shop-a/cabinet/item/asics-1201a019-108_5.jpg",
+      "https://image.rakuten.co.jp/shop-a/cabinet/item/asics-1201a019-108_6.jpg"
+    ]
+  },
+  "skus": [
+    {
+      "variantId": "v-250",
+      "colorLabel": "クリーム/ブラック(108)",
+      "colorCode": "108",
+      "sizeLabel": "25.0cm",
+      "sizeMm": 250
+    },
+    {
+      "variantId": "v-260",
+      "colorLabel": "クリーム/ブラック(108)",
+      "colorCode": "108",
+      "sizeLabel": "26.0cm",
+      "sizeMm": 260
+    }
+  ],
+  "anchor": { "modelCode": "1201A019108", "colorCode": "108", "colorLabel": "クリーム/ブラック" },
+  "imageFiles": {
+    "https://tshop.r10s.jp/shop-a/cabinet/item/asics-1201a019-108_1.jpg": "original-1.jpg",
+    "https://tshop.r10s.jp/shop-a/cabinet/item/asics-1201a019-108_2.jpg": "original-2.jpg",
+    "https://tshop.r10s.jp/shop-a/cabinet/item/asics-1201a019-108_3.jpg": "original-3.jpg",
+    "https://tshop.r10s.jp/shop-a/cabinet/item/asics-1201a019-108_4.jpg": "original-4.jpg",
+    "https://image.rakuten.co.jp/shop-a/cabinet/item/asics-1201a019-108_5.jpg": "original-5.jpg",
+    "https://image.rakuten.co.jp/shop-a/cabinet/item/asics-1201a019-108_6.jpg": "original-6.jpg",
+    "https://thumbnail.image.rakuten.co.jp/@0_mall/shop-a/cabinet/asics-1201a019-108_1.jpg?_ex=1200x1200": "original-1.jpg",
+    "https://thumbnail.image.rakuten.co.jp/@0_mall/shop-a/cabinet/asics-1201a019-108_2.jpg?_ex=1200x1200": "png-named.jpg"
+  },
+  "apiSearchItem": {
+    "itemCode": "shop-a:10000123",
+    "itemName": "アシックス ゲルカヤノ14 1201A019-108",
+    "itemUrl": "https://item.rakuten.co.jp/shop-a/10000123/",
+    "shopCode": "shop-a",
+    "mediumImageUrls": [
+      "https://thumbnail.image.rakuten.co.jp/@0_mall/shop-a/cabinet/asics-1201a019-108_1.jpg?_ex=128x128",
+      "https://thumbnail.image.rakuten.co.jp/@0_mall/shop-a/cabinet/asics-1201a019-108_2.jpg?_ex=128x128"
+    ]
+  }
+}

@@ -12,6 +12,7 @@ import type { CandidateCreationExtension } from './ports/candidate-creation.exte
 import type { GenderInputListener } from './ports/gender-input.port.js';
 import type {
   SourcingGenreView,
+  SourcingImagesView,
   SourcingSelectionReader,
   SourcingSelectionView,
   SourcingTargetSkus,
@@ -49,6 +50,10 @@ export type ResumeWaitingInput =
  *   `readGenre`를 부른다
  * - `refreshWaitingRunInputs(scope, stepRunId, inputKeys)`: 입력 대기 중인 실행의 입력 기록(값 해시·출처)·시작 지문을 지금
  *   값으로 다시 쓴다(④ 성별 재확인 — 같은 실행에서 이어 가는 예외, F-CA-05)
+ * P3-01:
+ * - `readSourcingImages(sourcingStepRunId, db?)`: ② 버전의 소싱 선택 상품 원본 이미지 출처(⑤ 원본 받기). 읽기 함수의 선택
+ *   메서드 `readImages`를 부른다. ⑤는 이 값을 입력 지문에 넣지 않는다
+ * - `refreshWaitingRunInputs`는 ⑤ 레퍼런스 저장(실행 중 오너 입력 `owner.referenceSelection` 해시 갱신)도 쓴다
  */
 @Injectable()
 export class StepEngineApi {
@@ -113,6 +118,15 @@ export class StepEngineApi {
   ): Promise<SourcingGenreView | null> {
     const reader = this.ports.sourcingSelectionReader;
     return reader?.readGenre ? reader.readGenre(db, sourcingStepRunId) : null;
+  }
+
+  /** ② 버전의 소싱 선택 상품 원본 이미지 출처(P3-01 — ⑤ 입력). 읽기 함수가 없거나 선택이 없으면 null */
+  async readSourcingImages(
+    sourcingStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<SourcingImagesView | null> {
+    const reader = this.ports.sourcingSelectionReader;
+    return reader?.readImages ? reader.readImages(db, sourcingStepRunId) : null;
   }
 
   /** 입력 대기 실행의 입력 기록 일부를 지금 값으로(P2-06 — ④ 성별 재확인). 호출자 트랜잭션 안(후보 행 잠금) */

@@ -70,6 +70,31 @@ export interface SourcingGenreView {
   productType: string | null;
 }
 
+/**
+ * ② 버전의 소싱 선택 상품 원본 이미지 출처(P3-01 Proposed — ⑤ 원본 받기 F-TH-01·02). 고른 페이지 스냅샷
+ * (`rakuten_item.image_urls` = 페이지 JSON `media.images[]`)과 출처 메타(샵·型番). ⑤는 이것을 입력 지문에 넣지 않는다
+ * (P3-01 규칙 2 — 같은 앵커 키 안에서 샵만 바뀌어도 ⑤·G3은 그대로).
+ */
+export interface SourcingImagesView {
+  sourcingStepRunId: number;
+  rakutenItemId: number;
+  itemCode: string;
+  shopCode: string;
+  shopName: string | null;
+  itemUrl: string;
+  /** 고른 페이지 스냅샷의 수집 시각 */
+  collectedAt: Date;
+  /** `media.images[]` 원본 URL(페이지 순서). 비었으면 ⑤가 API 이미지 URL의 `_ex`를 키워 받는다 */
+  imageUrls: string[];
+  /** 정규화 型番(없으면 null) */
+  modelCodeNorm: string | null;
+  /**
+   * 이미지가 보여 주는 SKU 색상 코드(P3-01 Proposed): 이 상품의 SKU 색상 코드가 **하나뿐이면** 그 값, 여럿이거나 없으면 null
+   * (이미지마다 어느 색상인지 모른다 — G3 '같은 상품·색상' 확인·색상 체크리스트로 대신한다)
+   */
+  colorCode: string | null;
+}
+
 export interface SourcingSelectionReader {
   /** ② 버전 하나(step_run id)의 소싱 선택. 선택이 없으면 null */
   read(db: Db, sourcingStepRunId: number): Promise<SourcingSelectionView | null>;
@@ -83,4 +108,6 @@ export interface SourcingSelectionReader {
   ): Promise<SourcingTargetSkus | null>;
   /** 소싱 선택 상품의 장르·상품유형(P2-06 Proposed, 선택 메서드). 선택이 없으면 null */
   readGenre?(db: Db, sourcingStepRunId: number): Promise<SourcingGenreView | null>;
+  /** 소싱 선택 상품의 원본 이미지 출처(P3-01 Proposed, 선택 메서드). 선택이 없으면 null */
+  readImages?(db: Db, sourcingStepRunId: number): Promise<SourcingImagesView | null>;
 }

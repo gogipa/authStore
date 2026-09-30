@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BE_ROOT } from '../../../common/config/paths.js';
 import { createDailyLimitProvider, DEFAULT_DAILY_LIMITS } from './daily-limit.provider.js';
@@ -10,19 +10,25 @@ import {
   EXTERNAL_TARGETS,
 } from './external-targets.js';
 
-/** V1 마이그레이션의 ck_call_log_target 목록 */
+/** ck_call_log_target을 마지막으로 만든 마이그레이션(V1 → V3 P3-01)의 목록 */
 function checkListFromMigration(): string[] {
-  const sql = readFileSync(
-    join(BE_ROOT, 'prisma', 'migrations', '20260927000000_v1_init', 'migration.sql'),
-    'utf8',
-  );
-  const m = /ck_call_log_target CHECK \(target IN \(([^)]*)\)\)/.exec(sql);
-  if (!m) throw new Error('ck_call_log_target을 찾지 못했습니다');
-  return m[1]!.split(',').map((s) => s.trim().replace(/^'|'$/g, ''));
+  const dir = join(BE_ROOT, 'prisma', 'migrations');
+  const folders = readdirSync(dir)
+    .filter((name) => /^\d{14}_/.test(name))
+    .sort();
+  let list: string[] | null = null;
+  for (const folder of folders) {
+    const sql = readFileSync(join(dir, folder, 'migration.sql'), 'utf8');
+    const m = /ck_call_log_target CHECK \(target IN \(([^)]*)\)\)/.exec(sql);
+    if (m) list = m[1]!.split(',').map((s) => s.trim().replace(/^'|'$/g, ''));
+  }
+  if (!list) throw new Error('ck_call_log_target을 찾지 못했습니다');
+  return list;
 }
 
 describe('EXTERNAL_TARGETS', () => {
-  it('13개 대상이 ERD CHECK(ck_call_log_target) 목록과 같다', () => {
+  it('14개 대상이 ERD CHECK(ck_call_log_target, V3 마이그레이션) 목록과 같다', () => {
+    expect(CALL_LOG_TARGETS).toHaveLength(14);
     expect([...CALL_LOG_TARGETS]).toEqual(checkListFromMigration());
     expect(Object.keys(EXTERNAL_TARGETS).sort()).toEqual([...CALL_LOG_TARGETS].sort());
   });
@@ -31,6 +37,12 @@ describe('EXTERNAL_TARGETS', () => {
     expect(EXTERNAL_TARGETS.COMMERCE_API.hosts).toEqual(['api.commerce.naver.com']);
     expect(EXTERNAL_TARGETS.RAKUTEN_API.hosts).toEqual(['openapi.rakuten.co.jp']);
     expect(EXTERNAL_TARGETS.RAKUTEN_PAGE.hosts).toEqual(['item.rakuten.co.jp']);
+    // P3-01(Proposed): 라쿠텐 상품 이미지 CDN
+    expect(EXTERNAL_TARGETS.RAKUTEN_IMAGE.hosts).toEqual([
+      'tshop.r10s.jp',
+      'image.rakuten.co.jp',
+      'thumbnail.image.rakuten.co.jp',
+    ]);
     expect(EXTERNAL_TARGETS.DATALAB.hosts).toEqual(['datalab.naver.com']);
     // P2-04(Proposed): 환율 두 곳
     expect(EXTERNAL_TARGETS.FX_KOREAEXIM.hosts).toEqual(['oapi.koreaexim.go.kr']);
@@ -52,7 +64,8 @@ describe('EXTERNAL_TARGETS', () => {
     expect(allAllowedHosts().has('app.rakuten.co.jp')).toBe(false);
   });
 
-  it('간격: DATALAB 2000·RAKUTEN_PAGE 3000·RAKUTEN_API 1500ms', () => {
+  it('간격: DATALAB 2000·RAKUTEN_PAGE 3000·RAKUTEN_API 1500·RAKUTEN_IMAGE 1000ms', () => {
+    expect(EXTERNAL_TARGETS.RAKUTEN_IMAGE.minIntervalMs).toBe(1000);
     expect(EXTERNAL_TARGETS.DATALAB.minIntervalMs).toBe(2000);
     expect(EXTERNAL_TARGETS.RAKUTEN_PAGE.minIntervalMs).toBe(3000);
     expect(EXTERNAL_TARGETS.RAKUTEN_API.minIntervalMs).toBe(1500);
@@ -76,6 +89,9 @@ describe('EXTERNAL_TARGETS', () => {
     expect(DEFAULT_DAILY_LIMITS.RAKUTEN_PAGE_PER_DAY).toBe(110);
     expect(limit('DATALAB')).toBe(100);
     expect(limit('RAKUTEN_API')).toBeNull();
+    // P3-01: 이미지는 하루 페이지 상한(110)에 넣지 않는다
+    expect(limit('RAKUTEN_IMAGE')).toBeNull();
+    expect(EXTERNAL_TARGETS.RAKUTEN_IMAGE.dailyLimitKey).toBeUndefined();
     expect(limit('COMMERCE_API')).toBeNull();
   });
 });
