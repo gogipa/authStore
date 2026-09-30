@@ -82,6 +82,8 @@ export type EventInvalidations = {
  * - P1-07: `auth.failed` → 커머스API 인증 상태(`getAuthStatus`). 재발급까지 실패하면 원인 안내가 바로 바뀐다.
  * - P1-08: `commerce-meta-sync.completed` → 메타 동기화 상태(`getLatestCommerceMetaSyncRuns`)와 주소록·반품 택배사 캐시
  *   목록 전체(P1-09 프로필의 선택 목록). 대상 하나가 끝날 때마다 온다.
+ * - P1-09: `commerce-meta-sync.completed` → 구매대행 프로필(`getPurchaseAgencyProfile`)도 다시 읽는다(주소록이 사라지거나
+ *   해외가 아니게 되면 `addressWarnings`가 바뀐다). 프로필·발송 택배사 목록은 settings 태그라 `settings.reloaded`도 무효화한다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -138,6 +140,7 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     qk('integrations', 'getLatestCommerceMetaSyncRuns'),
     qk('integrations', 'listCommerceAddressbooks'),
     qk('integrations', 'listCommerceReturnDeliveryCompanies'),
+    qk('settings', 'getPurchaseAgencyProfile'),
   ],
 };
 

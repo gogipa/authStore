@@ -56,7 +56,8 @@ describe('진행 알림 이름', () => {
       'auth.failed',
       'commerce-meta-sync.completed',
     ]);
-    // 메타 대상 하나가 끝나면 동기화 상태와 주소록·반품 택배사 캐시 목록을 다시 읽는다(P1-08)
+    // 메타 대상 하나가 끝나면 동기화 상태와 주소록·반품 택배사 캐시 목록을 다시 읽는다(P1-08).
+    // 프로필의 주소 경고도 바뀔 수 있어 프로필을 다시 읽는다(P1-09)
     expect(
       EVENT_INVALIDATIONS['commerce-meta-sync.completed']?.({
         runId: 1,
@@ -70,6 +71,7 @@ describe('진행 알림 이름', () => {
       ['integrations', 'getLatestCommerceMetaSyncRuns'],
       ['integrations', 'listCommerceAddressbooks'],
       ['integrations', 'listCommerceReturnDeliveryCompanies'],
+      ['settings', 'getPurchaseAgencyProfile'],
     ]);
     // 재발급까지 실패하면 인증 상태(원인 안내)를 다시 읽는다(P1-07)
     expect(

@@ -1,10 +1,12 @@
 import { useId, useState } from 'react';
 import {
+  PurchaseAgencyProfileForm,
   readAppliedCostDefaults,
   readSelectedAiEngine,
   readSellTaxableSizes,
   type SettingsFieldError,
   type SettingsView,
+  usePurchaseAgencyProfileForm,
   useReloadSettingsMutation,
   useSettingsQuery,
   VAT_MODE_LABEL,
@@ -14,6 +16,7 @@ import {
   Banner,
   Button,
   ButtonLink,
+  Chip,
   Icon,
   Num,
   PageHeader,
@@ -28,17 +31,26 @@ import styles from './SettingsPage.module.css';
 /** M1 탭 3개(Settings 보드 순서). 나머지 탭(템플릿·사전, 브랜드 사전, 목표 사이즈, AI 공급자, 기준값 버전)은 M2다. */
 type SettingsTab = 'profile' | 'costs' | 'fx';
 
-const TABS: readonly TabItem<SettingsTab>[] = [
-  { value: 'profile', label: '구매대행 프로필' },
-  { value: 'costs', label: '비용·요금표' },
-  { value: 'fx', label: '환율' },
-];
+/**
+ * 탭 3개(보드 순서). '구매대행 프로필'은 수입자(importer)가 비면 '수입자 입력 필요' 칩을 단다(보드).
+ * 저장된 값 기준이다 — 칸에 적기만 하고 저장하지 않았으면 칩이 남는다.
+ */
+function settingsTabs(importerMissing: boolean): readonly TabItem<SettingsTab>[] {
+  return [
+    {
+      value: 'profile',
+      label: '구매대행 프로필',
+      caption: importerMissing ? <Chip tone="waiting">수입자 입력 필요</Chip> : undefined,
+    },
+    { value: 'costs', label: '비용·요금표' },
+    { value: 'fx', label: '환율' },
+  ];
+}
 
 const TAB_ID_PREFIX = 'settings';
 
-/** 탭 본문을 채울 곳: 구매대행 프로필 P1-09, 요금표·환율 P2-04. 머리의 '되돌리기'·'저장'도 그쪽(F-ST-12 M2·P1-09) 몫이다. */
-const TAB_BODY: Record<SettingsTab, { title: string; caption?: string }> = {
-  profile: { title: '구매대행 프로필', caption: '모든 상품의 배송·반품·고시에 같이 들어갑니다' },
+/** 아직 입력을 만들지 않은 탭(요금표·환율 P2-04) */
+const TAB_BODY: Record<Exclude<SettingsTab, 'profile'>, { title: string; caption?: string }> = {
   costs: { title: '비용·요금표' },
   fx: { title: '환율' },
 };
@@ -50,14 +62,18 @@ const RATE_DIGITS: FractionDigits = { minFractionDigits: 1, maxFractionDigits: 3
  * SCR-10 설정(Settings.dc.html)의 M1 부분: 화면 머리, 탭 틀 3개, 'AI 엔진' 링크 카드, '설정 파일 검사'(+ 다시 읽기),
  * '적용 중인 기본값'(비용·부가세 모드·과세 사이즈 판매), 안내 줄. 값은 `GET /settings`의 `content`에서 읽는다.
  * 통과한 설정이 하나도 없으면(503 SETTINGS_INVALID) 차단 띠에 봉투 message를 보인다.
+ * P1-09: '구매대행 프로필' 탭 본문과 머리의 '되돌리기'·'저장'(프로필 탭을 볼 때만, Proposed — 다른 탭의 저장은
+ * P2-04가 정한다).
  */
 export function SettingsPage() {
   const settings = useSettingsQuery();
+  const profileForm = usePurchaseAgencyProfileForm();
   const [tab, setTab] = useState<SettingsTab>('profile');
   const view = settings.data;
   const unavailable = settings.error?.code === 'SETTINGS_INVALID' ? settings.error : null;
   const failed = settings.isError && !unavailable ? settings.error : null;
-  const body = TAB_BODY[tab];
+  const importerMissing = profileForm.profile?.importer === null;
+  const profileReady = profileForm.values !== null;
 
   return (
     <>
@@ -65,13 +81,29 @@ export function SettingsPage() {
         title="설정"
         screenId="SCR-10"
         description="모든 상품에 공통으로 쓰는 값입니다. 저장할 때 형식을 검사하고, 안전장치를 끄거나 기준을 낮추는 값은 저장하지 않습니다."
+        actions={
+          tab === 'profile' ? (
+            <>
+              <Button onClick={profileForm.reset} disabled={!profileReady || profileForm.saving}>
+                되돌리기
+              </Button>
+              <Button
+                variant="primary"
+                onClick={profileForm.save}
+                disabled={!profileReady || profileForm.saving}
+              >
+                {profileForm.saving ? '저장 중…' : '저장'}
+              </Button>
+            </>
+          ) : undefined
+        }
       />
       {unavailable ? <Banner tone="blocked">{unavailable.message}</Banner> : null}
       {failed ? <Banner tone="warning">{failed.message}</Banner> : null}
       <div className={styles.layout}>
         <div className={styles.side}>
           <Tabs
-            items={TABS}
+            items={settingsTabs(importerMissing)}
             value={tab}
             onValueChange={setTab}
             aria-label="설정 항목"
@@ -85,9 +117,13 @@ export function SettingsPage() {
           />
         </div>
         <TabPanel idPrefix={TAB_ID_PREFIX} value={tab} className={styles.tabPanel}>
-          <Panel title={body.title} caption={body.caption}>
-            <p className={styles.muted}>이 탭의 입력은 아직 만들지 않았습니다.</p>
-          </Panel>
+          {tab === 'profile' ? (
+            <PurchaseAgencyProfileForm form={profileForm} />
+          ) : (
+            <Panel title={TAB_BODY[tab].title} caption={TAB_BODY[tab].caption}>
+              <p className={styles.muted}>이 탭의 입력은 아직 만들지 않았습니다.</p>
+            </Panel>
+          )}
         </TabPanel>
         <aside aria-label="적용 중인 기본값" className={styles.summary}>
           <AppliedDefaults view={view} />

@@ -91,6 +91,21 @@ export const ERROR_CODES = {
     status: 422,
     message: '안전 기준은 느슨하게 바꿀 수 없습니다({항목}).',
   },
+  // ── 구매대행 프로필(P1-09, 05-3 §5.1 '설정·시스템' 문구 그대로) ──
+  /** 05-3 §5.1: 주소록 id 없음·지워짐(removed_at). fieldErrors에 해당 칸 */
+  ADDRESSBOOK_NOT_FOUND: { status: 404, message: '주소록 항목을 찾을 수 없습니다.' },
+  /** 05-3 §5.1: 해외 출고지로 고른 주소록이 is_overseas=false */
+  ADDRESS_NOT_OVERSEAS: { status: 422, message: '해외 출고지 주소가 아닙니다.' },
+  /** 05-3 §5.1: 발송 택배사 코드가 현재 설정 스냅샷의 목록(delivery.dispatchCompanies) 밖 */
+  DELIVERY_COMPANY_NOT_ALLOWED: { status: 422, message: '쓸 수 없는 발송 택배사입니다.' },
+  /**
+   * Proposed(P1-09, 05-3에 없던 코드): 반품 택배사 id가 동기화 목록(commerce_return_delivery_company)에 없거나
+   * 최신 동기화에서 사라짐(removed_at). 주소록과 같게 404로 둔다(05-3·05-1 §5.1에 더했다, 오너 검토).
+   */
+  RETURN_DELIVERY_COMPANY_NOT_FOUND: {
+    status: 404,
+    message: '반품 택배사를 찾을 수 없습니다. 동기화한 목록에서 다시 골라 주세요.',
+  },
   // ── step-engine 후보(P1-04, 05-3 §5.1 문구 그대로) ──
   /** 05-3 §5.1: 후보 id 없음 */
   CANDIDATE_NOT_FOUND: { status: 404, message: '후보를 찾을 수 없습니다.' },

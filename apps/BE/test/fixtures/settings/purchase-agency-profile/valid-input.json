@@ -1,0 +1,21 @@
+{
+  "overseasShippingCommerceAddressbookId": 1,
+  "returnCommerceAddressbookId": 2,
+  "dispatchDeliveryCompanyCode": "FAKE_DISPATCH_A",
+  "commerceReturnDeliveryCompanyId": 1,
+  "returnFeeKrw": 30000,
+  "exchangeFeeKrw": 60000,
+  "businessName": "[내 상호]",
+  "afterServicePhone": "[A/S 연락처]",
+  "afterServiceGuide": "[A/S 안내]",
+  "importer": "[수입자]",
+  "noticeFixedTexts": {
+    "compensationProcedure": "상품상세 참조",
+    "noRefundReason": "상품상세 참조",
+    "qualityAssuranceStandard": "상품상세 참조",
+    "returnCostReason": "상품상세 참조",
+    "troubleShootingContents": "상품상세 참조",
+    "warrantyPolicy": "소비자분쟁해결기준에 따름"
+  },
+  "maxPurchaseQuantityPerOrder": 1
+}

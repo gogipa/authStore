@@ -41,6 +41,19 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'settings.sourcing.defaultWidth': '기본 폭 설정',
   'settings.sourcing.excludeBackOrder': '取り寄せ 제외 설정',
   'settings.sourcing.defaultShippingYen': '기본 송료 설정',
+  // 구매대행 프로필(P1-09, BE settings/purchase-agency-profile/profile-input-keys.ts와 같은 표)
+  'profile.overseasShippingCommerceAddressbookId': '프로필 해외 출고지',
+  'profile.returnCommerceAddressbookId': '프로필 반품·교환지',
+  'profile.dispatchDeliveryCompanyCode': '프로필 발송 택배사',
+  'profile.commerceReturnDeliveryCompanyId': '프로필 반품 택배사',
+  'profile.returnFeeKrw': '프로필 반품비',
+  'profile.exchangeFeeKrw': '프로필 교환비',
+  'profile.businessName': '프로필 상호',
+  'profile.afterServicePhone': '프로필 A/S 연락처',
+  'profile.afterServiceGuide': '프로필 A/S 안내',
+  'profile.importer': '프로필 수입자',
+  'profile.noticeFixedTexts': '프로필 고시 고정 문구',
+  'profile.maxPurchaseQuantityPerOrder': '프로필 주문당 최대 구매수량',
 };
 
 const SETTINGS_PREFIX = 'settings.';

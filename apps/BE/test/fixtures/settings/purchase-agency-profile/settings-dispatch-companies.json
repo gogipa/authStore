@@ -1,0 +1,16 @@
+{
+  "delivery": {
+    "dispatchCompanies": [
+      {
+        "code": "FAKE_DISPATCH_A",
+        "name": "[가짜 발송 택배사 A]",
+        "source": "테스트 fixture(P1-09) — 실제 커머스API 택배사 코드가 아님"
+      },
+      {
+        "code": "FAKE_DISPATCH_B",
+        "name": "[가짜 발송 택배사 B]",
+        "source": "테스트 fixture(P1-09) — 실제 커머스API 택배사 코드가 아님"
+      }
+    ]
+  }
+}

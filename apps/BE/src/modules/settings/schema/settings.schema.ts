@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS } from '../defaults/default-settings.js';
 import {
   type AiEngineModelPair,
   type AppSettings,
+  type DispatchDeliveryCompanySetting,
   DUTY_HS_HEADINGS,
   NOTICE_BLOCK_CONDITIONS,
   type NoticeBlock,
@@ -77,10 +78,34 @@ const noticeBlock: JSONSchemaType<NoticeBlock> = {
   },
 };
 
+/** 발송 택배사 코드 모양(P1-09 Proposed): 영문·숫자·`_`·`-`·`.` 40자까지(profile.dispatch_delivery_company_code varchar(40)) */
+export const DISPATCH_COMPANY_CODE_PATTERN = '^[A-Za-z0-9_.-]{1,40}$';
+
+const dispatchCompany: JSONSchemaType<DispatchDeliveryCompanySetting> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['code', 'name', 'source'],
+  properties: {
+    code: { type: 'string', pattern: DISPATCH_COMPANY_CODE_PATTERN },
+    name: { type: 'string', minLength: 1, maxLength: 100 },
+    source: { type: 'string', minLength: 1, maxLength: 500 },
+  },
+};
+
 const schema: JSONSchemaType<AppSettings> = {
   type: 'object',
   additionalProperties: false,
-  required: ['schemaVersion', 'costs', 'pricing', 'sourcing', 'keywords', 'safety', 'notice', 'ai'],
+  required: [
+    'schemaVersion',
+    'costs',
+    'pricing',
+    'sourcing',
+    'keywords',
+    'safety',
+    'notice',
+    'delivery',
+    'ai',
+  ],
   properties: {
     schemaVersion: { type: 'string', const: SETTINGS_SCHEMA_VERSION },
     costs: {
@@ -269,6 +294,14 @@ const schema: JSONSchemaType<AppSettings> = {
             exchangePolicy: { type: 'string', minLength: 1, maxLength: 500 },
           },
         },
+      },
+    },
+    delivery: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['dispatchCompanies'],
+      properties: {
+        dispatchCompanies: { type: 'array', items: dispatchCompany, maxItems: 100 },
       },
     },
     ai: {

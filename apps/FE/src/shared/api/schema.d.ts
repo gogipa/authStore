@@ -2341,13 +2341,14 @@ export interface paths {
         };
         /**
          * 구매대행 프로필 조회
-         * @description 설치본당 1행이라 단수 리소스다. 행이 없으면 빈 기본값으로 200. 필수값 빈칸(`missingFields`)과 주소 경고(`addressWarnings`)를 함께 준다.
+         * @description 설치본당 1행이라 단수 리소스다. 행이 없으면 빈 기본값으로 200. 필수값 빈칸(`missingFields`)과 주소 경고(`addressWarnings`)를 함께 준다. Proposed(P1-09) — `missingFields`는 nullable 칸 10개 가운데 null인 것(PurchaseAgencyProfile.missingFields 설명), 주소 경고는 프로필이 가리키는 주소록 캐시 행으로 매번 계산한다(해외 출고지 사라짐·해외 아님, 반품·교환지 사라짐).
          */
         get: operations["getPurchaseAgencyProfile"];
         /**
          * 구매대행 프로필 저장
          * @description 전체 교체(웹 화면 전용 기록). 배송비는 0 고정이라 받지 않는다(F-ST-10). 저장하면 이 값을 읽는 ⑥-3·⑧·⑨를 재실행 필요로 전파하고
          *     `user_action_log`(SETTING_CHANGED)를 남긴다. 해외 출고지는 `isOverseas=true` 주소록만 고를 수 있다(F-ST-08).
+         *     Proposed(P1-09) — 검사 순서는 본문 형식(422 VALIDATION_FAILED) → 칸 순서대로 해외 출고지(404 ADDRESSBOOK_NOT_FOUND·422 ADDRESS_NOT_OVERSEAS) → 반품·교환지(404 ADDRESSBOOK_NOT_FOUND) → 발송 택배사(현재 설정 스냅샷 `delivery.dispatchCompanies` 밖이면 422 DELIVERY_COMPANY_NOT_ALLOWED, 스냅샷이 없으면 503 SETTINGS_INVALID) → 반품 택배사(동기화 목록에 없거나 `removed_at`이면 404 RETURN_DELIVERY_COMPANY_NOT_FOUND)이고, 도메인 오류도 `fieldErrors[0].field`에 그 칸을 담는다. null 칸은 검사하지 않는다(빈칸이 있어도 저장된다). 글 칸은 앞뒤 공백을 지우고 빈 문자열은 null로 저장한다(`noticeFixedTexts`의 빈 문구는 키째 뺀다). 값이 바뀐 키만 입력 이름 `profile.<필드>`(step_run_input source_type=SETTINGS)로 재실행 필요 전파에 넘기고, 저장·전파·감사 기록(detail `{ setting: PURCHASE_AGENCY_PROFILE, changedKeys }`, 값 없음)은 한 트랜잭션이다. 같은 값이면 아무것도 쓰지 않고 200 + `rerunRequiredStepCount=0`.
          */
         put: operations["replacePurchaseAgencyProfile"];
         post?: never;
@@ -2366,7 +2367,7 @@ export interface paths {
         };
         /**
          * 발송 택배사 코드 목록 조회
-         * @description DB 테이블 없이 현재 `settings_snapshot.content`의 출처를 밝힌 코드 목록을 준다(페이징 없음, RG-03). 해외 출고에 쓸 수 있는 코드는 M0 S3에서 확인한다.
+         * @description DB 테이블 없이 현재 `settings_snapshot.content`의 출처를 밝힌 코드 목록을 준다(페이징 없음, RG-03). 해외 출고에 쓸 수 있는 코드는 M0 S3에서 확인한다. Proposed(P1-09) — 설정 키는 `delivery.dispatchCompanies[{ code, name, source }]`(파일에 적은 순서, 코드는 영문·숫자·`_`·`-`·`.` 40자까지, 겹치면 설정 검사 오류). 기본 템플릿은 빈 목록이다(출처 있는 코드가 아직 없다).
          */
         get: operations["listDispatchDeliveryCompanies"];
         put?: never;
@@ -7101,7 +7102,7 @@ export interface components {
             afterServiceGuide: string | null;
             /** @description 수입자 표기. 기본은 비어 있고 사용자가 넣는다(F-AP-11) */
             importer: string | null;
-            /** @description 고시 항목 키별 고정 문구(jsonb) */
+            /** @description 고시 항목 키별 고정 문구(jsonb). Proposed(P1-09) — 키는 커머스API `SHOES` 고시 필드 이름이다. 설정 화면 '품질보증기준' 칸은 `warrantyPolicy`, '나머지 항목' 칸은 `returnCostReason`·`noRefundReason`·`qualityAssuranceStandard`·`compensationProcedure`·`troubleShootingContents` 다섯 키에 같은 문구를 둔다. 비어 있는 키는 ⑥-3 기본 문구를 쓴다(F-CT-22, 0/1 입력 형식은 M0 S3) */
             noticeFixedTexts: {
                 [key: string]: string;
             };
@@ -7110,11 +7111,11 @@ export interface components {
             createdAt: string | null;
             /** Format: date-time */
             updatedAt: string | null;
-            /** @description 비어 있는 필수값의 필드 이름(예 businessName, afterServicePhone, importer, overseasShippingCommerceAddressbookId) */
+            /** @description 비어 있는 필수값의 필드 이름(예 businessName, afterServicePhone, importer, overseasShippingCommerceAddressbookId). Proposed(P1-09) — 전체 목록은 nullable 칸 10개(overseasShippingCommerceAddressbookId, returnCommerceAddressbookId, dispatchDeliveryCompanyCode, commerceReturnDeliveryCompanyId, returnFeeKrw, exchangeFeeKrw, businessName, afterServicePhone, afterServiceGuide, importer)이고 이 순서로 준다. 빈 문자열은 저장할 때 null로 바뀌어 빈칸으로 본다. ⑥-3 시작 검사(PROFILE_INCOMPLETE)는 이 가운데 businessName·afterServicePhone·afterServiceGuide·importer만 본다 */
             missingFields: string[];
             addressWarnings: components["schemas"]["PurchaseAgencyProfileAddressWarning"][];
         };
-        /** @description 프로필 전체 교체 본문. 배송비(deliveryFeeKrw)는 0 고정이라 받지 않는다 */
+        /** @description 프로필 전체 교체 본문. 배송비(deliveryFeeKrw)는 0 고정이라 받지 않는다. Proposed(P1-09) — 12개 키가 모두 있어야 하고(값은 null 허용) 정의 밖 필드(deliveryFeeKrw 포함)는 422 VALIDATION_FAILED다. 숫자 칸에 문자열 숫자는 받지 않는다. 위 끝(maximum)은 DB 열 범위(int4·smallint)와 설정 파일 금액 칸에 맞춘 값이다 */
         PurchaseAgencyProfileInput: {
             overseasShippingCommerceAddressbookId: number | null;
             returnCommerceAddressbookId: number | null;
@@ -7126,6 +7127,7 @@ export interface components {
             afterServicePhone: string | null;
             afterServiceGuide: string | null;
             importer: string | null;
+            /** @description 고시 항목 키별 고정 문구. Proposed(P1-09) — 20개까지, 키는 영문으로 시작하는 영문·숫자 64자까지, 문구는 1000자까지 */
             noticeFixedTexts: {
                 [key: string]: string;
             };
@@ -12208,11 +12210,20 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
-            /** @description ADDRESSBOOK_NOT_FOUND — 본문의 주소록 id가 없거나 지워짐 */
+            /** @description ADDRESSBOOK_NOT_FOUND — 본문의 주소록 id가 없거나 지워짐 · RETURN_DELIVERY_COMPANY_NOT_FOUND — 반품 택배사 id가 동기화 목록에 없거나 사라짐(Proposed P1-09) */
             404: components["responses"]["NotFound"];
             /** @description ADDRESS_NOT_OVERSEAS · DELIVERY_COMPANY_NOT_ALLOWED · VALIDATION_FAILED */
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
+            /** @description SETTINGS_INVALID — 발송 택배사 코드가 있는데 로드된 설정 스냅샷이 없어 목록을 볼 수 없음(Proposed P1-09) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     listDispatchDeliveryCompanies: {

@@ -1,3 +1,5 @@
+import { PROFILE_INPUT_KEY_LABEL } from '../../settings/purchase-agency-profile/profile-input-keys.js';
+
 /**
  * 입력 키(step_run_input.input_key, candidate_step.stale_inputs)와 화면 이름. ERD step_run_input '코드 상수로 관리'.
  *
@@ -8,6 +10,8 @@
  * - `owner.*`: 오너 입력(실행 중 입력과, URL 후보 ③ 쿠폰·⑦ 경쟁 태그처럼 오너가 넣는 시작 조건)
  * - `settings.<설정 키 경로>`: 설정 파일 값(예 `settings.costs`, `settings.sourcing.minSizeCount`). 설정 변경 전파가
  *   바뀐 키(`costs.targetMarginPct`)와 이 경로를 앞부분 일치로 맞춘다
+ * - `profile.<필드>`: 구매대행 프로필 값(P1-09, 예 `profile.importer`, source_type SETTINGS). 이름과 읽는 단계는
+ *   settings/purchase-agency-profile/profile-input-keys.ts가 정하고, 프로필 저장 전파는 이름을 정확히 맞춘다
  * 64자 이하(varchar(64)). FE `features/step-engine/model/inputLabels.ts`가 같은 표를 쓴다.
  */
 export const INPUT_KEYS = {
@@ -101,6 +105,8 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'settings.sourcing.defaultWidth': '기본 폭 설정',
   'settings.sourcing.excludeBackOrder': '取り寄せ 제외 설정',
   'settings.sourcing.defaultShippingYen': '기본 송료 설정',
+  // 구매대행 프로필(P1-09)
+  ...PROFILE_INPUT_KEY_LABEL,
 };
 
 /** 입력 키의 화면 이름. 표에 없는 설정 키는 '설정 {경로}', 그 밖에는 키 그대로 */

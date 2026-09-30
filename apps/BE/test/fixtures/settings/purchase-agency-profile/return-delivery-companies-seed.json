@@ -1,0 +1,20 @@
+[
+  {
+    "code": "CJGLS",
+    "name": "CJ대한통운",
+    "syncedAt": "2026-09-28T00:10:00.000Z",
+    "removedAt": null
+  },
+  {
+    "code": "HANJIN",
+    "name": "한진택배",
+    "syncedAt": "2026-09-28T00:10:00.000Z",
+    "removedAt": null
+  },
+  {
+    "code": "FAKE_RETIRED",
+    "name": "[사라진 반품 택배사]",
+    "syncedAt": "2026-09-27T00:10:00.000Z",
+    "removedAt": "2026-09-28T00:10:00.000Z"
+  }
+]

@@ -218,6 +218,22 @@ describe('error-codes', () => {
     );
   });
 
+  it('P1-09 프로필 코드는 05-3 §5.1 문구·상태 그대로다(반품 택배사 404는 Proposed)', () => {
+    expect(ERROR_CODES.ADDRESSBOOK_NOT_FOUND).toEqual({
+      status: 404,
+      message: '주소록 항목을 찾을 수 없습니다.',
+    });
+    expect(ERROR_CODES.ADDRESS_NOT_OVERSEAS).toEqual({
+      status: 422,
+      message: '해외 출고지 주소가 아닙니다.',
+    });
+    expect(ERROR_CODES.DELIVERY_COMPANY_NOT_ALLOWED).toEqual({
+      status: 422,
+      message: '쓸 수 없는 발송 택배사입니다.',
+    });
+    expect(ERROR_CODES.RETURN_DELIVERY_COMPANY_NOT_FOUND.status).toBe(404);
+  });
+
   it("조사 '을/를'·'은/는'도 받침에 맞춘다(한글이 아니면 문구 그대로)", () => {
     expect(formatErrorMessage('GATE_NOT_PASSED', { 게이트: 'G3 썸네일 선택' })).toBe(
       'G3 썸네일 선택을 먼저 통과해 주세요.',

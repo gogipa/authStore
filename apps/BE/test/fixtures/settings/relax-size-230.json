@@ -198,6 +198,9 @@
       "exchangePolicy": "해외 구매 특성상 사이즈 교환은 반품 후 재주문으로 처리됩니다"
     }
   },
+  "delivery": {
+    "dispatchCompanies": []
+  },
   "ai": {
     "engine": "CLAUDE",
     "models": {

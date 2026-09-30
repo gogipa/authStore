@@ -1,0 +1,29 @@
+[
+  {
+    "addressBookNo": "100000001",
+    "name": "[배대지 창고] 해외 출고지",
+    "addressType": "RELEASE",
+    "isOverseas": true,
+    "addressSummary": "[배대지 창고 주소] [동·호수]",
+    "syncedAt": "2026-09-28T00:10:00.000Z",
+    "removedAt": null
+  },
+  {
+    "addressBookNo": "100000002",
+    "name": "[국내 반품지]",
+    "addressType": "REFUND_OR_EXCHANGE",
+    "isOverseas": false,
+    "addressSummary": "[국내 반품지 주소] [상세 주소]",
+    "syncedAt": "2026-09-28T00:10:00.000Z",
+    "removedAt": null
+  },
+  {
+    "addressBookNo": "100000003",
+    "name": "[예전 배대지 창고] 해외 출고지",
+    "addressType": "RELEASE",
+    "isOverseas": true,
+    "addressSummary": "[예전 배대지 창고 주소]",
+    "syncedAt": "2026-09-27T00:10:00.000Z",
+    "removedAt": "2026-09-28T00:10:00.000Z"
+  }
+]

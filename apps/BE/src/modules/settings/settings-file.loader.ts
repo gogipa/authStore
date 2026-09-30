@@ -150,6 +150,9 @@ function toFieldError(e: ErrorObject): FieldError {
     case 'pattern':
       if (base.endsWith('/basisDate')) return at(base, '날짜는 YYYY-MM-DD 모양이어야 합니다.');
       if (base.endsWith('/id')) return at(base, '블록 ID는 대문자·숫자·밑줄(_)로 40자까지 씁니다.');
+      if (base.endsWith('/code')) {
+        return at(base, '코드는 영문·숫자·밑줄(_)·하이픈(-)·점(.)으로 40자까지 씁니다.');
+      }
       return at(base, '모양이 맞지 않습니다.');
     case 'minLength':
       return at(
@@ -207,6 +210,16 @@ function crossFieldErrors(settings: AppSettings): FieldError[] {
       });
     }
     seen.add(block.id);
+  });
+  const codes = new Set<string>();
+  settings.delivery.dispatchCompanies.forEach((company, index) => {
+    if (codes.has(company.code)) {
+      out.push({
+        field: `/delivery/dispatchCompanies/${index}/code`,
+        message: `발송 택배사 코드 '${company.code}'가 앞 줄과 겹칩니다.`,
+      });
+    }
+    codes.add(company.code);
   });
   return out;
 }

@@ -1,6 +1,7 @@
 import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { ProgressEventsService } from '../../../common/events/progress-events.service.js';
 import type { Candidate, CandidateStep } from '../../../generated/prisma/client.js';
+import { PurchaseAgencyProfileService } from '../../settings/purchase-agency-profile/purchase-agency-profile.service.js';
 import { SettingsService } from '../../settings/settings.service.js';
 import { CandidateStatusService } from '../candidates/candidate-status.service.js';
 import { StepEngineTransactions, type StepEngineTx } from '../candidates/step-engine-tx.js';
@@ -31,6 +32,7 @@ const STALEABLE: readonly StepStatus[] = ['COMPLETED', 'RERUN_REQUIRED', 'WAITIN
  *   단계의 최신 값 해시를 현재 버전의 같은 키 해시와 비교한다.
  * - 설정 변경(`onSettingsChanged`, settings.reloaded의 changedKeys): 그 설정 키를 읽은 단계만. 등록 진행 잠금 후보는
  *   건너뛴다(P1-05 Proposed).
+ * - 구매대행 프로필 변경(`onProfileChanged`, P1-09): 바뀐 프로필 입력(`profile.<필드>`)을 읽은 단계만. 규칙은 설정 변경과 같다.
  * 공통: 자동으로 다시 실행하지 않는다. 현재 버전이 없는(NOT_RUN) 단계·실행 중·실패 단계는 바꾸지 않는다.
  * 입력 대기 중이던 실행은 step_run도 RERUN_REQUIRED로 닫는다.
  */
@@ -44,15 +46,20 @@ export class PropagationService implements OnModuleInit {
     private readonly events: ProgressEventsService,
     private readonly status: CandidateStatusService,
     private readonly transactions: StepEngineTransactions,
+    private readonly profile: PurchaseAgencyProfileService,
   ) {}
 
   /**
    * 설정 변경 전파를 settings 모듈 포트(SETTINGS_RERUN_PROPAGATOR)에 끼운다. 설정 시작 검사(onApplicationBootstrap)보다
    * 먼저 끼워야 해서 onModuleInit에서 한다. 전파 SSE는 설정 트랜잭션이 커밋된 뒤(settings.reloaded 뒤) 보낸다.
+   * 구매대행 프로필 저장의 전파(PROFILE_RERUN_PROPAGATOR, P1-09)도 같은 방식으로 끼운다.
    */
   onModuleInit(): void {
     this.settings.setRerunPropagator((changedKeys, tx, afterCommit) =>
       this.onSettingsChanged(changedKeys, tx, afterCommit),
+    );
+    this.profile.setRerunPropagator((changedInputKeys, tx, afterCommit) =>
+      this.onProfileChanged(changedInputKeys, tx, afterCommit),
     );
   }
 
@@ -130,6 +137,44 @@ export class PropagationService implements OnModuleInit {
     afterCommit: (fn: () => void) => void = () => undefined,
   ): Promise<number> {
     if (changedKeys.length === 0) return 0;
+    const count = await this.markSettingsReaders(
+      (inputKey) => changedKeys.some((changed) => settingsKeyAffects(changed, inputKey)),
+      tx,
+      afterCommit,
+    );
+    if (count > 0) this.logger.log(`설정 변경으로 재실행 필요가 된 단계 ${count}개`);
+    return count;
+  }
+
+  /**
+   * 구매대행 프로필 변경 전파(PROFILE_RERUN_PROPAGATOR, P1-09). 프로필 저장 트랜잭션 안에서 불린다. 현재 버전의
+   * SETTINGS 시작 조건 입력이 바뀐 프로필 입력 이름(`profile.importer` 등, 정확히 같은 이름)인 단계만 재실행 필요로
+   * 둔다(⑥-3·⑨ — ⑧은 ⑥-3 HTML을 거쳐). 나머지 규칙(잠긴 후보 건너뜀·제외 후보 표시·승인대기 후보 작업중으로)은
+   * 설정 변경과 같다. 자동으로 다시 실행하지 않는다.
+   * @returns 재실행 필요가 된(사유가 늘어난) 후보 단계 수
+   */
+  async onProfileChanged(
+    changedInputKeys: readonly string[],
+    tx: Tx,
+    afterCommit: (fn: () => void) => void = () => undefined,
+  ): Promise<number> {
+    if (changedInputKeys.length === 0) return 0;
+    const changed = new Set(changedInputKeys);
+    const count = await this.markSettingsReaders(
+      (inputKey) => changed.has(inputKey),
+      tx,
+      afterCommit,
+    );
+    if (count > 0) this.logger.log(`구매대행 프로필 변경으로 재실행 필요가 된 단계 ${count}개`);
+    return count;
+  }
+
+  /** 현재 버전의 SETTINGS 시작 조건 입력 가운데 `affects`에 맞는 것이 있는 단계를 재실행 필요로 둔다 */
+  private async markSettingsReaders(
+    affects: (inputKey: string) => boolean,
+    tx: Tx,
+    afterCommit: (fn: () => void) => void,
+  ): Promise<number> {
     const scope: StepEngineTx = { tx, now: this.transactions.now(), afterCommit };
     const rows = await tx.candidateStep.findMany({
       where: {
@@ -148,7 +193,7 @@ export class PropagationService implements OnModuleInit {
       });
       const affected = inputs
         .map((input) => input.inputKey)
-        .filter((key) => changedKeys.some((changed) => settingsKeyAffects(changed, key)))
+        .filter(affects)
         .sort();
       if (affected.length === 0) continue;
       await this.markStale(scope, row, affected, null);
@@ -156,7 +201,6 @@ export class PropagationService implements OnModuleInit {
       count += 1;
     }
     for (const candidateId of touched) await this.status.reevaluate(scope, candidateId);
-    if (count > 0) this.logger.log(`설정 변경으로 재실행 필요가 된 단계 ${count}개`);
     return count;
   }
 

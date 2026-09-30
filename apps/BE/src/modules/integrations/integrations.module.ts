@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AppConfigService } from '../../common/config/app-config.service.js';
 import { SettingsModule } from '../settings/settings.module.js';
 import { SettingsService } from '../settings/settings.service.js';
@@ -39,8 +39,9 @@ import {
  *   다른 모듈은 `CommerceMetaCacheService`로만 캐시를 읽는다(쓰기는 동기화기만). 자동 실행은 COMMERCE_META_SCHEDULE로 끈다.
  */
 @Module({
-  // 하루 조회 상한의 원본이 설정 파일이다(P1-03)
-  imports: [SettingsModule],
+  // 하루 조회 상한의 원본이 설정 파일이다(P1-03). settings도 프로필 검증에 CommerceMetaCacheService를 쓰므로(P1-09)
+  // 서로 forwardRef로 부른다
+  imports: [forwardRef(() => SettingsModule)],
   controllers: [CallUsageController, CommerceMetaSyncController, CommerceMetaController],
   providers: [
     { provide: HTTP_FETCH, useValue: defaultHttpFetch },

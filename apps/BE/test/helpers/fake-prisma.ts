@@ -281,6 +281,16 @@ const checkMetaSyncRun: FakeRowCheck = (row) => {
 const checkAddressbookNo: FakeRowCheck = (row) =>
   /^[0-9]+$/.test(String(row.addressBookNo)) ? null : 'ck_addressbook_no';
 
+/** ck_pap_singleton·ck_pap_free_delivery·ck_pap_qty(purchase_agency_profile) */
+const checkPurchaseAgencyProfile: FakeRowCheck = (row) => {
+  if (row.singletonKey !== 1) return 'ck_pap_singleton';
+  if (row.deliveryFeeKrw !== 0) return 'ck_pap_free_delivery';
+  if (typeof row.maxPurchaseQuantityPerOrder !== 'number' || row.maxPurchaseQuantityPerOrder < 1) {
+    return 'ck_pap_qty';
+  }
+  return null;
+};
+
 /** ck_cmd_sha */
 const checkDocumentSha: FakeRowCheck = (row) =>
   /^[0-9a-f]{64}$/.test(String(row.payloadSha256)) ? null : 'ck_cmd_sha';
@@ -306,6 +316,18 @@ export class FakeMetaPrisma {
     { finishedAt: null, itemCount: null, errorMessage: null },
     checkMetaSyncRun,
   );
+  /** 구매대행 프로필(P1-09). 설치본당 1행·배송비 0·수량 1 이상(CHECK 셋)만 흉내 낸다 */
+  purchaseAgencyProfile = new FakeTable(
+    {
+      singletonKey: 1,
+      deliveryFeeKrw: 0,
+      noticeFixedTexts: {},
+      maxPurchaseQuantityPerOrder: 1,
+      createdAt: new Date('2026-09-28T00:00:00Z'),
+      updatedAt: new Date('2026-09-28T00:00:00Z'),
+    },
+    checkPurchaseAgencyProfile,
+  );
   /** 트랜잭션 수(테스트가 본다) */
   transactions = 0;
 
@@ -317,6 +339,7 @@ export class FakeMetaPrisma {
       this.commerceReturnDeliveryCompany,
       this.commerceMetaDocument,
       this.commerceMetaSyncRun,
+      this.purchaseAgencyProfile,
     ];
   }
 

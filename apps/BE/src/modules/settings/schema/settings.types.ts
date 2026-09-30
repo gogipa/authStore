@@ -222,6 +222,24 @@ export interface AiEngineModelPair {
   vision: string | null;
 }
 
+/**
+ * 발송 택배사 코드 한 줄(F-ST-09, RG-03, P1-09 Proposed). 동기화하지 않고 설정 파일에 적는다.
+ * 출처(`source`)를 밝힌 코드만 둔다. 해외 출고에 쓸 수 있는 코드는 M0 S3에서 확인한다.
+ */
+export interface DispatchDeliveryCompanySetting {
+  /** 커머스API `deliveryInfo.deliveryCompany`에 넣을 코드(영문·숫자·`_`·`-`·`.`, 40자까지) */
+  code: string;
+  /** 화면 이름 */
+  name: string;
+  /** 코드 출처(문서 이름·확인 날짜 등). 비울 수 없다 */
+  source: string;
+}
+
+/** 배송(구매대행 프로필이 고르는 코드 목록, P1-09 Proposed). 기본 템플릿은 빈 목록이다(출처 있는 코드가 아직 없다) */
+export interface DeliverySettings {
+  dispatchCompanies: DispatchDeliveryCompanySetting[];
+}
+
 /** AI 엔진 선택(D-16). 이 섹션을 파일에 쓰는 것은 PUT /settings/ai-engine(P1-11)뿐이다 */
 export interface AiSettings {
   engine: AiEngineCode;
@@ -237,5 +255,7 @@ export interface AppSettings {
   keywords: KeywordSettings;
   safety: SafetySettings;
   notice: NoticeSettings;
+  /** P1-09: 발송 택배사 코드 목록(GET /dispatch-delivery-companies) */
+  delivery: DeliverySettings;
   ai: AiSettings;
 }

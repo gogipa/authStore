@@ -4,14 +4,32 @@ import { describe, expect, it } from 'vitest';
 import { errorResponse, jsonResponse, stubApi } from '@/test/apiStub';
 import { FakeEventSource } from '@/test/fakeEventSource';
 import { callUsageList } from '@/test/fixtures/callUsage';
+import {
+  addressbookEntry,
+  metaSyncStatusList,
+  page,
+  returnDeliveryCompanyEntry,
+} from '@/test/fixtures/commerceMeta';
+import { dispatchCompanyList, filledProfile } from '@/test/fixtures/purchaseAgencyProfile';
 import { settingsContent, settingsReloadResult, settingsView } from '@/test/fixtures/settings';
 import { renderRoute } from '@/test/renderRoute';
 
 const INVALID_MESSAGE =
   '설정 파일에 오류가 있어 설정을 읽지 못했습니다. 설정 화면의 검사 결과를 확인해 주세요.';
 
+/** 프로필 탭(P1-09)이 함께 부르는 API: 프로필(수입자까지 채움)·선택 목록·메타 동기화 상태 */
+const PROFILE_TAB_ROUTES = {
+  'GET /purchase-agency-profile': () => jsonResponse(filledProfile()),
+  'GET /commerce-addressbooks': () => jsonResponse(page([addressbookEntry()])),
+  'GET /commerce-return-delivery-companies': () =>
+    jsonResponse(page([returnDeliveryCompanyEntry()])),
+  'GET /dispatch-delivery-companies': () => jsonResponse(dispatchCompanyList()),
+  'GET /commerce-meta-sync-runs/latest': () => jsonResponse(metaSyncStatusList()),
+};
+
 function stubSettings(view = settingsView()) {
   return stubApi({
+    ...PROFILE_TAB_ROUTES,
     'GET /call-usage': () => jsonResponse(callUsageList()),
     'GET /settings': () => jsonResponse(view),
   });
@@ -31,7 +49,7 @@ const getRequests = (api: ReturnType<typeof stubApi>, key: string) =>
   );
 
 describe('설정 화면(SCR-10, P1-03)', () => {
-  it('머리: 제목 "설정"과 시안 설명, 탭은 M1 3개만', async () => {
+  it('머리: 제목 "설정"과 시안 설명, 탭은 M1 3개만, 프로필 탭이면 되돌리기·저장', async () => {
     stubSettings();
     await renderSettings();
     expect(
@@ -43,15 +61,17 @@ describe('설정 화면(SCR-10, P1-03)', () => {
     expect(tabs.map((t) => t.textContent)).toEqual(['구매대행 프로필', '비용·요금표', '환율']);
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('구매대행 프로필');
-    // 편집 버튼(되돌리기·저장)은 M1에 없다
-    expect(screen.queryByRole('button', { name: '저장' })).toBeNull();
+    // 머리의 '되돌리기'·'저장'은 구매대행 프로필 탭의 것이다(P1-09)
+    expect(await screen.findByRole('button', { name: '저장' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '되돌리기' })).toBeInTheDocument();
   });
 
-  it('탭을 고르면 그 패널을 보인다', async () => {
+  it('탭을 고르면 그 패널을 보인다(프로필 탭이 아니면 머리 버튼이 없다)', async () => {
     stubSettings();
     await renderSettings();
     await userEvent.click(screen.getByRole('tab', { name: '환율' }));
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('환율');
+    expect(screen.queryByRole('button', { name: '저장' })).toBeNull();
   });
 
   it("valid:true → '오류 없음'", async () => {
@@ -188,6 +208,7 @@ describe('설정 화면(SCR-10, P1-03)', () => {
 
   it('503 SETTINGS_INVALID → blocked 안내 띠에 봉투 message, 검사 카드에 fieldErrors, 값은 —', async () => {
     stubApi({
+      ...PROFILE_TAB_ROUTES,
       'GET /call-usage': () => jsonResponse(callUsageList()),
       'GET /settings': () =>
         errorResponse(503, 'SETTINGS_INVALID', INVALID_MESSAGE, {
