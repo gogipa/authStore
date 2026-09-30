@@ -1,0 +1,12 @@
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.error {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}

@@ -77,6 +77,7 @@ const DEFAULTS = {
   },
   agy: {
     version: 'agy/version.txt',
+    models: { stdout: 'agy/models.txt', exit: 0 },
     run: { stdout: 'agy/success.json', exit: 0 },
   },
   codex: {
@@ -126,6 +127,13 @@ async function main() {
     const auth = scenario.auth ?? { stdout: { text: '' }, exit: 0 };
     process.stdout.write(fixtureText(auth.stdout));
     process.exit(auth.exit ?? 0);
+  }
+  if (engine === 'agy' && args[0] === 'models') {
+    // P1-11: `agy models`(모델 목록, 호출 비용 없음)
+    record('models');
+    const models = scenario.models ?? { stdout: { text: '' }, exit: 0 };
+    process.stdout.write(fixtureText(models.stdout));
+    process.exit(models.exit ?? 0);
   }
   record('run');
   const run = scenario.run ?? {};

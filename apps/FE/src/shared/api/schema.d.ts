@@ -2289,6 +2289,7 @@ export interface paths {
          * AI 엔진 설정 조회
          * @description AI 엔진 페이지(SCR-13)의 설정 값이다. 설정 JSON 파일의 `ai` 섹션(선택 엔진, 엔진별 텍스트·비전 모델)과 엔진별 고정 안내(표시 이름·실행 파일 이름·모델 목록·직접 입력 허용·기본 모델·로그인 명령·약관 주의)를 준다.
          *     엔진 순서는 CLAUDE·AGY·CODEX. 설치·로그인·연결 테스트 상태는 `GET /ai-cli-checks/latest`에서 읽는다. 로드된 설정 스냅샷이 없으면 503 `SETTINGS_INVALID`.
+         *     P1-11 구현 결정(Proposed, 05-1 §2.12) — AGY `modelOptions`는 `agy models` 결과를 앱 메모리에 캐시한 것이다(AGY를 감지할 때마다 다시 받고, 한 번도 받지 않았으면 처음 필요할 때 한 번 받는다). 받지 못했으면(미설치·실패) 기본 모델(텍스트 gemini-3.8-flash-medium·비전 gemini-3.8-flash-high)을 목록으로 준다. `experimental`('실험적' 표시)은 M0 S7 측정값이 없어 앱 상수다(S7 전에는 CODEX만 true).
          */
         get: operations["getAiEngineSettings"];
         /**
@@ -2297,6 +2298,7 @@ export interface paths {
          *     모델 값이 그 엔진의 목록에 없고 직접 입력도 허용되지 않으면 422 `AI_MODEL_INVALID`(fieldErrors에 `models.{엔진}.text|vision`).
          *     저장하면 설정 JSON 파일의 `ai` 섹션을 원자적으로 쓰고 새 `settings_snapshot`을 만든 뒤 SSE `settings.reloaded`(`rerunRequiredStepCount` 0)를 보낸다.
          *     새로 시작하는 AI 단계부터 새 엔진을 쓰고, 진행 중인 실행과 이미 만든 결과는 그대로다(엔진·모델은 입력 지문·재실행 전파에서 뺀다, R9). 값이 현재와 같으면 새 스냅샷 없이 200 + 현재 설정.
+         *     P1-11 구현 결정(Proposed, 05-1 §2.12) — (1) 검사 순서: 본문 형식 422 `VALIDATION_FAILED` → 로드된 설정 503 → 모델 422 `AI_MODEL_INVALID` → 같은 값 200 → 10분 조건 409. (2) 모델 목록: CLAUDE `sonnet`·`opus`·`haiku`, AGY는 `getAiEngineSettings`의 `modelOptions`와 같은 목록, CODEX는 공백 없는 1~100자. 선택 엔진의 텍스트·비전 모델이 null이면 422, 다른 엔진의 null은 받는다. 현재 설정과 같은 값은 목록 검사를 건너뛴다(`agy models` 목록이 바뀌어도 다른 엔진 저장이 막히지 않게). (3) 10분은 `ai_cli_check.checked_at`을 찍는 것과 같은 앱 시계로 계산하고 정확히 10분 전은 통과로 본다. 비전 모델은 조건에 들지 않는다. (4) 파일은 JSON의 `ai` 키만 바꿔 원자적으로 쓴다(임시 파일 → fsync → rename, 다시 읽지 않은 다른 수정은 그대로 남는다). 파일이 JSON이 아니면 쓰지 않고 422 `SETTINGS_SCHEMA_INVALID`. 새 스냅샷 내용은 현재 설정 + 새 ai다. (5) 스냅샷과 같은 트랜잭션에 `user_action_log`(SETTING_CHANGED, detail `{ setting: AI_ENGINE, changedKeys }`, 값 없음)를 남긴다. (6) '새 스냅샷'은 P1-03 내용 해시 중복 제거를 따른다 — 예전에 쓴 적 있는 ai 설정으로 돌아가 같은 내용의 스냅샷이 이미 있으면 새 행을 만들지 않고 그 행의 `last_loaded_at`만 갱신해 현재 스냅샷으로 쓴다(응답 `settingsSnapshotId`는 그 행, `updatedAt`은 갱신한 시각). 이때도 설정은 바뀌었으므로 파일 쓰기·감사 기록·SSE는 같다. (7) SSE `settings.reloaded`의 `valid`·`errors`는 방금 저장한 스냅샷의 검사 결과라 늘 `true`·`[]`다. 앞선 다시 읽기가 실패했던(파일의 다른 칸 오류) 상태에서 저장해도 그 오류는 싣지 않고, 파일 검사 결과는 GET /settings의 `valid`·`errors`에 그대로 남는다.
          */
         put: operations["updateAiEngineSettings"];
         post?: never;
@@ -2754,6 +2756,7 @@ export interface paths {
          * AI 엔진별 최신 점검 결과 조회
          * @description 엔진(CLAUDE·AGY·CODEX)마다 최신 `ai_cli_check` 1건(설치·실행 파일 경로·버전·지원 범위 P-13·로그인·연결 테스트 결과·걸린 시간)과 선택 엔진 표시를 준다(페이징 없음).
          *     점검한 적 없는 엔진은 `latest`가 null이다. 실행 파일 경로(`binPath`)는 AI 엔진 페이지에 보여 줘야 해서 로컬 경로 비공개 규칙(§1.2)의 예외다. 로그인 정보·토큰은 읽지도 주지도 않는다(CON-11).
+         *     P1-11 구현 결정(Proposed, 05-1 §2.14) — (1) 화면의 '마지막 연결 테스트'는 이 응답과 이력(`listAiCliChecks`)에서 SKIPPED가 아닌 가장 최근 행이다(감지만 한 행이 최신이어도 가려지지 않게). (2) 첫 실행 'AI 엔진 고르기'(F-SY-23)는 확정 기록 자리가 M1에 없어, 선택 엔진의 마지막 연결 테스트가 PASSED면 완료로 본다(캡션의 모델·시각은 그 행). 추천은 설치됐고 마지막 연결 테스트가 PASSED인 엔진 가운데 CLAUDE → CODEX → AGY 순서의 첫 번째. (3) 이미지 생성 CLI 상태(F-SY-13)는 이 API에 없다 — M1 시스템 상태는 그 줄을 그리지 않는다(P3-02가 자리를 정한다).
          */
         get: operations["getLatestAiCliChecks"];
         put?: never;
@@ -2771,7 +2774,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * AI 엔진 점검 이력 조회
+         * @description AI 엔진 페이지(SCR-13) '최근 점검 이력' 표의 `ai_cli_check` 행(추가만)을 최신순으로 준다. `binPath`는 `getLatestAiCliChecks`와 같이 §1.2 예외다. sort 허용 필드는 `checkedAt`(같은 시각이면 id를 같은 방향으로), 기본 `checkedAt,desc`.
+         *     P1-11 구현 결정(Proposed, 05-1 §2.14) — 이력 표에 쓸 API가 없어 더했다(M1). 표는 처음 10행을 보이고 [전체 이력]을 누르면 최근 100행(size 최대)까지 편다.
+         */
+        get: operations["listAiCliChecks"];
         put?: never;
         /**
          * AI 엔진 감지·연결 테스트 실행
@@ -2779,6 +2787,7 @@ export interface paths {
          *     연결 테스트는 사용자가 누를 때만 돌고, 선택하지 않은 엔진을 앱이 스스로 부르지 않는다(R7). 그래서 `smokeTest=true`면 `engineCodes`가 필요하다(없으면 422 VALIDATION_FAILED).
          *     모델은 `models`의 값, 없으면 설정의 그 엔진 텍스트 모델이다(CODEX처럼 비어 있으면 422 AI_MODEL_INVALID). 엔진마다 `ai_cli_check` 1행을 쓰고 SSE `ai-cli-check.completed`를 보낸다.
          *     앱 시작 때 선택 엔진만 점검하는 것(trigger=STARTUP)은 앱이 스스로 하며 이 API로 받지 않는다.
+         *     P1-11 구현 결정(Proposed, 05-1 §2.14) — (1) 검사 순서: 본문 형식 422 `VALIDATION_FAILED`(trigger STARTUP 포함) → `smokeTest=true`인데 `engineCodes` 없음 422 `VALIDATION_FAILED`(fieldErrors `engineCodes`) → 연결 테스트 모델 422 `AI_MODEL_INVALID`(fieldErrors `models.{엔진}`, 비었으면 `{모델}` 자리 '(비어 있음)') → 잠금 409. (2) 모델 목록 검사는 저장(`updateAiEngineSettings`)과 같다. 설정에 이미 있는 값은 검사를 건너뛴다. `smokeTest=false`면 `models`는 쓰지 않는다. (3) 잠금은 앱 시작 점검과 설정 다시 읽기 뒤 점검도 같이 쓴다. `{작업}` = 'AI 엔진 점검'. (4) AGY가 설치돼 있으면 감지할 때 `agy models` 목록도 다시 받는다(호출 비용 없음). (5) 미설치 엔진은 연결 테스트를 부르지 않고 SKIPPED(`errorCode` NOT_INSTALLED), 로그인이 풀린 엔진도 SKIPPED(NOT_LOGGED_IN, P1-10). (6) 화면이 이 API를 부르는 때: AI 엔진 페이지를 열 때·[다시 감지]·시스템 상태 [다시 점검](감지만, MANUAL), 카드의 [연결 테스트](그 엔진만, MANUAL), [저장] 전 10분 안 통과가 없을 때(BEFORE_SAVE), 첫 실행 점검의 [AI 엔진] 링크로 연 AI 엔진 페이지(`?from=first-run`)의 감지·연결 테스트(FIRST_RUN).
          */
         post: operations["createAiCliCheck"];
         delete?: never;
@@ -4357,7 +4366,7 @@ export interface components {
             itemCount: number | null;
             errorMessage: string | null;
         };
-        /** @description settings.reloaded — 설정 파일을 다시 읽었거나(POST /settings-snapshots, 실패 포함) 화면에서 저장했을 때(AI 엔진 저장 포함). 다시 읽기가 실패하면 settingsSnapshotId null·valid false·errors에 검사 오류(P1-03 Proposed) */
+        /** @description settings.reloaded — 설정 파일을 다시 읽었거나(POST /settings-snapshots, 실패 포함) 화면에서 저장했을 때(AI 엔진 저장 포함). 다시 읽기가 실패하면 settingsSnapshotId null·valid false·errors에 검사 오류(P1-03 Proposed). AI 엔진 저장(PUT /settings/ai-engine)은 저장한 스냅샷의 결과라 늘 valid true·errors []이고, 같은 내용의 스냅샷이 이미 있으면 settingsSnapshotId는 그 기존 행이다(P1-11 Proposed) */
         SettingsReloadedEvent: {
             /** @description 검증에 실패해 새 스냅샷이 없으면 null */
             settingsSnapshotId: number | null;
@@ -7048,6 +7057,8 @@ export interface components {
             loginCommand: string;
             /** @description 구독 약관·쿼터 책임이 사용자에게 있다는 한 줄(R14) */
             termsNote: string;
+            /** @description M0 S7 기준(스키마 통과율 ≥ 95%, 호출당 ≤ 120초)에 못 미쳤거나 아직 재지 않은 엔진. 카드에 '실험적'을 붙인다(F-ST-27, R15). P1-11 Proposed — S7 측정값이 없어 앱 상수이고 S7 전에는 CODEX만 true */
+            experimental: boolean;
         };
         /** @description AI 엔진 페이지(SCR-13) 설정 값(설정 JSON ai 섹션 + 엔진별 고정 안내) */
         AiEngineSettings: {
@@ -7521,6 +7532,11 @@ export interface components {
             status: "RUNNING";
             /** Format: date-time */
             acceptedAt: string;
+        };
+        /** @description AI 엔진 점검 이력 한 페이지(P1-11 Proposed, listAiCliChecks) */
+        AiCliCheckPage: {
+            content: components["schemas"]["AiCliCheck"][];
+            page: components["schemas"]["PageMeta"];
         };
         /** @description 사전조건 점검 작업 접수(SSE system-check.completed의 kind와 같은 값). AI 엔진 점검은 AiCliCheckAccepted(D-16) */
         SystemCheckAccepted: {
@@ -12077,7 +12093,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             /** @description AI_ENGINE_NOT_VERIFIED — 선택 엔진·텍스트 모델로 10분 안에 통과한 연결 테스트가 없음(details.engineCode·model) */
             409: components["responses"]["Conflict"];
-            /** @description AI_MODEL_INVALID(fieldErrors에 models.{엔진}.text|vision) · VALIDATION_FAILED */
+            /** @description AI_MODEL_INVALID(fieldErrors에 models.{엔진}.text|vision) · VALIDATION_FAILED · SETTINGS_SCHEMA_INVALID(설정 파일이 JSON이 아니라 ai 섹션을 쓸 수 없음, P1-11 Proposed) */
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
             /** @description SETTINGS_INVALID — 로드된 설정 스냅샷이 없음 */
@@ -12892,6 +12908,39 @@ export interface operations {
                 };
             };
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    listAiCliChecks: {
+        parameters: {
+            query?: {
+                /** @description 이 엔진의 점검만 */
+                engineCode?: components["schemas"]["AiEngineCode"];
+                /** @description 0부터 시작하는 페이지 번호 */
+                page?: components["parameters"]["Page"];
+                /** @description 페이지 크기(기본 20, 최대 100) */
+                size?: components["parameters"]["Size"];
+                /** @description 정렬. `필드,asc|desc`를 여러 번 줄 수 있다. 허용 필드는 엔드포인트마다 정해져 있다(05-3). */
+                sort?: components["parameters"]["Sort"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 점검 이력 한 페이지 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiCliCheckPage"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            /** @description INVALID_QUERY_PARAMETER */
+            422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
         };
     };

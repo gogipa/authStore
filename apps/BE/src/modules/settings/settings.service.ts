@@ -9,11 +9,13 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import type { SettingsReloadResultDto } from './dto/settings-reload-result.dto.js';
 import type { SettingsSnapshotDto, SettingsViewDto } from './dto/settings-view.dto.js';
 import { describeSafetyItems } from './safety/safety-floor.validator.js';
-import type { AppSettings } from './schema/settings.types.js';
+import type { AiSettings, AppSettings } from './schema/settings.types.js';
 import {
+  type AtomicWriteOps,
   canonicalJson,
   checkSettingsValue,
   ROOT_FIELD,
+  type SettingsFileManifestEntry,
   SettingsFileLoader,
   type SettingsLoadResult,
 } from './settings-file.loader.js';
@@ -31,8 +33,29 @@ export interface SettingsReloadOutcome {
   result: SettingsReloadResultDto;
 }
 
-type LoadedOk = Extract<SettingsLoadResult, { ok: true }>;
 type LoadedFailed = Extract<SettingsLoadResult, { ok: false }>;
+
+/** 스냅샷으로 저장할 통과한 설정(파일 다시 읽기·ai 섹션 저장 공통) */
+interface PassedSettings {
+  settings: AppSettings;
+  contentSha256: string;
+  fileManifest: SettingsFileManifestEntry[];
+}
+
+/** ai 섹션 저장(P1-11) 결과 */
+export interface AiSectionReplaceOutcome {
+  /** false면 같은 값이라 아무것도 쓰지 않았다(새 스냅샷·SSE 없음) */
+  changed: boolean;
+  snapshotId: number;
+  changedKeys: string[];
+}
+
+export interface AiSectionReplaceOptions {
+  /** 스냅샷 트랜잭션 안에서 함께 할 일(감사 기록 SETTING_CHANGED 등) */
+  inTransaction?: (tx: Prisma.TransactionClient, changedKeys: readonly string[]) => Promise<void>;
+  /** 테스트: 원자 쓰기의 rename을 바꿔 끼운다 */
+  writeOps?: Partial<AtomicWriteOps>;
+}
 
 interface CurrentSettings {
   snapshotId: number;
@@ -256,6 +279,64 @@ export class SettingsService implements OnApplicationBootstrap {
     });
   }
 
+  /**
+   * AI 엔진 선택 저장(P1-11 PUT /settings/ai-engine, D-16 R8·R9). 다시 읽기와 같은 줄(한 번에 하나씩)에서 돈다.
+   * 1. 현재 설정(없으면 503)과 ai가 같으면 아무것도 하지 않는다(changed=false)
+   * 2. 설정 파일의 `ai` 섹션만 원자적으로 쓴다(`SettingsFileLoader.writeAiSection` — 임시 파일 → fsync → rename)
+   * 3. 현재 설정 + 새 ai로 새 `settings_snapshot`(같은 내용이 있으면 — 예전에 쓴 ai로 돌아가면 — 새 행 없이 그 행의
+   *    last_loaded_at만 갱신하고 그 id를 쓴다, P1-03 중복 제거). ai 키는 재실행 필요 전파에 넘기지 않으므로
+   *    rerunRequiredStepCount는 0이다
+   * 4. SSE `settings.reloaded { settingsSnapshotId, changedKeys, valid: true, errors: [], rerunRequiredStepCount: 0 }`
+   *    (앞선 다시 읽기의 실패는 싣지 않는다. GET /settings의 valid·errors는 파일 검사 결과 그대로)
+   * 파일에 다시 읽지 않은 다른 수정이 있어도 스냅샷은 '현재 설정 + 새 ai'다(다른 키는 다음 다시 읽기·시작 때 반영).
+   * 저장 조건(10분 안 연결 테스트 통과)·모델 검사는 부르는 쪽(AiEngineSettingsService)이 먼저 한다.
+   */
+  replaceAiSection(
+    ai: AiSettings,
+    options: AiSectionReplaceOptions = {},
+  ): Promise<AiSectionReplaceOutcome> {
+    return this.serialized(async () => {
+      const current = this.requireCurrent();
+      if (canonicalJson(current.settings.ai) === canonicalJson(ai)) {
+        return { changed: false, snapshotId: current.snapshotId, changedKeys: [] };
+      }
+      const checked = checkSettingsValue({ ...current.settings, ai });
+      if (!checked.ok) {
+        throw new ApiException('SETTINGS_SCHEMA_INVALID', {
+          message: formatErrorMessage('SETTINGS_SCHEMA_INVALID', {
+            위치: describeLocation(checked.errors),
+          }),
+          fieldErrors: checked.errors,
+        });
+      }
+      const fileManifest = await this.loader.writeAiSection(
+        checked.settings.ai,
+        checked.settings,
+        options.writeOps,
+      );
+      const saved = await this.saveSnapshot(
+        { settings: checked.settings, contentSha256: checked.contentSha256, fileManifest },
+        current.settings,
+        options.inTransaction,
+      );
+      this.currentState = { snapshotId: saved.row.id, settings: deepFreeze(checked.settings) };
+      // 규칙 5: 이 알림의 valid·errors는 방금 저장한 스냅샷의 검사 결과다(늘 통과 → true·[]).
+      // 앞선 다시 읽기가 실패했어도 그 오류를 싣지 않는다 — 파일 검사 결과는 GET /settings의 valid·errors(this.check)에 남는다
+      this.events.publish('settings.reloaded', {
+        settingsSnapshotId: saved.row.id,
+        changedKeys: saved.changedKeys,
+        valid: true,
+        errors: [],
+        rerunRequiredStepCount: saved.rerunRequiredStepCount,
+      });
+      this.runAfterCommit(saved.afterCommit);
+      this.logger.log(
+        `AI 엔진 설정 저장: 스냅샷 #${saved.row.id}, 바뀐 키 ${saved.changedKeys.length}개`,
+      );
+      return { changed: true, snapshotId: saved.row.id, changedKeys: saved.changedKeys };
+    });
+  }
+
   /** GET /settings: 현재 스냅샷 + 검사 결과. 통과한 스냅샷이 없으면 503(fieldErrors에 검사 오류) */
   async getView(): Promise<SettingsViewDto> {
     const current = this.currentState;
@@ -307,8 +388,9 @@ export class SettingsService implements OnApplicationBootstrap {
    * @param prevContent 직전 현재 스냅샷의 content(없으면 null → changedKeys는 빈 배열)
    */
   private async saveSnapshot(
-    loaded: LoadedOk,
+    loaded: PassedSettings,
     prevContent: unknown,
+    inTransaction?: AiSectionReplaceOptions['inTransaction'],
   ): Promise<{
     row: SettingsSnapshot;
     created: boolean;
@@ -350,6 +432,7 @@ export class SettingsService implements OnApplicationBootstrap {
         propagateKeys.length > 0
           ? await this.propagator(propagateKeys, tx, (fn) => afterCommit.push(fn))
           : 0;
+      if (inTransaction) await inTransaction(tx, changedKeys);
       return { row, created: !existing, changedKeys, rerunRequiredStepCount, afterCommit };
     });
   }

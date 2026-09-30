@@ -41,6 +41,12 @@
   text-align: right;
 }
 
+/* 코드 값(모델 ID): mono 13px(AiEngine 보드). 글자 토큰에 13px 없음(04-5). */
+.mono {
+  font: var(--type-num);
+  font-size: 13px;
+}
+
 .unit {
   flex-shrink: 0;
   font: var(--type-caption);
@@ -57,7 +63,13 @@
 }
 
 /* 잠긴 칸 바탕(surface-sunk) 위 캡션은 ink-faint를 쓰지 않는다(tokens.json usage). */
-.locked .unit {
+.locked /* 코드 값(모델 ID): mono 13px(AiEngine 보드). 글자 토큰에 13px 없음(04-5). */
+.mono {
+  font: var(--type-num);
+  font-size: 13px;
+}
+
+.unit {
   color: var(--color-ink-muted);
 }
 

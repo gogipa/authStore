@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { parseAgyModels } from '../../src/modules/integrations/ai-engine/agy-models.provider.js';
 import type {
   AiEngineAdapter,
   AiEngineAuthStatus,
@@ -32,11 +35,19 @@ export class FakeAiEngineAdapter implements AiEngineAdapter {
   smoke: Omit<AiEngineSmokeResult, 'model'>;
   /** 구조화 실행: 결과 객체를 돌려주거나 던진다 */
   runImpl: (call: FakeAiRunCall) => unknown;
+  /**
+   * 모델 목록(`listModels`, P1-11 — `agy models`). AGY만 기본값이 fixture(agy/models.txt)이고 나머지는 null(목록 명령 없음).
+   * 설치 안 됨이면 null을 준다
+   */
+  models: string[] | null = null;
+  /** 연결 테스트를 이만큼 붙잡는다(점검 중 409 ALREADY_IN_PROGRESS 테스트). 풀면 끝난다 */
+  smokeGate: Promise<void> | null = null;
   readonly calls = {
     detect: 0,
     authStatus: 0,
     smokeTest: [] as string[],
     runStructured: [] as FakeAiRunCall[],
+    listModels: 0,
   };
 
   constructor(
@@ -64,9 +75,15 @@ export class FakeAiEngineAdapter implements AiEngineAdapter {
     return Promise.resolve(this.auth);
   }
 
-  smokeTest(model: string): Promise<AiEngineSmokeResult> {
+  async smokeTest(model: string): Promise<AiEngineSmokeResult> {
     this.calls.smokeTest.push(model);
-    return Promise.resolve({ ...this.smoke, model });
+    if (this.smokeGate) await this.smokeGate;
+    return { ...this.smoke, model };
+  }
+
+  listModels(): Promise<string[] | null> {
+    this.calls.listModels += 1;
+    return Promise.resolve(this.detection.installed && this.models ? [...this.models] : null);
   }
 
   async runStructured<T>(
@@ -92,7 +109,18 @@ export class FakeAiEngineAdapter implements AiEngineAdapter {
     this.calls.authStatus = 0;
     this.calls.smokeTest.length = 0;
     this.calls.runStructured.length = 0;
+    this.calls.listModels = 0;
   }
+}
+
+/** `agy models` fixture를 모델 ID 목록으로(실제 파서 `parseAgyModels`를 지난다) */
+export function agyModelsFixture(): string[] {
+  return parseAgyModels(
+    readFileSync(
+      join(import.meta.dirname, '..', 'fixtures', 'ai-engine', 'agy', 'models.txt'),
+      'utf8',
+    ),
+  );
 }
 
 /** 엔진 3개(기본: CLAUDE 설치·로그인·2.1.269, AGY 설치·1.2.9·UNKNOWN, CODEX 미설치) */
@@ -102,11 +130,14 @@ export class FakeAiEngines {
     cliVersion: '2.1.269',
     auth: 'OK',
   });
-  readonly agy = new FakeAiEngineAdapter('AGY', {
-    installed: true,
-    cliVersion: '1.2.9',
-    auth: 'UNKNOWN',
-  });
+  readonly agy = Object.assign(
+    new FakeAiEngineAdapter('AGY', {
+      installed: true,
+      cliVersion: '1.2.9',
+      auth: 'UNKNOWN',
+    }),
+    { models: agyModelsFixture() },
+  );
   readonly codex = new FakeAiEngineAdapter('CODEX', {
     installed: false,
     cliVersion: null,
@@ -161,12 +192,13 @@ export async function seedAiCliCheck(
   const smokeStatus = seed.smokeStatus ?? 'PASSED';
   const skipped = smokeStatus === 'SKIPPED';
   const installed = seed.installed ?? true;
+  const engineCode = seed.engineCode ?? 'CLAUDE';
   await prisma.aiCliCheck.create({
     data: {
-      engineCode: seed.engineCode ?? 'CLAUDE',
+      engineCode,
       trigger: seed.trigger ?? 'MANUAL',
       installed,
-      binPath: installed ? '/usr/local/bin/claude' : null,
+      binPath: installed ? `/usr/local/bin/${engineCode.toLowerCase()}` : null,
       cliVersion: installed ? (seed.cliVersion ?? '2.1.269') : null,
       versionSupported: null,
       authStatus: seed.authStatus ?? 'OK',

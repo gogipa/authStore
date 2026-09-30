@@ -91,6 +91,15 @@ export const ERROR_CODES = {
     status: 422,
     message: '안전 기준은 느슨하게 바꿀 수 없습니다({항목}).',
   },
+  // ── AI 엔진 설정(P1-11, 05-3 §5.1 '설정·시스템' 문구 그대로) ──
+  /** 05-3 §5.1: 저장할 엔진·텍스트 모델로 10분 안에 통과한 연결 테스트가 없음(details.engineCode·model, D-16 R8) */
+  AI_ENGINE_NOT_VERIFIED: {
+    status: 409,
+    message:
+      '{엔진}({모델})으로 연결 테스트를 먼저 통과해 주세요. 통과한 지 10분이 지났으면 다시 해 주세요.',
+  },
+  /** 05-3 §5.1: 목록 밖 모델(직접 입력 불가 엔진) 또는 비어 있는 모델(fieldErrors에 models.{엔진}.text|vision, R12) */
+  AI_MODEL_INVALID: { status: 422, message: '{엔진}에서 쓸 수 없는 모델입니다: {모델}.' },
   // ── 구매대행 프로필(P1-09, 05-3 §5.1 '설정·시스템' 문구 그대로) ──
   /** 05-3 §5.1: 주소록 id 없음·지워짐(removed_at). fieldErrors에 해당 칸 */
   ADDRESSBOOK_NOT_FOUND: { status: 404, message: '주소록 항목을 찾을 수 없습니다.' },

@@ -72,6 +72,10 @@ export const ICONS = {
   'chevron-up': [path('M6 15l6-6 6 6')],
   /** 정보(안내 띠) */
   info: [{ tag: 'circle', cx: 12, cy: 12, r: 8.5 }, path('M12 11v5.5M12 7.5v.5')],
+  /** 멈춤(AiEngine 보드 '다른 엔진으로 넘어가지 않고 멈춥니다' 안내 띠, P1-11) */
+  'pause-circle': [{ tag: 'circle', cx: 12, cy: 12, r: 8.5 }, path('M9.5 9v6M14.5 9v6')],
+  /** 다시 감지(AiEngine 보드 머리 보조 버튼, P1-11) */
+  refresh: [path('M20 5v5h-5'), path('M19 15a7.5 7.5 0 1 1-1.2-7.4L20 10')],
   /** 이동(Settings 보드 'AI 엔진 설정' 링크) */
   'arrow-right': [path('M5 12h14M13 6l6 6-6 6')],
   /** 잠금(Settings 보드 '더할 수만 있고 뺄 수 없습니다' 안내 띠) */

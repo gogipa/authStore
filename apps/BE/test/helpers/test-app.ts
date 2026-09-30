@@ -11,6 +11,7 @@ import {
 } from '../../src/modules/integrations/commerce-meta/commerce-meta-sync.scheduler.js';
 import { AI_ENGINE_ADAPTERS } from '../../src/modules/integrations/ai-engine/ai-engine.port.js';
 import { CLOCK } from '../../src/modules/integrations/http/clock.token.js';
+import { AI_ENGINE_RELOAD_CHECK } from '../../src/modules/system/ai-cli-checks/ai-engine-reload.check.js';
 import { AI_ENGINE_STARTUP_CHECK } from '../../src/modules/system/ai-cli-checks/ai-engine-startup.check.js';
 import { HTTP_FETCH } from '../../src/modules/integrations/http/http-fetch.token.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
@@ -47,12 +48,15 @@ export interface CreateTestAppOptions {
   ai?: FakeAiEngines;
   /** 앱 시작 AI 엔진 점검을 켠다(기본 꺼짐, P1-10 규칙 13). 켜도 가짜 어댑터만 부른다 */
   aiStartupCheck?: boolean;
+  /** 설정 다시 읽기 뒤 선택 엔진 점검을 켠다(기본 꺼짐, P1-11 Proposed `AiEngineReloadCheck`). 켜도 가짜 어댑터만 부른다 */
+  aiReloadCheck?: boolean;
 }
 
 /**
  * AppModule 전체를 띄우되, 밖을 부르는 것(HTTP_FETCH)과 시계(CLOCK)는 가짜로 바꾼다.
  * SSE 연결 유지 주석(heartbeat)과 메타데이터 자동 동기화(P1-08, 켜 두면 테스트 중에 몰래 가짜 서버를 부른다)는 끈다.
- * AI 엔진 어댑터는 늘 가짜(AI_ENGINE_ADAPTERS)이고 앱 시작 AI 점검은 기본으로 끈다(P1-10 — 진짜 CLI·구독 쿼터를 쓰지 않게).
+ * AI 엔진 어댑터는 늘 가짜(AI_ENGINE_ADAPTERS)이고 앱 시작 AI 점검·설정 다시 읽기 뒤 점검은 기본으로 끈다
+ * (P1-10·P1-11 — 진짜 CLI·구독 쿼터를 쓰지 않게).
  */
 export async function createTestApp(options: CreateTestAppOptions = {}): Promise<TestApp> {
   const clock = new FakeClock(TEST_START_MS);
@@ -72,7 +76,9 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
     .overrideProvider(AI_ENGINE_ADAPTERS)
     .useValue(ai.adapters)
     .overrideProvider(AI_ENGINE_STARTUP_CHECK)
-    .useValue({ enabled: options.aiStartupCheck ?? false });
+    .useValue({ enabled: options.aiStartupCheck ?? false })
+    .overrideProvider(AI_ENGINE_RELOAD_CHECK)
+    .useValue({ enabled: options.aiReloadCheck ?? false });
   for (const o of options.overrides ?? []) {
     builder = builder.overrideProvider(o.provide).useValue(o.useValue);
   }

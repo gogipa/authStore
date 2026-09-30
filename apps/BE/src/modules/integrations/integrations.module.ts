@@ -3,6 +3,7 @@ import { AppConfigService } from '../../common/config/app-config.service.js';
 import { SettingsModule } from '../settings/settings.module.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { AgyAdapter } from './ai-engine/adapters/agy.adapter.js';
+import { AgyModelsProvider } from './ai-engine/agy-models.provider.js';
 import { ClaudeCodeAdapter } from './ai-engine/adapters/claude-code.adapter.js';
 import { CodexAdapter } from './ai-engine/adapters/codex.adapter.js';
 import { AI_ENGINE_ADAPTERS } from './ai-engine/ai-engine.port.js';
@@ -46,6 +47,7 @@ import {
  * ai-engine(P1-10): 어댑터 3개(claude·agy·codex)를 `AI_ENGINE_ADAPTERS` 배열로 등록하고 `AiExecutor`(단계 모듈의 유일한
  *   AI 입구)·`IsolatedCliRunner`(spawn 래퍼 하나 — P3-02 이미지 생성 공급자도 쓴다)를 export한다. AI CLI는 HTTP가 아니라
  *   외부 호출 관문을 지나지 않고, 격리 검사기(cli-isolation.ts)를 지나 spawn한다. 테스트는 AI_ENGINE_ADAPTERS를 가짜로 바꾼다.
+ *   P1-11: `AgyModelsProvider`(`agy models` 목록 캐시 — AI 엔진 설정의 AGY 모델 목록·검사, 감지 때 갱신)를 export한다.
  */
 @Module({
   // 하루 조회 상한의 원본이 설정 파일이다(P1-03). settings도 프로필 검증에 CommerceMetaCacheService를 쓰므로(P1-09)
@@ -88,6 +90,7 @@ import {
       ],
     },
     AiExecutor,
+    AgyModelsProvider,
   ],
   exports: [
     HTTP_FETCH,
@@ -102,6 +105,7 @@ import {
     CommerceMetaCacheService,
     AiExecutor,
     IsolatedCliRunner,
+    AgyModelsProvider,
   ],
 })
 export class IntegrationsModule {}

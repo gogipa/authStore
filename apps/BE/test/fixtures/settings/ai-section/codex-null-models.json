@@ -1,0 +1,8 @@
+{
+  "engine": "CODEX",
+  "models": {
+    "CLAUDE": { "text": "sonnet", "vision": "sonnet" },
+    "AGY": { "text": null, "vision": null },
+    "CODEX": { "text": null, "vision": null }
+  }
+}

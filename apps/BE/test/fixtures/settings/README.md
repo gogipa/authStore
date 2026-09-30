@@ -15,3 +15,14 @@
 
 - 템플릿을 바꾸면 이 파일들도 다시 만든다(`valid.json`은 템플릿 그대로 복사).
 - `broken.json`은 prettier가 읽지 못해 `.prettierignore`에 넣었다.
+
+## `ai-section/` (P1-11)
+
+AI 엔진 설정(`GET·PUT /settings/ai-engine`) 단위·e2e가 쓴다. **`ai` 섹션만** 담았다 — 테스트가 기본 템플릿에 끼워
+설정 파일을 만든다(`{ ...DEFAULT_SETTINGS, ai: <이 파일> }`).
+
+| 파일                     | 내용                                                                    | 쓰임                                           |
+| ------------------------ | ----------------------------------------------------------------------- | ---------------------------------------------- |
+| `default.json`           | 기본 템플릿 그대로: CLAUDE, 텍스트·비전 `sonnet`(AGY·CODEX는 null)      | 첫 실행·확정 전 기본값(PRD §8.9 R3)            |
+| `agy-selected.json`      | AGY 선택, 텍스트 `gemini-3.8-flash-medium`·비전 `gemini-3.8-flash-high` | 저장 뒤 파일 모양·같은 값 저장                 |
+| `codex-null-models.json` | CODEX 선택인데 모델 null(설정 파일을 직접 고친 경우)                    | 연결 테스트 모델 없음 → 422 `AI_MODEL_INVALID` |

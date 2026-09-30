@@ -1,0 +1,8 @@
+{
+  "engine": "AGY",
+  "models": {
+    "CLAUDE": { "text": "sonnet", "vision": "sonnet" },
+    "AGY": { "text": "gemini-3.8-flash-medium", "vision": "gemini-3.8-flash-high" },
+    "CODEX": { "text": null, "vision": null }
+  }
+}

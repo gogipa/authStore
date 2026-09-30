@@ -7,7 +7,7 @@ import type { ProgressEventsService } from '../../common/events/progress-events.
 import type { SettingsSnapshot } from '../../generated/prisma/client.js';
 import type { PrismaService } from '../../prisma/prisma.service.js';
 import { DEFAULT_SETTINGS } from './defaults/default-settings.js';
-import type { AppSettings } from './schema/settings.types.js';
+import type { AiSettings, AppSettings } from './schema/settings.types.js';
 import {
   checkSettingsText,
   SettingsFileLoader,
@@ -55,6 +55,12 @@ class FakePrisma {
 /** 파일 대신 글자를 돌려주는 가짜 로더 */
 class FakeLoader {
   text = JSON.stringify(DEFAULT_SETTINGS);
+  /** writeAiSection으로 쓴 ai 섹션(P1-11) */
+  aiWrites: AiSettings[] = [];
+  writeAiSection(ai: AiSettings): Promise<{ name: string; sha256: string; sizeBytes: number }[]> {
+    this.aiWrites.push(ai);
+    return Promise.resolve([{ name: 'settings.json', sha256: 'a'.repeat(64), sizeBytes: 2 }]);
+  }
   load(): Promise<SettingsLoadResult> {
     return Promise.resolve({
       ...checkSettingsText(this.text),
@@ -335,5 +341,106 @@ describe('SettingsService(가짜 DB·로더)', () => {
     const [a, b] = await Promise.all([service.reload(), service.reload()]);
     expect([a.created, b.created]).toEqual([true, false]);
     expect(prisma.rows).toHaveLength(2);
+  });
+});
+
+describe('ai 섹션 저장 replaceAiSection(P1-11 규칙 5·6)', () => {
+  const agy: AiSettings = {
+    engine: 'AGY',
+    models: {
+      CLAUDE: { text: 'sonnet', vision: 'sonnet' },
+      AGY: { text: 'gemini-3.8-flash-medium', vision: 'gemini-3.8-flash-high' },
+      CODEX: { text: null, vision: null },
+    },
+  };
+
+  it('같은 값이면 파일 쓰기 0회·스냅샷 그대로·SSE 0건', async () => {
+    const { service, loader, prisma, published } = setup();
+    await service.initialize();
+    published.length = 0;
+    const outcome = await service.replaceAiSection(structuredClone(DEFAULT_SETTINGS.ai));
+    expect(outcome).toEqual({ changed: false, snapshotId: 1, changedKeys: [] });
+    expect(loader.aiWrites).toHaveLength(0);
+    expect(prisma.rows).toHaveLength(1);
+    expect(published).toHaveLength(0);
+  });
+
+  it('바뀌면 ai 섹션을 쓰고 새 스냅샷(현재 설정 + 새 ai), 전파 없이 SSE rerunRequiredStepCount 0, 트랜잭션 훅', async () => {
+    const { service, loader, prisma, published, propagated } = setup();
+    await service.initialize();
+    published.length = 0;
+    const hooked: string[][] = [];
+    const outcome = await service.replaceAiSection(agy, {
+      inTransaction: (_tx, keys) => {
+        hooked.push([...keys]);
+        return Promise.resolve();
+      },
+    });
+    expect(outcome.changed).toBe(true);
+    expect(outcome.snapshotId).toBe(2);
+    expect(loader.aiWrites).toEqual([agy]);
+    expect(prisma.rows).toHaveLength(2);
+    expect((prisma.rows[1]!.content as unknown as AppSettings).ai).toEqual(agy);
+    expect(prisma.rows[1]!.fileManifest).toEqual([
+      { name: 'settings.json', sha256: 'a'.repeat(64), sizeBytes: 2 },
+    ]);
+    expect(service.current().ai.engine).toBe('AGY');
+    expect(service.currentSnapshotId()).toBe(2);
+    expect(propagated).toEqual([]);
+    expect(hooked).toEqual([outcome.changedKeys]);
+    expect(outcome.changedKeys).toEqual([
+      'ai.engine',
+      'ai.models.AGY.text',
+      'ai.models.AGY.vision',
+    ]);
+    expect(published).toEqual([
+      {
+        name: 'settings.reloaded',
+        data: {
+          settingsSnapshotId: 2,
+          changedKeys: outcome.changedKeys,
+          valid: true,
+          errors: [],
+          rerunRequiredStepCount: 0,
+        },
+      },
+    ]);
+  });
+
+  it('앞선 다시 읽기가 실패(스키마 위반)했어도 SSE는 valid true·errors [], status()는 파일 검사 결과 그대로', async () => {
+    const { service, loader, published } = setup();
+    await service.initialize();
+    loader.text = '{"costs": {"cardSurchargePct": "2.5"}}';
+    await rejection(service.reload());
+    expect(service.status().valid).toBe(false);
+    published.length = 0;
+    await service.replaceAiSection(agy);
+    expect(published).toHaveLength(1);
+    expect(published[0]!.data).toMatchObject({ settingsSnapshotId: 2, valid: true, errors: [] });
+    expect(service.status().valid).toBe(false);
+  });
+
+  it('예전에 쓴 ai로 돌아가면 새 행 없이 그 행의 last_loaded_at만 갱신하고 그 id를 쓴다(SSE는 보낸다)', async () => {
+    const { service, prisma, published } = setup();
+    await service.initialize();
+    await service.replaceAiSection(agy);
+    const before = prisma.rows[0]!.lastLoadedAt.getTime();
+    await new Promise((r) => setTimeout(r, 5));
+    published.length = 0;
+    const outcome = await service.replaceAiSection(structuredClone(DEFAULT_SETTINGS.ai));
+    expect(outcome.changed).toBe(true);
+    expect(outcome.snapshotId).toBe(1);
+    expect(prisma.rows).toHaveLength(2);
+    expect(prisma.rows[0]!.lastLoadedAt.getTime()).toBeGreaterThan(before);
+    expect(service.currentSnapshotId()).toBe(1);
+    expect(published).toHaveLength(1);
+    expect(published[0]!.data).toMatchObject({ settingsSnapshotId: 1, valid: true, errors: [] });
+  });
+
+  it('로드된 설정이 없으면 503 SETTINGS_INVALID(쓰지 않는다)', async () => {
+    const { service, loader } = setup();
+    const error = await rejection(service.replaceAiSection(agy));
+    expect(error.code).toBe('SETTINGS_INVALID');
+    expect(loader.aiWrites).toHaveLength(0);
   });
 });

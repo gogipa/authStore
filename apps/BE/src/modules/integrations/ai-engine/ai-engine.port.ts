@@ -71,6 +71,11 @@ export interface AiEngineAdapter {
   authStatus(): Promise<AiEngineAuthStatus>;
   smokeTest(model: string): Promise<AiEngineSmokeResult>;
   /**
+   * 고를 수 있는 모델 목록(P1-11, F-ST-30). 목록 명령이 있는 엔진만 둔다 — 지금은 `agy models`(AgyAdapter)뿐이다.
+   * 호출 비용이 없는 감지 호출(probe)이고, 받지 못하면(미설치·실패·빈 목록) null. 던지지 않는다.
+   */
+  listModels?(): Promise<string[] | null>;
+  /**
    * @param task 작업 식별자(예: 요구사항 ID 'CT-01'). 캐시 키·로그에 쓴다
    * @param schema 결과 JSON 스키마
    */

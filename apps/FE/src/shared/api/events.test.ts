@@ -43,7 +43,7 @@ describe('진행 알림 이름', () => {
     >();
   });
 
-  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 후보 이벤트 2개(P1-04), 단계 실행(P1-05), 연속 실행·게이트(P1-06), auth.failed(P1-07), commerce-meta-sync.completed(P1-08)', () => {
+  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 후보 이벤트 2개(P1-04), 단계 실행(P1-05), 연속 실행·게이트(P1-06), auth.failed(P1-07), commerce-meta-sync.completed(P1-08), ai-cli-check.completed(P1-11)', () => {
     expect(Object.keys(EVENT_INVALIDATIONS)).toEqual([
       'call-usage.changed',
       'settings.reloaded',
@@ -54,7 +54,30 @@ describe('진행 알림 이름', () => {
       'gate.passed',
       'gate.invalidated',
       'auth.failed',
+      'ai-cli-check.completed',
       'commerce-meta-sync.completed',
+    ]);
+    // AI 엔진 하나의 점검이 끝나면 최신 점검·이력을 다시 읽는다. AGY면 agy models 목록이 바뀌었을 수 있어 설정도(P1-11)
+    const aiCheck = {
+      installed: true,
+      cliVersion: '1.2.9',
+      authStatus: 'UNKNOWN',
+      smokeStatus: 'SKIPPED',
+      latencyMs: null,
+      errorCode: null,
+    } as const;
+    expect(
+      EVENT_INVALIDATIONS['ai-cli-check.completed']?.({ ...aiCheck, engineCode: 'CLAUDE' }),
+    ).toEqual([
+      ['system', 'getLatestAiCliChecks'],
+      ['system', 'listAiCliChecks'],
+    ]);
+    expect(
+      EVENT_INVALIDATIONS['ai-cli-check.completed']?.({ ...aiCheck, engineCode: 'AGY' }),
+    ).toEqual([
+      ['system', 'getLatestAiCliChecks'],
+      ['system', 'listAiCliChecks'],
+      ['settings', 'getAiEngineSettings'],
     ]);
     // 메타 대상 하나가 끝나면 동기화 상태와 주소록·반품 택배사 캐시 목록을 다시 읽는다(P1-08).
     // 프로필의 주소 경고도 바뀔 수 있어 프로필을 다시 읽는다(P1-09)

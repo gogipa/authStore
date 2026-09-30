@@ -14,6 +14,8 @@ export type FakeText = string | { text: string } | null;
 export interface FakeCliScenario {
   version?: FakeText;
   auth?: { stdout: FakeText; exit?: number };
+  /** agy: `agy models`(P1-11) */
+  models?: { stdout: FakeText; exit?: number };
   run?: {
     stdout?: FakeText;
     stderr?: FakeText;
@@ -27,7 +29,7 @@ export interface FakeCliScenario {
 /** 가짜 CLI 호출 기록 한 줄 */
 export interface FakeCliRecord {
   engine: FakeCliEngine;
-  kind: 'version' | 'auth' | 'run';
+  kind: 'version' | 'auth' | 'models' | 'run';
   argv: string[];
   cwd: string;
   cwdEntries: string[] | null;

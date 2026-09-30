@@ -76,3 +76,19 @@ export function formatKstTime(value: string | Date): string {
   const minute = parts.find((p) => p.type === 'minute')?.value ?? '';
   return `${hour}:${minute}`;
 }
+
+const kstMonthDayFormat = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: KST_TIME_ZONE,
+  month: '2-digit',
+  day: '2-digit',
+});
+
+/** 날짜·시각(Asia/Seoul) `MM-DD HH:mm`: '2026-09-27T05:00:00Z' → `09-27 14:00`(AiEngine 보드 점검 이력, P1-11). */
+export function formatKstMonthDayTime(value: string | Date): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return EMPTY_VALUE;
+  const parts = kstMonthDayFormat.formatToParts(date);
+  const month = parts.find((p) => p.type === 'month')?.value ?? '';
+  const day = parts.find((p) => p.type === 'day')?.value ?? '';
+  return `${month}-${day} ${formatKstTime(date)}`;
+}

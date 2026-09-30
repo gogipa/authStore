@@ -15,6 +15,7 @@ import type {
   AiRunOptions,
   AiStructuredResult,
 } from '../ai-engine.port.js';
+import { AGY_MODELS_ARGS, parseAgyModels } from '../agy-models.provider.js';
 import type { CliRunResult, IsolatedCliRunner } from '../process/isolated-cli-runner.js';
 import { withAiWorkspace } from '../process/work-dir.js';
 import { assertAiSchemaRules } from '../schema/ai-schema-rules.js';
@@ -27,6 +28,7 @@ import {
   mapSpawnError,
   parseJsonEnvelope,
   revalidate,
+  runProbe,
   runSmokeTest,
   visionPromptSuffix,
 } from './cli-adapter-support.js';
@@ -139,6 +141,18 @@ export class AgyAdapter implements AiEngineAdapter {
 
   smokeTest(model: string): Promise<AiEngineSmokeResult> {
     return runSmokeTest(this, model);
+  }
+
+  /**
+   * `agy models`(P1-11, F-ST-30): 호출 비용이 없는 감지 호출(probe, 빈 작업 폴더·허용 환경변수만). 모델 ID 목록으로 바꾼다
+   * (`parseAgyModels`). 실행 파일이 없거나 실패·시간 초과·빈 목록이면 null. 던지지 않는다.
+   */
+  async listModels(): Promise<string[] | null> {
+    if (!this.runner.locate(AI_ENGINE_BINARY.AGY)) return null;
+    const result = await runProbe(this.runner, this.code, AGY_MODELS_ARGS).catch(() => null);
+    if (!result || result.timedOut || result.exitCode !== 0) return null;
+    const models = parseAgyModels(result.stdout);
+    return models.length > 0 ? models : null;
   }
 
   async runStructured<T>(

@@ -171,6 +171,29 @@ describe('error-codes', () => {
     }
   });
 
+  it('P1-11 AI 엔진 설정 코드는 05-3 §5.1 문구·상태 그대로다', () => {
+    expect(ERROR_CODES.AI_ENGINE_NOT_VERIFIED).toEqual({
+      status: 409,
+      message:
+        '{엔진}({모델})으로 연결 테스트를 먼저 통과해 주세요. 통과한 지 10분이 지났으면 다시 해 주세요.',
+    });
+    expect(ERROR_CODES.AI_MODEL_INVALID).toEqual({
+      status: 422,
+      message: '{엔진}에서 쓸 수 없는 모델입니다: {모델}.',
+    });
+    expect(
+      formatErrorMessage('AI_ENGINE_NOT_VERIFIED', {
+        엔진: 'Antigravity CLI',
+        모델: 'gemini-3.8-flash-medium',
+      }),
+    ).toBe(
+      'Antigravity CLI(gemini-3.8-flash-medium)으로 연결 테스트를 먼저 통과해 주세요. 통과한 지 10분이 지났으면 다시 해 주세요.',
+    );
+    expect(formatErrorMessage('ALREADY_IN_PROGRESS', { 작업: 'AI 엔진 점검' })).toBe(
+      'AI 엔진 점검이 이미 진행 중입니다. 끝난 뒤 다시 해 주세요.',
+    );
+  });
+
   it('P1-07 비밀정보·인증 코드는 05-3 §5.1 문구·상태 그대로다', () => {
     const expected: Record<string, { status: number; message: string }> = {
       SECRET_NOT_CONFIGURED: {

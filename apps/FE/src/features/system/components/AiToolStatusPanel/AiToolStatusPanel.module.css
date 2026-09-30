@@ -1,0 +1,81 @@
+/* SCR-11 (4) AI 도구 상태(System.dc.html). 묶음 라벨 12px 600, 줄 위 테두리 line, 한 줄 36px·두 줄은 위아래 6px. */
+.link {
+  font: var(--type-body-strong);
+  white-space: nowrap;
+}
+
+.muted,
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.groupLabel {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detailRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 36px;
+  border-top: 1px solid var(--color-line);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.name,
+.nameGrow,
+.nameMuted {
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.nameGrow,
+.nameMuted {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.nameMuted {
+  color: var(--color-ink-muted);
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.version {
+  font: var(--type-caption);
+  font-family: var(--font-mono);
+  color: var(--color-ink-faint);
+}

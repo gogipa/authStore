@@ -1,0 +1,28 @@
+/* SCR-13 AI 엔진(AiEngine.dc.html). 카드 3열(사이 16), 안내 띠 2열(사이 16). 머리 오른쪽 '마지막 감지'(12px). */
+.lastDetected {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.muted {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}

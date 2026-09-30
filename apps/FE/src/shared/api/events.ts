@@ -84,6 +84,9 @@ export type EventInvalidations = {
  *   목록 전체(P1-09 프로필의 선택 목록). 대상 하나가 끝날 때마다 온다.
  * - P1-09: `commerce-meta-sync.completed` → 구매대행 프로필(`getPurchaseAgencyProfile`)도 다시 읽는다(주소록이 사라지거나
  *   해외가 아니게 되면 `addressWarnings`가 바뀐다). 프로필·발송 택배사 목록은 settings 태그라 `settings.reloaded`도 무효화한다.
+ * - P1-11: `ai-cli-check.completed` → AI 엔진 최신 점검(`getLatestAiCliChecks`)·점검 이력(`listAiCliChecks` 전체). 엔진마다 1건
+ *   온다. AGY면 AI 엔진 설정(`getAiEngineSettings`)도 다시 읽는다(감지 때 `agy models` 목록을 다시 받는다). AI 엔진 저장의
+ *   `settings.reloaded`는 위 settings 태그 무효화에 들어 있다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -136,6 +139,11 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
   'gate.passed': ({ candidateId }) => gateKeys(candidateId),
   'gate.invalidated': ({ candidateId }) => gateKeys(candidateId),
   'auth.failed': () => [qk('system', 'getAuthStatus')],
+  'ai-cli-check.completed': ({ engineCode }) => [
+    qk('system', 'getLatestAiCliChecks'),
+    qk('system', 'listAiCliChecks'),
+    ...(engineCode === 'AGY' ? [qk('settings', 'getAiEngineSettings')] : []),
+  ],
   'commerce-meta-sync.completed': () => [
     qk('integrations', 'getLatestCommerceMetaSyncRuns'),
     qk('integrations', 'listCommerceAddressbooks'),

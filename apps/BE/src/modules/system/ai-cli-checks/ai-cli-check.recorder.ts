@@ -7,6 +7,7 @@ import {
   AI_ENGINE_LABEL,
 } from '../../integrations/ai-engine/ai-engine.constants.js';
 import type { AiEngineCode } from '../../integrations/ai-engine/ai-engine.port.js';
+import { AgyModelsProvider } from '../../integrations/ai-engine/agy-models.provider.js';
 import { AiExecutor } from '../../integrations/ai-engine/ai-executor.service.js';
 import { CLOCK, type Clock } from '../../integrations/http/clock.token.js';
 import type { AI_CLI_CHECK_TRIGGERS } from './ai-cli-check.dto.js';
@@ -41,6 +42,8 @@ const MODEL_NOT_SET_MESSAGE =
  * - 로그인이 풀린 엔진은 연결 테스트를 하지 않는다(SKIPPED, error_code NOT_LOGGED_IN, Proposed)
  * - 점검은 한 번에 하나씩 돈다(앱 시작 점검과 P1-11 `POST /ai-cli-checks`가 겹쳐도 CLI를 동시에 부르지 않는다)
  * 앱 시작 점검(`AiEngineStartupCheck`)과 P1-11의 수동 점검이 이 클래스를 쓴다.
+ * P1-11: AGY가 설치돼 있으면 감지할 때 `agy models` 목록도 다시 받는다(`AgyModelsProvider.refresh`, 비용 없음, Proposed).
+ * 행을 쓰기 전에 받아 두어 SSE를 받은 화면이 새 목록으로 다시 읽는다.
  */
 @Injectable()
 export class AiCliCheckRecorder implements OnApplicationShutdown {
@@ -50,6 +53,7 @@ export class AiCliCheckRecorder implements OnApplicationShutdown {
   constructor(
     private readonly prisma: PrismaService,
     private readonly executor: AiExecutor,
+    private readonly agyModels: AgyModelsProvider,
     private readonly events: ProgressEventsService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
@@ -86,6 +90,7 @@ export class AiCliCheckRecorder implements OnApplicationShutdown {
   private async checkOne(engine: AiEngineCode, options: AiCliCheckOptions): Promise<AiCliCheck> {
     const detection = await this.executor.detect(engine);
     const authStatus = detection.installed ? await this.executor.authStatus(engine) : 'UNKNOWN';
+    if (engine === 'AGY' && detection.installed) await this.agyModels.refresh();
     let smokeStatus: 'PASSED' | 'FAILED' | 'SKIPPED' = 'SKIPPED';
     let model: string | null = null;
     let latencyMs: number | null = null;

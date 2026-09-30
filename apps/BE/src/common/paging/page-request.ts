@@ -53,6 +53,8 @@ export const LIST_SORT_RULES = {
   '/commerce-return-delivery-companies': rule(['name'], 'name', 'asc'),
   '/forwarder-rate-tables': rule(['importedAt'], 'importedAt', 'desc'),
   '/fx-rates': rule(['referenceAt', 'collectedAt'], 'referenceAt', 'desc'),
+  // P1-11 Proposed: AI 엔진 점검 이력(SCR-13 '최근 점검 이력'). 같은 시각이면 id 같은 방향
+  '/ai-cli-checks': rule(['checkedAt'], 'checkedAt', 'desc'),
 } as const satisfies Record<string, SortRule>;
 
 export type ListPath = keyof typeof LIST_SORT_RULES;

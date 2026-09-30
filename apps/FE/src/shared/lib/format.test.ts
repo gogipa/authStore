@@ -3,6 +3,7 @@ import {
   EMPTY_VALUE,
   formatCount,
   formatKrw,
+  formatKstMonthDayTime,
   formatKstTime,
   formatMm,
   formatPct,
@@ -46,6 +47,13 @@ describe('숫자·시각 표기(공통부품 §J)', () => {
     expect(formatKstTime('2026-09-27T14:02:11+09:00')).toBe('14:02');
     // KST 0시 넘김: UTC 15:30 → 다음 날 00:30
     expect(formatKstTime(new Date('2026-09-27T15:30:00Z'))).toBe('00:30');
+  });
+
+  it('날짜·시각: Asia/Seoul 기준 MM-DD HH:mm(P1-11 점검 이력)', () => {
+    expect(formatKstMonthDayTime('2026-09-27T05:00:00Z')).toBe('09-27 14:00');
+    // KST 0시 넘김: 날짜도 바뀐다
+    expect(formatKstMonthDayTime('2026-09-27T15:30:00Z')).toBe('09-28 00:30');
+    expect(formatKstMonthDayTime('nope')).toBe(EMPTY_VALUE);
   });
 
   it('개수: 천 단위 쉼표만', () => {

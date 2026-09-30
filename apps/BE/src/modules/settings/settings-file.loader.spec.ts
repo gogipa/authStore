@@ -1,11 +1,13 @@
+import { createHash } from 'node:crypto';
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { AppConfigService } from '../../common/config/app-config.service.js';
 import { BE_ROOT } from '../../common/config/paths.js';
+import { ApiException } from '../../common/errors/api.exception.js';
 import { findPersonalValues } from '../../common/safety/safety-rules.js';
 import { DEFAULT_SETTINGS, readDefaultSettingsText } from './defaults/default-settings.js';
-import type { AppSettings } from './schema/settings.types.js';
+import type { AiSettings, AppSettings } from './schema/settings.types.js';
 import {
   canonicalJson,
   checkSettingsText,
@@ -400,5 +402,68 @@ describe('SettingsFileLoader(파일)', () => {
     await writeSettingsFileAtomically(dir, readDefaultSettingsText());
     writeFileSync(settingsFilePath(dir), `\uFEFF${readDefaultSettingsText()}`);
     expect((await loaderFor(dir).load()).ok).toBe(true);
+  });
+
+  describe('ai 섹션 쓰기(P1-11 규칙 5)', () => {
+    const agySelected = JSON.parse(
+      readFileSync(join(FIXTURES, 'ai-section', 'agy-selected.json'), 'utf8'),
+    ) as AiSettings;
+    const whole = { ...(structuredClone(DEFAULT_SETTINGS) as AppSettings), ai: agySelected };
+
+    it('rename 전에 실패하면 원래 파일 바이트가 그대로이고 임시 파일은 지운다', async () => {
+      await writeSettingsFileAtomically(dir, readDefaultSettingsText());
+      const before = readFileSync(settingsFilePath(dir));
+      const failure = new Error('rename 실패(테스트)');
+      await expect(
+        loaderFor(dir).writeAiSection(agySelected, whole, {
+          rename: () => Promise.reject(failure),
+        }),
+      ).rejects.toBe(failure);
+      expect(readFileSync(settingsFilePath(dir)).equals(before)).toBe(true);
+      expect(readdirSync(join(dir, 'settings'))).toEqual([SETTINGS_FILE_NAME]);
+    });
+
+    it('ai 키만 바꾸고 나머지 키·순서(다시 읽지 않은 수정 포함)는 그대로, file_manifest는 쓴 바이트', async () => {
+      const handEdited = { ...(structuredClone(DEFAULT_SETTINGS) as AppSettings) };
+      handEdited.costs.miscCostKrw = 4321;
+      await writeSettingsFileAtomically(dir, handEdited);
+      const manifest = await loaderFor(dir).writeAiSection(agySelected, whole);
+      const text = readFileSync(settingsFilePath(dir), 'utf8');
+      const file = JSON.parse(text) as AppSettings;
+      expect(file.ai).toEqual(agySelected);
+      expect(file.costs.miscCostKrw).toBe(4321);
+      expect(Object.keys(file)).toEqual(Object.keys(handEdited));
+      expect(manifest).toEqual([
+        {
+          name: SETTINGS_FILE_NAME,
+          sha256: createHash('sha256').update(text).digest('hex'),
+          sizeBytes: Buffer.byteLength(text),
+        },
+      ]);
+      expect(readdirSync(join(dir, 'settings'))).toEqual([SETTINGS_FILE_NAME]);
+    });
+
+    it('파일이 없으면 현재 설정 + 새 ai 전체를 쓴다', async () => {
+      await loaderFor(dir).writeAiSection(agySelected, whole);
+      expect(readFileSync(settingsFilePath(dir), 'utf8')).toBe(formatSettingsJson(whole));
+    });
+
+    it('파일이 JSON이 아니면 쓰지 않고 422 SETTINGS_SCHEMA_INVALID(줄·칸만)', async () => {
+      await writeSettingsFileAtomically(dir, '{ "schemaVersion": "1",');
+      const error = await loaderFor(dir)
+        .writeAiSection(agySelected, whole)
+        .then(
+          () => null,
+          (e: unknown) => e,
+        );
+      expect(error).toBeInstanceOf(ApiException);
+      expect((error as ApiException).code).toBe('SETTINGS_SCHEMA_INVALID');
+      expect((error as ApiException).fieldErrors?.[0]?.field).toBe(ROOT_FIELD);
+      expect(readFileSync(settingsFilePath(dir), 'utf8')).toBe('{ "schemaVersion": "1",');
+      await writeSettingsFileAtomically(dir, '[1, 2]');
+      await expect(loaderFor(dir).writeAiSection(agySelected, whole)).rejects.toBeInstanceOf(
+        ApiException,
+      );
+    });
   });
 });

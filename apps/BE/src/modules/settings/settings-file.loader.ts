@@ -1,14 +1,16 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import type { ErrorObject } from 'ajv';
 import { AppConfigService } from '../../common/config/app-config.service.js';
+import { ApiException } from '../../common/errors/api.exception.js';
+import { formatErrorMessage } from '../../common/errors/error-codes.js';
 import type { FieldError } from '../../common/errors/error-response.js';
 import { readDefaultSettingsText } from './defaults/default-settings.js';
 import { validateSafetyFloor, type SafetyViolation } from './safety/safety-floor.validator.js';
 import { compileSettingsValidator } from './schema/settings.schema.js';
-import type { AppSettings } from './schema/settings.types.js';
+import type { AiSettings, AppSettings } from './schema/settings.types.js';
 
 /**
  * 설정 파일 구성(Proposed, ERD §7.4-1·06-4 §2.1): `APP_DATA_DIR/settings/settings.json` **한 파일**.
@@ -296,26 +298,51 @@ export function formatSettingsJson(settings: AppSettings): string {
   return `${JSON.stringify(settings, null, 2)}\n`;
 }
 
+/** 원자 쓰기의 마지막 단계(테스트가 rename 전 실패를 흉내 낸다 — P1-11 규칙 5 단위 테스트) */
+export interface AtomicWriteOps {
+  rename: (from: string, to: string) => Promise<void>;
+}
+
 /**
- * 설정 파일을 원자적으로 쓴다: 같은 폴더의 임시 파일(`.settings.json.<난수>.tmp`)에 쓰고 rename.
- * 쓰다 멈춰도 원래 파일은 그대로다. P1-11(PUT /settings/ai-engine)이 `ai` 섹션을 쓸 때 이 함수를 쓴다.
+ * 설정 파일을 원자적으로 쓴다: 같은 폴더의 임시 파일(`.settings.json.<난수>.tmp`)에 쓰고 `fsync` → rename.
+ * 쓰다 멈추거나 rename 전에 실패하면 원래 파일은 그대로이고 임시 파일은 지운다. P1-11(PUT /settings/ai-engine)이
+ * `ai` 섹션을 쓸 때도 이 함수를 쓴다(`SettingsFileLoader.writeAiSection`).
  * @param content 설정 값 또는 그대로 쓸 글자
+ * @returns 쓴 바이트(file_manifest 계산용)
  */
 export async function writeSettingsFileAtomically(
   appDataDir: string,
   content: AppSettings | string,
-): Promise<void> {
+  ops: Partial<AtomicWriteOps> = {},
+): Promise<Buffer> {
   const dir = settingsDirPath(appDataDir);
   await mkdir(dir, { recursive: true });
   const text = typeof content === 'string' ? content : formatSettingsJson(content);
+  const bytes = Buffer.from(text, 'utf8');
   const tmp = join(dir, `.${SETTINGS_FILE_NAME}.${randomBytes(6).toString('hex')}.tmp`);
   try {
-    await writeFile(tmp, text, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
-    await rename(tmp, settingsFilePath(appDataDir));
+    const handle = await open(tmp, 'wx', 0o600);
+    try {
+      await handle.writeFile(bytes);
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+    await (ops.rename ?? rename)(tmp, settingsFilePath(appDataDir));
   } catch (error) {
     await rm(tmp, { force: true });
     throw error;
   }
+  return bytes;
+}
+
+/** file_manifest 한 줄(쓴 바이트 기준) */
+export function manifestOf(bytes: Buffer): SettingsFileManifestEntry[] {
+  return [{ name: SETTINGS_FILE_NAME, sha256: sha256Hex(bytes), sizeBytes: bytes.byteLength }];
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function isNotFound(error: unknown): boolean {
@@ -350,15 +377,62 @@ export class SettingsFileLoader {
         return this.unreadable();
       }
     }
-    const fileManifest: SettingsFileManifestEntry[] = [
-      { name: SETTINGS_FILE_NAME, sha256: sha256Hex(bytes), sizeBytes: bytes.byteLength },
-    ];
+    const fileManifest = manifestOf(bytes);
     return { ...checkSettingsText(bytes.toString('utf8')), createdFromTemplate, fileManifest };
   }
 
-  /** 설정 파일을 원자적으로 쓴다(P1-11용) */
-  write(settings: AppSettings): Promise<void> {
-    return writeSettingsFileAtomically(this.config.appDataDir, settings);
+  /** 설정 파일을 원자적으로 쓴다 */
+  async write(settings: AppSettings): Promise<void> {
+    await writeSettingsFileAtomically(this.config.appDataDir, settings);
+  }
+
+  /**
+   * `ai` 섹션만 바꿔 쓴다(P1-11 PUT /settings/ai-engine, 원자적 쓰기). Proposed(06-2 §9):
+   * - 파일을 다시 읽어 JSON의 `ai` 키만 바꾸고 나머지 키·순서는 그대로 둔다(다시 읽지 않은 사용자 수정도 지우지 않는다)
+   * - 파일이 없으면(켠 뒤 지워짐) `whole`(현재 설정 + 새 ai 전체)을 쓴다
+   * - 파일이 JSON이 아니면 쓰지 않고 422 SETTINGS_SCHEMA_INVALID(고치는 중인 파일을 덮지 않는다)
+   * @returns 쓴 파일의 file_manifest
+   */
+  async writeAiSection(
+    ai: AiSettings,
+    whole: AppSettings,
+    ops: Partial<AtomicWriteOps> = {},
+  ): Promise<SettingsFileManifestEntry[]> {
+    const appDataDir = this.config.appDataDir;
+    let text: string | null = null;
+    try {
+      text = await readFile(settingsFilePath(appDataDir), 'utf8');
+    } catch (error) {
+      if (!isNotFound(error)) {
+        const unreadable = this.unreadable();
+        throw this.unwritable(unreadable.ok ? [] : unreadable.errors);
+      }
+    }
+    if (text === null) return manifestOf(await writeSettingsFileAtomically(appDataDir, whole, ops));
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text.replace(/^\uFEFF/, ''));
+    } catch {
+      const checked = checkSettingsText(text);
+      throw this.unwritable(checked.ok ? [] : checked.errors);
+    }
+    if (!isPlainObject(parsed)) {
+      throw this.unwritable([{ field: ROOT_FIELD, message: '묶음({ })여야 합니다.' }]);
+    }
+    const next = { ...parsed, ai };
+    return manifestOf(
+      await writeSettingsFileAtomically(appDataDir, `${JSON.stringify(next, null, 2)}\n`, ops),
+    );
+  }
+
+  /** ai 섹션을 쓸 수 없는 파일(JSON 아님): 422 SETTINGS_SCHEMA_INVALID(경로 /, 줄·칸만) */
+  private unwritable(errors: FieldError[]): ApiException {
+    const fieldErrors =
+      errors.length > 0 ? errors : [{ field: ROOT_FIELD, message: '설정 파일을 읽지 못했습니다.' }];
+    return new ApiException('SETTINGS_SCHEMA_INVALID', {
+      message: formatErrorMessage('SETTINGS_SCHEMA_INVALID', { 위치: fieldErrors[0]!.field }),
+      fieldErrors,
+    });
   }
 
   private unreadable(): SettingsLoadResult {

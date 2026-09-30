@@ -1,0 +1,16 @@
+/* SCR-13 점검 이력 표의 칸 글자(AiEngine.dc.html). */
+.mono {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.code {
+  font: var(--type-id);
+  color: var(--color-ink-faint);
+}
+
+.smoke {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}

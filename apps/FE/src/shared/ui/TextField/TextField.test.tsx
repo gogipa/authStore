@@ -30,4 +30,17 @@ describe('TextField', () => {
     expect(input).toHaveAttribute('readonly');
     expect(moduleClassNames(input.parentElement)).toContain('locked');
   });
+
+  it('label을 비우면 칸만 그리고 밖의 <label htmlFor>로 찾는다(P1-11). mono는 코드 값 모양', () => {
+    render(
+      <>
+        <label htmlFor="codex-text">텍스트 모델</label>
+        <TextField id="codex-text" mono placeholder="모델 ID 직접 입력" />
+      </>,
+    );
+    const input = screen.getByLabelText('텍스트 모델');
+    expect(input).toHaveAttribute('placeholder', '모델 ID 직접 입력');
+    expect(moduleClassNames(input)).toEqual(['input', 'mono']);
+    expect(document.querySelectorAll('label')).toHaveLength(1);
+  });
 });

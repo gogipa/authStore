@@ -60,3 +60,20 @@ export {
   PurchaseAgencyProfileForm,
   SYSTEM_META_SYNC_PATH,
 } from './components/PurchaseAgencyProfileForm/PurchaseAgencyProfileForm';
+
+/**
+ * P1-11: AI 엔진 설정(getAiEngineSettings·updateAiEngineSettings). AI 엔진 페이지(SCR-13)가 쓴다.
+ * 설치·로그인·연결 테스트 상태는 `@/features/system`(ai-cli-checks)에 있다.
+ */
+export {
+  aiEngineSettingsQueryKey,
+  useAiEngineSettingsQuery,
+  useUpdateAiEngineSettingsMutation,
+} from './api/aiEngineSettings';
+export type {
+  AiEngineModelPair,
+  AiEngineModels,
+  AiEngineOption,
+  AiEngineSettings,
+  AiEngineSettingsUpdateRequest,
+} from './api/aiEngineSettings';

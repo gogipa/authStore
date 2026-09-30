@@ -2,10 +2,17 @@ import { Module } from '@nestjs/common';
 import { AppConfigService } from '../../common/config/app-config.service.js';
 import { IntegrationsModule } from '../integrations/integrations.module.js';
 import { SettingsModule } from '../settings/settings.module.js';
+import { AiCliCheckQueryModule } from './ai-cli-checks/ai-cli-check-query.module.js';
+import { AiCliCheckLock } from './ai-cli-checks/ai-cli-check.lock.js';
 import { AiCliCheckRecorder } from './ai-cli-checks/ai-cli-check.recorder.js';
 import { AiCliChecksController } from './ai-cli-checks/ai-cli-checks.controller.js';
 import { AiCliChecksService } from './ai-cli-checks/ai-cli-checks.service.js';
 import { AiEngineAvailabilityService } from './ai-cli-checks/ai-engine-availability.service.js';
+import {
+  AI_ENGINE_RELOAD_CHECK,
+  AiEngineReloadCheck,
+  type AiEngineReloadCheckOptions,
+} from './ai-cli-checks/ai-engine-reload.check.js';
 import {
   AI_ENGINE_STARTUP_CHECK,
   AiEngineStartupCheck,
@@ -26,15 +33,19 @@ import { SecretsService } from './secrets/secrets.service.js';
  * P1-10: AI CLI 점검 기록(`AiCliCheckRecorder` — P1-11 `POST /ai-cli-checks`도 쓴다), 앱 시작 점검(`AiEngineStartupCheck`,
  * `AI_ENGINE_STARTUP_CHECK`로 끈다), AI 단계 시작 전 사용 가능 판정(`AiEngineAvailabilityService.assertUsable`) —
  * step-engine이 부른다(C4 §3 step-engine → system, Proposed). 선택 엔진은 SettingsService(설정 JSON ai 섹션)에서 읽는다.
+ * P1-11: `POST /ai-cli-checks`(감지·연결 테스트, 202 + 메모리 잠금 `AiCliCheckLock`), `GET /ai-cli-checks`(점검 이력, Proposed),
+ * 설정 다시 읽기 뒤 선택 엔진 점검(`AiEngineReloadCheck`, Proposed). 읽기 창구 `AiCliCheckQueryService`는 따로 뗀
+ * `AiCliCheckQueryModule`에 있고(SettingsModule도 import — 순환 없이) 이 모듈이 다시 export한다.
  */
 @Module({
-  imports: [IntegrationsModule, SettingsModule],
+  imports: [IntegrationsModule, SettingsModule, AiCliCheckQueryModule],
   controllers: [AiCliChecksController, SecretsController, CommerceAuthController],
   providers: [
     AiCliChecksService,
     SecretsService,
     CommerceAuthStatusService,
     AiCliCheckRecorder,
+    AiCliCheckLock,
     AiEngineAvailabilityService,
     {
       provide: AI_ENGINE_STARTUP_CHECK,
@@ -44,7 +55,15 @@ import { SecretsService } from './secrets/secrets.service.js';
       }),
     },
     AiEngineStartupCheck,
+    {
+      provide: AI_ENGINE_RELOAD_CHECK,
+      inject: [AppConfigService],
+      useFactory: (config: AppConfigService): AiEngineReloadCheckOptions => ({
+        enabled: config.aiEngineStartupCheck,
+      }),
+    },
+    AiEngineReloadCheck,
   ],
-  exports: [AiEngineAvailabilityService, AiCliCheckRecorder],
+  exports: [AiEngineAvailabilityService, AiCliCheckRecorder, AiCliCheckQueryModule],
 })
 export class SystemModule {}
