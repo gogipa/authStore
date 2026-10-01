@@ -32,7 +32,8 @@ export async function thumbnailSelectionValue(
 }
 
 /**
- * ⑧ UPLOAD 가짜 실행기(P3-02 e2e — ⑧은 P4-01 전이라 운영 실행기가 없다). 테스트 대역(`@StepRunnerTestDouble`)이다.
+ * ⑧ UPLOAD 가짜 실행기(P3-02 e2e). 테스트 대역(`@StepRunnerTestDouble`)이라 운영 실행기(P4-01 `UploadStepRunner` — 커머스API에
+ * 이미지를 올린다)를 바꿔 낀다. 입력 값 모양은 운영 실행기의 `thumbnail.selection`과 같다(`[{sortOrder, sha256}]`).
  * 입력은 ⑤ G3 선택본 하나(`thumbnail.selection`, PREV_STEP)라 G3 선택본이 바뀌면 ⑧의 지문이 달라져 '재실행 필요'가 된다
  * (US-33 AC3). ⑥-3 HTML은 읽지 않는다(자리표시자 — PRD §5.3 ⑥-3 HTML 규칙). 실행하면 곧바로 완료한다.
  */

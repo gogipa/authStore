@@ -15,3 +15,6 @@ apps/BE/test/fixtures/rakuten/pages/
 
 # ⑥-3 상세 HTML 조립 스냅샷(P3-04): 조립 결과를 바이트 그대로 비교한다
 apps/BE/test/fixtures/content/assembly/expected/
+
+# ⑧ 업로드 자리표시자 HTML(P4-01): P3-04 ⑥-3 스냅샷을 바이트 그대로 쓴다(자리표시자 계약)
+apps/BE/test/fixtures/registration/upload/html-with-placeholders.html

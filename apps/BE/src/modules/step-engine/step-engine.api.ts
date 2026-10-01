@@ -20,6 +20,8 @@ import type {
   SourcingTargetSkus,
 } from './ports/sourcing-selection.port.js';
 import type {
+  NoticeHtmlReader,
+  NoticeHtmlView,
   PricingOutputReader,
   PricingSaleSizesView,
   ThumbnailSelectionReader,
@@ -85,6 +87,11 @@ export type ResumeWaitingInput =
  *   pricing이 등록한다. 등록 전·판정 없음이면 null
  * - `registerThumbnailSelectionReader(reader)`·`readThumbnailSelection(candidateId, db?)`: 후보의 지금 G3 선택본(⑤ 현재 버전 —
  *   ⑥-3 미리보기 자리표시자 채우기). thumbnails가 등록한다. ⑥-3의 입력이 아니다(지문에 넣지 않는다)
+ * P4-01:
+ * - `readThumbnailSelectionOf(thumbnailStepRunId, db?)`: ⑤ 버전 하나의 G3 선택본(⑧ 입력 — 실행기가 고른 완료 버전을 읽는다).
+ *   thumbnails가 등록한 읽기 함수의 `readSelection`을 부른다
+ * - `registerNoticeHtmlReader(reader)`·`readNoticeHtml(noticeHtmlStepRunId, db?)`: ⑥-3 버전의 상세 HTML(자리표시자 그대로)·
+ *   `html_sha256`(⑧ 입력). content가 등록한다. 등록 전·산출물 없음이면 null
  */
 @Injectable()
 export class StepEngineApi {
@@ -157,6 +164,28 @@ export class StepEngineApi {
 
   registerThumbnailSelectionReader(reader: ThumbnailSelectionReader): void {
     this.ports.registerThumbnailSelectionReader(reader);
+  }
+
+  registerNoticeHtmlReader(reader: NoticeHtmlReader): void {
+    this.ports.registerNoticeHtmlReader(reader);
+  }
+
+  /** ⑤ 버전 하나의 G3 선택본(P4-01 — ⑧ 입력). 읽기 함수가 없거나 선택이 없으면 null */
+  async readThumbnailSelectionOf(
+    thumbnailStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<ThumbnailSelectionView | null> {
+    const reader = this.ports.thumbnailSelectionReader;
+    return reader ? reader.readSelection(db, thumbnailStepRunId) : null;
+  }
+
+  /** ⑥-3 버전 하나의 상세 HTML(P4-01 — ⑧ 입력). 읽기 함수가 없거나 산출물이 없으면 null */
+  async readNoticeHtml(
+    noticeHtmlStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<NoticeHtmlView | null> {
+    const reader = this.ports.noticeHtmlReader;
+    return reader ? reader.readHtml(db, noticeHtmlStepRunId) : null;
   }
 
   /** ③ 버전의 판매 사이즈(P3-04 — ⑥-3 입력). 읽기 함수가 없거나 판정이 없으면 null */

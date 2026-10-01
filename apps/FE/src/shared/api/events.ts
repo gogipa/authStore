@@ -118,6 +118,8 @@ export type EventInvalidations = {
  *   ⑥-3은 다시 실행하지 않는다). 상품명·고시 고치기는 응답 뒤 화면이 무효화한다.
  * - P3-05: `step-run.status-changed`가 ⑦(TAGS)이면 그 후보의 ⑦ 산출물(`getCandidateTagSet` — 실행·태그 편집 202 재검증이 끝날 때)과
  *   경쟁 태그 입력 목록(`listTagCompetitorInputs`). 입력 넣기·빼기는 응답 뒤 훅이 무효화한다.
+ * - P4-01: `step-run.status-changed`가 ⑧(UPLOAD)이면 그 후보의 ⑧ 산출물(`getCandidateUploadResult`). `candidate-step.changed`
+ *   (재실행 필요로 바뀜 등)도 ⑧ 산출물을 다시 읽힌다(단계 레일은 위 공통 키).
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -173,10 +175,13 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     qk('step-engine', 'listCandidateStatusHistory', { candidateId }),
     qk('step-engine', 'listAttentionCandidateSteps'),
   ],
-  'candidate-step.changed': ({ candidateId }) => [
+  'candidate-step.changed': ({ candidateId, stepCode }) => [
     ...stepEngineStepKeys(candidateId),
     qk('step-engine', 'getStepRun'),
     qk('category', 'getCategoryDecision', { candidateId }),
+    ...(stepCode === 'UPLOAD'
+      ? [qk('registration', 'getCandidateUploadResult', { candidateId })]
+      : []),
   ],
   'step-run.status-changed': ({ candidateId, stepRunId, stepChainId, stepCode }) => [
     ...stepEngineStepKeys(candidateId),
@@ -209,6 +214,9 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
           qk('tags', 'getCandidateTagSet', { candidateId }),
           qk('tags', 'listTagCompetitorInputs', { candidateId }),
         ]
+      : []),
+    ...(stepCode === 'UPLOAD'
+      ? [qk('registration', 'getCandidateUploadResult', { candidateId })]
       : []),
   ],
   'continuous-run.stopped': ({ candidateId, stepChainId }) => [

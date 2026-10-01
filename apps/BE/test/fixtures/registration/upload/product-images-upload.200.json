@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-upload-200" },
+  "body": {
+    "images": [
+      { "url": "https://shop-phinf.pstatic.net/20261001_101/fixture-upload-1.jpg" },
+      { "url": "https://shop-phinf.pstatic.net/20261001_102/fixture-upload-2.jpg" }
+    ]
+  }
+}

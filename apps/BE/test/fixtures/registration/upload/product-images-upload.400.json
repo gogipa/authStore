@@ -1,0 +1,13 @@
+{
+  "status": 400,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-upload-400" },
+  "body": {
+    "code": "BadRequest",
+    "message": "이미지 파일 형식이 올바르지 않습니다.(fixture)",
+    "timestamp": "2026-10-01T05:00:00.000+09:00",
+    "traceId": "fixture-trace-upload-400",
+    "invalidInputs": [
+      { "name": "imageFiles", "type": "NotValid", "message": "fixture invalid input" }
+    ]
+  }
+}

@@ -66,6 +66,8 @@ export interface RecordedCommerceRequest {
   /** 문자열 본문(form·JSON). FormData는 null */
   body: string | null;
   contentType: string | null;
+  /** multipart 본문(FormData — P4-01 이미지 업로드). 그 밖은 null */
+  form: FormData | null;
 }
 
 type Responder =
@@ -175,6 +177,7 @@ export class FakeCommerceTransport implements CommerceTransport {
             ? Buffer.from(body).toString('utf8')
             : null,
       contentType: lower['content-type'] ?? null,
+      form: body instanceof FormData ? body : null,
     };
     this.requests.push(recorded);
     if (this.blocked) await this.blocked;

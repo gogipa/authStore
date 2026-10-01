@@ -1,11 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleInit } from '@nestjs/common';
 import { IntegrationsModule } from '../integrations/integrations.module.js';
 import { SettingsModule } from '../settings/settings.module.js';
+import { StepEngineApi } from '../step-engine/step-engine.api.js';
 import { StepEngineModule } from '../step-engine/step-engine.module.js';
 import { AssemblyOwnerEditHandler } from './assembly/assembly-owner-edit.handler.js';
 import { ContentAssemblyController } from './assembly/content-assembly.controller.js';
 import { ContentAssemblyService } from './assembly/content-assembly.service.js';
 import { NoticeHtmlStepRunner } from './assembly/notice-html-step.runner.js';
+import { noticeHtmlReader } from './assembly/notice-html.reader.js';
 import { OriginCodeResolver } from './assembly/notice/origin-code.resolver.js';
 import { ContentCopyController } from './copy/content-copy.controller.js';
 import { ContentCopyService } from './copy/content-copy.service.js';
@@ -38,6 +40,8 @@ import { SpecImageCollector } from './facts/spec-image.collector.js';
  * - API: `GET /candidates/{id}/content-assembly`, `GET …/content-assembly/preview`(text/html + CSP — G3 선택본은
  *   `StepEngineApi.readThumbnailSelection`)
  * - 상세 HTML 계약(자리표시자·고지 블록 해시)은 공용 `common/rules/detail-html.ts`(P4-01·P4-02가 같이 쓴다)
+ * P4-01: ⑥-3 상세 HTML 읽기(`assembly/notice-html.reader.ts`)를 앱 시작 때 `StepEngineApi.registerNoticeHtmlReader`로 끼운다 —
+ * ⑧ 업로드(registration)가 `readNoticeHtml`로 읽는다
  */
 @Module({
   imports: [IntegrationsModule, SettingsModule, StepEngineModule],
@@ -63,4 +67,10 @@ import { SpecImageCollector } from './facts/spec-image.collector.js';
     ContentAssemblyService,
   ],
 })
-export class ContentModule {}
+export class ContentModule implements OnModuleInit {
+  constructor(private readonly api: StepEngineApi) {}
+
+  onModuleInit(): void {
+    this.api.registerNoticeHtmlReader(noticeHtmlReader);
+  }
+}

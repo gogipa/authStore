@@ -122,6 +122,29 @@ describe('진행 알림 이름', () => {
     expect(tagsRun).toContainEqual(['tags', 'getCandidateTagSet', { candidateId: 1 }]);
     expect(tagsRun).toContainEqual(['tags', 'listTagCompetitorInputs', { candidateId: 1 }]);
     expect(stepRun('COPY')).not.toContainEqual(['tags', 'getCandidateTagSet', { candidateId: 1 }]);
+    // ⑧(P4-01): 업로드 실행이 끝나면(완료·실패) ⑧ 산출물, ⑧이 재실행 필요로 바뀌어도 산출물과 단계 레일
+    const uploadKey = ['registration', 'getCandidateUploadResult', { candidateId: 1 }];
+    const uploadRun = EVENT_INVALIDATIONS['step-run.status-changed']?.({
+      stepRunId: 108,
+      candidateId: 1,
+      stepCode: 'UPLOAD',
+      version: 1,
+      status: 'FAILED',
+      stepChainId: null,
+    } as ProgressEventData<'step-run.status-changed'>);
+    expect(uploadRun).toContainEqual(uploadKey);
+    expect(uploadRun).toContainEqual(['step-engine', 'listCandidateSteps', { candidateId: 1 }]);
+    expect(tagsRun).not.toContainEqual(uploadKey);
+    const uploadStale = EVENT_INVALIDATIONS['candidate-step.changed']?.({
+      candidateId: 1,
+      stepCode: 'UPLOAD',
+      status: 'RERUN_REQUIRED',
+      currentStepRunId: 108,
+      staleInputs: ['noticeHtml.html'],
+      staleSince: '2026-09-28T00:00:00.000Z',
+    });
+    expect(uploadStale).toContainEqual(uploadKey);
+    expect(uploadStale).toContainEqual(['step-engine', 'listCandidateSteps', { candidateId: 1 }]);
     expect(
       EVENT_INVALIDATIONS['content-field.recheck-flagged']?.({
         candidateId: 1,

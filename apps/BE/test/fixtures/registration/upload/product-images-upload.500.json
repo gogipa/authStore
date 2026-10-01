@@ -1,0 +1,10 @@
+{
+  "status": 500,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-upload-500" },
+  "body": {
+    "code": "InternalServerError",
+    "message": "일시적인 오류입니다.(fixture)",
+    "timestamp": "2026-10-01T05:00:00.000+09:00",
+    "traceId": "fixture-trace-upload-500"
+  }
+}

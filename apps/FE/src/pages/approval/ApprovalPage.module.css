@@ -1,0 +1,12 @@
+/* SCR-08 최종 승인(Approval.dc.html, P4-01). 화면 제목은 화면 읽기 프로그램용(h1) — 보드는 단계 구역 제목(h2)부터 보인다 */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

@@ -1,0 +1,111 @@
+/*
+ * SCR-08 ⑧ 이미지 업로드 영역(Approval.dc.html 맨 위 줄, P4-01). h2(20px) + 상태 줄(StepStatusBar — 칩 · '마지막 실행 · 버전' ·
+ * '입력 출처' · '다시 실행'), 그 아래 '업로드한 이미지' 띠(정규화본 1000×1000 미리보기 — 로컬 파일). 색·크기는 토큰 변수만(라이트 테마).
+ */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.screenId {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunk);
+  color: var(--color-ink);
+  font: var(--type-id);
+}
+
+.bar {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.reason {
+  align-self: flex-end;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.panelTitle {
+  margin: 0;
+  font: var(--type-heading);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.placeholder {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+.images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.image {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 96px;
+  margin: 0;
+}
+
+.thumb {
+  width: 96px;
+  height: 96px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunk);
+  object-fit: contain;
+}
+
+.imageMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}

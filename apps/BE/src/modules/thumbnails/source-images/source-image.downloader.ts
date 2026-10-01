@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { UnsupportedImageError } from '../../../common/files/image-asset.rules.js';
+import { sniffImageMime } from '../../../common/files/image-sniff.js';
 import {
   apiImageUrlsOf,
   enlargeApiImageUrl,
@@ -63,33 +64,8 @@ export class SourceImageDownloadError extends Error {
   }
 }
 
-/**
- * 파일 앞머리(매직 바이트)로 이미지 형식을 판별한다(확장자를 믿지 않는다 — ERD `image_asset.mime_type`). 받는 형식은 P1-01
- * 이미지 저장과 같은 JPEG·PNG·WebP·GIF. 모르면 null
- */
-export function sniffImageMime(bytes: Buffer): string | null {
-  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
-    return 'image/jpeg';
-  }
-  if (
-    bytes.length >= 8 &&
-    bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
-  ) {
-    return 'image/png';
-  }
-  if (bytes.length >= 6) {
-    const head = bytes.subarray(0, 6).toString('latin1');
-    if (head === 'GIF87a' || head === 'GIF89a') return 'image/gif';
-  }
-  if (
-    bytes.length >= 12 &&
-    bytes.subarray(0, 4).toString('latin1') === 'RIFF' &&
-    bytes.subarray(8, 12).toString('latin1') === 'WEBP'
-  ) {
-    return 'image/webp';
-  }
-  return null;
-}
+/** 매직 바이트 판별(P3-01 — P4-01이 common으로 옮겼다. 이 이름도 그대로 쓸 수 있게 다시 내보낸다) */
+export { sniffImageMime };
 
 /**
  * ⑤ 원본 이미지 받기(F-TH-01·02, P3-01 규칙 3·4).

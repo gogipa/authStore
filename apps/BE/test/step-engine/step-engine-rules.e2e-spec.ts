@@ -17,6 +17,7 @@ import {
   INTERRUPTED_ERROR,
   RestartRecoveryService,
 } from '../../src/modules/step-engine/recovery/restart-recovery.service.js';
+import { StepRunnerRegistry } from '../../src/modules/step-engine/runner/step-runner.registry.js';
 import { StepEngineApi } from '../../src/modules/step-engine/step-engine.api.js';
 import {
   allRequiredCompleted,
@@ -633,27 +634,37 @@ describe('앱 시작: 재시작 정리는 요청 전에 · 실행기가 없는 �
     });
   });
 
-  // ②~⑥-3(P2-02~P3-04)·⑦(P3-05)는 운영 실행기가 있다. 아직 실행기가 없는 ⑧ UPLOAD(P4-01)로 본다
+  // ②~⑧(P2-02~P4-01)은 모두 운영 실행기가 있다(⑨는 실행 API로 돌리지 않는다 — NOT_RUNNABLE). 실행기가 없는 단계를 만들려고
+  // 이 테스트 안에서만 ⑧ UPLOAD 실행기를 레지스트리에서 잠시 뺀다(P4-01)
   it('실행 요청은 422 INVALID_STEP_CODE(NO_RUNNER), 레일 run도 같은 코드로 꺼진다', async () => {
     await truncateStepEngine(t.prisma);
-    const c = (await createCandidate(t.prisma, { gender: 'MALE' })).candidate;
-    const res = await request(t.app.getHttpServer())
-      .post(`/api/v1/candidates/${c.id}/steps/UPLOAD/runs`)
-      .set('X-AutoStore-Client', '1');
-    expect(res.status).toBe(422);
-    expect(res.body).toMatchObject({
-      code: 'INVALID_STEP_CODE',
-      details: { stepCode: 'UPLOAD', reason: 'NO_RUNNER' },
-    });
-    const rail = await request(t.app.getHttpServer()).get(`/api/v1/candidates/${c.id}/steps`);
-    const items = (
-      rail.body as {
-        items: { actions: { run: { disabledReason: { code: string; message: string } } } }[];
-      }
-    ).items;
-    expect(items[8]!.actions.run.disabledReason).toMatchObject({
-      code: 'INVALID_STEP_CODE',
-      message: (res.body as { message: string }).message,
-    });
+    const registry: unknown = t.app.get(StepRunnerRegistry);
+    const runners = (registry as { runners: Map<string, unknown> }).runners;
+    const upload = runners.get('UPLOAD');
+    expect(upload).toBeDefined();
+    runners.delete('UPLOAD');
+    try {
+      const c = (await createCandidate(t.prisma, { gender: 'MALE' })).candidate;
+      const res = await request(t.app.getHttpServer())
+        .post(`/api/v1/candidates/${c.id}/steps/UPLOAD/runs`)
+        .set('X-AutoStore-Client', '1');
+      expect(res.status).toBe(422);
+      expect(res.body).toMatchObject({
+        code: 'INVALID_STEP_CODE',
+        details: { stepCode: 'UPLOAD', reason: 'NO_RUNNER' },
+      });
+      const rail = await request(t.app.getHttpServer()).get(`/api/v1/candidates/${c.id}/steps`);
+      const items = (
+        rail.body as {
+          items: { actions: { run: { disabledReason: { code: string; message: string } } } }[];
+        }
+      ).items;
+      expect(items[8]!.actions.run.disabledReason).toMatchObject({
+        code: 'INVALID_STEP_CODE',
+        message: (res.body as { message: string }).message,
+      });
+    } finally {
+      runners.set('UPLOAD', upload);
+    }
   });
 });
