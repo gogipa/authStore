@@ -1,6 +1,6 @@
 # M0 S6 — AI CLI 격리·오버헤드·비전 (claude·agy)
 
-> **상태**: Proposed. 실측 결과와 추천안이다. 앱 코드는 바꾸지 않았다.
+> **상태**: Proposed. 실측 결과와 추천안이다. 실측할 때는 앱 코드를 바꾸지 않았고, §9.2의 추천은 커밋 `dc3f61d`에서 앱에 반영했다(반영하지 않은 것은 [README](README.md) 표).
 > **작성**: 2026-10-01. 오너 PC(macOS)에서 실제 CLI를 불러 쟀다.
 > **범위**: PRD §17 S6 중 '호출 격리와 오버헤드', '비전 템플릿(`images_seen`)', '`stream-json` base64 대안'. 약관은 [S6_AI약관.md](S6_AI약관.md), 엔진 동등성·고시 추출 정확도(상품 10개)는 같은 폴더의 S7 보고서가 맡는다.
 > **codex**: 이 PC에 설치돼 있지 않아(`which codex` → 없음) 모든 항목에서 뺐다.
@@ -322,7 +322,7 @@ AI_CLI_LIVE=1 AI_CLI_LIVE_ENGINES=claude,agy pnpm --filter @autostore/be test --
 - 환경변수: claude 자식에 `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`을 더한다(세션 제목용 haiku 부가 호출 제거, 텍스트 호출당 약 900토큰·비전 약 1,800토큰 절약).
 - `--setting-sources ""`의 빈 문자열은 인자 배열의 빈 원소로 넘긴다(셸 없음이라 그대로 전달됨, 실측).
 
-### 9.2 앱 코드 변경 제안(이번에는 바꾸지 않음)
+### 9.2 앱 코드 변경 제안(커밋 `dc3f61d`에서 반영)
 
 | # | 파일 | 바꿀 것 | 근거 |
 |---|---|---|---|

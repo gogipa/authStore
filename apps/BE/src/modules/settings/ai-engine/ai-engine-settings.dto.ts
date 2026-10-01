@@ -98,10 +98,13 @@ export class AiEngineOptionDto {
   @ApiProperty({ description: '로그인 방법(터미널 명령 안내)' })
   loginCommand!: string;
 
-  @ApiProperty({ description: '구독 약관·쿼터 책임 한 줄(R14)' })
+  @ApiProperty({ description: '엔진별 약관·쿼터 고지 한 줄(R14, M0 S6 약관 §8 문구)' })
   termsNote!: string;
 
-  @ApiProperty({ description: "M0 S7 기준 미달·미측정 엔진('실험적' 표시, P1-11 Proposed)" })
+  @ApiProperty({
+    description:
+      "M0 S7 기준(스키마 통과율 ≥ 95%, 호출당 ≤ 120초) 미달·미측정 엔진('실험적' 표시). 2026-10-01 결과 AGY·CODEX가 true",
+  })
   experimental!: boolean;
 }
 
