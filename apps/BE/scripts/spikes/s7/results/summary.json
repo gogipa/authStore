@@ -1,0 +1,3320 @@
+{
+  "generatedAt": "2026-10-01T06:58:50.252Z",
+  "sources": ["raw-main.jsonl"],
+  "criteria": {
+    "schemaPassRate": 0.95,
+    "maxLatencyMs": 120000,
+    "factAccuracyS6": 0.9
+  },
+  "perEngine": {
+    "claude": {
+      "models": ["TEXT:sonnet", "VISION:sonnet"],
+      "calls": 50,
+      "schemaPass": 50,
+      "schemaPassRate": 1,
+      "latencyP50": 9005,
+      "latencyP95": 39347,
+      "latencyMax": 44504,
+      "over120s": 0,
+      "usage": {
+        "input": 134,
+        "output": 62056,
+        "cacheRead": 413347,
+        "cacheCreate": 102162,
+        "costUsd": 1.2019
+      },
+      "verdict": "통과"
+    },
+    "agy": {
+      "models": ["TEXT:gemini-3.8-flash-medium", "VISION:gemini-3.8-flash-high"],
+      "calls": 50,
+      "schemaPass": 43,
+      "schemaPassRate": 0.86,
+      "latencyP50": 18273,
+      "latencyP95": 42803,
+      "latencyMax": 72160,
+      "over120s": 0,
+      "usage": {
+        "input": 1520801,
+        "output": 117751,
+        "cacheRead": 0,
+        "cacheCreate": 0,
+        "costUsd": 0
+      },
+      "verdict": "실험적"
+    }
+  },
+  "perTask": [
+    {
+      "engine": "claude",
+      "task": "smoke",
+      "model": "sonnet",
+      "n": 10,
+      "schemaPass": 10,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 2662,
+      "latencyP95": 4364,
+      "latencyMax": 4364,
+      "over120s": 0,
+      "answerOk": 10
+    },
+    {
+      "engine": "claude",
+      "task": "copy",
+      "model": "sonnet",
+      "n": 10,
+      "schemaPass": 10,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 33544,
+      "latencyP95": 44504,
+      "latencyMax": 44504,
+      "over120s": 0,
+      "samplesWithForbidden": 0,
+      "sourceFactsGroundedRate": 0.976,
+      "bodyRuleOk": 9,
+      "structureBroken": 4
+    },
+    {
+      "engine": "claude",
+      "task": "fact_text",
+      "model": "sonnet",
+      "n": 10,
+      "schemaPass": 10,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 9005,
+      "latencyP95": 18630,
+      "latencyMax": 18630,
+      "over120s": 0,
+      "fieldAccuracyAll": 1,
+      "fieldAccuracyOk": 1,
+      "fieldAccuracyAcceptedAll": 1,
+      "fieldCorrect": 50,
+      "fieldTotal": 50,
+      "byField": {
+        "origin": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        },
+        "material_upper": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        },
+        "material_lining": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        },
+        "material_sole": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        },
+        "heel_height": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        }
+      },
+      "colorKoCorrect": 10,
+      "colorKoAccepted": 10,
+      "cautionPresent": 10,
+      "japaneseValues": {
+        "ja": 30,
+        "total": 33
+      },
+      "originSettledByDictionary": {
+        "settled": 7,
+        "found": 9
+      }
+    },
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "model": "sonnet",
+      "n": 10,
+      "schemaPass": 10,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 13289,
+      "latencyP95": 16109,
+      "latencyMax": 16109,
+      "over120s": 0,
+      "fieldAccuracyAll": 0.98,
+      "fieldAccuracyOk": 0.98,
+      "fieldAccuracyAcceptedAll": 0.98,
+      "fieldCorrect": 49,
+      "fieldTotal": 50,
+      "byField": {
+        "origin": {
+          "raw": 9,
+          "accepted": 9,
+          "n": 10
+        },
+        "material_upper": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        },
+        "material_lining": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        },
+        "material_sole": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        },
+        "heel_height": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        }
+      },
+      "colorKoCorrect": 10,
+      "colorKoAccepted": 10,
+      "cautionPresent": 10,
+      "japaneseValues": {
+        "ja": 28,
+        "total": 34
+      },
+      "originSettledByDictionary": {
+        "settled": 8,
+        "found": 9
+      },
+      "imageIndex": {
+        "correct": 44,
+        "total": 44
+      }
+    },
+    {
+      "engine": "claude",
+      "task": "match",
+      "model": "sonnet",
+      "n": 10,
+      "schemaPass": 10,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 3677,
+      "latencyP95": 6226,
+      "latencyMax": 6226,
+      "over120s": 0,
+      "accuracyAll": 1,
+      "confusion": {
+        "tp": 5,
+        "tn": 5,
+        "fp": 0,
+        "fn": 0,
+        "noResult": 0
+      }
+    },
+    {
+      "engine": "agy",
+      "task": "smoke",
+      "model": "gemini-3.8-flash-medium",
+      "n": 10,
+      "schemaPass": 10,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 17119,
+      "latencyP95": 44836,
+      "latencyMax": 44836,
+      "over120s": 0,
+      "answerOk": 10
+    },
+    {
+      "engine": "agy",
+      "task": "copy",
+      "model": "gemini-3.8-flash-medium",
+      "n": 10,
+      "schemaPass": 10,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 19332,
+      "latencyP95": 23471,
+      "latencyMax": 23471,
+      "over120s": 0,
+      "samplesWithForbidden": 0,
+      "sourceFactsGroundedRate": 1,
+      "bodyRuleOk": 10,
+      "structureBroken": 0
+    },
+    {
+      "engine": "agy",
+      "task": "fact_text",
+      "model": "gemini-3.8-flash-medium",
+      "n": 10,
+      "schemaPass": 10,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 16378,
+      "latencyP95": 19698,
+      "latencyMax": 19698,
+      "over120s": 0,
+      "fieldAccuracyAll": 1,
+      "fieldAccuracyOk": 1,
+      "fieldAccuracyAcceptedAll": 1,
+      "fieldCorrect": 50,
+      "fieldTotal": 50,
+      "byField": {
+        "origin": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        },
+        "material_upper": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        },
+        "material_lining": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        },
+        "material_sole": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        },
+        "heel_height": {
+          "raw": 10,
+          "accepted": 10,
+          "n": 10
+        }
+      },
+      "colorKoCorrect": 10,
+      "colorKoAccepted": 10,
+      "cautionPresent": 10,
+      "japaneseValues": {
+        "ja": 31,
+        "total": 33
+      },
+      "originSettledByDictionary": {
+        "settled": 7,
+        "found": 9
+      }
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "model": "gemini-3.8-flash-high",
+      "n": 10,
+      "schemaPass": 3,
+      "schemaPassRate": 0.3,
+      "errors": {
+        "AI_OUTPUT_INVALID (빈 결과)": 7
+      },
+      "latencyP50": 30010,
+      "latencyP95": 72160,
+      "latencyMax": 72160,
+      "over120s": 0,
+      "fieldAccuracyAll": 0.3,
+      "fieldAccuracyOk": 1,
+      "fieldAccuracyAcceptedAll": 0.3,
+      "fieldCorrect": 15,
+      "fieldTotal": 50,
+      "byField": {
+        "origin": {
+          "raw": 3,
+          "accepted": 3,
+          "n": 10
+        },
+        "material_upper": {
+          "raw": 3,
+          "accepted": 3,
+          "n": 10
+        },
+        "material_lining": {
+          "raw": 3,
+          "accepted": 3,
+          "n": 10
+        },
+        "material_sole": {
+          "raw": 3,
+          "accepted": 3,
+          "n": 10
+        },
+        "heel_height": {
+          "raw": 3,
+          "accepted": 3,
+          "n": 10
+        }
+      },
+      "colorKoCorrect": 3,
+      "colorKoAccepted": 3,
+      "cautionPresent": 3,
+      "japaneseValues": {
+        "ja": 9,
+        "total": 9
+      },
+      "originSettledByDictionary": {
+        "settled": 2,
+        "found": 2
+      },
+      "imageIndex": {
+        "correct": 12,
+        "total": 12
+      }
+    },
+    {
+      "engine": "agy",
+      "task": "match",
+      "model": "gemini-3.8-flash-medium",
+      "n": 10,
+      "schemaPass": 10,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 13803,
+      "latencyP95": 18273,
+      "latencyMax": 18273,
+      "over120s": 0,
+      "accuracyAll": 1,
+      "confusion": {
+        "tp": 5,
+        "tn": 5,
+        "fp": 0,
+        "fn": 0,
+        "noResult": 0
+      }
+    }
+  ],
+  "facts": [
+    {
+      "engine": "claude",
+      "task": "fact_text",
+      "sampleId": "T01",
+      "ok": true,
+      "origin": {
+        "value": "ベトナム、インドネシア、中国",
+        "ok": true,
+        "accepted": "ベトナム、インドネシア、中国",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["베트남", "인도네시아", "중국"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "合成繊維・合成皮革",
+        "ok": true,
+        "accepted": "合成繊維・合成皮革",
+        "acceptedOk": true,
+        "appValue": "합성섬유·합성가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ゴム",
+        "ok": true,
+        "accepted": "ゴム",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": "3.5cm",
+        "ok": true,
+        "accepted": "3.5cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "TEXT",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "크림/블랙",
+        "ok": true,
+        "accepted": "크림/블랙"
+      },
+      "caution": "합성피혁·고무 소재이므로 직사광선과 고온·습기를 피하고 통풍이 잘되는 곳에 보관하세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "claude",
+      "task": "fact_text",
+      "sampleId": "T02",
+      "ok": true,
+      "origin": {
+        "value": "미국",
+        "ok": true,
+        "accepted": "미국",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["미국"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "スエード／メッシュ",
+        "ok": true,
+        "accepted": "スエード／メッシュ",
+        "acceptedOk": true,
+        "appValue": "스웨이드·메쉬",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー",
+        "ok": true,
+        "accepted": "ラバー",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": "약3cm",
+        "ok": true,
+        "accepted": "3cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "TEXT",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "그레이",
+        "ok": true,
+        "accepted": "그레이"
+      },
+      "caution": "스웨이드 소재는 물과 습기에 약하므로 비 오는 날 착용을 피하고 전용 브러시로 관리하세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "claude",
+      "task": "fact_text",
+      "sampleId": "T03",
+      "ok": true,
+      "origin": {
+        "value": "タイ (태국)",
+        "ok": true,
+        "accepted": "タイ (태국)",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["タイ (태국)"],
+          "unresolved": ["タイ (태국)"]
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "スムースレザー（牛革）",
+        "ok": true,
+        "accepted": "スムースレザー（牛革）",
+        "acceptedOk": true,
+        "appValue": "スムースレザー(牛革)",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": "牛革",
+        "ok": true,
+        "accepted": "牛革",
+        "acceptedOk": true,
+        "appValue": "소가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "AirWairソール（PVC）",
+        "ok": true,
+        "accepted": "AirWairソール（PVC）",
+        "acceptedOk": true,
+        "appValue": "AirWairソール(PVC)",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": "約3cm",
+        "ok": true,
+        "accepted": "3cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "TEXT",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "블랙",
+        "ok": true,
+        "accepted": "블랙"
+      },
+      "caution": "가죽 소재이므로 물에 젖지 않도록 주의하고, 전용 가죽 클리너와 방수 스프레이로 관리하세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "claude",
+      "task": "fact_text",
+      "sampleId": "T04",
+      "ok": true,
+      "origin": {
+        "value": "インドネシア",
+        "ok": true,
+        "accepted": "インドネシア",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["인도네시아"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "キャンバス",
+        "ok": true,
+        "accepted": "キャンバス",
+        "acceptedOk": true,
+        "appValue": "캔버스",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー",
+        "ok": true,
+        "accepted": "ラバー",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "화이트",
+        "ok": true,
+        "accepted": "화이트"
+      },
+      "caution": "캔버스 소재는 물에 약하니 비 오는 날 착용을 피하고 젖으면 그늘에서 말려주세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "claude",
+      "task": "fact_text",
+      "sampleId": "T05",
+      "ok": true,
+      "origin": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "スエード・キャンバス",
+        "ok": true,
+        "accepted": "スエード・キャンバス",
+        "acceptedOk": true,
+        "appValue": "스웨이드·캔버스",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー（ワッフルソール）",
+        "ok": true,
+        "accepted": "ラバー（ワッフルソール）",
+        "acceptedOk": true,
+        "appValue": "ラバー(ワッフルソール)",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "블랙/화이트",
+        "ok": true,
+        "accepted": "블랙/화이트"
+      },
+      "caution": "스웨이드 소재는 물과 습기에 약하므로 전용 브러시로 관리하고 젖지 않도록 주의하세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "claude",
+      "task": "fact_text",
+      "sampleId": "T06",
+      "ok": true,
+      "origin": {
+        "value": "일본",
+        "ok": true,
+        "accepted": "일본",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["일본"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "牛革",
+        "ok": true,
+        "accepted": "牛革",
+        "acceptedOk": true,
+        "appValue": "소가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": "豚革",
+        "ok": true,
+        "accepted": "豚革",
+        "acceptedOk": true,
+        "appValue": "돼지가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "合成底",
+        "ok": true,
+        "accepted": "合成底",
+        "acceptedOk": true,
+        "appValue": "合成底",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": "2.5cm",
+        "ok": true,
+        "accepted": "2.5cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "TEXT",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "블랙",
+        "ok": true,
+        "accepted": "블랙"
+      },
+      "caution": "가죽(牛革) 소재이므로 물기와 직사광선을 피하고 통풍이 잘 되는 곳에서 보관하세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "claude",
+      "task": "fact_text",
+      "sampleId": "T07",
+      "ok": true,
+      "origin": {
+        "value": "中国",
+        "ok": true,
+        "accepted": "中国",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["중국"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "合成皮革",
+        "ok": true,
+        "accepted": "合成皮革",
+        "acceptedOk": true,
+        "appValue": "합성가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": "合成皮革",
+        "ok": true,
+        "accepted": "合成皮革",
+        "acceptedOk": true,
+        "appValue": "합성가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "合成ゴム",
+        "ok": true,
+        "accepted": "合成ゴム",
+        "acceptedOk": true,
+        "appValue": "합성고무",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": "5.5cm",
+        "ok": true,
+        "accepted": "5.5cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "TEXT",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "베이지",
+        "ok": true,
+        "accepted": "베이지"
+      },
+      "caution": "합성피혁 소재는 물과 직사광선에 약하므로 젖었을 때 바로 마른 천으로 닦고 그늘에서 건조하세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "claude",
+      "task": "fact_text",
+      "sampleId": "T08",
+      "ok": true,
+      "origin": {
+        "value": "ベトナム",
+        "ok": true,
+        "accepted": "ベトナム",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["베트남"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "合成繊維",
+        "ok": true,
+        "accepted": "合成繊維",
+        "acceptedOk": true,
+        "appValue": "합성섬유",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "合成底",
+        "ok": true,
+        "accepted": "合成底",
+        "acceptedOk": true,
+        "appValue": "合成底",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "네이비/화이트",
+        "ok": true,
+        "accepted": "네이비/화이트"
+      },
+      "caution": "합성섬유·합성고무 소재이므로 물기에 젖으면 변형될 수 있어 직사광선을 피해 그늘에서 건조하세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "claude",
+      "task": "fact_text",
+      "sampleId": "T09",
+      "ok": true,
+      "origin": {
+        "value": "日本（福岡県久留米市の自社工場）",
+        "ok": true,
+        "accepted": "日本（福岡県久留米市の自社工場）",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["日本(福岡県久留米市の自社工場)"],
+          "unresolved": ["日本(福岡県久留米市の自社工場)"]
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "キャンバス",
+        "ok": true,
+        "accepted": "キャンバス",
+        "acceptedOk": true,
+        "appValue": "캔버스",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": "綿（コットン）",
+        "ok": true,
+        "accepted": "綿（コットン）",
+        "acceptedOk": true,
+        "appValue": "綿(コットン)",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー（バルカナイズ製法）",
+        "ok": true,
+        "accepted": "ラバー（バルカナイズ製法）",
+        "acceptedOk": true,
+        "appValue": "ラバー(バルカナイズ製法)",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "화이트",
+        "ok": true,
+        "accepted": "화이트"
+      },
+      "caution": "캔버스 소재는 물에 약하니 젖음에 주의하고, 러버(고무) 밑창은 직사광선과 고온을 피해 보관하세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "claude",
+      "task": "fact_text",
+      "sampleId": "T10",
+      "ok": true,
+      "origin": {
+        "value": "インドネシア",
+        "ok": true,
+        "accepted": "インドネシア",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["인도네시아"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "天然皮革・合成皮革",
+        "ok": true,
+        "accepted": "天然皮革・合成皮革",
+        "acceptedOk": true,
+        "appValue": "천연가죽·합성가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ゴム底",
+        "ok": true,
+        "accepted": "ゴム底",
+        "acceptedOk": true,
+        "appValue": "ゴム底",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": "약 2cm",
+        "ok": true,
+        "accepted": "2cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "TEXT",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "옐로우/블랙",
+        "ok": true,
+        "accepted": "옐로우/블랙"
+      },
+      "caution": "천연가죽·인조가죽 갑피와 고무 밑창은 물기·습기에 약하니 직사광선을 피해 통풍이 잘 되는 곳에서 보관하세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "sampleId": "V01",
+      "ok": true,
+      "origin": {
+        "value": "인도",
+        "ok": true,
+        "accepted": "인도",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["인도"],
+          "unresolved": []
+        },
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_upper": {
+        "value": "天然皮革（牛革）・スエード",
+        "ok": true,
+        "accepted": "天然皮革（牛革）・スエード",
+        "acceptedOk": true,
+        "appValue": "天然皮革(牛革)·스웨이드",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": "合成繊維",
+        "ok": true,
+        "accepted": "合成繊維",
+        "acceptedOk": true,
+        "appValue": "합성섬유",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_sole": {
+        "value": "ガムラバー",
+        "ok": true,
+        "accepted": "ガムラバー",
+        "acceptedOk": true,
+        "appValue": "ガムラバー",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "약 2.5cm",
+        "ok": true,
+        "accepted": "2.5cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "color_ko": {
+        "value": "화이트/블랙",
+        "ok": true,
+        "accepted": "화이트/블랙"
+      },
+      "caution": "천연가죽(소가죽)과 스웨이드 소재이므로 물에 젖지 않도록 하고 전용 브러시로 손질하세요.",
+      "imagesSeen": ["image-1.jpg"]
+    },
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "sampleId": "V02",
+      "ok": true,
+      "origin": {
+        "value": "ベトナム",
+        "ok": true,
+        "accepted": "ベトナム",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["베트남"],
+          "unresolved": []
+        },
+        "method": "IMAGE",
+        "image_index": 2
+      },
+      "material_upper": {
+        "value": "天然皮革",
+        "ok": true,
+        "accepted": "天然皮革",
+        "acceptedOk": true,
+        "appValue": "천연가죽",
+        "method": "IMAGE",
+        "image_index": 2
+      },
+      "material_lining": {
+        "value": "合成繊維",
+        "ok": true,
+        "accepted": "合成繊維",
+        "acceptedOk": true,
+        "appValue": "합성섬유",
+        "method": "IMAGE",
+        "image_index": 2
+      },
+      "material_sole": {
+        "value": "ラバー",
+        "ok": true,
+        "accepted": "ラバー",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "IMAGE",
+        "image_index": 2
+      },
+      "heel_height": {
+        "value": "約3cm",
+        "ok": true,
+        "accepted": "3cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 2
+      },
+      "color_ko": {
+        "value": "화이트/화이트",
+        "ok": true,
+        "accepted": "화이트/화이트"
+      },
+      "caution": "천연가죽 소재이므로 물기와 직사광선을 피하고 전용 클리너로 부드럽게 관리하세요.",
+      "imagesSeen": ["image-1.jpg", "image-2.jpg"]
+    },
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "sampleId": "V03",
+      "ok": true,
+      "origin": {
+        "value": "中国",
+        "ok": true,
+        "accepted": "中国",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["중국"],
+          "unresolved": []
+        },
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_upper": {
+        "value": "スエード・メッシュ",
+        "ok": true,
+        "accepted": "スエード・メッシュ",
+        "acceptedOk": true,
+        "appValue": "스웨이드·메쉬",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー",
+        "ok": true,
+        "accepted": "ラバー",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "3.5cm",
+        "ok": true,
+        "accepted": "3.5cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "color_ko": {
+        "value": "그레이",
+        "ok": true,
+        "accepted": "그레이"
+      },
+      "caution": "스웨이드 소재는 물에 약하므로 비나 물에 닿지 않도록 하고, 전용 브러시로 관리하세요.",
+      "imagesSeen": ["image-1.jpg"]
+    },
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "sampleId": "V04",
+      "ok": true,
+      "origin": {
+        "value": "日本",
+        "ok": true,
+        "accepted": "日本",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["일본"],
+          "unresolved": []
+        },
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_upper": {
+        "value": "牛革",
+        "ok": true,
+        "accepted": "牛革",
+        "acceptedOk": true,
+        "appValue": "소가죽",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": "豚革",
+        "ok": true,
+        "accepted": "豚革",
+        "acceptedOk": true,
+        "appValue": "돼지가죽",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_sole": {
+        "value": "ラバー",
+        "ok": true,
+        "accepted": "ラバー",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "3cm",
+        "ok": true,
+        "accepted": "3cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "color_ko": {
+        "value": "블랙",
+        "ok": true,
+        "accepted": "블랙"
+      },
+      "caution": "가죽 소재이므로 물기·직사광선을 피하고 통풍이 잘 되는 곳에서 보관하세요.",
+      "imagesSeen": ["image-1.jpg"]
+    },
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "sampleId": "V05",
+      "ok": true,
+      "origin": {
+        "value": "日本",
+        "ok": true,
+        "accepted": "日本",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["일본"],
+          "unresolved": []
+        },
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_upper": {
+        "value": "合成皮革（エナメル）",
+        "ok": true,
+        "accepted": "合成皮革（エナメル）",
+        "acceptedOk": true,
+        "appValue": "合成皮革(エナメル)",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": "合成皮革",
+        "ok": true,
+        "accepted": "合成皮革",
+        "acceptedOk": true,
+        "appValue": "합성가죽",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_sole": {
+        "value": "合成底",
+        "ok": true,
+        "accepted": "合成底",
+        "acceptedOk": true,
+        "appValue": "合成底",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "7cm",
+        "ok": true,
+        "accepted": "7cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "color_ko": {
+        "value": "블랙 에나멜",
+        "ok": true,
+        "accepted": "블랙 에나멜"
+      },
+      "caution": "에나멜(합성피혁) 소재는 긁힘과 갈라짐에 약하니 접지 말고 부드러운 천으로 닦아 보관하세요.",
+      "imagesSeen": ["image-1.jpg"]
+    },
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "sampleId": "V06",
+      "ok": true,
+      "origin": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "メッシュ・合成皮革",
+        "ok": true,
+        "accepted": "メッシュ・合成皮革",
+        "acceptedOk": true,
+        "appValue": "메쉬·합성가죽",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "アウトソール：ラバー、ミッドソール：EVA",
+        "ok": true,
+        "accepted": "アウトソール：ラバー、ミッドソール：EVA",
+        "acceptedOk": true,
+        "appValue": "アウトソール:ラバー·ミッドソール:EVA",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "約4cm",
+        "ok": true,
+        "accepted": "4cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "color_ko": {
+        "value": "화이트/네이비",
+        "ok": true,
+        "accepted": "화이트/네이비"
+      },
+      "caution": "부드러운 천으로 닦고 직사광선·고온다습을 피해 보관하며 세탁기는 사용하지 마세요",
+      "imagesSeen": ["image-1.jpg", "image-2.jpg"]
+    },
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "sampleId": "V07",
+      "ok": true,
+      "origin": {
+        "value": "베트남",
+        "ok": true,
+        "accepted": "베트남",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["베트남"],
+          "unresolved": []
+        },
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_upper": {
+        "value": "エンジニアードメッシュ",
+        "ok": true,
+        "accepted": "エンジニアードメッシュ",
+        "acceptedOk": true,
+        "appValue": "エンジニアードメッシュ",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー",
+        "ok": true,
+        "accepted": "ラバー",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "約3.6cm",
+        "ok": true,
+        "accepted": "3.6cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "color_ko": {
+        "value": "블랙/화이트",
+        "ok": true,
+        "accepted": "블랙/화이트"
+      },
+      "caution": "메쉬 소재 갑피는 물과 오염에 약하니 마른 솔로 먼지를 털고 직사광선을 피해 보관하세요.",
+      "imagesSeen": ["image-1.jpg"]
+    },
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "sampleId": "V08",
+      "ok": true,
+      "origin": {
+        "value": "타이",
+        "ok": false,
+        "accepted": "타이",
+        "acceptedOk": false,
+        "appValue": {
+          "countries": ["타이"],
+          "unresolved": ["타이"]
+        },
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_upper": {
+        "value": "スムースレザー",
+        "ok": true,
+        "accepted": "スムースレザー",
+        "acceptedOk": true,
+        "appValue": "スムースレザー",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": "テキスタイル",
+        "ok": true,
+        "accepted": "テキスタイル",
+        "acceptedOk": true,
+        "appValue": "テキスタイル",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_sole": {
+        "value": "PVC",
+        "ok": true,
+        "accepted": "PVC",
+        "acceptedOk": true,
+        "appValue": "PVC",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "3cm",
+        "ok": true,
+        "accepted": "3cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "color_ko": {
+        "value": "블랙",
+        "ok": true,
+        "accepted": "블랙"
+      },
+      "caution": "가죽(스무스 레더) 소재는 물과 습기에 약하니 비 오는 날 착용을 피하고 전용 클리너로 관리하세요.",
+      "imagesSeen": ["image-1.jpg"]
+    },
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "sampleId": "V09",
+      "ok": true,
+      "origin": {
+        "value": "ドイツ",
+        "ok": true,
+        "accepted": "ドイツ",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["독일"],
+          "unresolved": []
+        },
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_upper": {
+        "value": "ビルコフロー（合成皮革）",
+        "ok": true,
+        "accepted": "ビルコフロー（合成皮革）",
+        "acceptedOk": true,
+        "appValue": "ビルコフロー(合成皮革)",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "EVA",
+        "ok": true,
+        "accepted": "EVA",
+        "acceptedOk": true,
+        "appValue": "EVA",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "약3cm",
+        "ok": true,
+        "accepted": "3cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "color_ko": {
+        "value": "블랙",
+        "ok": true,
+        "accepted": "블랙"
+      },
+      "caution": "합성피혁(비르코플로) 소재는 물기와 직사광선에 약하니 젖으면 마른 천으로 닦고 그늘에서 말려주세요.",
+      "imagesSeen": ["image-1.jpg"]
+    },
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "sampleId": "V10",
+      "ok": true,
+      "origin": {
+        "value": "캄보디아",
+        "ok": true,
+        "accepted": "캄보디아",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["캄보디아"],
+          "unresolved": []
+        },
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_upper": {
+        "value": "合成皮革・メッシュ",
+        "ok": true,
+        "accepted": "合成皮革・メッシュ",
+        "acceptedOk": true,
+        "appValue": "합성가죽·메쉬",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー",
+        "ok": true,
+        "accepted": "ラバー",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "2.5cm",
+        "ok": true,
+        "accepted": "2.5cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 2
+      },
+      "color_ko": {
+        "value": "화이트/블루",
+        "ok": true,
+        "accepted": "화이트/블루"
+      },
+      "caution": "합성피혁·메쉬 소재는 물과 습기에 약하니 젖었을 때는 그늘에서 말리고 직사광선을 피해 보관하세요.",
+      "imagesSeen": ["image-1.jpg", "image-2.jpg"]
+    },
+    {
+      "engine": "agy",
+      "task": "fact_text",
+      "sampleId": "T01",
+      "ok": true,
+      "origin": {
+        "value": "ベトナム、インドネシア、中国",
+        "ok": true,
+        "accepted": "ベトナム、インドネシア、中国",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["베트남", "인도네시아", "중국"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "合成繊維・合成皮革",
+        "ok": true,
+        "accepted": "合成繊維・合成皮革",
+        "acceptedOk": true,
+        "appValue": "합성섬유·합성가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ゴム",
+        "ok": true,
+        "accepted": "ゴム",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": "3.5cm",
+        "ok": true,
+        "accepted": "3.5cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "TEXT",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "크림/블랙",
+        "ok": true,
+        "accepted": "크림/블랙"
+      },
+      "caution": "합성피혁 및 합성섬유 소재는 물세탁을 피하고 오염 부위를 부드러운 천으로 닦아 그늘에서 건조하십시오.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_text",
+      "sampleId": "T02",
+      "ok": true,
+      "origin": {
+        "value": "U.S.A.",
+        "ok": true,
+        "accepted": "U.S.A.",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["U.S.A."],
+          "unresolved": ["U.S.A."]
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "スエード／メッシュ",
+        "ok": true,
+        "accepted": "スエード／メッシュ",
+        "acceptedOk": true,
+        "appValue": "스웨이드·메쉬",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー",
+        "ok": true,
+        "accepted": "ラバー",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": "3cm",
+        "ok": true,
+        "accepted": "3cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "TEXT",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "그레이",
+        "ok": true,
+        "accepted": "그레이"
+      },
+      "caution": "스웨이드 소재는 물에 취약하므로 눈이나 비에 닿지 않게 주의하고 전용 브러시로 관리해 주세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_text",
+      "sampleId": "T03",
+      "ok": true,
+      "origin": {
+        "value": "タイ",
+        "ok": true,
+        "accepted": "タイ",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["태국"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "スムースレザー（牛革）",
+        "ok": true,
+        "accepted": "スムースレザー（牛革）",
+        "acceptedOk": true,
+        "appValue": "スムースレザー(牛革)",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": "牛革",
+        "ok": true,
+        "accepted": "牛革",
+        "acceptedOk": true,
+        "appValue": "소가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "AirWairソール（PVC）",
+        "ok": true,
+        "accepted": "AirWairソール（PVC）",
+        "acceptedOk": true,
+        "appValue": "AirWairソール(PVC)",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": "約3cm",
+        "ok": true,
+        "accepted": "3cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "TEXT",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "블랙",
+        "ok": true,
+        "accepted": "블랙"
+      },
+      "caution": "천연 가죽(소재) 특성상 물과 습기에 취약하므로 건조하고 통풍이 잘되는 곳에 보관하며 전용 크림으로 관리해 주세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_text",
+      "sampleId": "T04",
+      "ok": true,
+      "origin": {
+        "value": "インドネシア",
+        "ok": true,
+        "accepted": "インドネシア",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["인도네시아"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "キャンバス",
+        "ok": true,
+        "accepted": "キャンバス",
+        "acceptedOk": true,
+        "appValue": "캔버스",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー",
+        "ok": true,
+        "accepted": "ラバー",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "화이트",
+        "ok": true,
+        "accepted": "화이트"
+      },
+      "caution": "캔버스 소재 특성상 물세탁 시 수축이나 이염이 발생할 수 있으니 오염 부위만 가볍게 털어내거나 전용 세제를 사용해 관리하세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_text",
+      "sampleId": "T05",
+      "ok": true,
+      "origin": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "スエード・キャンバス",
+        "ok": true,
+        "accepted": "スエード・キャンバス",
+        "acceptedOk": true,
+        "appValue": "스웨이드·캔버스",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー（ワッフルソール）",
+        "ok": true,
+        "accepted": "ラバー（ワッフルソール）",
+        "acceptedOk": true,
+        "appValue": "ラバー(ワッフルソール)",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "블랙/화이트",
+        "ok": true,
+        "accepted": "블랙/화이트"
+      },
+      "caution": "스웨이드 및 캔버스 소재 특성상 물세탁을 피하고 전용 브러시나 클리너로 관리해 주세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_text",
+      "sampleId": "T06",
+      "ok": true,
+      "origin": {
+        "value": "JAPAN",
+        "ok": true,
+        "accepted": "JAPAN",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["일본"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "牛革",
+        "ok": true,
+        "accepted": "牛革",
+        "acceptedOk": true,
+        "appValue": "소가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": "豚革",
+        "ok": true,
+        "accepted": "豚革",
+        "acceptedOk": true,
+        "appValue": "돼지가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "合成底",
+        "ok": true,
+        "accepted": "合成底",
+        "acceptedOk": true,
+        "appValue": "合成底",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": "2.5cm",
+        "ok": true,
+        "accepted": "2.5cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "TEXT",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "블랙",
+        "ok": true,
+        "accepted": "블랙"
+      },
+      "caution": "천연 가죽 소재 특성상 수분과 직사광선을 피하고 가죽 전용 크림으로 관리해 주세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_text",
+      "sampleId": "T07",
+      "ok": true,
+      "origin": {
+        "value": "中国",
+        "ok": true,
+        "accepted": "中国",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["중국"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "合成皮革",
+        "ok": true,
+        "accepted": "合成皮革",
+        "acceptedOk": true,
+        "appValue": "합성가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": "合成皮革",
+        "ok": true,
+        "accepted": "合成皮革",
+        "acceptedOk": true,
+        "appValue": "합성가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "合成ゴム",
+        "ok": true,
+        "accepted": "合成ゴム",
+        "acceptedOk": true,
+        "appValue": "합성고무",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": "5.5cm",
+        "ok": true,
+        "accepted": "5.5cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "TEXT",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "베이지",
+        "ok": true,
+        "accepted": "베이지"
+      },
+      "caution": "합성피혁 소재는 오염 시 부드러운 천으로 닦아내고 직사광선을 피해 통풍이 잘되는 그늘에서 보관해 주세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_text",
+      "sampleId": "T08",
+      "ok": true,
+      "origin": {
+        "value": "ベトナム",
+        "ok": true,
+        "accepted": "ベトナム",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["베트남"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "合成繊維",
+        "ok": true,
+        "accepted": "合成繊維",
+        "acceptedOk": true,
+        "appValue": "합성섬유",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "合成底",
+        "ok": true,
+        "accepted": "合成底",
+        "acceptedOk": true,
+        "appValue": "合成底",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "네이비/화이트",
+        "ok": true,
+        "accepted": "네이비/화이트"
+      },
+      "caution": "오염 시 부드러운 솔로 가볍게 털어내고 직사광선을 피해 통풍이 잘되는 그늘에서 건조하십시오.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_text",
+      "sampleId": "T09",
+      "ok": true,
+      "origin": {
+        "value": "日本（福岡県久留米市の自社工場）",
+        "ok": true,
+        "accepted": "日本（福岡県久留米市の自社工場）",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["日本(福岡県久留米市の自社工場)"],
+          "unresolved": ["日本(福岡県久留米市の自社工場)"]
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "キャンバス",
+        "ok": true,
+        "accepted": "キャンバス",
+        "acceptedOk": true,
+        "appValue": "캔버스",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": "綿（コットン）",
+        "ok": true,
+        "accepted": "綿（コットン）",
+        "acceptedOk": true,
+        "appValue": "綿(コットン)",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー（バルカナイズ製法）",
+        "ok": true,
+        "accepted": "ラバー（バルカナイズ製法）",
+        "acceptedOk": true,
+        "appValue": "ラバー(バルカナイズ製法)",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "화이트",
+        "ok": true,
+        "accepted": "화이트"
+      },
+      "caution": "캔버스 소재 특성상 물세탁 시 이염이나 변형이 발생할 수 있으니 오염 부위만 가볍게 닦아 관리해 주세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_text",
+      "sampleId": "T10",
+      "ok": true,
+      "origin": {
+        "value": "インドネシア",
+        "ok": true,
+        "accepted": "インドネシア",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["인도네시아"],
+          "unresolved": []
+        },
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "天然皮革・合成皮革",
+        "ok": true,
+        "accepted": "天然皮革・合成皮革",
+        "acceptedOk": true,
+        "appValue": "천연가죽·합성가죽",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ゴム底",
+        "ok": true,
+        "accepted": "ゴム底",
+        "acceptedOk": true,
+        "appValue": "ゴム底",
+        "method": "TEXT",
+        "image_index": null
+      },
+      "heel_height": {
+        "value": "約2cm",
+        "ok": true,
+        "accepted": "2cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "TEXT",
+        "image_index": null
+      },
+      "color_ko": {
+        "value": "옐로우/블랙",
+        "ok": true,
+        "accepted": "옐로우/블랙"
+      },
+      "caution": "천연가죽 및 합성가죽 소재 제품이므로 물세탁을 피하고 가죽 전용 클리너로 관리해 주세요.",
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "sampleId": "V01",
+      "ok": true,
+      "origin": {
+        "value": "インド",
+        "ok": true,
+        "accepted": "インド",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["인도"],
+          "unresolved": []
+        },
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_upper": {
+        "value": "天然皮革（牛革）・スエード",
+        "ok": true,
+        "accepted": "天然皮革（牛革）・スエード",
+        "acceptedOk": true,
+        "appValue": "天然皮革(牛革)·스웨이드",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": "合成繊維",
+        "ok": true,
+        "accepted": "合成繊維",
+        "acceptedOk": true,
+        "appValue": "합성섬유",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_sole": {
+        "value": "ガムラバー",
+        "ok": true,
+        "accepted": "ガムラバー",
+        "acceptedOk": true,
+        "appValue": "ガムラバー",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "約2.5cm",
+        "ok": true,
+        "accepted": "2.5cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "color_ko": {
+        "value": "화이트/블랙",
+        "ok": true,
+        "accepted": "화이트/블랙"
+      },
+      "caution": "천연가죽 및 스웨이드 소재는 물과 습기에 취약하므로 비에 젖지 않도록 주의하고 전용 솔이나 클리너로 관리하세요.",
+      "imagesSeen": ["image-1.jpg"]
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "sampleId": "V02",
+      "ok": false,
+      "origin": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_upper": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_sole": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "color_ko": {
+        "value": null,
+        "ok": false,
+        "accepted": null
+      },
+      "caution": null,
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "sampleId": "V03",
+      "ok": false,
+      "origin": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_upper": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_sole": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "color_ko": {
+        "value": null,
+        "ok": false,
+        "accepted": null
+      },
+      "caution": null,
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "sampleId": "V04",
+      "ok": false,
+      "origin": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_upper": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_sole": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "color_ko": {
+        "value": null,
+        "ok": false,
+        "accepted": null
+      },
+      "caution": null,
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "sampleId": "V05",
+      "ok": false,
+      "origin": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_upper": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_sole": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "color_ko": {
+        "value": null,
+        "ok": false,
+        "accepted": null
+      },
+      "caution": null,
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "sampleId": "V06",
+      "ok": true,
+      "origin": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_upper": {
+        "value": "メッシュ・合成皮革",
+        "ok": true,
+        "accepted": "メッシュ・合成皮革",
+        "acceptedOk": true,
+        "appValue": "메쉬·합성가죽",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー",
+        "ok": true,
+        "accepted": "ラバー",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "4cm",
+        "ok": true,
+        "accepted": "4cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "color_ko": {
+        "value": "화이트/네이비",
+        "ok": true,
+        "accepted": "화이트/네이비"
+      },
+      "caution": "합성피혁 및 메쉬 소재는 물세탁을 피하고 오염 시 부드러운 천으로 닦아 그늘에서 건조해 주세요.",
+      "imagesSeen": ["image-1.jpg", "image-2.jpg"]
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "sampleId": "V07",
+      "ok": false,
+      "origin": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_upper": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_sole": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "color_ko": {
+        "value": null,
+        "ok": false,
+        "accepted": null
+      },
+      "caution": null,
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "sampleId": "V08",
+      "ok": false,
+      "origin": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_upper": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_sole": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "color_ko": {
+        "value": null,
+        "ok": false,
+        "accepted": null
+      },
+      "caution": null,
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "sampleId": "V09",
+      "ok": false,
+      "origin": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_upper": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_sole": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "color_ko": {
+        "value": null,
+        "ok": false,
+        "accepted": null
+      },
+      "caution": null,
+      "imagesSeen": null
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "sampleId": "V10",
+      "ok": true,
+      "origin": {
+        "value": "カンボジア",
+        "ok": true,
+        "accepted": "カンボジア",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["캄보디아"],
+          "unresolved": []
+        },
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_upper": {
+        "value": "合成皮革・メッシュ",
+        "ok": true,
+        "accepted": "合成皮革・メッシュ",
+        "acceptedOk": true,
+        "appValue": "합성가죽·메쉬",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": null,
+        "ok": true,
+        "accepted": null,
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "NONE",
+        "image_index": null
+      },
+      "material_sole": {
+        "value": "ラバー",
+        "ok": true,
+        "accepted": "ラバー",
+        "acceptedOk": true,
+        "appValue": "고무",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "2.5cm",
+        "ok": true,
+        "accepted": "2.5cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 2
+      },
+      "color_ko": {
+        "value": "화이트/블루",
+        "ok": true,
+        "accepted": "화이트/블루"
+      },
+      "caution": "합성피혁 및 메쉬 소재는 물세탁을 피하고 부드러운 솔이나 젖은 천으로 오염을 가볍게 닦아 관리해 주세요.",
+      "imagesSeen": ["image-1.jpg", "image-2.jpg"]
+    }
+  ],
+  "match": [
+    {
+      "engine": "claude",
+      "sampleId": "M01",
+      "truth": true,
+      "match": true,
+      "confidence": 0.97,
+      "reason": "型番 1201A019-108과 1201A019 108이 동일하며, 색상 코드 108(クリーム/ブラック=CREAM/BLACK)도 일치하므로 같은 상품이다."
+    },
+    {
+      "engine": "claude",
+      "sampleId": "M02",
+      "truth": false,
+      "match": false,
+      "confidence": 0.98,
+      "reason": "型番의 색상코드가 108과 020으로 다르고, 색상명도 크림/블랙과 화이트/퓨어실버로 서로 달라 같은 색상의 동일 상품이 아니다."
+    },
+    {
+      "engine": "claude",
+      "sampleId": "M03",
+      "truth": true,
+      "match": true,
+      "confidence": 0.97,
+      "reason": "두 상품 모두 型番이 M2002RXD로 동일하고 색상도 ブラック/BLACK으로 동일하여 같은 모델·같은 색상의 동일 상품으로 판단된다."
+    },
+    {
+      "engine": "claude",
+      "sampleId": "M04",
+      "truth": false,
+      "match": false,
+      "confidence": 0.9,
+      "reason": "型番이 ML574EVG와 U574EVG로 접두사(ML vs U)가 달라 서로 다른 모델 라인(남성용 vs 유니섹스)이므로 동일 상품으로 볼 수 없습니다."
+    },
+    {
+      "engine": "claude",
+      "sampleId": "M05",
+      "truth": true,
+      "match": true,
+      "confidence": 0.97,
+      "reason": "型番 CW2288-111로 동일하고, 색상도 화이트/화이트로 일치하여 같은 모델·같은 색상 상품으로 판단된다."
+    },
+    {
+      "engine": "claude",
+      "sampleId": "M06",
+      "truth": false,
+      "match": false,
+      "confidence": 0.98,
+      "reason": "型番이 CW2288-111과 DQ7658-100으로 서로 다르고 색상 코드도 111과 100으로 달라 서로 다른 모델(기준은 '07 기본형, 비교는 '07 LV8)이다."
+    },
+    {
+      "engine": "claude",
+      "sampleId": "M07",
+      "truth": true,
+      "match": true,
+      "confidence": 0.97,
+      "reason": "두 상품 모두 型番(품번) 31307990으로 동일하며, 색상도 ホワイト(화이트)로 일치하는 컨버스 올스타 US HI 동일 모델이다."
+    },
+    {
+      "engine": "claude",
+      "sampleId": "M08",
+      "truth": false,
+      "match": false,
+      "confidence": 0.97,
+      "reason": "型番이 31307990(HI, 하이탑)과 31307991(OX, 로우탑)로 서로 다르며 상품명에도 HI와 OX로 모델이 다르게 표기되어 있어 동일 상품이 아니다."
+    },
+    {
+      "engine": "claude",
+      "sampleId": "M09",
+      "truth": true,
+      "match": true,
+      "confidence": 0.97,
+      "reason": "型番(DH6927-111)과 색상 코드(111, white/black)가 모두 일치하여 동일 모델·동일 색상으로 판단됨."
+    },
+    {
+      "engine": "claude",
+      "sampleId": "M10",
+      "truth": false,
+      "match": false,
+      "confidence": 0.97,
+      "reason": "型番이 B75806과 ID0493으로 서로 다른 모델이며, adidas Samba OG 라인의 다른 컬러웨이/버전이므로 같은 상품이 아니다."
+    },
+    {
+      "engine": "agy",
+      "sampleId": "M01",
+      "truth": true,
+      "match": true,
+      "confidence": 1,
+      "reason": "두 상품 모두 모델 품번(1201A019)과 색상 코드(108, 크림/블랙)가 정확히 일치하는 동일 상품입니다."
+    },
+    {
+      "engine": "agy",
+      "sampleId": "M02",
+      "truth": false,
+      "match": false,
+      "confidence": 1,
+      "reason": "두 상품은 기본 모델(1201A019)은 같으나, 색상 코드 및 세부 형번(108 vs 020)과 색상이 서로 다르므로 다른 상품입니다."
+    },
+    {
+      "engine": "agy",
+      "sampleId": "M03",
+      "truth": true,
+      "match": true,
+      "confidence": 1,
+      "reason": "두 상품 모두 모델(型番)이 M2002RXD로 동일하고 색상 또한 블랙(BLACK)으로 일치합니다."
+    },
+    {
+      "engine": "agy",
+      "sampleId": "M04",
+      "truth": false,
+      "match": false,
+      "confidence": 1,
+      "reason": "기준 상품의 모델 번호(型番)는 ML574EVG이고 비교 상품의 모델 번호는 U574EVG로 서로 일치하지 않습니다."
+    },
+    {
+      "engine": "agy",
+      "sampleId": "M05",
+      "truth": true,
+      "match": true,
+      "confidence": 1,
+      "reason": "두 상품 모두 나이키 에어포스 1 '07 동일 모델(CW2288-111) 및 화이트 색상으로 모델과 색상이 일치합니다."
+    },
+    {
+      "engine": "agy",
+      "sampleId": "M06",
+      "truth": false,
+      "match": false,
+      "confidence": 1,
+      "reason": "기준 상품(CW2288-111, 색상 코드 111)과 비교 상품(DQ7658-100, 색상 코드 100)의 모델(型番) 및 색상 코드가 모두 다르므로 일치하지 않는 상품입니다."
+    },
+    {
+      "engine": "agy",
+      "sampleId": "M07",
+      "truth": true,
+      "match": true,
+      "confidence": 1,
+      "reason": "두 상품의 모델 번호(型番 31307990)와 색상(ホワイト)이 모두 일치하므로 동일한 상품입니다."
+    },
+    {
+      "engine": "agy",
+      "sampleId": "M08",
+      "truth": false,
+      "match": false,
+      "confidence": 1,
+      "reason": "기준 상품은 하이컷(HI, 31307990)이고 비교 상품은 로우컷(OX, 31307991)으로 型番과 모델이 서로 다릅니다."
+    },
+    {
+      "engine": "agy",
+      "sampleId": "M09",
+      "truth": true,
+      "match": true,
+      "confidence": 1,
+      "reason": "두 상품 모두 모델 번호(型番)와 색상 코드가 DH6927-111로 동일하며, 색상 역시 화이트/블랙으로 완전히 일치합니다."
+    },
+    {
+      "engine": "agy",
+      "sampleId": "M10",
+      "truth": false,
+      "match": false,
+      "confidence": 1,
+      "reason": "기준 상품의 모델 번호(B75806)와 색상(화이트/블랙)이 비교 상품의 모델 번호(ID0493) 및 색상(블랙/화이트)과 서로 일치하지 않습니다."
+    }
+  ],
+  "copy": [
+    {
+      "engine": "claude",
+      "sampleId": "C01",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 26,
+      "sellingPoints": 5,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": ["메쉬"],
+      "sourceFacts": 5,
+      "sourceFactsGrounded": 5
+    },
+    {
+      "engine": "claude",
+      "sampleId": "C02",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 30,
+      "sellingPoints": 5,
+      "bodySentences": 4,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 6,
+      "sourceFactsGrounded": 6
+    },
+    {
+      "engine": "claude",
+      "sampleId": "C03",
+      "ok": true,
+      "structureBroken": true,
+      "jsonInField": true,
+      "placeholder": false,
+      "headlineLength": 22,
+      "sellingPoints": 4,
+      "bodySentences": 5,
+      "bodyRuleOk": false,
+      "koreanRatio": 0.878,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 5,
+      "sourceFactsGrounded": 5
+    },
+    {
+      "engine": "claude",
+      "sampleId": "C04",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 30,
+      "sellingPoints": 4,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 4,
+      "sourceFactsGrounded": 4
+    },
+    {
+      "engine": "claude",
+      "sampleId": "C05",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 31,
+      "sellingPoints": 5,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 5,
+      "sourceFactsGrounded": 5
+    },
+    {
+      "engine": "claude",
+      "sampleId": "C06",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 31,
+      "sellingPoints": 5,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 5,
+      "sourceFactsGrounded": 5
+    },
+    {
+      "engine": "claude",
+      "sampleId": "C07",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 27,
+      "sellingPoints": 5,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 4,
+      "sourceFactsGrounded": 4
+    },
+    {
+      "engine": "claude",
+      "sampleId": "C08",
+      "ok": true,
+      "structureBroken": true,
+      "jsonInField": true,
+      "placeholder": true,
+      "headlineLength": 11,
+      "sellingPoints": 3,
+      "bodySentences": 4,
+      "bodyRuleOk": true,
+      "koreanRatio": 0.815,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 1,
+      "sourceFactsGrounded": 0
+    },
+    {
+      "engine": "claude",
+      "sampleId": "C09",
+      "ok": true,
+      "structureBroken": true,
+      "jsonInField": true,
+      "placeholder": false,
+      "headlineLength": 30,
+      "sellingPoints": 4,
+      "bodySentences": 4,
+      "bodyRuleOk": true,
+      "koreanRatio": 0.919,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 4,
+      "sourceFactsGrounded": 4
+    },
+    {
+      "engine": "claude",
+      "sampleId": "C10",
+      "ok": true,
+      "structureBroken": true,
+      "jsonInField": true,
+      "placeholder": false,
+      "headlineLength": 27,
+      "sellingPoints": 4,
+      "bodySentences": 4,
+      "bodyRuleOk": true,
+      "koreanRatio": 0.959,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 3,
+      "sourceFactsGrounded": 3
+    },
+    {
+      "engine": "agy",
+      "sampleId": "C01",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 34,
+      "sellingPoints": 4,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": ["메쉬"],
+      "sourceFacts": 5,
+      "sourceFactsGrounded": 5
+    },
+    {
+      "engine": "agy",
+      "sampleId": "C02",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 34,
+      "sellingPoints": 4,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 6,
+      "sourceFactsGrounded": 6
+    },
+    {
+      "engine": "agy",
+      "sampleId": "C03",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 38,
+      "sellingPoints": 4,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 9,
+      "sourceFactsGrounded": 9
+    },
+    {
+      "engine": "agy",
+      "sampleId": "C04",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 29,
+      "sellingPoints": 4,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 4,
+      "sourceFactsGrounded": 4
+    },
+    {
+      "engine": "agy",
+      "sampleId": "C05",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 31,
+      "sellingPoints": 3,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 5,
+      "sourceFactsGrounded": 5
+    },
+    {
+      "engine": "agy",
+      "sampleId": "C06",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 35,
+      "sellingPoints": 4,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 12,
+      "sourceFactsGrounded": 12
+    },
+    {
+      "engine": "agy",
+      "sampleId": "C07",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 34,
+      "sellingPoints": 4,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 11,
+      "sourceFactsGrounded": 11
+    },
+    {
+      "engine": "agy",
+      "sampleId": "C08",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 31,
+      "sellingPoints": 4,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 6,
+      "sourceFactsGrounded": 6
+    },
+    {
+      "engine": "agy",
+      "sampleId": "C09",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 36,
+      "sellingPoints": 4,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 4,
+      "sourceFactsGrounded": 4
+    },
+    {
+      "engine": "agy",
+      "sampleId": "C10",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 26,
+      "sellingPoints": 4,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": [],
+      "sourceFacts": 5,
+      "sourceFactsGrounded": 5
+    }
+  ]
+}

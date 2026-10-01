@@ -1,6 +1,28 @@
 {
+  "conversation_id": "00000000-0000-4000-8000-000000000101",
   "status": "SUCCESS",
-  "model": "gemini-3.8-flash-medium",
-  "structured_output": { "answer": "OK" },
-  "warnings": []
+  "response": "OK\n{\"answer\":\"OK\",\"toolAction\":\"Finishing task\",\"toolSummary\":\"Finish task\"}\n",
+  "duration_seconds": 12.122066,
+  "num_turns": 2,
+  "structured_output": {
+    "answer": "OK"
+  },
+  "json_schema": {
+    "type": "object",
+    "properties": {
+      "answer": {
+        "type": "string",
+        "enum": ["OK"]
+      }
+    },
+    "required": ["answer"],
+    "additionalProperties": false
+  },
+  "usage": {
+    "input_tokens": 31493,
+    "output_tokens": 113,
+    "thinking_tokens": 81,
+    "cache_read_tokens": 20385,
+    "total_tokens": 31606
+  }
 }

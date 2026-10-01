@@ -156,13 +156,16 @@ describe('AI 엔진 설정·AI CLI 점검(P1-11) e2e', () => {
         allowCustomModel: false,
         defaultModels: { text: 'sonnet', vision: 'sonnet' },
         loginCommand: 'claude 실행 후 /login',
-        termsNote: 'Claude 구독의 약관·쿼터 책임은 사용자에게 있습니다.',
+        termsNote:
+          '본인 Claude 구독 한도를 씁니다. 대량·상시 사용은 Anthropic 약관상 제한될 수 있고, 계정 책임은 본인에게 있습니다.',
         experimental: false,
       });
       // AGY 목록 = agy models(가짜 어댑터의 fixture 출력을 실제 파서로)
       expect(agy!.modelOptions).toEqual(agyModelsFixture());
       expect(agy!.modelOptions).toContain(AGY_TEXT);
       expect(agy!.defaultModels).toEqual({ text: AGY_TEXT, vision: 'gemini-3.8-flash-high' });
+      // M0 S7: AGY는 기준 미달(스키마 통과 86%)이라 '실험적'
+      expect(agy!.experimental).toBe(true);
       expect(codex).toMatchObject({
         allowCustomModel: true,
         modelOptions: [],

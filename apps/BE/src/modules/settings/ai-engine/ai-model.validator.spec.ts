@@ -56,12 +56,14 @@ describe('엔진 안내 상수(P1-11 규칙 2)', () => {
       { text: 'gemini-3.8-flash-medium', vision: 'gemini-3.8-flash-high' },
       { text: null, vision: null },
     ]);
+    // M0 S6 약관 §8: 엔진마다 위험이 다른 고지(AGY는 계정 정지 위험 + 사용자 MCP를 끌 수 없음)
     expect(engines.map((e) => e.termsNote)).toEqual([
-      'Claude 구독의 약관·쿼터 책임은 사용자에게 있습니다.',
-      'Google 구독의 약관·쿼터 책임은 사용자에게 있습니다.',
-      'ChatGPT 구독의 약관·쿼터 책임은 사용자에게 있습니다.',
+      '본인 Claude 구독 한도를 씁니다. 대량·상시 사용은 Anthropic 약관상 제한될 수 있고, 계정 책임은 본인에게 있습니다.',
+      'Google 약관은 다른 프로그램과 함께 쓰는 것을 막을 수 있어 Google 계정이 정지될 위험이 있습니다. 사용자 MCP·규칙·플러그인도 함께 켜집니다(끌 수 없음).',
+      '본인 ChatGPT 플랜 한도를 씁니다. OpenAI 약관과 계정 책임은 본인에게 있습니다.',
     ]);
-    expect(engines.map((e) => e.experimental)).toEqual([false, false, true]);
+    // M0 S7: CLAUDE 통과, AGY 미달(86%, 비전 3/10), CODEX 미측정
+    expect(engines.map((e) => e.experimental)).toEqual([false, true, true]);
     // 비밀처럼 보이는 값이 없다(앱 상수)
     expect(JSON.stringify(engines)).not.toMatch(/api[_-]?key|token|secret/i);
   });
@@ -70,6 +72,19 @@ describe('엔진 안내 상수(P1-11 규칙 2)', () => {
     expect(agyModelOptions(null)).toEqual(['gemini-3.8-flash-medium', 'gemini-3.8-flash-high']);
     expect(agyModelOptions([])).toEqual(agyModelOptions(null));
     expect(AI_ENGINE_DEFAULT_MODELS.CODEX).toEqual({ text: null, vision: null });
+  });
+
+  it('AGY 목록은 gemini-*만(M0 S6 약관: agy의 제3자 모델은 그 모델 약관을 따른다). 남는 게 없으면 기본 모델', () => {
+    const listed = [
+      'gemini-3.8-flash-high',
+      'claude-sonnet-4-6',
+      'claude-opus-4-6-thinking',
+      'gpt-oss-120b-medium',
+      'gemini-3.1-pro-low',
+    ];
+    expect(agyModelOptions(listed)).toEqual(['gemini-3.8-flash-high', 'gemini-3.1-pro-low']);
+    expect(agyModelOptions(['claude-sonnet-4-6'])).toEqual(agyModelOptions(null));
+    expect(isAllowedAiModel('AGY', 'claude-sonnet-4-6', listed)).toBe(false);
   });
 });
 

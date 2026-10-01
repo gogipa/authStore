@@ -45,6 +45,28 @@ describe('⑥-2 값의 한국어 정리(P3-03 규칙 10 — 설정 사전, Propo
     });
   });
 
+  it('M0 S7: 괄호 설명·영문 약칭 마침표를 떼고 사전에서 찾는다(나라 이름이 섞인 괄호는 확정하지 않는다)', () => {
+    const dict = CONTENT.originCountries;
+    expect(resolveOrigin('日本（福岡県久留米市の自社工場）', dict)).toEqual({
+      countries: ['일본'],
+      unresolved: [],
+    });
+    expect(resolveOrigin('タイ (태국)', dict)).toEqual({ countries: ['태국'], unresolved: [] });
+    expect(resolveOrigin('U.S.A.', dict)).toEqual({ countries: ['미국'], unresolved: [] });
+    expect(resolveOrigin('MADE IN U.S.A', dict).countries).toEqual(['미국']);
+    expect(resolveOrigin('（中国）', dict)).toEqual({ countries: ['중국'], unresolved: [] });
+    // 괄호 안에 다른 나라가 섞이면 버리지 않고 오너 확인으로 남긴다
+    expect(resolveOrigin('中国製（一部ベトナム製）', dict)).toEqual({
+      countries: ['중국', '一部ベトナム'],
+      unresolved: ['一部ベトナム'],
+    });
+    // 영문 이름은 낱말 경계로만 본다(FUKUOKA 속 UK는 영국이 아니다)
+    expect(resolveOrigin('JAPAN (FUKUOKA FACTORY)', dict)).toEqual({
+      countries: ['일본'],
+      unresolved: [],
+    });
+  });
+
   it('원산지 입력 비교: 원문·"대륙 > 국가"·한국어 나라 이름 모두 받는다', () => {
     for (const input of ['ベトナム', '베트남', '아시아 > 베트남', '아시아>베트남', ' vietnam ']) {
       expect(countryFromDictionary(input, CONTENT.originCountries)).toBe('베트남');

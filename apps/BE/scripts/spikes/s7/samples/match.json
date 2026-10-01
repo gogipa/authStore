@@ -1,0 +1,196 @@
+{
+  "_note": "M0 S7 합성 샘플(실제 상품 아님). F-BS-38(RK-03) 동일 상품 판정 10건 — 규칙 분류가 애매한(NEEDS_REVIEW) 모양으로 만들었다. truth = 같은 모델·같은 색상이면 true",
+  "samples": [
+    {
+      "id": "M01",
+      "anchor": {
+        "itemName": "アシックス ゲルカヤノ14 1201A019-108 クリーム/ブラック",
+        "shopName": "シューズショップA",
+        "modelCode": "1201A019-108",
+        "colorCode": "108",
+        "colorLabel": "クリーム/ブラック"
+      },
+      "row": {
+        "itemName": "【送料無料】ASICS GEL-KAYANO 14 1201A019 108 CREAM/BLACK メンズ スニーカー",
+        "shopName": "スニーカーショップB",
+        "modelCode": null,
+        "colorCode": null,
+        "colorLabel": "CREAM/BLACK"
+      },
+      "truth": true,
+      "why": "같은 型番·색상 코드, 표기만 다름(하이픈·영문 색상)"
+    },
+    {
+      "id": "M02",
+      "anchor": {
+        "itemName": "アシックス ゲルカヤノ14 1201A019-108 クリーム/ブラック",
+        "shopName": "シューズショップA",
+        "modelCode": "1201A019-108",
+        "colorCode": "108",
+        "colorLabel": "クリーム/ブラック"
+      },
+      "row": {
+        "itemName": "アシックス ゲルカヤノ14 1201A019-020 ホワイト/ピュアシルバー",
+        "shopName": "スポーツショップC",
+        "modelCode": "1201A019-020",
+        "colorCode": "020",
+        "colorLabel": "ホワイト/ピュアシルバー"
+      },
+      "truth": false,
+      "why": "같은 모델, 다른 색상 코드"
+    },
+    {
+      "id": "M03",
+      "anchor": {
+        "itemName": "ニューバランス M2002RXD ブラック GORE-TEX",
+        "shopName": "シューズショップA",
+        "modelCode": "M2002RXD",
+        "colorCode": null,
+        "colorLabel": "ブラック"
+      },
+      "row": {
+        "itemName": "New Balance 2002R GORE-TEX M2002RXD Dワイズ BLACK 26.5cm",
+        "shopName": "ABCスポーツ",
+        "modelCode": null,
+        "colorCode": null,
+        "colorLabel": "BLACK"
+      },
+      "truth": true,
+      "why": "같은 型番, 사이즈 표기는 무시"
+    },
+    {
+      "id": "M04",
+      "anchor": {
+        "itemName": "ニューバランス ML574EVG グレー",
+        "shopName": "シューズショップA",
+        "modelCode": "ML574EVG",
+        "colorCode": null,
+        "colorLabel": "グレー"
+      },
+      "row": {
+        "itemName": "ニューバランス U574EVG グレー ユニセックス",
+        "shopName": "スニーカーショップB",
+        "modelCode": "U574EVG",
+        "colorCode": null,
+        "colorLabel": "グレー"
+      },
+      "truth": false,
+      "why": "비슷하지만 다른 型番(ML574 vs U574)"
+    },
+    {
+      "id": "M05",
+      "anchor": {
+        "itemName": "ナイキ エアフォース1 '07 CW2288-111 ホワイト/ホワイト",
+        "shopName": "シューズショップA",
+        "modelCode": "CW2288-111",
+        "colorCode": "111",
+        "colorLabel": "ホワイト/ホワイト"
+      },
+      "row": {
+        "itemName": "NIKE AIR FORCE 1 07 cw2288111 WHITE メンズ 27cm",
+        "shopName": "スポーツショップC",
+        "modelCode": null,
+        "colorCode": null,
+        "colorLabel": "WHITE"
+      },
+      "truth": true,
+      "why": "하이픈 없는 소문자 型番"
+    },
+    {
+      "id": "M06",
+      "anchor": {
+        "itemName": "ナイキ エアフォース1 '07 CW2288-111 ホワイト/ホワイト",
+        "shopName": "シューズショップA",
+        "modelCode": "CW2288-111",
+        "colorCode": "111",
+        "colorLabel": "ホワイト/ホワイト"
+      },
+      "row": {
+        "itemName": "ナイキ エアフォース1 '07 LV8 DQ7658-100 ホワイト",
+        "shopName": "ABCスポーツ",
+        "modelCode": "DQ7658-100",
+        "colorCode": "100",
+        "colorLabel": "ホワイト"
+      },
+      "truth": false,
+      "why": "같은 계열 다른 모델(LV8)"
+    },
+    {
+      "id": "M07",
+      "anchor": {
+        "itemName": "コンバース オールスター US HI ホワイト 31307990",
+        "shopName": "シューズショップA",
+        "modelCode": "31307990",
+        "colorCode": null,
+        "colorLabel": "ホワイト"
+      },
+      "row": {
+        "itemName": "CONVERSE ALL STAR US HI ホワイト 31307990 ユニセックス 23.0〜29.0cm",
+        "shopName": "スニーカーショップB",
+        "modelCode": null,
+        "colorCode": null,
+        "colorLabel": "ホワイト"
+      },
+      "truth": true,
+      "why": "같은 品番, 영문 상품명"
+    },
+    {
+      "id": "M08",
+      "anchor": {
+        "itemName": "コンバース オールスター US HI ホワイト 31307990",
+        "shopName": "シューズショップA",
+        "modelCode": "31307990",
+        "colorCode": null,
+        "colorLabel": "ホワイト"
+      },
+      "row": {
+        "itemName": "コンバース オールスター US OX ホワイト 31307991",
+        "shopName": "スポーツショップC",
+        "modelCode": "31307991",
+        "colorCode": null,
+        "colorLabel": "ホワイト"
+      },
+      "truth": false,
+      "why": "HI vs OX, 品番 끝자리 다름"
+    },
+    {
+      "id": "M09",
+      "anchor": {
+        "itemName": "ナイキ ダンク ロー レトロ ホワイト/ブラック",
+        "shopName": null,
+        "modelCode": "DH6927-111",
+        "colorCode": "111",
+        "colorLabel": "ホワイト/ブラック",
+        "ownerEntered": true
+      },
+      "row": {
+        "itemName": "NIKE DUNK LOW RETRO PANDA DH6927-111 white/black",
+        "shopName": "ABCスポーツ",
+        "modelCode": null,
+        "colorCode": null,
+        "colorLabel": "white/black"
+      },
+      "truth": true,
+      "why": "오너가 넣은 型番·색상 코드(OWNER_INPUT)와 같은 상품"
+    },
+    {
+      "id": "M10",
+      "anchor": {
+        "itemName": "アディダス サンバ OG B75806 ホワイト/ブラック",
+        "shopName": "シューズショップA",
+        "modelCode": "B75806",
+        "colorCode": null,
+        "colorLabel": "ホワイト/ブラック"
+      },
+      "row": {
+        "itemName": "adidas SAMBA OG ID0493 ブラック/ホワイト",
+        "shopName": "スニーカーショップB",
+        "modelCode": "ID0493",
+        "colorCode": null,
+        "colorLabel": "ブラック/ホワイト"
+      },
+      "truth": false,
+      "why": "같은 모델명, 다른 品番·반대 배색"
+    }
+  ]
+}

@@ -1,0 +1,393 @@
+{
+  "generatedAt": "2026-10-01T06:50:08.581Z",
+  "sources": ["raw-pilot.jsonl"],
+  "criteria": {
+    "schemaPassRate": 0.95,
+    "maxLatencyMs": 120000,
+    "factAccuracyS6": 0.9
+  },
+  "perEngine": {
+    "claude": {
+      "models": ["TEXT:sonnet", "VISION:sonnet"],
+      "calls": 3,
+      "schemaPass": 3,
+      "schemaPassRate": 1,
+      "latencyP50": 10953,
+      "latencyP95": 46660,
+      "latencyMax": 46660,
+      "over120s": 0,
+      "usage": {
+        "input": 10,
+        "output": 6246,
+        "cacheRead": 20761,
+        "cacheCreate": 21683,
+        "costUsd": 0.1588
+      },
+      "verdict": "통과"
+    },
+    "agy": {
+      "models": ["TEXT:gemini-3.8-flash-medium", "VISION:gemini-3.8-flash-high"],
+      "calls": 3,
+      "schemaPass": 2,
+      "schemaPassRate": 0.667,
+      "latencyP50": 20395,
+      "latencyP95": 24161,
+      "latencyMax": 24161,
+      "over120s": 0,
+      "usage": {
+        "input": 114710,
+        "output": 5427,
+        "cacheRead": 0,
+        "cacheCreate": 0,
+        "costUsd": 0
+      },
+      "verdict": "실험적"
+    }
+  },
+  "perTask": [
+    {
+      "engine": "claude",
+      "task": "smoke",
+      "model": "sonnet",
+      "n": 1,
+      "schemaPass": 1,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 3379,
+      "latencyP95": 3379,
+      "latencyMax": 3379,
+      "over120s": 0,
+      "answerOk": 1
+    },
+    {
+      "engine": "claude",
+      "task": "copy",
+      "model": "sonnet",
+      "n": 1,
+      "schemaPass": 1,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 46660,
+      "latencyP95": 46660,
+      "latencyMax": 46660,
+      "over120s": 0,
+      "samplesWithForbidden": 0,
+      "sourceFactsGroundedRate": 1,
+      "bodyRuleOk": 1,
+      "structureBroken": 0
+    },
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "model": "sonnet",
+      "n": 1,
+      "schemaPass": 1,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 10953,
+      "latencyP95": 10953,
+      "latencyMax": 10953,
+      "over120s": 0,
+      "fieldAccuracyAll": 1,
+      "fieldAccuracyOk": 1,
+      "fieldAccuracyAcceptedAll": 1,
+      "fieldCorrect": 5,
+      "fieldTotal": 5,
+      "byField": {
+        "origin": {
+          "raw": 1,
+          "accepted": 1,
+          "n": 1
+        },
+        "material_upper": {
+          "raw": 1,
+          "accepted": 1,
+          "n": 1
+        },
+        "material_lining": {
+          "raw": 1,
+          "accepted": 1,
+          "n": 1
+        },
+        "material_sole": {
+          "raw": 1,
+          "accepted": 1,
+          "n": 1
+        },
+        "heel_height": {
+          "raw": 1,
+          "accepted": 1,
+          "n": 1
+        }
+      },
+      "colorKoCorrect": 1,
+      "colorKoAccepted": 1,
+      "cautionPresent": 1,
+      "japaneseValues": {
+        "ja": 0,
+        "total": 4
+      },
+      "originSettledByDictionary": {
+        "settled": 1,
+        "found": 1
+      },
+      "imageIndex": {
+        "correct": 5,
+        "total": 5
+      }
+    },
+    {
+      "engine": "agy",
+      "task": "smoke",
+      "model": "gemini-3.8-flash-medium",
+      "n": 1,
+      "schemaPass": 1,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 20395,
+      "latencyP95": 20395,
+      "latencyMax": 20395,
+      "over120s": 0,
+      "answerOk": 1
+    },
+    {
+      "engine": "agy",
+      "task": "copy",
+      "model": "gemini-3.8-flash-medium",
+      "n": 1,
+      "schemaPass": 1,
+      "schemaPassRate": 1,
+      "errors": {},
+      "latencyP50": 24161,
+      "latencyP95": 24161,
+      "latencyMax": 24161,
+      "over120s": 0,
+      "samplesWithForbidden": 0,
+      "sourceFactsGroundedRate": 1,
+      "bodyRuleOk": 1,
+      "structureBroken": 0
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "model": "gemini-3.8-flash-high",
+      "n": 1,
+      "schemaPass": 0,
+      "schemaPassRate": 0,
+      "errors": {
+        "AI_OUTPUT_INVALID (빈 결과)": 1
+      },
+      "latencyP50": 20078,
+      "latencyP95": 20078,
+      "latencyMax": 20078,
+      "over120s": 0,
+      "fieldAccuracyAll": 0,
+      "fieldAccuracyOk": null,
+      "fieldAccuracyAcceptedAll": 0,
+      "fieldCorrect": 0,
+      "fieldTotal": 5,
+      "byField": {
+        "origin": {
+          "raw": 0,
+          "accepted": 0,
+          "n": 1
+        },
+        "material_upper": {
+          "raw": 0,
+          "accepted": 0,
+          "n": 1
+        },
+        "material_lining": {
+          "raw": 0,
+          "accepted": 0,
+          "n": 1
+        },
+        "material_sole": {
+          "raw": 0,
+          "accepted": 0,
+          "n": 1
+        },
+        "heel_height": {
+          "raw": 0,
+          "accepted": 0,
+          "n": 1
+        }
+      },
+      "colorKoCorrect": 0,
+      "colorKoAccepted": 0,
+      "cautionPresent": 0,
+      "japaneseValues": {
+        "ja": 0,
+        "total": 0
+      },
+      "originSettledByDictionary": {
+        "settled": 0,
+        "found": 0
+      },
+      "imageIndex": {
+        "correct": 0,
+        "total": 0
+      }
+    }
+  ],
+  "facts": [
+    {
+      "engine": "claude",
+      "task": "fact_vision",
+      "sampleId": "V01",
+      "ok": true,
+      "origin": {
+        "value": "인도",
+        "ok": true,
+        "accepted": "인도",
+        "acceptedOk": true,
+        "appValue": {
+          "countries": ["인도"],
+          "unresolved": []
+        },
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_upper": {
+        "value": "천연피혁(소가죽)·스웨이드",
+        "ok": true,
+        "accepted": "천연피혁(소가죽)·스웨이드",
+        "acceptedOk": true,
+        "appValue": "천연피혁(소가죽)·스웨이드",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_lining": {
+        "value": "합성섬유",
+        "ok": true,
+        "accepted": "합성섬유",
+        "acceptedOk": true,
+        "appValue": "합성섬유",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "material_sole": {
+        "value": "검 고무(ガムラバー)",
+        "ok": true,
+        "accepted": "검 고무(ガムラバー)",
+        "acceptedOk": true,
+        "appValue": "검 고무(ガムラバー)",
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "heel_height": {
+        "value": "약 2.5cm",
+        "ok": true,
+        "accepted": "2.5cm",
+        "acceptedOk": true,
+        "appValue": null,
+        "method": "IMAGE",
+        "image_index": 1
+      },
+      "color_ko": {
+        "value": "화이트/블랙",
+        "ok": true,
+        "accepted": "화이트/블랙"
+      },
+      "caution": "천연가죽과 스웨이드 소재이므로 물에 젖지 않도록 주의하고 전용 클리너와 브러시로 관리하세요.",
+      "imagesSeen": ["image-1.jpg"]
+    },
+    {
+      "engine": "agy",
+      "task": "fact_vision",
+      "sampleId": "V01",
+      "ok": false,
+      "origin": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_upper": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_lining": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "material_sole": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "heel_height": {
+        "value": null,
+        "ok": false,
+        "accepted": null,
+        "acceptedOk": false,
+        "appValue": null,
+        "method": null,
+        "image_index": null
+      },
+      "color_ko": {
+        "value": null,
+        "ok": false,
+        "accepted": null
+      },
+      "caution": null,
+      "imagesSeen": null
+    }
+  ],
+  "match": [],
+  "copy": [
+    {
+      "engine": "claude",
+      "sampleId": "C01",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 30,
+      "sellingPoints": 4,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": ["메시"],
+      "sourceFacts": 5,
+      "sourceFactsGrounded": 5
+    },
+    {
+      "engine": "agy",
+      "sampleId": "C01",
+      "ok": true,
+      "structureBroken": false,
+      "jsonInField": false,
+      "placeholder": false,
+      "headlineLength": 32,
+      "sellingPoints": 4,
+      "bodySentences": 3,
+      "bodyRuleOk": true,
+      "koreanRatio": 1,
+      "genericForbidden": [],
+      "sampleForbidden": [],
+      "materialMentions": ["메쉬"],
+      "sourceFacts": 7,
+      "sourceFactsGrounded": 7
+    }
+  ]
+}

@@ -1,0 +1,396 @@
+{
+  "_note": "M0 S7 합성 샘플(실제 상품 아님). CT-02 비전 추출 10건. 글에는 사양이 없고 스펙표 이미지(images/*.jpg, run-s7 render로 sharp가 그린다)에만 있다. truth 규칙은 facts-text.json과 같고, imageIndex = 값이 들어 있는 이미지 번호(1부터)",
+  "samples": [
+    {
+      "id": "V01",
+      "itemName": "アディダス サンバ OG B75806 ホワイト/ブラック ユニセックス",
+      "descriptionText": "1950年代にサッカーのトレーニングシューズとして誕生したサンバ。\n詳しいスペックは下の画像をご覧ください。\n※日本正規品",
+      "attributes": [],
+      "selectedColorRaw": "ホワイト/ブラック",
+      "images": [
+        {
+          "file": "V01-1.jpg",
+          "title": "スペック表",
+          "rows": [
+            ["品番", "B75806"],
+            ["カラー", "フットウェアホワイト/コアブラック"],
+            ["原産国", "インド"],
+            ["アッパー", "天然皮革（牛革）・スエード"],
+            ["ライニング", "合成繊維"],
+            ["アウトソール", "ガムラバー"],
+            ["ヒール高さ", "約2.5cm"]
+          ]
+        }
+      ],
+      "truth": {
+        "origin": [["インド", "INDIA", "인도"]],
+        "material_upper": [
+          ["天然皮革", "牛革", "レザー"],
+          ["スエード", "SUEDE"]
+        ],
+        "material_lining": [["合成繊維", "合繊"]],
+        "material_sole": [["ガムラバー", "ラバー", "ゴム", "RUBBER"]],
+        "heel_height": { "value": 2.5, "unit": "cm" },
+        "color_ko": [
+          ["화이트", "흰색"],
+          ["블랙", "검정"]
+        ]
+      },
+      "imageIndex": {
+        "origin": 1,
+        "material_upper": 1,
+        "material_lining": 1,
+        "material_sole": 1,
+        "heel_height": 1
+      },
+      "forbid": { "origin": ["インドネシア", "INDONESIA", "인도네시아", "日本", "JAPAN"] }
+    },
+    {
+      "id": "V02",
+      "itemName": "ナイキ エアフォース1 '07 CW2288-111 ホワイト/ホワイト メンズ",
+      "descriptionText": "1982年に誕生したバスケットボールシューズの定番。\nサイズ表とスペックは画像をご確認ください。",
+      "attributes": [],
+      "selectedColorRaw": "ホワイト/ホワイト",
+      "images": [
+        {
+          "file": "V02-1.jpg",
+          "title": "サイズ表",
+          "columns": ["日本(cm)", "US", "UK", "EU"],
+          "rows": [
+            ["25.0", "7", "6", "40"],
+            ["25.5", "7.5", "6.5", "40.5"],
+            ["26.0", "8", "7", "41"],
+            ["26.5", "8.5", "7.5", "42"],
+            ["27.0", "9", "8", "42.5"],
+            ["27.5", "9.5", "8.5", "43"]
+          ]
+        },
+        {
+          "file": "V02-2.jpg",
+          "title": "商品スペック",
+          "rows": [
+            ["原産国", "ベトナム"],
+            ["アッパー", "天然皮革"],
+            ["ライニング", "合成繊維"],
+            ["アウトソール", "ラバー"],
+            ["ヒール高さ", "約3cm"]
+          ]
+        }
+      ],
+      "truth": {
+        "origin": [["ベトナム", "VIETNAM", "베트남"]],
+        "material_upper": [["天然皮革", "レザー", "LEATHER", "本革"]],
+        "material_lining": [["合成繊維", "合繊"]],
+        "material_sole": [["ラバー", "ゴム", "RUBBER"]],
+        "heel_height": { "value": 3, "unit": "cm" },
+        "color_ko": [["화이트", "흰색"]]
+      },
+      "imageIndex": {
+        "origin": 2,
+        "material_upper": 2,
+        "material_lining": 2,
+        "material_sole": 2,
+        "heel_height": 2
+      },
+      "forbid": {}
+    },
+    {
+      "id": "V03",
+      "itemName": "ニューバランス CM996 グレー Dワイズ",
+      "descriptionText": "ブランドの代表モデル996のカジュアルライン。\n素材・原産国は画像をご覧ください。",
+      "attributes": [],
+      "selectedColorRaw": "グレー",
+      "images": [
+        {
+          "file": "V03-1.jpg",
+          "title": "SPEC",
+          "rows": [
+            ["品番", "CM996BG"],
+            ["原産国", "中国"],
+            ["アッパー", "スエード・メッシュ"],
+            ["アウトソール", "ラバー"],
+            ["ヒール高", "3.5cm"],
+            ["ワイズ", "D"]
+          ]
+        }
+      ],
+      "truth": {
+        "origin": [["中国", "CHINA", "중국"]],
+        "material_upper": [
+          ["スエード", "SUEDE"],
+          ["メッシュ", "MESH"]
+        ],
+        "material_lining": null,
+        "material_sole": [["ラバー", "ゴム", "RUBBER"]],
+        "heel_height": { "value": 3.5, "unit": "cm" },
+        "color_ko": [["그레이", "회색"]]
+      },
+      "imageIndex": { "origin": 1, "material_upper": 1, "material_sole": 1, "heel_height": 1 },
+      "forbid": {}
+    },
+    {
+      "id": "V04",
+      "itemName": "リーガル REGAL 2177 コインローファー ブラック メンズ",
+      "descriptionText": "学生から社会人まで愛用される定番ローファー。\n仕様は画像をご参照ください。",
+      "attributes": [],
+      "selectedColorRaw": "ブラック",
+      "images": [
+        {
+          "file": "V04-1.jpg",
+          "title": "仕様",
+          "rows": [
+            ["生産国", "日本（MADE IN JAPAN）"],
+            ["甲材", "牛革"],
+            ["裏材", "豚革"],
+            ["底材", "ラバー"],
+            ["ヒール", "3cm"],
+            ["ワイズ", "2E"]
+          ]
+        }
+      ],
+      "truth": {
+        "origin": [["日本", "JAPAN", "일본"]],
+        "material_upper": [["牛革", "レザー", "LEATHER"]],
+        "material_lining": [["豚革", "PIG"]],
+        "material_sole": [["ラバー", "ゴム", "RUBBER"]],
+        "heel_height": { "value": 3, "unit": "cm" },
+        "color_ko": [["블랙", "검정"]]
+      },
+      "imageIndex": {
+        "origin": 1,
+        "material_upper": 1,
+        "material_lining": 1,
+        "material_sole": 1,
+        "heel_height": 1
+      },
+      "forbid": {}
+    },
+    {
+      "id": "V05",
+      "itemName": "ダイアナ エナメル ポインテッドトゥ パンプス 7cmヒール ブラック",
+      "descriptionText": "美しいシルエットのポインテッドトゥパンプス。\nスペックは下の表をご確認ください。",
+      "attributes": [],
+      "selectedColorRaw": "ブラックエナメル",
+      "images": [
+        {
+          "file": "V05-1.jpg",
+          "title": "商品詳細",
+          "rows": [
+            ["原産国", "日本"],
+            ["アッパー", "合成皮革（エナメル）"],
+            ["ライニング", "合成皮革"],
+            ["ソール", "合成底"],
+            ["ヒール高さ", "7cm"]
+          ]
+        }
+      ],
+      "truth": {
+        "origin": [["日本", "JAPAN", "일본"]],
+        "material_upper": [["合成皮革", "合皮", "エナメル"]],
+        "material_lining": [["合成皮革", "合皮"]],
+        "material_sole": [["合成底"]],
+        "heel_height": { "value": 7, "unit": "cm" },
+        "color_ko": [["블랙", "검정"], ["에나멜"]]
+      },
+      "imageIndex": {
+        "origin": 1,
+        "material_upper": 1,
+        "material_lining": 1,
+        "material_sole": 1,
+        "heel_height": 1
+      },
+      "forbid": {}
+    },
+    {
+      "id": "V06",
+      "itemName": "スケッチャーズ ディライト 厚底スニーカー ホワイト/ネイビー レディース",
+      "descriptionText": "ボリュームのある厚底ソールで脚長効果。\n素材と注意事項は画像をご覧ください。",
+      "attributes": [],
+      "selectedColorRaw": "ホワイト/ネイビー",
+      "images": [
+        {
+          "file": "V06-1.jpg",
+          "title": "素材",
+          "rows": [
+            ["アッパー", "メッシュ・合成皮革"],
+            ["ミッドソール", "EVA"],
+            ["アウトソール", "ラバー"],
+            ["ソール高", "約4cm（厚底）"]
+          ]
+        },
+        {
+          "file": "V06-2.jpg",
+          "title": "お手入れ方法",
+          "rows": [
+            ["汚れ", "柔らかい布で拭き取ってください"],
+            ["保管", "直射日光・高温多湿を避けてください"],
+            ["洗濯", "洗濯機は使用しないでください"]
+          ]
+        }
+      ],
+      "truth": {
+        "origin": null,
+        "material_upper": [
+          ["メッシュ", "MESH"],
+          ["合成皮革", "合皮"]
+        ],
+        "material_lining": null,
+        "material_sole": [["ラバー", "ゴム", "RUBBER"]],
+        "heel_height": { "value": 4, "unit": "cm" },
+        "color_ko": [
+          ["화이트", "흰색"],
+          ["네이비", "남색"]
+        ]
+      },
+      "imageIndex": { "material_upper": 1, "material_sole": 1, "heel_height": 1 },
+      "forbid": {}
+    },
+    {
+      "id": "V07",
+      "itemName": "ホカ クリフトン10 ブラック/ホワイト メンズ ランニング",
+      "descriptionText": "軽量でクッション性の高いロードランニングシューズ。\n詳細スペックは画像をご覧ください。",
+      "attributes": [],
+      "selectedColorRaw": "ブラック/ホワイト",
+      "images": [
+        {
+          "file": "V07-1.jpg",
+          "title": "SPEC",
+          "rows": [
+            ["原産国", "ベトナム"],
+            ["アッパー", "エンジニアードメッシュ"],
+            ["ミッドソール", "圧縮成型EVA"],
+            ["アウトソール", "ラバー"],
+            ["ヒール高さ", "約3.6cm"],
+            ["ドロップ", "5mm"]
+          ]
+        }
+      ],
+      "truth": {
+        "origin": [["ベトナム", "VIETNAM", "베트남"]],
+        "material_upper": [["メッシュ", "MESH"]],
+        "material_lining": null,
+        "material_sole": [["ラバー", "ゴム", "RUBBER"]],
+        "heel_height": { "value": 3.6, "unit": "cm" },
+        "color_ko": [
+          ["블랙", "검정"],
+          ["화이트", "흰색"]
+        ]
+      },
+      "imageIndex": { "origin": 1, "material_upper": 1, "material_sole": 1, "heel_height": 1 },
+      "forbid": {}
+    },
+    {
+      "id": "V08",
+      "itemName": "ドクターマーチン 2976 チェルシーブーツ ブラック サイドゴア",
+      "descriptionText": "英国ブランドの定番サイドゴアブーツ。\nスペックは画像をご覧ください。",
+      "attributes": [],
+      "selectedColorRaw": "ブラック",
+      "images": [
+        {
+          "file": "V08-1.jpg",
+          "title": "スペック",
+          "rows": [
+            ["生産国", "タイ"],
+            ["アッパー", "スムースレザー"],
+            ["ライニング", "テキスタイル"],
+            ["ソール", "PVC"],
+            ["ヒール高", "3cm"]
+          ],
+          "note": "英国ブランド・UK生まれのデザイン"
+        }
+      ],
+      "truth": {
+        "origin": [["タイ", "THAILAND", "태국"]],
+        "material_upper": [["スムースレザー", "レザー", "LEATHER"]],
+        "material_lining": [["テキスタイル", "TEXTILE", "繊維"]],
+        "material_sole": [["PVC"]],
+        "heel_height": { "value": 3, "unit": "cm" },
+        "color_ko": [["블랙", "검정"]]
+      },
+      "imageIndex": {
+        "origin": 1,
+        "material_upper": 1,
+        "material_lining": 1,
+        "material_sole": 1,
+        "heel_height": 1
+      },
+      "forbid": { "origin": ["イギリス", "英国", "UK", "영국"] }
+    },
+    {
+      "id": "V09",
+      "itemName": "ビルケンシュトック アリゾナ ビルコフロー サンダル ブラック",
+      "descriptionText": "2本のストラップが特徴のコンフォートサンダル。\n仕様は画像をご確認ください。",
+      "attributes": [],
+      "selectedColorRaw": "ブラック",
+      "images": [
+        {
+          "file": "V09-1.jpg",
+          "title": "商品仕様",
+          "rows": [
+            ["原産国", "ドイツ"],
+            ["アッパー", "ビルコフロー（合成皮革）"],
+            ["ソール", "EVA"],
+            ["ヒール高", "約3cm"]
+          ]
+        }
+      ],
+      "truth": {
+        "origin": [["ドイツ", "GERMANY", "독일"]],
+        "material_upper": [["ビルコフロー", "合成皮革", "合皮"]],
+        "material_lining": null,
+        "material_sole": [["EVA"]],
+        "heel_height": { "value": 3, "unit": "cm" },
+        "color_ko": [["블랙", "검정"]]
+      },
+      "imageIndex": { "origin": 1, "material_upper": 1, "material_sole": 1, "heel_height": 1 },
+      "forbid": {}
+    },
+    {
+      "id": "V10",
+      "itemName": "アシックス ジェルライト3 ホワイト/ブルー ユニセックス",
+      "descriptionText": "1990年に登場したモデルを復刻。\n素材とサイズは画像をご覧ください。",
+      "attributes": [],
+      "selectedColorRaw": "ホワイト/ブルー",
+      "images": [
+        {
+          "file": "V10-1.jpg",
+          "title": "素材",
+          "rows": [
+            ["原産国", "カンボジア"],
+            ["アッパー", "合成皮革・メッシュ"],
+            ["ソール", "ラバー"]
+          ]
+        },
+        {
+          "file": "V10-2.jpg",
+          "title": "サイズ",
+          "columns": ["サイズ(cm)", "足囲"],
+          "rows": [
+            ["23.0", "2E"],
+            ["24.0", "2E"],
+            ["25.0", "2E"],
+            ["26.0", "2E"],
+            ["27.0", "2E"]
+          ],
+          "note": "ヒール高さ：2.5cm（全サイズ共通）"
+        }
+      ],
+      "truth": {
+        "origin": [["カンボジア", "CAMBODIA", "캄보디아"]],
+        "material_upper": [
+          ["合成皮革", "合皮"],
+          ["メッシュ", "MESH"]
+        ],
+        "material_lining": null,
+        "material_sole": [["ラバー", "ゴム", "RUBBER"]],
+        "heel_height": { "value": 2.5, "unit": "cm" },
+        "color_ko": [
+          ["화이트", "흰색"],
+          ["블루", "파랑", "파란"]
+        ]
+      },
+      "imageIndex": { "origin": 1, "material_upper": 1, "material_sole": 1, "heel_height": 2 },
+      "forbid": {}
+    }
+  ]
+}

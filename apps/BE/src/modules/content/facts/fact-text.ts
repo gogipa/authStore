@@ -96,7 +96,10 @@ export function parseHeight(text: string): { value: number; unit: 'cm' | 'mm' } 
   return { value, unit };
 }
 
-/** 나라 목록 글 → 나라 조각(`ベトナム、インドネシア、中国` → 3개, `中国製` → `中国`) */
+/**
+ * 나라 목록 글 → 나라 조각(`ベトナム、インドネシア、中国` → 3개, `中国製` → `中国`).
+ * 영문 약칭의 마침표를 뗀다(`U.S.A.` → `USA`, M0 S7: AI가 맞게 읽고도 사전에서 못 찾은 값). 괄호 설명은 `splitParenNotes`가 먼저 뗀다.
+ */
 export function splitCountries(text: string): string[] {
   return text
     .normalize('NFKC')
@@ -106,9 +109,28 @@ export function splitCountries(text: string): string[] {
         .trim()
         .replace(/^(MADE\s+IN|原産国|製造国|生産国)\s*[:：]?\s*/i, '')
         .replace(/製$/, '')
+        .replace(/^(?:[A-Za-z]\.)+[A-Za-z]?\.?$/, (abbr) => abbr.replace(/\./g, ''))
         .trim(),
     )
     .filter((s) => s !== '');
+}
+
+/**
+ * 괄호 설명을 떼어 낸다(NFKC 뒤 `(…)`, 전각 괄호 포함): 괄호 밖 글과 괄호 안 글 목록.
+ * `日本（福岡県久留米市の自社工場）` → main `日本`, notes `['福岡県久留米市の自社工場']`. 괄호 밖이 비면(괄호만) 안의 글을 main으로 쓴다.
+ * 괄호 안 `、`·`・`로 나라 조각이 잘못 잘리지 않게 `splitCountries`보다 먼저 쓴다(M0 S7 §4.2).
+ */
+export function splitParenNotes(text: string): { main: string; notes: string[] } {
+  const normalized = text.normalize('NFKC');
+  const notes: string[] = [];
+  const main = normalized
+    .replace(/\(([^()]*)\)/g, (_m, inner: string) => {
+      if (inner.trim() !== '') notes.push(inner.trim());
+      return ' ';
+    })
+    .trim();
+  if (main === '') return { main: notes.join('、'), notes: [] };
+  return { main, notes };
 }
 
 /** 소재 글 → 소재 조각(`合成繊維・合成皮革` → 2개) */

@@ -1,8 +1,9 @@
 # AI 엔진 fixture (P1-10)
 
 실제 AI CLI(`claude`·`agy`·`codex`)를 부르지 않고 AI 실행기·어댑터 3개를 검증하는 파일이다.
-M0 S6(claude·agy 격리·비전)과 S7(codex 설치·엔진 동등성)이 끝나기 전이라 **모두 합성본**이다. 녹화본이 오면
-같은 이름으로 바꾸고 아래 표의 '종류'를 '녹화본(날짜·버전)'으로 고친다. 파서는 `src/modules/integrations/ai-engine/adapters/*.adapter.ts`에만 있다.
+M0 S6·S7(2026-10-01, [docs/dev/07_M0스파이크](../../../../../docs/dev/07_M0스파이크/README.md)) 실측 출력 중 일부를 **녹화본**으로 넣었다
+(아이디는 0으로 바꾸고 로컬 경로는 `/tmp/autostore-ai-img-XXXXXX`로 바꿨다). 나머지는 합성본이고, codex는 미설치라 모두 합성본이다.
+파서는 `src/modules/integrations/ai-engine/adapters/*.adapter.ts`에만 있다.
 
 ## 가짜 CLI
 
@@ -19,26 +20,30 @@ M0 S6(claude·agy 격리·비전)과 S7(codex 설치·엔진 동등성)이 끝�
 
 ## 출력
 
-| 파일                                                             | 종류   | 근거                                                                                 |
-| ---------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------ |
-| `claude/version.txt`                                             | 합성본 | `claude --version`(2.1.269, PRD §8.9)                                                |
-| `claude/auth-status-ok.txt` · `auth-status-logged-out.txt`       | 합성본 | `claude auth status` 출력 모양은 S6에서 확인                                         |
-| `claude/text-success.json`                                       | 합성본 | `--output-format json` 봉투의 `structured_output`(PRD §8.9 템플릿)                   |
-| `claude/vision-success.json`                                     | 합성본 | 비전 결과 + `images_seen`(읽은 파일 이름 목록, P1-10 Proposed)                       |
-| `claude/success-empty-structured-output.json`                    | 합성본 | SUCCESS인데 `structured_output`이 null                                               |
-| `claude/smoke-ok.json`                                           | 합성본 | 연결 테스트 `{answer:'OK'}`                                                          |
-| `claude/error-logged-out.json`                                   | 합성본 | 로그인 풀림 오류 봉투(`is_error`)                                                    |
-| `claude/extra-field.json`                                        | 합성본 | 스키마 밖 필드(`price`)가 섞인 결과                                                  |
-| `agy/version.txt`                                                | 합성본 | `agy --version`(1.2.9)                                                               |
-| `agy/models.txt`                                                 | 합성본 | `agy models`(P1-11 — 모델 5개, 머리 줄·'(default)' 설명 포함. 파서 `parseAgyModels`) |
-| `agy/success.json` · `smoke-ok.json`                             | 합성본 | `status: SUCCESS` 봉투(PRD §8.9 agy)                                                 |
-| `agy/success-empty-structured-output.json`                       | 합성본 | SUCCESS인데 빈 `structured_output`                                                   |
-| `agy/partial-output-warning.json`                                | 합성본 | 부분 출력 경고(`warnings`의 PARTIAL_OUTPUT) — 실제 경고 모양은 S6에서 확인           |
-| `agy/agy-error.stderr.txt`                                       | 합성본 | stderr의 `AGY_ERROR`                                                                 |
-| `codex/version.txt`                                              | 합성본 | `codex --version`                                                                    |
-| `codex/last-message-success.json` · `last-message-smoke-ok.json` | 합성본 | `--output-last-message` 파일(결과는 이것만 믿는다)                                   |
-| `codex/events.jsonl`                                             | 합성본 | `--json` 이벤트(진행 표시용, 결과로 쓰지 않는다)                                     |
-| `codex/login-status-ok.txt` · `login-status-logged-out.txt`      | 합성본 | `codex login status`                                                                 |
+| 파일                                                             | 종류                                   | 근거                                                                                                                                  |
+| ---------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `claude/version.txt`                                             | 합성본                                 | `claude --version`(2.1.269, PRD §8.9)                                                                                                 |
+| `claude/auth-status-ok.txt` · `auth-status-logged-out.txt`       | 합성본                                 | `claude auth status` 출력 모양은 S6에서 확인                                                                                          |
+| `claude/text-success.json`                                       | 합성본                                 | `--output-format json` 봉투의 `structured_output`(PRD §8.9 템플릿)                                                                    |
+| `claude/vision-success.json`                                     | 합성본                                 | 비전 결과 + `images_seen`(읽은 파일 이름 목록, P1-10 Proposed)                                                                        |
+| `claude/success-empty-structured-output.json`                    | 합성본                                 | SUCCESS인데 `structured_output`이 null                                                                                                |
+| `claude/smoke-ok.json`                                           | 녹화본(2026-10-01, claude 2.1.269)     | 연결 테스트 `{answer:'OK'}`, 격리 3개 플래그. 실제 봉투 키(`permission_denials`·`modelUsage` 등) 그대로                               |
+| `claude/vision-permission-denied.json`                           | 녹화본 모양(2026-10-01)                | 읽기가 거부됐는데 `images_seen`에 이름을 적은 실측(S6 §5 발견 2). 결과는 `valid.schema.json` 모양으로 바꿨다 → AI_IMAGES_NOT_SEEN     |
+| `claude/error-logged-out.json`                                   | 합성본                                 | 로그인 풀림 오류 봉투(`is_error`)                                                                                                     |
+| `claude/extra-field.json`                                        | 합성본                                 | 스키마 밖 필드(`price`)가 섞인 결과                                                                                                   |
+| `agy/version.txt`                                                | 합성본                                 | `agy --version`(1.2.9)                                                                                                                |
+| `agy/models.txt`                                                 | 합성본                                 | `agy models`(P1-11 — 모델 5개, 머리 줄·'(default)' 설명 포함. 파서 `parseAgyModels`)                                                  |
+| `agy/success.json`                                               | 합성본                                 | `status: SUCCESS` 봉투(PRD §8.9 agy)                                                                                                  |
+| `agy/smoke-ok.json`                                              | 녹화본(2026-10-01, agy 1.2.14)         | 연결 테스트. `response`에 잡음(`OK\n{…toolAction…}`)이 섞이고 `structured_output`만 깨끗하다                                          |
+| `agy/print-timeout.json` · `print-timeout.stderr.txt`            | 녹화본(agy 1.2.14)                     | `--print-timeout 1s`: exit 0·`SUCCESS`·`num_turns 0`, stderr `print timeout after` → AI_TIMEOUT                                       |
+| `agy/denied-command.json` · `no-output-produced.stderr.txt`      | 녹화본(agy 1.2.14, 스키마 에코만 줄임) | 비전에서 `RunCommand` 자동 거부(`denied_actions`), stderr `jetski: no output produced` → 비전 AI_IMAGES_NOT_SEEN·텍스트 AI_CLI_FAILED |
+| `agy/success-empty-structured-output.json`                       | 합성본                                 | SUCCESS인데 빈 `structured_output`                                                                                                    |
+| `agy/partial-output-warning.json`                                | 합성본                                 | 부분 출력 경고(`warnings`의 PARTIAL_OUTPUT). S6 실측 봉투(1.2.14)에는 `partial`·`warnings` 필드가 없었다 — 시간 초과는 stderr로 본다  |
+| `agy/agy-error.stderr.txt`                                       | 합성본                                 | stderr의 `AGY_ERROR`                                                                                                                  |
+| `codex/version.txt`                                              | 합성본                                 | `codex --version`                                                                                                                     |
+| `codex/last-message-success.json` · `last-message-smoke-ok.json` | 합성본                                 | `--output-last-message` 파일(결과는 이것만 믿는다)                                                                                    |
+| `codex/events.jsonl`                                             | 합성본                                 | `--json` 이벤트(진행 표시용, 결과로 쓰지 않는다)                                                                                      |
+| `codex/login-status-ok.txt` · `login-status-logged-out.txt`      | 합성본                                 | `codex login status`                                                                                                                  |
 
 ## 스키마
 

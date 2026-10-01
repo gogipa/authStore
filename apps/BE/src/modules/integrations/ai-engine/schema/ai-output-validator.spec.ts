@@ -37,6 +37,48 @@ describe('validateAiOutput(P1-10 규칙 8·9, F-BS-32)', () => {
     expect(codeOf(() => validateAiOutput(SCHEMA, value))).toBe(AI_RUN_ERROR_CODES.OUTPUT_INVALID);
   });
 
+  describe('결과 모양 깨짐(M0 S7 §4.5: claude 카피 4/10)', () => {
+    const COPY_LIKE = {
+      type: 'object',
+      properties: {
+        headline: { type: 'string' },
+        selling_points: { type: 'array', items: { type: 'string' } },
+        body: { type: 'string' },
+      },
+      required: ['headline', 'selling_points', 'body'],
+      additionalProperties: false,
+    };
+    const ok = { headline: '헤드라인', selling_points: ['하나', '둘'], body: '본문입니다.' };
+
+    it('본문 칸에 결과 JSON 전체(스키마 키 포함)가 들어가면 AI_OUTPUT_INVALID — 잘려 파싱되지 않아도', () => {
+      const whole = JSON.stringify(ok);
+      for (const body of [whole, ` ${whole}`, whole.slice(0, 30)]) {
+        expect(() => validateAiOutput(COPY_LIKE, { ...ok, body })).toThrow(
+          '모양 깨짐: /body에 결과 JSON이 들어감',
+        );
+      }
+    });
+
+    it("값이 'placeholder'(배열 칸 포함)면 AI_OUTPUT_INVALID", () => {
+      expect(() => validateAiOutput(COPY_LIKE, { ...ok, headline: 'placeholder' })).toThrow(
+        '모양 깨짐: /headline가 자리 표시 글',
+      );
+      expect(() =>
+        validateAiOutput(COPY_LIKE, { ...ok, selling_points: ['하나', ' <PLACEHOLDER> '] }),
+      ).toThrow('모양 깨짐: /selling_points/1가 자리 표시 글');
+    });
+
+    it('스키마 키가 없는 중괄호·placeholder라는 낱말이 섞인 글은 통과한다', () => {
+      for (const body of [
+        '{신상} 러닝화입니다.',
+        '{"color": "red"}',
+        'placeholder 문구를 쓰지 않았습니다.',
+      ]) {
+        expect(validateAiOutput(COPY_LIKE, { ...ok, body })).toEqual({ ...ok, body });
+      }
+    });
+  });
+
   it('오류 문구에 값·출력 본문을 넣지 않는다(필드 경로만)', () => {
     try {
       validateAiOutput(SCHEMA, { title: '비밀스러운 본문', note: null, extra: '본문2' });

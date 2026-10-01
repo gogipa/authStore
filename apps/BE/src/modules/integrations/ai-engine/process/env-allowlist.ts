@@ -4,9 +4,24 @@ import { AI_CLI_ENV_ALLOWLIST, AI_CLI_FORBIDDEN_ENV, type AiCliBinary } from '..
 export const CLAUDE_AUTOUPDATE_ENV = { DISABLE_AUTOUPDATER: '1' } as const;
 
 /**
+ * claude 부가 트래픽 끄기(M0 S6 §4.3). 본 호출과 따로 붙던 세션 제목용 haiku 호출(프롬프트 내용이 들어간다)이 사라진다 —
+ * 텍스트 호출당 약 900토큰, 비전 약 1,800토큰이 준다. 텔레메트리·오류 보고·자동 업데이트도 함께 꺼진다.
+ */
+export const CLAUDE_NONESSENTIAL_TRAFFIC_ENV = {
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
+} as const;
+
+/** claude 자식에만 앱이 넣는 값(부모 값은 쓰지 않는다) */
+export const CLAUDE_CHILD_ENV: Readonly<Record<string, string>> = {
+  ...CLAUDE_AUTOUPDATE_ENV,
+  ...CLAUDE_NONESSENTIAL_TRAFFIC_ENV,
+};
+
+/**
  * 자식 프로세스 환경변수(규칙 3). 허용 목록(`AI_CLI_ENV_ALLOWLIST`, 06-2 §9-16 Proposed)에 있는 부모 값만 넘긴다.
- * - `ANTHROPIC_API_KEY`·`OPENAI_API_KEY`는 부모에 있어도 넘기지 않는다(구독 대신 API 과금, R14)
- * - `claude`만 `DISABLE_AUTOUPDATER=1`을 더한다. 다른 CLI에는 부모 값이 있어도 넘기지 않는다
+ * - `ANTHROPIC_API_KEY`·`OPENAI_API_KEY`·`CODEX_API_KEY`·`GEMINI_API_KEY`는 부모에 있어도 넘기지 않는다(구독 대신 API 과금, R14)
+ * - `claude`만 `DISABLE_AUTOUPDATER=1`·`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`을 더한다.
+ *   다른 CLI에는 부모 값이 있어도 넘기지 않는다
  * - 빈 값·undefined는 넘기지 않는다
  */
 export function buildAiCliEnv(
@@ -16,10 +31,10 @@ export function buildAiCliEnv(
   const env: Record<string, string> = {};
   for (const key of AI_CLI_ENV_ALLOWLIST) {
     if ((AI_CLI_FORBIDDEN_ENV as readonly string[]).includes(key)) continue;
-    if (key === 'DISABLE_AUTOUPDATER') continue;
+    if (key in CLAUDE_CHILD_ENV) continue;
     const value = parent[key];
     if (typeof value === 'string' && value.length > 0) env[key] = value;
   }
-  if (bin === 'claude') Object.assign(env, CLAUDE_AUTOUPDATE_ENV);
+  if (bin === 'claude') Object.assign(env, CLAUDE_CHILD_ENV);
   return env;
 }

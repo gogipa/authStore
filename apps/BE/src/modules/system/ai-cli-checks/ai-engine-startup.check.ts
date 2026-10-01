@@ -20,7 +20,8 @@ export const AI_ENGINE_STARTUP_CHECK = Symbol('AI_ENGINE_STARTUP_CHECK');
  * 앱 시작 점검(P1-10 규칙 13, F-BS-67, PRD §8.9 R7·버전). `OnApplicationBootstrap`에서 **기다리지 않고** 돈다:
  * 세 엔진 감지(`--version`·경로·로그인, 비용 없음) → 선택 엔진만 텍스트 모델로 계약 테스트 1회 → 엔진마다 ai_cli_check
  * 1행(trigger=STARTUP) + SSE. agy처럼 스스로 업데이트되는 CLI의 변화를 켤 때마다 잡는다.
- * 선택 엔진이 agy이고 사용자 MCP를 끄는 방법이 확인되지 않았으면(M0 S6) 경고를 남긴다(기록 자리가 없어 앱 로그, Proposed).
+ * 선택 엔진이 agy면 사용자 MCP·규칙·플러그인을 끌 방법이 없다(M0 S6 확인) — 경고를 남긴다(기록 자리가 없어 앱 로그, Proposed).
+ * 같은 내용을 SCR-13 AGY 카드 고지(`AI_ENGINE_TERMS_NOTE.AGY`)에도 보인다.
  * e2e는 AppModule을 띄우므로 `AI_ENGINE_STARTUP_CHECK`를 `{ enabled: false }`로 바꾸고 어댑터를 가짜로 끼운다(§8 주의).
  * P1-11: 점검하는 동안 `POST /ai-cli-checks`와 같은 메모리 잠금(`AiCliCheckLock`)을 잡는다(그동안 POST는 409 ALREADY_IN_PROGRESS,
  * Proposed). 잠금이 이미 잡혀 있으면(드묾) 잠금 없이 돈다 — CLI 호출은 기록기가 한 번에 하나씩 부른다.
@@ -62,7 +63,7 @@ export class AiEngineStartupCheck implements OnApplicationBootstrap {
     const textModel = settings?.ai.models[engine]?.text ?? null;
     if (engine === 'AGY' && !AGY_USER_MCP_DISABLE_KNOWN) {
       this.logger.warn(
-        `선택 엔진 ${AI_ENGINE_LABEL.AGY}: 사용자 MCP를 끄는 방법이 아직 확인되지 않았습니다(M0 S6). 사용자 MCP가 함께 올라올 수 있습니다.`,
+        `선택 엔진 ${AI_ENGINE_LABEL.AGY}: 사용자 MCP·규칙·플러그인을 끄는 방법이 없습니다(M0 S6). 호출마다 함께 올라옵니다.`,
       );
     }
     const release = this.lock.tryAcquire();

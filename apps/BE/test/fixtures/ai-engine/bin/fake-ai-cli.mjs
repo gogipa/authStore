@@ -99,6 +99,7 @@ function record(kind) {
     cwdEntries: listDir(process.cwd()),
     envNames: Object.keys(process.env).sort(),
     disableAutoupdater: process.env.DISABLE_AUTOUPDATER ?? null,
+    disableNonessentialTraffic: process.env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC ?? null,
     stdin: stdinKind(),
     addDir,
     addDirEntries: addDir ? listDir(addDir) : null,

@@ -20,8 +20,10 @@ import type { CliRunResult, IsolatedCliRunner } from '../process/isolated-cli-ru
 import { withAiWorkspace } from '../process/work-dir.js';
 import { assertAiSchemaRules } from '../schema/ai-schema-rules.js';
 import {
+  agyVisionPromptSuffix,
   assertCliSucceeded,
   assertModel,
+  deniedCountOf,
   detectCli,
   effectiveSchemaOf,
   LOGGED_OUT_PATTERN,
@@ -30,7 +32,7 @@ import {
   revalidate,
   runProbe,
   runSmokeTest,
-  visionPromptSuffix,
+  toolDeniedError,
 } from './cli-adapter-support.js';
 
 /** agy 호출 인자 입력 */
@@ -54,7 +56,8 @@ export function agyPrintTimeout(timeoutMs: number): string {
 
 /**
  * agy 호출 인자(규칙 6, PRD §8.9 agy 템플릿): `-p <prompt> --model <id> --output-format json --json-schema <schema>
- * --print-timeout <120s·180s>`, 비전은 `--add-dir <이미지 폴더>`. 사용자 MCP 끄기 플래그(`AGY_ISOLATION_ARGS`)는 M0 S6 뒤.
+ * --print-timeout <120s·180s>`, 비전은 `--add-dir <이미지 폴더>`, 끝에 `AGY_ISOLATION_ARGS`(`--disable-slash-commands`).
+ * 사용자 MCP·규칙·플러그인을 끄는 플래그는 없다(M0 S6 §6.1).
  */
 export function buildAgyArgs(input: AgyArgsInput): string[] {
   if (!input.model || input.model.trim() === '') throw new Error('agy --model 값이 비었다');
@@ -91,13 +94,33 @@ export function hasAgyPartialWarning(envelope: Record<string, unknown>): boolean
   });
 }
 
+/** `--print-timeout`을 넘긴 agy(1.2.14 실측 stderr: `[agy] print timeout after 1s with turn in progress; …`) */
+export const AGY_PRINT_TIMEOUT_PATTERN = /print timeout after/i;
+/** 도구 권한 자동 거부로 결과 없이 끝난 agy(실측 stderr: `jetski: no output produced — a tool required the "command" permission …`) */
+export const AGY_NO_OUTPUT_PATTERN = /no output produced/i;
+
 /**
  * agy 결과 해석(규칙 8, PRD §8.9 agy): exit code, stderr의 `AGY_ERROR`, `status`를 보고 `structured_output`만 쓴다.
- * SUCCESS인데 비었거나(재검증) 부분 출력 경고가 있으면 실패. 합성본 봉투: `{ status:'SUCCESS', structured_output:{…}, warnings:[] }`.
+ * SUCCESS인데 비었거나(재검증) 부분 출력 경고가 있으면 실패. 실측 봉투(1.2.14): `{ conversation_id, status:'SUCCESS',
+ * response, structured_output:{…}, num_turns, usage, denied_actions? }` — `response`에는 잡음이 섞여 쓰지 않는다.
+ * agy는 실패를 `SUCCESS`·exit 0으로 감춘다(M0 S6 §6.6). 그래서 아래도 실패로 본다:
+ * - stderr `print timeout after` → AI_TIMEOUT(봉투에 partial·warnings 필드가 없다)
+ * - 봉투 `denied_actions`가 비어 있지 않음 또는 stderr `no output produced` → 도구 권한 거부(비전 AI_IMAGES_NOT_SEEN, 텍스트 AI_CLI_FAILED)
  */
-export function parseAgyResult(result: CliRunResult, timeoutMs: number): unknown {
+export function parseAgyResult(
+  result: CliRunResult,
+  timeoutMs: number,
+  options: { vision?: boolean } = {},
+): unknown {
   if (!result.timedOut && /AGY_ERROR/.test(result.stderr)) {
     throw new AiCallFailedError('AGY', AI_RUN_ERROR_CODES.AGY_ERROR, 'stderr AGY_ERROR');
+  }
+  if (!result.timedOut && AGY_PRINT_TIMEOUT_PATTERN.test(result.stderr)) {
+    throw new AiCallFailedError(
+      'AGY',
+      AI_RUN_ERROR_CODES.TIMEOUT,
+      `${Math.round(timeoutMs / 1000)}초`,
+    );
   }
   assertCliSucceeded('AGY', result, timeoutMs);
   const envelope = parseJsonEnvelope(result.stdout);
@@ -114,6 +137,10 @@ export function parseAgyResult(result: CliRunResult, timeoutMs: number): unknown
       );
     }
     throw new AiCallFailedError('AGY', AI_RUN_ERROR_CODES.CLI_FAILED, `status ${status || '없음'}`);
+  }
+  const denied = deniedCountOf(envelope, 'denied_actions');
+  if (denied > 0 || AGY_NO_OUTPUT_PATTERN.test(result.stderr)) {
+    throw toolDeniedError('AGY', options.vision === true, denied > 0 ? denied : null);
   }
   if (hasAgyPartialWarning(envelope)) {
     throw new AiOutputInvalidError(AI_RUN_ERROR_CODES.OUTPUT_INVALID, '부분 출력 경고');
@@ -166,7 +193,7 @@ export class AgyAdapter implements AiEngineAdapter {
       const eff = effectiveSchemaOf(schema, ws.imageNames);
       assertAiSchemaRules(eff.schema);
       const prompt = ws.imageDir
-        ? inputs.prompt + visionPromptSuffix(ws.imageNames, `폴더 ${ws.imageDir}`)
+        ? inputs.prompt + agyVisionPromptSuffix(ws.imagePaths)
         : inputs.prompt;
       const args = buildAgyArgs({
         prompt,
@@ -182,7 +209,7 @@ export class AgyAdapter implements AiEngineAdapter {
         });
       const output = revalidate(
         eff.schema,
-        parseAgyResult(result, options.timeoutMs),
+        parseAgyResult(result, options.timeoutMs, { vision: ws.imageDir !== null }),
         eff.expectedImages,
       );
       return {

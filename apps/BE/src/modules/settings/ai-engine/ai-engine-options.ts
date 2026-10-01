@@ -14,7 +14,7 @@ export interface AiEngineOption {
   engineCode: AiEngineCode;
   displayName: string;
   binName: AiCliBinary;
-  /** 고를 수 있는 모델. CLAUDE 별칭 3개, AGY `agy models`(없으면 기본 모델), CODEX 빈 목록(직접 입력) */
+  /** 고를 수 있는 모델. CLAUDE 별칭 3개, AGY `agy models`의 gemini-* (없으면 기본 모델), CODEX 빈 목록(직접 입력) */
   modelOptions: string[];
   /** 목록 밖 모델을 직접 입력할 수 있는지(CODEX만) */
   allowCustomModel: boolean;
@@ -29,7 +29,8 @@ export interface AiEngineOption {
 export const CLAUDE_MODEL_OPTIONS: readonly string[] = ['sonnet', 'opus', 'haiku'];
 
 /**
- * 엔진별 기본 텍스트·비전 모델(규칙 2). AGY는 M0 S7에서 확정할 때까지 시안 값, CODEX는 정하지 않음(null).
+ * 엔진별 기본 텍스트·비전 모델(규칙 2). CLAUDE `sonnet`/`sonnet`과 AGY `gemini-3.8-flash-medium`/`gemini-3.8-flash-high`는
+ * M0 S7(2026-10-01)에서 그대로 확정했다(agy 비전 실패는 모델이 아니라 도구 권한 문제). CODEX는 미설치로 재지 못해 null.
  * 설정 파일 기본 템플릿의 ai 섹션은 CLAUDE sonnet/sonnet만 채운다(PRD §8.9 R3) — 화면은 비어 있는 모델 칸에 이 값을 먼저 보인다.
  */
 export const AI_ENGINE_DEFAULT_MODELS: Readonly<Record<AiEngineCode, AiEngineModelPair>> = {
@@ -39,12 +40,14 @@ export const AI_ENGINE_DEFAULT_MODELS: Readonly<Record<AiEngineCode, AiEngineMod
 };
 
 /**
- * '실험적' 표시(F-ST-27, PRD §8.9 R15). Proposed(P1-11): M0 S7 측정값이 없어 앱 상수로 둔다. S7 전에는 설치·로그인도
- * 확인하지 못한 CODEX만 true(README 'codex는 fixture로만 검증, 페이지에 실험적 표시 가능'). S7 결과가 오면 여기만 고친다.
+ * '실험적' 표시(F-ST-27, PRD §8.9 R15). M0 S7(2026-10-01, 기준: 스키마 통과율 ≥ 95%, 호출당 ≤ 120초) 결과:
+ * - CLAUDE 통과(50/50, 최대 44.5초) → false
+ * - AGY 미달(43/50 = 86%, 비전 3/10 — headless 도구 권한 거부) → true. 약관 위험(S6 약관 '상')도 있다
+ * - CODEX 미설치로 재지 못함 → true 유지
  */
 export const AI_ENGINE_EXPERIMENTAL: Readonly<Record<AiEngineCode, boolean>> = {
   CLAUDE: false,
-  AGY: false,
+  AGY: true,
   CODEX: true,
 };
 
@@ -55,11 +58,15 @@ export const AI_ENGINE_LOGIN_COMMAND: Readonly<Record<AiEngineCode, string>> = {
   CODEX: 'npm install -g @openai/codex 다음 codex login',
 };
 
-/** 약관·쿼터 책임 한 줄(R14) */
+/**
+ * 엔진별 약관·쿼터 고지(R14). M0 S6 약관 §8 추천 문구(엔진마다 위험이 다르다 — Claude 중, agy 상, Codex 중). 오너 검토 대상(D-11).
+ * AGY는 '실험적' 칩이 따로 붙으므로 문구 앞 '실험적:'은 뺐고, 사용자 MCP·규칙·플러그인을 끌 수 없다는 S6 격리 결과를 덧붙였다.
+ */
 export const AI_ENGINE_TERMS_NOTE: Readonly<Record<AiEngineCode, string>> = {
-  CLAUDE: 'Claude 구독의 약관·쿼터 책임은 사용자에게 있습니다.',
-  AGY: 'Google 구독의 약관·쿼터 책임은 사용자에게 있습니다.',
-  CODEX: 'ChatGPT 구독의 약관·쿼터 책임은 사용자에게 있습니다.',
+  CLAUDE:
+    '본인 Claude 구독 한도를 씁니다. 대량·상시 사용은 Anthropic 약관상 제한될 수 있고, 계정 책임은 본인에게 있습니다.',
+  AGY: 'Google 약관은 다른 프로그램과 함께 쓰는 것을 막을 수 있어 Google 계정이 정지될 위험이 있습니다. 사용자 MCP·규칙·플러그인도 함께 켜집니다(끌 수 없음).',
+  CODEX: '본인 ChatGPT 플랜 한도를 씁니다. OpenAI 약관과 계정 책임은 본인에게 있습니다.',
 };
 
 /** 목록 밖 모델 직접 입력 허용(CODEX만, R12) */
@@ -73,11 +80,18 @@ export const AI_ENGINE_ALLOW_CUSTOM_MODEL: Readonly<Record<AiEngineCode, boolean
 export const AI_MODEL_MAX_LENGTH = 100;
 
 /**
- * AGY 모델 목록(Proposed P1-11): `agy models` 캐시가 있으면 그것, 받은 적이 없으면(미설치·실패) 기본 텍스트·비전 모델.
+ * AGY에서 고를 수 있는 모델: Google 모델(`gemini-*`)만. agy에서 제3자 모델(`claude-*`·`gpt-oss-*`)을 고르면 그 모델 약관을 따르고
+ * Anthropic 모델은 상업 약관 동의로 본다(M0 S6 약관 §6 #7, Antigravity 약관). 저장된 값이 목록 밖이어도 같은 값 재저장은 막지 않는다.
+ */
+export const AGY_ALLOWED_MODEL = /^gemini-/i;
+
+/**
+ * AGY 모델 목록(Proposed P1-11): `agy models` 캐시의 `gemini-*`가 있으면 그것, 받은 적이 없으면(미설치·실패) 기본 텍스트·비전 모델.
  * 화면 목록과 저장·연결 테스트 검사가 같은 목록을 쓴다.
  */
 export function agyModelOptions(listed: readonly string[] | null): string[] {
-  if (listed && listed.length > 0) return [...listed];
+  const allowed = (listed ?? []).filter((m) => AGY_ALLOWED_MODEL.test(m));
+  if (allowed.length > 0) return allowed;
   const { text, vision } = AI_ENGINE_DEFAULT_MODELS.AGY;
   return [...new Set([text, vision].filter((m): m is string => m !== null))];
 }

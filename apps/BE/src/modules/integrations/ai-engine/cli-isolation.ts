@@ -29,19 +29,33 @@ export const AI_CLI_ENV_ALLOWLIST = [
   'NO_COLOR',
   // claude 자동 업데이트 끄기(PRD §8.9 '버전')
   'DISABLE_AUTOUPDATER',
+  // claude 부가 트래픽 끄기(세션 제목용 haiku 호출·텔레메트리·오류 보고, M0 S6 §4.3). 앱이 claude에만 '1'로 넣는다
+  'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC',
 ] as const;
 
-/** 있으면 구독 대신 API로 과금되므로 절대 넘기지 않는다(PRD §8.9 R14) */
-export const AI_CLI_FORBIDDEN_ENV = ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY'] as const;
+/**
+ * 있으면 구독 대신 API로 과금되므로 절대 넘기지 않는다(PRD §8.9 R14). 허용 목록이 이미 막지만 의도를 드러내려고 적는다:
+ * `CODEX_API_KEY`(`codex exec`가 받는다), `GEMINI_API_KEY`(agy API 과금 모드) — M0 S6 약관 §6 #6.
+ */
+export const AI_CLI_FORBIDDEN_ENV = [
+  'ANTHROPIC_API_KEY',
+  'OPENAI_API_KEY',
+  'CODEX_API_KEY',
+  'GEMINI_API_KEY',
+] as const;
 
 /**
- * claude가 사용자 전역 설정(훅·CLAUDE.md·MCP·플러그인)을 읽지 않게 하는 옵션 조합. 어느 하나를 모두 갖추면 된다.
- * 정확한 조합은 M0 S6에서 정한다(F-BS-28). 바뀌면 여기만 고친다.
+ * claude가 사용자 전역 설정(훅·CLAUDE.md·MCP·플러그인·사용자 설정 파일)을 읽지 않게 하는 옵션 조합(F-BS-28).
+ * M0 S6(2026-10-01) 실측으로 한 조합으로 정했다: `--safe-mode`만으로는 사용자 설정 파일(`~/.claude/` 아래)을 읽고,
+ * `--setting-sources "" --strict-mcp-config`만으로는 자동 메모리가 켜진다. 셋을 모두 갖춰야 한다.
+ * `--setting-sources` 값은 빈 문자열이어야 한다(`CLAUDE_SETTING_SOURCES_VALUE`). 바뀌면 여기만 고친다.
  */
 export const CLAUDE_GLOBAL_SETTINGS_BLOCKERS: readonly (readonly string[])[] = [
-  ['--safe-mode'],
-  ['--setting-sources', '--strict-mcp-config'],
+  ['--safe-mode', '--setting-sources', '--strict-mcp-config'],
 ];
+
+/** `--setting-sources` 값: 빈 문자열 = 사용자·프로젝트·로컬 설정 파일을 하나도 읽지 않는다(M0 S6) */
+export const CLAUDE_SETTING_SOURCES_VALUE = '';
 
 export interface CliInvocation {
   /** 실행 파일 이름 또는 경로 */
@@ -71,6 +85,19 @@ export class CliIsolationError extends Error {
 
 function hasFlag(args: readonly string[], flag: string): boolean {
   return args.some((a) => a === flag || a.startsWith(`${flag}=`));
+}
+
+/** `--flag 값` 또는 `--flag=값`의 값(빈 문자열 포함). 플래그가 없거나 값이 없으면 null */
+function flagValue(args: readonly string[], flag: string): string | null {
+  for (let i = 0; i < args.length; i += 1) {
+    const a = args[i]!;
+    if (a === flag) {
+      const v = args[i + 1];
+      return v !== undefined && !v.startsWith('-') ? v : null;
+    }
+    if (a.startsWith(`${flag}=`)) return a.slice(flag.length + 1);
+  }
+  return null;
 }
 
 /** `--model x` 또는 `--model=x`에서 값(비었으면 null) */
@@ -143,6 +170,13 @@ export function checkIsolatedCliInvocation(
     if (!blocked) {
       v.push(
         `claude는 전역 설정 차단 옵션(${CLAUDE_GLOBAL_SETTINGS_BLOCKERS.map((s) => s.join(' + ')).join(' 또는 ')})이 필요하다`,
+      );
+    } else if (
+      hasFlag(args, '--setting-sources') &&
+      flagValue(args, '--setting-sources') !== CLAUDE_SETTING_SOURCES_VALUE
+    ) {
+      v.push(
+        'claude --setting-sources 값은 빈 문자열이어야 한다(사용자·프로젝트 설정을 읽지 않는다)',
       );
     }
   }

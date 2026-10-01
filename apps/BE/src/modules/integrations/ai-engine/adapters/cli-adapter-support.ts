@@ -31,7 +31,7 @@ import { createAiWorkDir, removeAiDir } from '../process/work-dir.js';
 import { validateAiOutput, withImagesSeen } from '../schema/ai-output-validator.js';
 
 /**
- * 세 어댑터가 같이 쓰는 조각(P1-10). 녹화본(M0 S6·S7)이 오면 엔진별 파서(`adapters/*.adapter.ts`)만 고친다.
+ * 세 어댑터가 같이 쓰는 조각(P1-10). 엔진별 봉투 해석은 `adapters/*.adapter.ts`에 있다(M0 S6·S7 실측 반영, codex는 합성본).
  */
 
 /** 로그인이 풀렸다는 출력(합성본 기준, 녹화본이 오면 고친다) */
@@ -209,13 +209,49 @@ export function revalidate(
   return validateAiOutput(schema, raw, { expectedImages });
 }
 
-/** 비전 프롬프트 뒤에 붙이는 이미지 안내(파일 이름만, 폴더 경로는 CLI 인자로 연다) */
+/** 비전 프롬프트 뒤에 붙이는 이미지 안내(파일 이름만, 폴더 경로는 CLI 인자로 연다). claude·codex */
 export function visionPromptSuffix(imageNames: readonly string[], where: string): string {
   return [
     '',
     `[이미지] ${where}의 이미지 ${imageNames.length}장을 모두 확인하라. 확인한 파일 이름을 images_seen 배열에 그대로 적어라.`,
     ...imageNames.map((n) => `- ${n}`),
   ].join('\n');
+}
+
+/**
+ * agy 비전 이미지 안내(M0 S6 §6.5·S7 §4.7). 폴더 경로만 주면 agy가 폴더를 보려고 터미널 명령을 쓰다가 headless에서 자동 거부돼
+ * 빈 결과로 끝났다(S6 0/2, S7 7/10 실패). 파일 절대 경로를 하나씩 주고 파일 보기 도구만 쓰게 하면 성공했다(S6 2/2, S7 5/6).
+ * 남은 실패는 URL 읽기 거부 1건이라 그것도 금지 목록에 넣는다. images_seen은 절대 경로로 와도 검증기가 마지막 조각만 본다.
+ */
+export function agyVisionPromptSuffix(imagePaths: readonly string[]): string {
+  return [
+    '',
+    `[이미지] 아래 이미지 ${imagePaths.length}장을 파일 보기 도구(view_file)로 하나씩 직접 열어 확인하라. ` +
+      '터미널 명령(ls·file·cat 등)·폴더 목록·URL 읽기 도구는 쓰지 않는다 — 이 환경에서는 허용되지 않는다. ' +
+      '확인한 파일 이름을 images_seen 배열에 그대로 적어라.',
+    ...imagePaths.map((p) => `- ${p}`),
+  ].join('\n');
+}
+
+/** 결과 봉투의 거부 목록 길이(claude `permission_denials`, agy `denied_actions`). 배열이 아니면 0 */
+export function deniedCountOf(envelope: Record<string, unknown>, key: string): number {
+  const v = envelope[key];
+  return Array.isArray(v) ? v.length : 0;
+}
+
+/**
+ * 도구 권한 거부로 끝난 호출(M0 S6 §5 발견 2·§6.6). claude는 읽기가 모두 거부돼도 images_seen에 프롬프트의 파일 이름을 적어
+ * 이름 검사를 통과했고, agy는 거부돼도 `status: SUCCESS`·exit 0이다. 비전이면 AI_IMAGES_NOT_SEEN, 아니면 AI_CLI_FAILED.
+ */
+export function toolDeniedError(
+  engine: AiEngineCode,
+  vision: boolean,
+  count: number | null,
+): AiOutputInvalidError | AiCallFailedError {
+  const detail = count && count > 0 ? `도구 권한 거부 ${count}건` : '도구 권한 거부';
+  return vision
+    ? new AiOutputInvalidError(AI_RUN_ERROR_CODES.IMAGES_NOT_SEEN, detail)
+    : new AiCallFailedError(engine, AI_RUN_ERROR_CODES.CLI_FAILED, detail);
 }
 
 /**

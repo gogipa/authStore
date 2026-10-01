@@ -5,7 +5,7 @@ import type {
 } from '../../settings/schema/settings.types.js';
 import type { FieldJson } from '../fields/content-field.store.js';
 import type { ExtractedFact, FactName } from './fact.schema.js';
-import { compareKey, splitCountries, splitMaterials } from './fact-text.js';
+import { compareKey, splitCountries, splitMaterials, splitParenNotes } from './fact-text.js';
 
 /**
  * ⑥-2 값의 한국어 정리(P3-03 규칙 10 '값은 한국어로 정리한다. 정리 방법(사전·AI)은 문서에 없음' → Proposed: **설정 사전**).
@@ -44,18 +44,58 @@ export function countryFromDictionary(
   return null;
 }
 
-/** 원산지 원문 → 한국어 나라 이름(사전) + 사전에 없는 조각 */
+/**
+ * 조각 안에 사전의 나라 이름이 섞여 있는가(`一部ベトナム` → 예, `福岡県久留米市の自社工場` → 아니오). 영문 이름은 낱말 경계로만 본다.
+ * 괄호 설명을 버려도 되는지 가린다 — 나라 이름이 섞였으면 버리지 않고 '확정 못 함'으로 남긴다(안전한 쪽).
+ */
+export function mentionsDictionaryCountry(
+  token: string,
+  dictionary: readonly OriginCountryEntry[],
+): boolean {
+  const upper = token.normalize('NFKC').toUpperCase();
+  const key = compareKey(token);
+  return dictionary.some((entry) =>
+    [entry.raw, countryOfArea(entry.area)].some((name) => {
+      const n = name.normalize('NFKC').toUpperCase().trim();
+      if (n.length < 2) return false;
+      if (/^[A-Z .]+$/.test(n)) {
+        const escaped = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(`(^|[^A-Z])${escaped}([^A-Z]|$)`).test(upper);
+      }
+      return key.includes(compareKey(n));
+    }),
+  );
+}
+
+/**
+ * 원산지 원문 → 한국어 나라 이름(사전) + 사전에 없는 조각.
+ * 괄호 설명(M0 S7 §4.2: `日本（福岡県…）`·`タイ (태국)`)은 떼어 본다: 괄호 안이 사전 나라면 더하고, 나라 이름이 섞인 글이면
+ * 확정 못 한 조각으로 남기고, 그 밖(지역·공장 설명, 번역)은 버린다.
+ */
 export function resolveOrigin(
   raw: string,
   dictionary: readonly OriginCountryEntry[],
 ): { countries: string[]; unresolved: string[] } {
   const countries: string[] = [];
   const unresolved: string[] = [];
-  for (const token of splitCountries(raw)) {
-    const country = countryFromDictionary(token, dictionary);
-    const value = country ?? token;
+  const add = (value: string) => {
     if (!countries.includes(value)) countries.push(value);
+  };
+  const { main, notes } = splitParenNotes(raw);
+  for (const token of splitCountries(main)) {
+    const country = countryFromDictionary(token, dictionary);
+    add(country ?? token);
     if (!country) unresolved.push(token);
+  }
+  for (const note of notes) {
+    for (const token of splitCountries(note)) {
+      const country = countryFromDictionary(token, dictionary);
+      if (country) add(country);
+      else if (mentionsDictionaryCountry(token, dictionary)) {
+        add(token);
+        unresolved.push(token);
+      }
+    }
   }
   return { countries, unresolved };
 }

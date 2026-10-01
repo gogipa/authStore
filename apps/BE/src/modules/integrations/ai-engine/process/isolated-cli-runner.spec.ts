@@ -158,6 +158,13 @@ describe('IsolatedCliRunner(P1-10 규칙 1·2·3) — 가짜 CLI', () => {
     expect(byEngine.claude!.disableAutoupdater).toBe('1');
     expect(byEngine.agy!.disableAutoupdater).toBeNull();
     expect(byEngine.codex!.disableAutoupdater).toBeNull();
+    // M0 S6: claude만 부가 트래픽 끄기(부모 값 '0'은 쓰지 않는다), GEMINI_API_KEY는 어디에도 넘기지 않는다
+    expect(byEngine.claude!.disableNonessentialTraffic).toBe('1');
+    expect(byEngine.agy!.disableNonessentialTraffic).toBeNull();
+    expect(byEngine.codex!.disableNonessentialTraffic).toBeNull();
+    for (const engine of ['claude', 'agy', 'codex'] as const) {
+      expect(byEngine[engine]!.envNames).not.toContain('GEMINI_API_KEY');
+    }
   });
 
   it('작업 폴더가 비어 있지 않으면 격리 검사기가 spawn 전에 막는다', async () => {

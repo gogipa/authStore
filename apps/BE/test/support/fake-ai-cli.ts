@@ -35,6 +35,8 @@ export interface FakeCliRecord {
   cwdEntries: string[] | null;
   envNames: string[];
   disableAutoupdater: string | null;
+  /** claude 부가 트래픽 끄기 값(M0 S6) */
+  disableNonessentialTraffic: string | null;
   stdin: string;
   addDir: string | null;
   addDirEntries: string[] | null;
@@ -84,6 +86,8 @@ export function createFakeCliWorld(
       OPENAI_API_KEY: 'y',
       NODE_OPTIONS: '--max-old-space-size=64',
       DISABLE_AUTOUPDATER: '1',
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '0',
+      GEMINI_API_KEY: 'z',
     },
     setScenario(scenario) {
       writeFileSync(join(dir, 'scenario.json'), JSON.stringify(scenario));

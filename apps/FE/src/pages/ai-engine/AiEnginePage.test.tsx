@@ -84,8 +84,13 @@ describe('AI 엔진 화면(SCR-13, P1-11 규칙 11)', () => {
       ),
     ).toBeInTheDocument();
     expect(
-      within(card('AGY')).getByText('Google 구독의 약관·쿼터 책임은 사용자에게 있습니다.'),
+      within(card('AGY')).getByText(
+        'Google 약관은 다른 프로그램과 함께 쓰는 것을 막을 수 있어 Google 계정이 정지될 위험이 있습니다. 사용자 MCP·규칙·플러그인도 함께 켜집니다(끌 수 없음).',
+      ),
     ).toBeInTheDocument();
+    // M0 S7: AGY는 기준 미달이라 '실험적'(CODEX는 미측정), CLAUDE는 아니다
+    expect(within(card('AGY')).getByText('실험적')).toBeInTheDocument();
+    expect(within(card('CLAUDE')).queryByText('실험적')).toBeNull();
     expect(screen.getByRole('table', { name: '최근 점검 이력' })).toBeInTheDocument();
   });
 

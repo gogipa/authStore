@@ -17382,10 +17382,10 @@ components:
           description: 로그인 방법(터미널 명령 안내, 예 claude 실행 뒤 /login, codex login, agy 첫 실행)
         termsNote:
           type: string
-          description: 구독 약관·쿼터 책임이 사용자에게 있다는 한 줄(R14)
+          description: 엔진별 약관·쿼터 고지 한 줄(R14). M0 S6 약관 §8 문구(엔진마다 위험이 달라 문구도 다르다)
         experimental:
           type: boolean
-          description: M0 S7 기준(스키마 통과율 ≥ 95%, 호출당 ≤ 120초)에 못 미쳤거나 아직 재지 않은 엔진. 카드에 '실험적'을 붙인다(F-ST-27, R15). P1-11 Proposed — S7 측정값이 없어 앱 상수이고 S7 전에는 CODEX만 true
+          description: M0 S7 기준(스키마 통과율 ≥ 95%, 호출당 ≤ 120초)에 못 미쳤거나 아직 재지 않은 엔진. 카드에 '실험적'을 붙인다(F-ST-27, R15). 앱 상수 — M0 S7(2026-10-01) 결과 AGY(86%)·CODEX(미설치, 미측정)가 true
     AiEngineSettings:
       type: object
       description: AI 엔진 페이지(SCR-13) 설정 값(설정 JSON ai 섹션 + 엔진별 고정 안내)

@@ -8,6 +8,8 @@ import type { AiJsonSchema } from '../ai-engine.port.js';
  * 어댑터(봉투에서 꺼낸 직후)와 실행기(돌려주기 전)가 같은 함수를 쓴다.
  * - 빈 결과(null·빈 객체)·스키마 불일치(추가 필드 포함) → AI_OUTPUT_INVALID
  * - 비전: `images_seen`(읽은 파일 이름 목록, Proposed)이 없거나 넘긴 이미지 이름 집합과 다르면 → AI_IMAGES_NOT_SEEN
+ * - 모양 깨짐(M0 S7 §4.5): 스키마는 통과했지만 글 값에 결과 JSON(스키마 키를 담은 `{…}`)이 통째로 들어갔거나 값이
+ *   'placeholder'면 → AI_OUTPUT_INVALID. claude 카피 10건 중 4건이 이랬고 프롬프트 보강 뒤에도 1건이 다시 깨졌다
  * 오류 문구에는 필드 경로만 넣는다(값·출력 본문은 넣지 않는다, NFR-02).
  */
 
@@ -58,6 +60,70 @@ function baseName(name: string): string {
   return parts[parts.length - 1] ?? name;
 }
 
+/** 자리 표시 글(실측: claude 카피가 나머지 필드를 모두 'placeholder'로 채움). 앞뒤 공백·대소문자·괄호 무시 */
+const PLACEHOLDER_TEXT = /^[\s<[('"]*placeholder[\s>\])'"]*$/i;
+
+/** 스키마에 나오는 속성 이름 전부(중첩 properties·items 포함) */
+function schemaPropertyNames(schema: unknown, out = new Set<string>()): Set<string> {
+  if (!schema || typeof schema !== 'object') return out;
+  const node = schema as Record<string, unknown>;
+  const props = node.properties;
+  if (props && typeof props === 'object' && !Array.isArray(props)) {
+    for (const [name, sub] of Object.entries(props as Record<string, unknown>)) {
+      out.add(name);
+      schemaPropertyNames(sub, out);
+    }
+  }
+  const items = node.items;
+  if (Array.isArray(items)) for (const sub of items) schemaPropertyNames(sub, out);
+  else schemaPropertyNames(items, out);
+  return out;
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * 모양 깨짐을 찾는다(처음 하나). 글 값이 `{`로 시작하고 스키마 키(`"body":` 꼴)를 담았거나(잘려 파싱되지 않아도), 'placeholder'면
+ * 그 필드 경로(`/body`, `/selling_points/0`)와 종류를 돌려준다. 없으면 null
+ */
+export function findAiOutputShapeBreak(
+  schema: AiJsonSchema,
+  value: unknown,
+): { path: string; kind: 'RESULT_JSON' | 'PLACEHOLDER' } | null {
+  const keys = [...schemaPropertyNames(schema)];
+  const keyPattern =
+    keys.length > 0 ? new RegExp(`"(?:${keys.map(escapeRegExp).join('|')})"\\s*:`) : null;
+  const walk = (
+    v: unknown,
+    path: string,
+  ): { path: string; kind: 'RESULT_JSON' | 'PLACEHOLDER' } | null => {
+    if (typeof v === 'string') {
+      if (PLACEHOLDER_TEXT.test(v)) return { path, kind: 'PLACEHOLDER' };
+      const t = v.trim();
+      if (keyPattern && t.startsWith('{') && keyPattern.test(t))
+        return { path, kind: 'RESULT_JSON' };
+      return null;
+    }
+    if (Array.isArray(v)) {
+      for (let i = 0; i < v.length; i += 1) {
+        const hit = walk(v[i], `${path}/${i}`);
+        if (hit) return hit;
+      }
+      return null;
+    }
+    if (v && typeof v === 'object') {
+      for (const [k, sub] of Object.entries(v as Record<string, unknown>)) {
+        const hit = walk(sub, `${path}/${k}`);
+        if (hit) return hit;
+      }
+    }
+    return null;
+  };
+  return walk(value, '');
+}
+
 export interface ValidateAiOutputOptions {
   /** 비전: 넘긴 이미지 파일 이름(images_seen 기대값) */
   expectedImages?: readonly string[];
@@ -96,6 +162,15 @@ export function validateAiOutput(
     const first = validate.errors?.[0];
     const where = first ? `${first.instancePath || '/'} ${first.keyword}` : '스키마 불일치';
     throw new AiOutputInvalidError(AI_RUN_ERROR_CODES.OUTPUT_INVALID, `스키마 불일치: ${where}`);
+  }
+  const broken = findAiOutputShapeBreak(schema, value);
+  if (broken) {
+    throw new AiOutputInvalidError(
+      AI_RUN_ERROR_CODES.OUTPUT_INVALID,
+      broken.kind === 'RESULT_JSON'
+        ? `모양 깨짐: ${broken.path}에 결과 JSON이 들어감`
+        : `모양 깨짐: ${broken.path}가 자리 표시 글`,
+    );
   }
   return value as Record<string, unknown>;
 }

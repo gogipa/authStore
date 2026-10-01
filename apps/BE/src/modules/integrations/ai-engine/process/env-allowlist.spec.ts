@@ -11,6 +11,9 @@ describe('buildAiCliEnv(P1-10 규칙 3, F-BS-27·29)', () => {
     NODE_OPTIONS: '--inspect',
     DATABASE_URL: 'postgresql://localhost/db',
     DISABLE_AUTOUPDATER: '0',
+    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '0',
+    CODEX_API_KEY: 'c',
+    GEMINI_API_KEY: 'g',
     TZ: '',
   };
 
@@ -28,6 +31,19 @@ describe('buildAiCliEnv(P1-10 규칙 3, F-BS-27·29)', () => {
     expect(buildAiCliEnv('codex', parent)).not.toHaveProperty('DISABLE_AUTOUPDATER');
     expect(buildAiCliEnv('agy', parent)).not.toHaveProperty('DISABLE_AUTOUPDATER');
     expect(buildAiCliEnv('codex', parent)).not.toHaveProperty('OPENAI_API_KEY');
+    expect(buildAiCliEnv('codex', parent)).not.toHaveProperty('CODEX_API_KEY');
+    expect(buildAiCliEnv('agy', parent)).not.toHaveProperty('GEMINI_API_KEY');
     expect(buildAiCliEnv('claude', parent)).not.toHaveProperty('ANTHROPIC_API_KEY');
+  });
+
+  it('M0 S6: claude만 CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1(세션 제목용 haiku 호출 끄기), 부모 값은 쓰지 않는다', () => {
+    expect(buildAiCliEnv('claude', parent).CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC).toBe('1');
+    expect(buildAiCliEnv('claude', {}).CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC).toBe('1');
+    expect(buildAiCliEnv('agy', parent)).not.toHaveProperty(
+      'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC',
+    );
+    expect(buildAiCliEnv('codex', parent)).not.toHaveProperty(
+      'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC',
+    );
   });
 });

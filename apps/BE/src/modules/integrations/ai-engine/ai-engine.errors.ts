@@ -37,9 +37,9 @@ export const AI_UNAVAILABLE_REASON_LABEL: Readonly<Record<AiUnavailableReason, s
 export const AI_RUN_ERROR_CODES = {
   /** 실행 중 선택 엔진을 쓸 수 없음(실행 파일 없음·로그인 풀림·모델 없음, 문서 값) */
   ENGINE_UNAVAILABLE: 'AI_ENGINE_UNAVAILABLE',
-  /** 결과가 스키마와 다름·JSON 아님·SUCCESS인데 빈 결과·부분 출력(규칙 8) */
+  /** 결과가 스키마와 다름·JSON 아님·SUCCESS인데 빈 결과·부분 출력·모양 깨짐(필드 속 결과 JSON·자리 표시 글)(규칙 8, M0 S7) */
   OUTPUT_INVALID: 'AI_OUTPUT_INVALID',
-  /** 비전 결과의 images_seen이 없거나 넘긴 이미지와 다름(규칙 9) */
+  /** 비전 결과의 images_seen이 없거나 넘긴 이미지와 다름, 또는 이미지 읽기 도구가 거부됨(규칙 9, M0 S6) */
   IMAGES_NOT_SEEN: 'AI_IMAGES_NOT_SEEN',
   /** agy stderr의 AGY_ERROR(문서 값) */
   AGY_ERROR: 'AGY_ERROR',
@@ -102,7 +102,7 @@ export class AiOutputInvalidError extends AiExecutionError {
     this.name = 'AiOutputInvalidError';
     this.userMessage =
       errorCode === AI_RUN_ERROR_CODES.IMAGES_NOT_SEEN
-        ? `AI가 넘긴 이미지를 모두 읽었다고 답하지 않아 결과를 쓰지 않았습니다(${detail}). 다시 실행해 보세요.`
+        ? `AI가 넘긴 이미지를 모두 읽지 못했거나 읽었다고 답하지 않아 결과를 쓰지 않았습니다(${detail}). 다시 실행해 보세요.`
         : `AI 결과가 정해진 형식과 달라 쓰지 않았습니다(${detail}). 다시 실행해 보세요.`;
   }
 }

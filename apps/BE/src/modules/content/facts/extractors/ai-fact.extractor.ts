@@ -20,7 +20,7 @@ export function factAiTask(withImages: boolean): AiTask {
 export const FACT_AI_FIELD_SPECS: Readonly<Record<string, { label: string; hint: string }>> = {
   origin: {
     label: '원산지(제조국)',
-    hint: '原産国·製造国·生産国·MADE IN 뒤의 나라 이름. 판매국(일본)이 아니라 만든 나라. 여러 나라면 원문대로',
+    hint: '原産国·製造国·生産国·MADE IN 뒤의 나라 이름. 판매국(일본)이 아니라 만든 나라. 나라 이름만 원문 표기로(괄호·지역 설명·번역 없이). 여러 나라면 원문대로',
   },
   material_upper: { label: '겉감 소재', hint: 'アッパー·甲材 등 신발 윗부분 소재(원문 표기)' },
   material_lining: { label: '안감 소재', hint: 'ライニング·裏地 소재(원문 표기)' },

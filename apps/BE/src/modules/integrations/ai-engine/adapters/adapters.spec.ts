@@ -50,8 +50,11 @@ describe('인자 빌더(P1-10 규칙 4·6, P1-01 F-BS-07 검사기와 함께)', 
         'json',
         '--no-session-persistence',
         '--safe-mode',
+        '--strict-mcp-config',
       ]),
     );
+    // M0 S6: 사용자 설정 파일도 읽지 않게 --setting-sources 빈 값(인자 배열의 빈 원소)
+    expect(args.slice(-4)).toEqual(['--safe-mode', '--setting-sources', '', '--strict-mcp-config']);
     expect(args[args.indexOf('--json-schema') + 1]).toBe(JSON.stringify(schema));
     expect(args[args.indexOf('--tools') + 1]).toBe('');
     expect(args).not.toContain('--add-dir');
@@ -66,7 +69,7 @@ describe('인자 빌더(P1-10 규칙 4·6, P1-01 F-BS-07 검사기와 함께)', 
     ).toEqual([]);
   });
 
-  it('buildClaudeArgs(비전): --tools Read --allowedTools Read --add-dir <폴더>, --tools "" 없음', () => {
+  it('buildClaudeArgs(비전): --tools Read --add-dir <폴더>, --allowedTools·--tools "" 없음(M0 S6 발견 1)', () => {
     const args = buildClaudeArgs({
       prompt: '[지시] x',
       model: 'sonnet',
@@ -74,14 +77,9 @@ describe('인자 빌더(P1-10 규칙 4·6, P1-01 F-BS-07 검사기와 함께)', 
       imageDir: '/tmp/img',
     });
     const i = args.indexOf('--tools');
-    expect(args.slice(i, i + 6)).toEqual([
-      '--tools',
-      'Read',
-      '--allowedTools',
-      'Read',
-      '--add-dir',
-      '/tmp/img',
-    ]);
+    expect(args.slice(i, i + 4)).toEqual(['--tools', 'Read', '--add-dir', '/tmp/img']);
+    // --allowedTools Read는 경로 제한 없이 Read를 미리 허용해 --add-dir 밖도 읽혔다
+    expect(args).not.toContain('--allowedTools');
     expect(args.filter((a, k) => a === '--tools' && args[k + 1] === '')).toHaveLength(0);
   });
 
@@ -96,6 +94,7 @@ describe('인자 빌더(P1-10 규칙 4·6, P1-01 F-BS-07 검사기와 함께)', 
     expect(text.slice(0, 4)).toEqual(['-p', '[지시] x', '--model', 'gemini-3.8-flash-medium']);
     expect(text[text.indexOf('--print-timeout') + 1]).toBe('120s');
     expect(text).toEqual(expect.arrayContaining(['--output-format', 'json', '--json-schema']));
+    expect(text.at(-1)).toBe('--disable-slash-commands');
     const vision = buildAgyArgs({
       prompt: '[지시] x',
       model: 'gemini-3.8-flash-high',
@@ -254,6 +253,111 @@ describe('어댑터 결과 해석(P1-10 규칙 8·9·12) — 가짜 CLI·합성 
     expect(rec!.argv[rec!.argv.indexOf('--output-schema') + 1]).not.toContain(rec!.cwd);
   });
 
+  describe('도구 권한 거부·시간 초과를 SUCCESS로 감춘 결과(M0 S6 §5·§6.6 실측 모양)', () => {
+    let images: string[];
+    const VISION = { model: 'sonnet', timeoutMs: 180_000 };
+
+    beforeEach(() => {
+      images = [join(world.dir, 'side.jpg'), join(world.dir, 'back.png')];
+      writeFileSync(images[0]!, 'fake-jpeg');
+      writeFileSync(images[1]!, 'fake-png');
+    });
+
+    it('claude 비전: permission_denials가 있으면 images_seen 이름이 맞아도 AI_IMAGES_NOT_SEEN', async () => {
+      world.setScenario({ claude: { run: { stdout: 'claude/vision-permission-denied.json' } } });
+      const err = await errorOf(
+        new ClaudeCodeAdapter(runner).runStructured(
+          'CT-02',
+          SCHEMA,
+          { prompt: '[지시] x', imagePaths: images },
+          VISION,
+        ),
+      );
+      expect(err).toBeInstanceOf(AiOutputInvalidError);
+      expect((err as AiOutputInvalidError).errorCode).toBe(AI_RUN_ERROR_CODES.IMAGES_NOT_SEEN);
+      expect((err as AiOutputInvalidError).detail).toBe('도구 권한 거부 2건');
+    });
+
+    it('claude 텍스트: permission_denials가 있으면 AI_CLI_FAILED', async () => {
+      const envelope = JSON.parse(
+        readFileSync(join(AI_FIXTURE_ROOT, 'claude', 'text-success.json'), 'utf8'),
+      ) as Record<string, unknown>;
+      envelope.permission_denials = [{ tool_name: 'Bash', tool_use_id: 't', tool_input: {} }];
+      world.setScenario({ claude: { run: { stdout: { text: JSON.stringify(envelope) } } } });
+      const err = await errorOf(
+        new ClaudeCodeAdapter(runner).runStructured('CT-01', SCHEMA, { prompt: '[지시] x' }, TEXT),
+      );
+      expect(err).toBeInstanceOf(AiCallFailedError);
+      expect((err as AiCallFailedError).errorCode).toBe(AI_RUN_ERROR_CODES.CLI_FAILED);
+    });
+
+    it('agy --print-timeout: exit 0·SUCCESS여도 stderr "print timeout after" → AI_TIMEOUT', async () => {
+      world.setScenario({
+        agy: {
+          run: { stdout: 'agy/print-timeout.json', stderr: 'agy/print-timeout.stderr.txt' },
+        },
+      });
+      const err = await errorOf(
+        new AgyAdapter(runner).runStructured('CT-01', SCHEMA, { prompt: '[지시] x' }, TEXT),
+      );
+      expect(err).toBeInstanceOf(AiCallFailedError);
+      expect((err as AiCallFailedError).errorCode).toBe(AI_RUN_ERROR_CODES.TIMEOUT);
+    });
+
+    it('agy 비전: denied_actions(RunCommand)·"no output produced" → AI_IMAGES_NOT_SEEN, 텍스트면 AI_CLI_FAILED', async () => {
+      world.setScenario({
+        agy: {
+          run: { stdout: 'agy/denied-command.json', stderr: 'agy/no-output-produced.stderr.txt' },
+        },
+      });
+      const vision = await errorOf(
+        new AgyAdapter(runner).runStructured(
+          'CT-02',
+          SCHEMA,
+          { prompt: '[지시] x', imagePaths: images },
+          { model: 'gemini-3.8-flash-high', timeoutMs: 180_000 },
+        ),
+      );
+      expect((vision as AiOutputInvalidError).errorCode).toBe(AI_RUN_ERROR_CODES.IMAGES_NOT_SEEN);
+      expect((vision as AiOutputInvalidError).detail).toBe('도구 권한 거부 1건');
+      const text = await errorOf(
+        new AgyAdapter(runner).runStructured('CT-01', SCHEMA, { prompt: '[지시] x' }, TEXT),
+      );
+      expect((text as AiCallFailedError).errorCode).toBe(AI_RUN_ERROR_CODES.CLI_FAILED);
+      // 봉투에 거부 목록이 없어도 stderr만으로 실패
+      world.setScenario({
+        agy: {
+          run: { stdout: 'agy/success.json', stderr: 'agy/no-output-produced.stderr.txt' },
+        },
+      });
+      const stderrOnly = await errorOf(
+        new AgyAdapter(runner).runStructured('CT-01', SCHEMA, { prompt: '[지시] x' }, TEXT),
+      );
+      expect((stderrOnly as AiCallFailedError).errorCode).toBe(AI_RUN_ERROR_CODES.CLI_FAILED);
+      expect((stderrOnly as AiCallFailedError).detail).toBe('도구 권한 거부');
+    });
+
+    it('결과 모양 깨짐(M0 S7): 스키마는 맞아도 필드에 결과 JSON·placeholder가 들어가면 AI_OUTPUT_INVALID', async () => {
+      const broken = {
+        type: 'result',
+        subtype: 'success',
+        is_error: false,
+        permission_denials: [],
+        structured_output: {
+          title: 't',
+          bullets: [],
+          note: '{"title": "t", "bullets": [], "note": null}',
+        },
+      };
+      world.setScenario({ claude: { run: { stdout: { text: JSON.stringify(broken) } } } });
+      const err = await errorOf(
+        new ClaudeCodeAdapter(runner).runStructured('CT-01', SCHEMA, { prompt: '[지시] x' }, TEXT),
+      );
+      expect((err as AiOutputInvalidError).errorCode).toBe(AI_RUN_ERROR_CODES.OUTPUT_INVALID);
+      expect((err as AiOutputInvalidError).detail).toBe('모양 깨짐: /note에 결과 JSON이 들어감');
+    });
+  });
+
   describe('비전(규칙 9)', () => {
     let images: string[];
 
@@ -274,7 +378,8 @@ describe('어댑터 결과 해석(P1-10 규칙 8·9·12) — 가짜 CLI·합성 
       expect(result.output).toMatchObject({ images_seen: ['image-1.jpg', 'image-2.png'] });
       const [rec] = world.records();
       expect(rec!.addDirEntries).toEqual(['image-1.jpg', 'image-2.png']);
-      expect(rec!.argv).toEqual(expect.arrayContaining(['--tools', 'Read', '--allowedTools']));
+      expect(rec!.argv).toEqual(expect.arrayContaining(['--tools', 'Read', '--add-dir']));
+      expect(rec!.argv).not.toContain('--allowedTools');
       const schemaArg = JSON.parse(rec!.argv[rec!.argv.indexOf('--json-schema') + 1]!) as {
         required: string[];
       };
@@ -351,6 +456,12 @@ describe('어댑터 결과 해석(P1-10 규칙 8·9·12) — 가짜 CLI·합성 
       const [agy, codex] = world.records();
       expect(agy!.addDirEntries).toEqual(['image-1.jpg', 'image-2.png']);
       expect(agy!.argv[agy!.argv.indexOf('--print-timeout') + 1]).toBe('180s');
+      // M0 S6·S7: agy는 파일 절대 경로를 하나씩 + 파일 보기 도구만(터미널 명령·URL 읽기 금지)
+      const agyPrompt = agy!.argv[1]!;
+      expect(agyPrompt).toContain(`- ${agy!.addDir}/image-1.jpg`);
+      expect(agyPrompt).toContain(`- ${agy!.addDir}/image-2.png`);
+      expect(agyPrompt).toMatch(/view_file/);
+      expect(agyPrompt).toMatch(/터미널 명령.*URL 읽기 도구는 쓰지 않는다/);
       expect(codex!.argv[0]).toBe('exec');
       expect(codex!.argv[2]).toBe('--image');
       expect(codex!.images.map((i) => i.path.split('/').pop())).toEqual([

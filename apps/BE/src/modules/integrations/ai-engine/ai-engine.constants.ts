@@ -4,7 +4,8 @@ import { CLAUDE_GLOBAL_SETTINGS_BLOCKERS, type AiCliBinary } from './cli-isolati
 
 /**
  * AI 실행기 상수(P1-10, PRD §8.9). 격리 플래그·시간 제한·이름은 여기 한 곳에만 둔다.
- * M0 S6·S7 결과가 오면(claude 전역 설정 차단 조합, agy 사용자 MCP 끄기, codex `~/.codex` 격리) 이 파일만 고친다.
+ * M0 S6·S7 결과(2026-10-01, docs/dev/07_M0스파이크) 반영: claude 격리 3개 플래그, agy `--disable-slash-commands`.
+ * codex `~/.codex` 격리는 미설치라 재지 못했다(빈 배열 유지).
  */
 
 /** 화면 이름(05-2 AiEngineOption.displayName, 'AI 생성 · Claude Code' 표시, R11) */
@@ -53,23 +54,43 @@ export const AI_IMAGE_DIR_PREFIX = 'autostore-ai-img-';
 export const AI_IO_DIR_PREFIX = 'autostore-ai-io-';
 
 /**
- * claude 전역 설정 차단 플래그(규칙 4, F-BS-28). `--safe-mode` 하나로 사용자 훅·CLAUDE.md·MCP·플러그인을 읽지 않게 한다.
- * M0 S6 결과에 따라 `['--setting-sources', '<값>', '--strict-mcp-config']`로 바뀔 수 있다 — 여기만 고친다.
- * 격리 검사기(`CLAUDE_GLOBAL_SETTINGS_BLOCKERS`)의 한 조합을 만족해야 한다(모듈을 읽을 때 확인).
+ * claude 전역 설정 차단 플래그(규칙 4, F-BS-28, M0 S6 §4.4 실측).
+ * - `--safe-mode`: 사용자 훅·CLAUDE.md·MCP·플러그인·스킬·자동 메모리를 막는다(구독 인증은 그대로)
+ * - `--setting-sources ""`: 사용자 전역 설정 파일(`~/.claude/` 아래 — 허용 규칙·효과 수준 등)도 읽지 않는다(`--safe-mode`만으로는 읽는다)
+ * - `--strict-mcp-config`: `--mcp-config`로 준 MCP만 쓴다(주지 않으므로 0개)
+ * 토큰·지연 비용은 없다(프롬프트 토큰 5,394~5,396 그대로). 빈 문자열 값은 인자 배열의 빈 원소로 넘긴다(셸 없음).
+ * `--bare`는 구독 인증(OAuth·키체인)을 읽지 않아 쓸 수 없다('Not logged in').
+ * 격리 검사기(`CLAUDE_GLOBAL_SETTINGS_BLOCKERS`)의 조합을 만족해야 한다(모듈을 읽을 때 확인).
  */
-export const CLAUDE_ISOLATION_ARGS: readonly string[] = ['--safe-mode'];
+export const CLAUDE_ISOLATION_ARGS: readonly string[] = [
+  '--safe-mode',
+  '--setting-sources',
+  '',
+  '--strict-mcp-config',
+];
 /**
- * agy 사용자 MCP 끄기 플래그. 방법이 아직 확인되지 않았다(M0 S6) — 빈 배열이고, 선택 엔진이 agy면 앱 시작 때
- * 경고를 남긴다(규칙 13, `AGY_USER_MCP_DISABLE_KNOWN`).
+ * agy 격리 플래그(M0 S6 §6.1). 사용자 MCP·규칙(GEMINI.md)·플러그인 스킬을 끄는 플래그는 **없다**(`agy --help`에 없음,
+ * `HOME`을 바꾸면 인증이 깨진다). `--disable-slash-commands`는 컨텍스트·토큰 차이는 없지만 비용이 없어 넣는다
+ * (라쿠텐 글의 `/` 확장 방어). 선택 엔진이 agy면 앱 시작 때 경고를 남기고 SCR-13 카드에 알린다(규칙 13).
  */
-export const AGY_ISOLATION_ARGS: readonly string[] = [];
-/** agy 사용자 MCP를 끄는 방법을 확인했는가(M0 S6 전 false) */
+export const AGY_ISOLATION_ARGS: readonly string[] = ['--disable-slash-commands'];
+/** agy 사용자 MCP를 끄는 방법을 확인했는가 — M0 S6에서 '없음'으로 확인(false 유지) */
 export const AGY_USER_MCP_DISABLE_KNOWN = false;
-/** codex 사용자 설정(`~/.codex` AGENTS.md·MCP) 격리 플래그. M0 S7에서 확인한다 — 그 전에는 빈 배열 */
+/** codex 사용자 설정(`~/.codex` AGENTS.md·MCP) 격리 플래그. codex 미설치로 M0 S7에서 재지 못했다 — 빈 배열 */
 export const CODEX_ISOLATION_ARGS: readonly string[] = [];
 
 /**
- * 지원 CLI 버전 범위(P-13). 아직 정해지지 않아 모두 null(판단하지 못함 → `version_supported` NULL).
+ * M0 S6·S7에서 실제로 검증한 CLI 버전(2026-10-01, P-13 기록용). 지원 범위(`AI_SUPPORTED_VERSION_RANGE`)는 오너 결정 뒤에 넣는다.
+ * agy는 측정 중 1.2.9 → 1.2.14로 스스로 업데이트됐다(호출 사이에 버전이 바뀔 수 있다).
+ */
+export const AI_VERIFIED_CLI_VERSIONS: Readonly<Record<AiEngineCode, string | null>> = {
+  CLAUDE: '2.1.269',
+  AGY: '1.2.14',
+  CODEX: null,
+};
+
+/**
+ * 지원 CLI 버전 범위(P-13). 오너가 정하지 않아 모두 null(판단하지 못함 → `version_supported` NULL). 검증한 버전은 위 상수.
  * 범위가 정해져도 M1은 거절하지 않고 경고만 한다(P1-10 Proposed, PRD §8.9 '버전'·F-SY-13 쪽을 따른다).
  */
 export const AI_SUPPORTED_VERSION_RANGE: Readonly<
