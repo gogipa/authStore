@@ -1,0 +1,31 @@
+{
+  "shoppingResult": {
+    "query": "아식스 젤카야노14",
+    "total": 3,
+    "products": [
+      {
+        "rank": 1,
+        "id": "82345678901",
+        "productTitle": "아식스 젤카야노14 크림",
+        "mallName": "슈즈마켓",
+        "sellerTel": "010-2222-3333",
+        "manuTag": "젤카야노14,데일리운동화,아식스운동화"
+      },
+      {
+        "rank": 2,
+        "id": "82345678902",
+        "productTitle": "GEL-KAYANO 14",
+        "mallName": "러닝샵",
+        "sellerEmail": "seller@example.com",
+        "manuTag": "젤카야노14|레트로운동화|무료배송"
+      },
+      {
+        "rank": 3,
+        "id": "82345678903",
+        "productTitle": "아식스 러닝화",
+        "mallName": "스포츠몰",
+        "manuTag": ["크림운동화", "쿠션운동화"]
+      }
+    ]
+  }
+}

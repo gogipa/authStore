@@ -57,6 +57,9 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'settings.content.colorTerms': '색상 사전 설정',
   'settings.content.cautionTemplates': '소재별 주의 문구 설정',
   'settings.content.multiOriginMode': '여러 원산지 코드 방식 설정',
+  // ⑦ 태그(P3-05)
+  'settings.tags.useWords': '태그 용도어 설정',
+  'settings.tags.rules': '태그 규칙 필터 사전 설정',
   // 판정 기준 데이터(P2-04, BE step-engine/domain/input-keys.ts와 같은 표) — 새 최신 환율·활성 요금표 교체
   'fx.costJpy': '원가 환율',
   'fx.customsJpy': '과세환율(엔)',

@@ -71,11 +71,18 @@ export function buildPinoHttpOptions(options: {
     },
     hooks: { logMethod: redactLogArgsHook },
     serializers: {
-      req: (req: { headers?: Record<string, unknown> } & Record<string, unknown>) => ({
-        ...req,
-        url: typeof req.url === 'string' ? scrubKnownSecrets(req.url) : req.url,
-        headers: redactHeaders(req.headers),
-      }),
+      // 요청 본문·업로드 파일(이름 포함)은 로그에 넣지 않는다 — 비밀 키 입력, ⑦ 경쟁 태그 원본(TG-01·CON-09, P3-05)
+      req: (req: { headers?: Record<string, unknown> } & Record<string, unknown>) => {
+        const safe: Record<string, unknown> = {
+          ...req,
+          url: typeof req.url === 'string' ? scrubKnownSecrets(req.url) : req.url,
+          headers: redactHeaders(req.headers),
+        };
+        delete safe.body;
+        delete safe.file;
+        delete safe.files;
+        return safe;
+      },
       res: (res: { headers?: Record<string, unknown> } & Record<string, unknown>) => ({
         ...res,
         headers: redactHeaders(res.headers),

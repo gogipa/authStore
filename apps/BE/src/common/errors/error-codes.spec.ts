@@ -368,6 +368,21 @@ describe('error-codes', () => {
     );
   });
 
+  it('P3-05 ⑦ 코드 2개는 05-3 §5.1 문구·상태 그대로다(가져오기 코드는 P2-01·P2-04가 이미 더했다)', () => {
+    expect(ERROR_CODES.COMPETITOR_INPUT_NOT_FOUND).toEqual({
+      status: 404,
+      message: '경쟁 태그 입력을 찾을 수 없습니다.',
+    });
+    expect(ERROR_CODES.FINAL_TAG_LIMIT_EXCEEDED).toEqual({
+      status: 422,
+      message: '최종 태그는 10개까지입니다. 하나를 지운 뒤 넣어 주세요.',
+    });
+    expect(ERROR_CODES.IMPORT_EMPTY.status).toBe(422);
+    expect(ERROR_CODES.IMPORT_PARSE_FAILED.status).toBe(422);
+    expect(ERROR_CODES.UNSUPPORTED_FILE_TYPE.status).toBe(422);
+    expect(ERROR_CODES.PAYLOAD_TOO_LARGE.status).toBe(413);
+  });
+
   it('formatErrorMessage는 {…} 자리를 채우고 모르는 자리는 그대로 둔다', () => {
     expect(formatErrorMessage('DAILY_LIMIT_REACHED', { 대상: '라쿠텐 상품 페이지', n: 110 })).toBe(
       '오늘 라쿠텐 상품 페이지 조회 한도(110건)를 다 썼습니다. 내일 0시(한국 시간)에 다시 됩니다.',

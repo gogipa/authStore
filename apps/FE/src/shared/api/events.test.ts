@@ -110,6 +110,18 @@ describe('진행 알림 이름', () => {
       'getCandidateContentAssembly',
       { candidateId: 1 },
     ]);
+    // ⑦(P3-05): 실행·태그 편집 재검증이 끝나면 ⑦ 산출물과 경쟁 태그 입력 목록
+    const tagsRun = EVENT_INVALIDATIONS['step-run.status-changed']?.({
+      stepRunId: 107,
+      candidateId: 1,
+      stepCode: 'TAGS',
+      version: 2,
+      status: 'COMPLETED',
+      stepChainId: null,
+    } as ProgressEventData<'step-run.status-changed'>);
+    expect(tagsRun).toContainEqual(['tags', 'getCandidateTagSet', { candidateId: 1 }]);
+    expect(tagsRun).toContainEqual(['tags', 'listTagCompetitorInputs', { candidateId: 1 }]);
+    expect(stepRun('COPY')).not.toContainEqual(['tags', 'getCandidateTagSet', { candidateId: 1 }]);
     expect(
       EVENT_INVALIDATIONS['content-field.recheck-flagged']?.({
         candidateId: 1,

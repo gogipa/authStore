@@ -116,6 +116,8 @@ export type EventInvalidations = {
  * - P3-04: `step-run.status-changed`가 ⑥-3(NOTICE_HTML)이면 조립 결과(`getCandidateContentAssembly`). `content-field.recheck-flagged`는
  *   stepCode가 NOTICE_HTML이면 조립 결과, 아니면 고시 원자료. `gate.passed`(G3 다시 고르기) → 조립 결과도(미리보기 iframe을 새로 연다 —
  *   ⑥-3은 다시 실행하지 않는다). 상품명·고시 고치기는 응답 뒤 화면이 무효화한다.
+ * - P3-05: `step-run.status-changed`가 ⑦(TAGS)이면 그 후보의 ⑦ 산출물(`getCandidateTagSet` — 실행·태그 편집 202 재검증이 끝날 때)과
+ *   경쟁 태그 입력 목록(`listTagCompetitorInputs`). 입력 넣기·빼기는 응답 뒤 훅이 무효화한다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -201,6 +203,12 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
       : []),
     ...(stepCode === 'NOTICE_HTML'
       ? [qk('content', 'getCandidateContentAssembly', { candidateId })]
+      : []),
+    ...(stepCode === 'TAGS'
+      ? [
+          qk('tags', 'getCandidateTagSet', { candidateId }),
+          qk('tags', 'listTagCompetitorInputs', { candidateId }),
+        ]
       : []),
   ],
   'continuous-run.stopped': ({ candidateId, stepChainId }) => [

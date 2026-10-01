@@ -233,6 +233,12 @@ export interface StepRunner {
    * 없으면 빈 목록
    */
   editWarnings?(db: Tx, stepRunId: number): Promise<CandidateWarning[]>;
+  /**
+   * 비동기 오너 수정(⑦ 태그 편집 202)을 받기 **전** 동기 검사(선택, P3-05 Proposed — C4 §3.1). owner-edits가 바탕 버전·잠금 검사
+   * 뒤, 새 실행을 열기 전에 같은 트랜잭션에서 부른다. 던진 오류(422 FINAL_TAG_LIMIT_EXCEEDED·VALIDATION_FAILED, 409
+   * SECRET_NOT_CONFIGURED 등)가 그대로 응답이 되고 실행은 만들지 않는다. `edit` = `{ add, remove }`. DB 읽기·키체인 확인만
+   */
+  checkOwnerEdit?(db: Tx, baseStepRunId: number, edit: unknown): Promise<void>;
   /** 이 버전의 실행 중 오너 입력 값(다시 실행 기본값, 규칙 7). 없으면 빈 객체 */
   ownerInputsOf?(db: Tx, stepRunId: number): Promise<Record<string, unknown>>;
   /** ② 버전의 앵커 키(이전 버전 다시 고르기의 409 ANCHOR_KEY_MISMATCH 검사). 없으면 검사하지 않는다 */

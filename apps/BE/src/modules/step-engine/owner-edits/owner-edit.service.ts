@@ -327,6 +327,10 @@ export class OwnerEditService {
 
       // ⑦ 태그 편집: 202 — 새 실행(RUNNING)을 열고 대기열에서 재검증 뒤 끝낸다
       if (edit.ownerAction === 'EDIT' && 'add' in edit) {
+        // 받기 전 동기 검사(P3-05 — 10개 상한·빈 값 등). 던지면 실행을 만들지 않는다
+        if (runner.checkOwnerEdit) {
+          await runner.checkOwnerEdit(scope.tx, base.id, { add: edit.add, remove: edit.remove });
+        }
         const run = await this.executions.openRun(scope, {
           candidate,
           stepCode,

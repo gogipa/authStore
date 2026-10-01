@@ -20,6 +20,8 @@ import {
   PRICE_RULE_METHODS,
   type SettingsSchemaVersion,
   type SizeRangeMm,
+  TAG_COMPETITOR_INPUT_MAX_BYTES_LIMIT,
+  type TagBrandEntry,
   THUMBNAIL_FACE_OPTIONS,
   THUMBNAIL_GENERATION_TIMEOUT_MAX_SECONDS,
   THUMBNAIL_IMAGE_PROVIDERS,
@@ -181,6 +183,29 @@ const termList = {
   items: { type: 'string', minLength: 1, maxLength: 40 },
 } as const;
 
+/** ⑦ 규칙 사전 말 목록(P3-05 Proposed): 1~40자, 500개까지 */
+const tagWordList = {
+  type: 'array',
+  maxItems: 500,
+  items: { type: 'string', minLength: 1, maxLength: 40 },
+} as const;
+
+/** ⑦ 브랜드 사전 한 줄(P3-05 Proposed): 이름 1~40자, 비교 말 1~20개 */
+const tagBrand: JSONSchemaType<TagBrandEntry> = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['name', 'terms'],
+  properties: {
+    name: { type: 'string', minLength: 1, maxLength: 40 },
+    terms: {
+      type: 'array',
+      minItems: 1,
+      maxItems: 20,
+      items: { type: 'string', minLength: 1, maxLength: 40 },
+    },
+  },
+};
+
 /** ⑥-2 항목 이름 목록(P3-03 Proposed): 1~20자, 1~50개 */
 const factLabelList = {
   type: 'array',
@@ -202,6 +227,7 @@ const schema: JSONSchemaType<AppSettings> = {
     'category',
     'thumbnail',
     'content',
+    'tags',
     'notice',
     'delivery',
     'ai',
@@ -542,6 +568,62 @@ const schema: JSONSchemaType<AppSettings> = {
         },
         productNameBannedWords: termList,
         multiOriginMode: { type: 'string', enum: MULTI_ORIGIN_MODES },
+      },
+    },
+    tags: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'useWords',
+        'recommendCacheMinutes',
+        'restrictedBatchSize',
+        'competitorInputMaxBytes',
+        'aiRelevanceEnabled',
+        'rules',
+      ],
+      properties: {
+        // 추천 태그 조회 키워드는 100자까지(tag_set.recommend_keywords varchar(100)), 용도어는 20개까지
+        useWords: {
+          type: 'array',
+          maxItems: 20,
+          items: { type: 'string', minLength: 1, maxLength: 100 },
+        },
+        recommendCacheMinutes: { type: 'integer', minimum: 0, maximum: 1440 },
+        restrictedBatchSize: { type: 'integer', minimum: 1, maximum: 100 },
+        competitorInputMaxBytes: {
+          type: 'integer',
+          minimum: 1024,
+          maximum: TAG_COMPETITOR_INPUT_MAX_BYTES_LIMIT,
+        },
+        // M1은 AI 관련성 판정이 없어 끔만 받는다(F-TG-08 — 켜기는 M2, CON-13 예외 기록)
+        aiRelevanceEnabled: { type: 'boolean', const: false },
+        rules: {
+          type: 'object',
+          additionalProperties: false,
+          required: [
+            'brands',
+            'keepOwnBrandRecommended',
+            'storeWords',
+            'promotionWords',
+            'childWords',
+            'genderWords',
+            'useSeasonWords',
+          ],
+          properties: {
+            brands: { type: 'array', items: tagBrand, maxItems: 500 },
+            keepOwnBrandRecommended: { type: 'boolean' },
+            storeWords: tagWordList,
+            promotionWords: tagWordList,
+            childWords: tagWordList,
+            genderWords: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['MALE', 'FEMALE'],
+              properties: { MALE: tagWordList, FEMALE: tagWordList },
+            },
+            useSeasonWords: tagWordList,
+          },
+        },
       },
     },
     notice: {

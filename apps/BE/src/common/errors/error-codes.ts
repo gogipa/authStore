@@ -400,6 +400,14 @@ export const ERROR_CODES = {
     status: 422,
     message: '사양 블록에 실제 나라 표기가 없어 이 원산지 코드를 쓸 수 없습니다.',
   },
+  // ── tags ⑦ 태그(P3-05, 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 경쟁 태그 입력 id 없음(경로가 1 이상 정수가 아니어도 같다 — P3-05 Proposed) */
+  COMPETITOR_INPUT_NOT_FOUND: { status: 404, message: '경쟁 태그 입력을 찾을 수 없습니다.' },
+  /** 05-3 §5.1: 오너 태그 추가 뒤 최종 태그 10개 초과(details.limit·count) */
+  FINAL_TAG_LIMIT_EXCEEDED: {
+    status: 422,
+    message: '최종 태그는 10개까지입니다. 하나를 지운 뒤 넣어 주세요.',
+  },
   INTERNAL_ERROR: {
     status: 500,
     message: '앱 안에서 오류가 났습니다. 다시 해 보고, 계속되면 로그를 확인해 주세요.',

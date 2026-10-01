@@ -504,6 +504,61 @@ export interface ContentSettings {
   multiOriginMode: MultiOriginMode;
 }
 
+/**
+ * ⑦ 브랜드 사전 한 줄(P3-05 Proposed — F-TG-08 '자사·타사 브랜드명'). `name`은 화면·사유에 쓰는 한국어 이름, `terms`는 태그·
+ * 시드 키워드·② 브랜드 속성·② 상품명에서 찾는 말(한국어·영문·일본어 — NFKC·소문자·공백 무시로 비교)
+ */
+export interface TagBrandEntry {
+  name: string;
+  terms: string[];
+}
+
+/** ⑦ 성별 말(P3-05 Proposed): 상품 성별과 반대 성별 말이 든 태그는 ATTRIBUTE_MISMATCH */
+export interface TagGenderWords {
+  MALE: string[];
+  FEMALE: string[];
+}
+
+/**
+ * ⑦ 규칙 필터 사전(P3-05 Proposed — F-TG-08, PRD §8.6 4. AI 판정 없이 사전으로만 뺀다). ⑦ 시작 조건(`settings.tags.rules`)이라
+ * 바꾸면 완료된 ⑦이 재실행 필요가 된다.
+ * - `brands`: 브랜드 사전. 상품 자체 브랜드(시드 키워드·② 브랜드 속성·상품명에서 찾은 첫 항목)가 아닌 브랜드 말이 든 태그는 BRAND_NAME
+ * - `keepOwnBrandRecommended`: 상품 자체 브랜드 말이 든 태그라도 추천(사전) 태그와 정확히 같으면 남긴다(시안 '아식스운동화' —
+ *   PRD '자사 브랜드명 제외'와 다른 곳을 설정으로 고를 수 있게, 기본 true). false면 자체 브랜드 태그도 뺀다
+ * - `storeWords`: 판매처·스토어명(STORE_NAME), `promotionWords`: 가격·혜택·배송·홍보 문구(PROMOTION)
+ * - `childWords`: 아동 말(ATTRIBUTE_MISMATCH — M1 상품은 성인화뿐이다), `genderWords`: 성별 말(반대 성별이면 ATTRIBUTE_MISMATCH)
+ * - `useSeasonWords`: 용도·시즌 말. 상품 맥락(시드 키워드·상품유형·④ 리프 경로)에 없는 말이 든 태그는 ATTRIBUTE_MISMATCH
+ */
+export interface TagRuleSettings {
+  brands: TagBrandEntry[];
+  keepOwnBrandRecommended: boolean;
+  storeWords: string[];
+  promotionWords: string[];
+  childWords: string[];
+  genderWords: TagGenderWords;
+  useSeasonWords: string[];
+}
+
+/**
+ * ⑦ 태그(P3-05 Proposed 키 — 06-4 §2.2). ⑦ 시작 조건은 `useWords`·`rules`뿐이다(나머지는 결과를 바꾸지 않는 실행 값).
+ * - `useWords`: 용도어 — 추천 태그 조회(recommend-tags)에 시드 키워드·모델명·상품유형과 함께 보내는 말(PRD §8.6 1)
+ * - `recommendCacheMinutes`: 추천 태그 응답 메모리 캐시 시간(분, 0 = 캐시 안 함). DB에는 두지 않는다(ERD 부록 A)
+ * - `restrictedBatchSize`: restricted-tags 1회에 보내는 태그 수(1회 최대 개수는 M0 S3에서 확정 — 그 전 설정값)
+ * - `competitorInputMaxBytes`: 경쟁 태그 입력(파일·붙여 넣은 글) 크기 상한(바이트) — 넘으면 413 PAYLOAD_TOO_LARGE
+ * - `aiRelevanceEnabled`: 태그 관련성 AI 판정(F-TG-08 기본 꺼짐). M1은 판정 기능이 없어 false만 받는다(켜면 CON-13 예외 기록 — M2)
+ */
+export interface TagSettings {
+  useWords: string[];
+  recommendCacheMinutes: number;
+  restrictedBatchSize: number;
+  competitorInputMaxBytes: number;
+  aiRelevanceEnabled: boolean;
+  rules: TagRuleSettings;
+}
+
+/** 경쟁 태그 입력 크기 상한의 최대값(바이트, 5MB — 파일 받기 하드 상한과 같다) */
+export const TAG_COMPETITOR_INPUT_MAX_BYTES_LIMIT = 5_242_880;
+
 /** 설정 JSON 전체(schemaVersion "1") */
 export interface AppSettings {
   schemaVersion: SettingsSchemaVersion;
@@ -518,6 +573,8 @@ export interface AppSettings {
   thumbnail: ThumbnailSettings;
   /** P3-03: ⑥-2 원산지 나라 사전·소재 말 사전·설명문 항목 이름·스펙 이미지 고르기 */
   content: ContentSettings;
+  /** P3-05: ⑦ 용도어·추천 캐시·restricted 1회 개수·경쟁 입력 크기 상한·규칙 필터 사전 */
+  tags: TagSettings;
   notice: NoticeSettings;
   /** P1-09: 발송 택배사 코드 목록(GET /dispatch-delivery-companies) */
   delivery: DeliverySettings;

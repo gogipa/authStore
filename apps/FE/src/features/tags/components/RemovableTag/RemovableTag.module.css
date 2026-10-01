@@ -1,0 +1,18 @@
+/* 최종 태그 한 개(Tags.dc.html: 32px, line 테두리, radius 4, 왼쪽 10·오른쪽 4 안쪽, 13px 글자). 토큰 변수만 쓴다 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 var(--space-1) 0 10px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 13px;
+}
+
+.text {
+  white-space: nowrap;
+}

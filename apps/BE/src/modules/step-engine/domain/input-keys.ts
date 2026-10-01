@@ -80,6 +80,9 @@ export const INPUT_KEYS = {
   settingsContentCautionTemplates: 'settings.content.cautionTemplates',
   // ⑥-3 여러 원산지 코드 방식(P3-04 — 나라 사전 `settings.content.originCountries`도 읽는다)
   settingsContentMultiOriginMode: 'settings.content.multiOriginMode',
+  // ⑦ 태그(P3-05): 용도어(추천 조회 키워드)·규칙 필터 사전. 캐시 시간·restricted 1회 개수·입력 크기 상한은 결과를 바꾸지 않아 넣지 않는다
+  settingsTagsUseWords: 'settings.tags.useWords',
+  settingsTagsRules: 'settings.tags.rules',
   // 판정 기준 데이터(P2-04)
   fxCostJpy: 'fx.costJpy',
   fxCustomsJpy: 'fx.customsJpy',
@@ -145,6 +148,8 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'settings.content.colorTerms': '색상 사전 설정',
   'settings.content.cautionTemplates': '소재별 주의 문구 설정',
   'settings.content.multiOriginMode': '여러 원산지 코드 방식 설정',
+  'settings.tags.useWords': '태그 용도어 설정',
+  'settings.tags.rules': '태그 규칙 필터 사전 설정',
   // 판정 기준 데이터(P2-04)
   'fx.costJpy': '원가 환율',
   'fx.customsJpy': '과세환율(엔)',

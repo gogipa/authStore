@@ -140,13 +140,17 @@ export const STEP_INPUT_SPECS: Record<StepCode, readonly StepInputSpec[]> = {
     settingsKey(K.settingsContentOriginCountries),
     settingsKey(K.settingsContentMultiOriginMode),
   ],
-  // 시드 키워드, ② 모델명·상품유형, 성별, (선택) 경쟁 태그, (선택) ④ 리프 경로
+  // 시드 키워드, ② 모델명·상품유형, 성별, (선택) 경쟁 태그, (선택) ④ 리프 경로, 용도어·규칙 필터 사전 설정(P3-05).
+  // 시드 키워드는 후보 칸 하나가 아니라 ① 선택 키워드 → ② 검색어 → ② 型番 순으로 실행기가 정하고 필수로 본다(P3-05 Proposed —
+  // 값이 없으면 409 STEP_START_CONDITION_UNMET). 그래프의 후보 필드 검사(candidateFields)에는 넣지 않는다
   TAGS: [
     cand(K.candidateSeedKeyword, false),
     prev(K.sourcingModelInfo, 'SOURCING'),
     cand(K.candidateGender),
     ownerStart(K.ownerCompetitorTags),
     prev(K.categoryLeafPath, 'CATEGORY', false),
+    settingsKey(K.settingsTagsUseWords),
+    settingsKey(K.settingsTagsRules),
   ],
   // ⑤ G3 선택본, ⑥-3 HTML
   UPLOAD: [prev(K.thumbnailSelection, 'THUMBNAIL'), prev(K.noticeHtmlHtml, 'NOTICE_HTML')],
