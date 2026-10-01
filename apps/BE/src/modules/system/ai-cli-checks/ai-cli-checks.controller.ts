@@ -31,6 +31,7 @@ export class AiCliChecksController {
     operationId: 'getLatestAiCliChecks',
     summary: 'AI 엔진별 최신 점검 결과 조회',
   })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiOkResponse({
     type: AiCliCheckLatestListDto,
     description: '엔진별 최신 점검 결과와 선택 엔진',

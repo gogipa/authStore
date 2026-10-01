@@ -1,6 +1,7 @@
 import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiConflictResponse,
   ApiForbiddenResponse,
   ApiHeader,
@@ -56,6 +57,7 @@ export class ApprovalController {
   @Post('candidates/:candidateId/pre-validations')
   @HttpCode(200)
   @ApiOperation({ operationId: 'runCandidatePreValidation', summary: 'G4 사전 검증 실행' })
+  @ApiBody({ type: PreValidationRequestDto, required: false })
   @ApiHeader({ name: 'X-AutoStore-Client', required: true, description: '앱 화면 요청 표시(1)' })
   @ApiParam({ name: 'candidateId', type: 'integer', required: true })
   @ApiOkResponse({ type: PreValidationResultDto, description: '항목별 검증 결과' })

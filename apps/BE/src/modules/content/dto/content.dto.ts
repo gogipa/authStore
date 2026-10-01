@@ -47,10 +47,15 @@ export class ContentDraftFieldItemDto {
   @ApiPropertyOptional({ enum: METHODS, nullable: true, description: '⑥-2 필드만 추출 방법' })
   extractionMethod!: string | null;
 
-  @ApiPropertyOptional({ nullable: true, description: '원문 발췌(일본어)' })
+  @ApiPropertyOptional({ type: String, nullable: true, description: '원문 발췌(일본어)' })
   evidenceQuote!: string | null;
 
-  @ApiPropertyOptional({ nullable: true, maxLength: 2048, description: '근거 출처 URL' })
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    maxLength: 2048,
+    description: '근거 출처 URL',
+  })
   evidenceUrl!: string | null;
 
   @ApiPropertyOptional({
@@ -62,6 +67,7 @@ export class ContentDraftFieldItemDto {
   evidenceImageAssetId!: number | null;
 
   @ApiPropertyOptional({
+    type: String,
     nullable: true,
     maxLength: 128,
     description: '값을 추출·입력한 때의 itemCode',
@@ -158,13 +164,13 @@ export class ContentFactOutputDto {
   @ApiProperty({ type: 'integer', minimum: 1 })
   contentDraftFactId!: number;
 
-  @ApiPropertyOptional({ nullable: true, maxLength: 128 })
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 128 })
   sourceItemCode!: string | null;
 
-  @ApiPropertyOptional({ nullable: true, maxLength: 2048 })
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 2048 })
   sourcePageUrl!: string | null;
 
-  @ApiPropertyOptional({ nullable: true, maxLength: 128 })
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 128 })
   selectedColorRaw!: string | null;
 
   @ApiProperty({ type: 'string', format: 'date-time' })
@@ -192,6 +198,7 @@ export class ContentFieldInputRequestDto {
   value!: unknown;
 
   @ApiPropertyOptional({
+    type: String,
     nullable: true,
     maxLength: 2048,
     description: '근거 출처 URL. fact.origin이면 필수(422 EVIDENCE_URL_REQUIRED)',
@@ -201,7 +208,7 @@ export class ContentFieldInputRequestDto {
   @MaxLength(2048, { message: '2048자 이하여야 합니다.' })
   evidenceUrl?: string | null;
 
-  @ApiPropertyOptional({ nullable: true, description: '근거 원문 발췌(선택)' })
+  @ApiPropertyOptional({ type: String, nullable: true, description: '근거 원문 발췌(선택)' })
   @IsOptional()
   @IsString({ message: '글자여야 합니다.' })
   @MaxLength(2000, { message: '2000자 이하여야 합니다.' })

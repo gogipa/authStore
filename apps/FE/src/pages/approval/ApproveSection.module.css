@@ -33,3 +33,25 @@
   font: var(--type-caption);
   color: var(--color-failed);
 }
+
+/* 승인을 막는 필수 단계·게이트 링크(US-33 AC6, P5-01) */
+.blockers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.blockerList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.blockerLink {
+  font: var(--type-caption);
+  color: var(--color-accent);
+}

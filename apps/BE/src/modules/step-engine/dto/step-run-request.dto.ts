@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   Allow,
@@ -77,12 +77,34 @@ export class StepRunStartRequestDto {
  * 동작마다 모양이 달라 칸 검사는 `parseOwnerEditBody`가 한 곳에서 한다(422 VALIDATION_FAILED·KEEP_AS_IS_NOT_ALLOWED·
  * INVALID_STEP_CODE). 여기서는 받을 칸만 연다(그 밖 칸은 전역 ValidationPipe가 422).
  */
+/** 05-2 OwnerEditFieldInput(문서용 — 검사는 `parseOwnerEditBody`) */
+export class OwnerEditFieldInputDto {
+  @ApiProperty({
+    maxLength: 48,
+    pattern: '^((copy|fact|notice)\\.[a-z0-9_.]+|product_name)$',
+    description: 'content_draft_field.field_key 형식',
+  })
+  fieldKey!: string;
+
+  @ApiPropertyOptional({ description: '새 값(문서형)' })
+  value?: unknown;
+
+  @ApiPropertyOptional({ type: String, format: 'uri', maxLength: 2048, description: '근거 URL' })
+  evidenceUrl?: string;
+
+  @ApiPropertyOptional({ enum: ['OWNER', 'GENERATED'], description: '나란히 고르기' })
+  choose?: 'OWNER' | 'GENERATED';
+
+  @ApiPropertyOptional({ type: Boolean, description: "'재확인 필요'를 확인했다" })
+  recheckConfirmed?: boolean;
+}
+
 export class StepOwnerEditRequestDto {
-  @ApiPropertyOptional({ enum: ['EDIT', 'KEEP_AS_IS', 'RESTORE_VERSION'] })
+  @ApiProperty({ enum: ['EDIT', 'KEEP_AS_IS', 'RESTORE_VERSION'] })
   @Allow()
   ownerAction?: unknown;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: 'integer',
     minimum: 1,
     description: '화면이 본 현재 버전 / 다시 고를 버전',
@@ -90,7 +112,10 @@ export class StepOwnerEditRequestDto {
   @Allow()
   baseStepRunId?: unknown;
 
-  @ApiPropertyOptional({ description: 'EDIT(COPY·NOTICE_RAW·NOTICE_HTML) — 필드 값 편집' })
+  @ApiPropertyOptional({
+    type: [OwnerEditFieldInputDto],
+    description: 'EDIT(COPY·NOTICE_RAW·NOTICE_HTML) — 필드 값 편집',
+  })
   @Allow()
   fields?: unknown;
 

@@ -1,5 +1,7 @@
+import { Link } from 'react-router';
 import {
   API_BLOCKED_NOTE,
+  APPROVAL_BLOCKERS_TITLE,
   APPROVE_LABEL,
   APPROVING_LABEL,
   freshnessNote,
@@ -21,6 +23,8 @@ export interface ApproveSectionProps {
   pending?: boolean;
   /** 승인 요청 실패(409·422 문구) */
   error?: { message: string } | null;
+  /** 승인을 막는 필수 단계·게이트와 고칠 단계 화면(US-33 AC6 — 승인대기가 아닐 때) */
+  blockers?: readonly { text: string; href: string }[];
 }
 
 /**
@@ -37,6 +41,7 @@ export function ApproveSection({
   onApprove,
   pending = false,
   error = null,
+  blockers = [],
 }: ApproveSectionProps) {
   const why = pending ? APPROVING_LABEL : reason;
   return (
@@ -56,6 +61,20 @@ export function ApproveSection({
           <span role="alert" className={styles.error}>
             {error.message}
           </span>
+        ) : null}
+        {blockers.length > 0 ? (
+          <div className={styles.blockers}>
+            <span className={styles.summary}>{APPROVAL_BLOCKERS_TITLE}</span>
+            <ul aria-label={APPROVAL_BLOCKERS_TITLE} className={styles.blockerList}>
+              {blockers.map((blocker) => (
+                <li key={`${blocker.href}:${blocker.text}`}>
+                  <Link to={blocker.href} className={styles.blockerLink}>
+                    {blocker.text}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
       </div>
       <Button

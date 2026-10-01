@@ -38,9 +38,11 @@ export {
 export type { UploadResultImageItem, UploadResultOutput } from './model/upload';
 export {
   API_BLOCKED_NOTE,
+  APPROVAL_BLOCKERS_TITLE,
   APPROVAL_DESCRIPTION,
   APPROVAL_TITLE,
   APPROVE_LABEL,
+  approvalBlockersOf,
   approveState,
   categoryPathText,
   deliveryText,
@@ -72,6 +74,7 @@ export {
   tagsSummaryText,
 } from './model/approval';
 export type {
+  ApprovalBlocker,
   ApprovalPreview,
   ApprovalSizeOption,
   DraftOption,

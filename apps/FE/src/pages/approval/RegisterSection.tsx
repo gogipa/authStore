@@ -1,4 +1,5 @@
 import {
+  approvalBlockersOf,
   duplicateOf,
   EXISTING_PRODUCT_LABEL,
   existingProductText,
@@ -20,8 +21,17 @@ import {
   type PreValidationResult,
   type RegistrationOptionType,
 } from '@/features/registration';
-import { useCandidateGates, useCandidateSteps } from '@/features/step-engine';
-import { Button, Chip, DisabledReason, Disclosure, GateBadge, StatusChip } from '@/shared/ui';
+import { STEP_NAME, useCandidateGates, useCandidateSteps } from '@/features/step-engine';
+import { stepPath } from '@/shared/lib/steps';
+import {
+  Button,
+  Chip,
+  DisabledReason,
+  Disclosure,
+  GateBadge,
+  StatusChip,
+  stepStatusLabel,
+} from '@/shared/ui';
 import { ApproveSection } from './ApproveSection';
 import styles from './RegisterSection.module.css';
 
@@ -76,7 +86,18 @@ export function RegisterSection({
   const check = useCheckRegistrationResult(candidateId);
   const steps = useCandidateSteps(candidateId).data;
   const registerStep = steps?.items.find((item) => item.stepCode === 'REGISTER');
-  const g4 = useCandidateGates(candidateId).data?.items.find((item) => item.gate === 'G4');
+  const gates = useCandidateGates(candidateId).data?.items;
+  const g4 = gates?.find((item) => item.gate === 'G4');
+  // 승인대기가 아니어서 미리보기가 없을 때(예: ⑤를 다시 골라 ⑧이 재실행 필요) 무엇이 막는지와 고칠 단계(US-33 AC6)
+  const blockers = preview
+    ? []
+    : approvalBlockersOf(
+        steps?.items,
+        gates,
+        (status, failureKind) =>
+          stepStatusLabel(status, failureKind as Parameters<typeof stepStatusLabel>[1]),
+        STEP_NAME,
+      ).map((b) => ({ text: b.text, href: stepPath(candidateId, b.stepCode) }));
   const duplicate = duplicateOf(preview?.duplicate, result?.duplicate);
   const mode = registerModeView({
     displayStatusType: preview?.displayStatusType ?? latest?.displayStatusType ?? 'SUSPENSION',
@@ -197,6 +218,7 @@ export function RegisterSection({
           onApprove={onApprove}
           pending={create.isPending}
           error={create.error}
+          blockers={blockers}
         />
       )}
     </section>

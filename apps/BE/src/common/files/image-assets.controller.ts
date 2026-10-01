@@ -49,6 +49,7 @@ export class ImageAssetsController {
 
   @Get(':imageAssetId')
   @ApiOperation({ operationId: 'getImageAsset', summary: '이미지 메타' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam({ name: 'imageAssetId', type: 'integer', description: '이미지(image_asset) id' })
   @ApiOkResponse({ type: ImageAssetMetaDto, description: '이미지 메타' })
   @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host)' })
@@ -63,10 +64,11 @@ export class ImageAssetsController {
    */
   @Get(':imageAssetId/file')
   @ApiOperation({ operationId: 'getImageAssetFile', summary: '이미지 파일 받기' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam({ name: 'imageAssetId', type: 'integer', description: '이미지(image_asset) id' })
   @ApiHeader({ name: 'If-None-Match', required: false, description: '이전에 받은 ETag(sha256)' })
   @ApiProduces('image/*')
-  @ApiOkResponse({ description: '이미지 파일' })
+  @ApiOkResponse({ description: '이미지 파일', schema: { type: 'string', format: 'binary' } })
   @ApiResponse({ status: 304, description: '파일이 바뀌지 않았다(If-None-Match 일치)' })
   @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host)' })
   @ApiNotFoundResponse({ description: 'IMAGE_ASSET_NOT_FOUND · IMAGE_FILE_MISSING' })

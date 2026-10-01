@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryObserver } from '@tanstack/react-query';
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import type { components } from './schema';
 import { FakeEventSource } from '@/test/fakeEventSource';
@@ -594,6 +594,47 @@ describe('connectProgressEvents', () => {
 
     expect(a.invalidate).toHaveBeenCalledTimes(1);
     expect(b.invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it('첫 조회가 오는 중에 이벤트가 오면 그 요청을 끊고 다시 읽는다(이벤트 전 응답으로 멈추지 않는다, P5-01)', async () => {
+    const queryClient = new QueryClient();
+    connect(queryClient);
+    const replies: Array<(value: string) => void> = [];
+    const queryFn = vi.fn(
+      ({ signal }: { signal: AbortSignal }) =>
+        new Promise<string>((resolve, reject) => {
+          replies.push(resolve);
+          signal.addEventListener('abort', () => reject(new Error('aborted')));
+        }),
+    );
+    const observer = new QueryObserver(queryClient, {
+      queryKey: ['integrations', 'getCallUsage'],
+      queryFn,
+    });
+    const unsubscribe = observer.subscribe(() => undefined);
+    await vi.waitFor(() => expect(queryFn).toHaveBeenCalledTimes(1));
+
+    FakeEventSource.latest().emit('call-usage.changed', callUsageChanged(39));
+    await vi.waitFor(() => expect(queryFn).toHaveBeenCalledTimes(2));
+    replies[0]?.('이벤트 전');
+    replies[1]?.('이벤트 뒤');
+    await vi.waitFor(() => expect(observer.getCurrentResult().data).toBe('이벤트 뒤'));
+    unsubscribe();
+  });
+
+  it('데이터가 있는 쿼리는 바로 무효화한다(요청을 끊지 않는다)', async () => {
+    const { queryClient, invalidate } = setup();
+    connect(queryClient);
+    queryClient.setQueryData(['integrations', 'getCallUsage'], 'cached');
+    const cancel = vi.spyOn(
+      queryClient.getQueryCache().find({ queryKey: ['integrations', 'getCallUsage'] })!,
+      'cancel',
+    );
+
+    FakeEventSource.latest().emit('call-usage.changed', callUsageChanged(39));
+
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    expect(cancel).not.toHaveBeenCalled();
   });
 
   it('모르는 이벤트·표에 없는 이벤트·읽을 수 없는 data는 무시한다', () => {

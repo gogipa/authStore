@@ -12175,12 +12175,14 @@ components:
           - null
           description: 동일 상품 오너 최종 판단
         shippingYen:
+          x-milestone: M2
           type:
           - integer
           - 'null'
           minimum: 0
           description: (M2) 송료 직접 입력(shippingSource=OWNER_INPUT). null이면 기본 규칙으로 되돌림
         couponPercent:
+          x-milestone: M2
           type:
           - number
           - 'null'
@@ -12188,17 +12190,20 @@ components:
           maximum: 100
           description: (M2) 쿠폰 %(엔으로 바꿔 couponYen에 반영)
         couponMinAmountYen:
+          x-milestone: M2
           type:
           - integer
           - 'null'
           minimum: 0
           description: (M2)
         couponCombinable:
+          x-milestone: M2
           type:
           - boolean
           - 'null'
           description: (M2)
         couponPageUrl:
+          x-milestone: M2
           type:
           - string
           - 'null'

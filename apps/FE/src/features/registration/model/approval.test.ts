@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { approvalPreview, CHECK_CODES, preValidationResult } from '@/test/fixtures/registration';
 import {
+  approvalBlockersOf,
   approveState,
   draftOptions,
   localizeDetailContent,
@@ -134,5 +135,54 @@ describe('승인 화면 표시 규칙(P4-02)', () => {
         itemCode: 'shop-a:1',
       }),
     ).toBe('비교 없이 확정 · shop-a:1');
+  });
+});
+
+describe('approvalBlockersOf — 승인을 막는 필수 단계·게이트(US-33 AC6, P5-01)', () => {
+  const label = (status: string, failureKind?: string | null) =>
+    failureKind === 'INTERRUPTED' ? `${status}(중단됨)` : status;
+  const names = {
+    SOURCING: '② 소싱',
+    PRICING: '③ 판정',
+    CATEGORY: '④ 카테고리',
+    THUMBNAIL: '⑤ 썸네일',
+    COPY: '⑥-1 카피',
+    NOTICE_RAW: '⑥-2 원산지·소재',
+    NOTICE_HTML: '⑥-3 고시·HTML',
+    TAGS: '⑦ 태그',
+    UPLOAD: '⑧ 이미지 업로드',
+    REGISTER: '⑨ 등록',
+  } as const;
+  const rail = (status: Partial<Record<keyof typeof names, string>>) =>
+    (Object.keys(names) as (keyof typeof names)[]).map((stepCode) => ({
+      stepCode,
+      status: (status[stepCode] ?? 'COMPLETED') as 'COMPLETED',
+      currentRun: null,
+    }));
+
+  it('필수 단계(②~⑧) 중 완료가 아닌 것만, ⑨는 보지 않는다', () => {
+    expect(
+      approvalBlockersOf(rail({ UPLOAD: 'RERUN_REQUIRED', REGISTER: 'NOT_RUN' }), [], label, names),
+    ).toEqual([{ stepCode: 'UPLOAD', text: '⑧ 이미지 업로드 · RERUN_REQUIRED' }]);
+  });
+
+  it('G2·G3 통과가 무효면 근거 단계(③·⑤)로 잇는다', () => {
+    expect(
+      approvalBlockersOf(
+        rail({}),
+        [
+          { gate: 'G2', passed: false },
+          { gate: 'G3', passed: true },
+          { gate: 'G4', passed: false },
+        ],
+        label,
+        names,
+      ),
+    ).toEqual([{ stepCode: 'PRICING', text: 'G2 판정 확정 · 다시 확인' }]);
+  });
+
+  it('모두 완료·통과면 빈 목록, 레일을 아직 못 읽었으면 빈 목록', () => {
+    expect(approvalBlockersOf(rail({}), [{ gate: 'G2', passed: true }], label, names)).toEqual([]);
+    expect(approvalBlockersOf(undefined, undefined, label, names)).toEqual([]);
   });
 });

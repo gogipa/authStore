@@ -21,6 +21,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiServiceUnavailableResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
@@ -94,6 +95,7 @@ export class CandidateStepRailController {
 
   @Get()
   @ApiOperation({ operationId: 'listCandidateSteps', summary: '단계 레일' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam(CANDIDATE_ID_PARAM)
   @ApiOkResponse({ type: CandidateStepRailDto })
   @ApiForbiddenResponse(FORBIDDEN)
@@ -105,6 +107,8 @@ export class CandidateStepRailController {
   @Post(':stepCode/runs')
   @HttpCode(202)
   @ApiOperation({ operationId: 'startCandidateStepRun', summary: '단계 하나 실행·다시 실행' })
+  @ApiResponse({ status: 400, description: 'MALFORMED_REQUEST' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam(CANDIDATE_ID_PARAM)
   @ApiParam(STEP_CODE_PARAM)
   @ApiHeader(CLIENT_HEADER)
@@ -138,6 +142,7 @@ export class CandidateStepRailController {
 
   @Get(':stepCode/runs')
   @ApiOperation({ operationId: 'listCandidateStepRuns', summary: '단계별 버전 이력' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam(CANDIDATE_ID_PARAM)
   @ApiParam(STEP_CODE_PARAM)
   @ApiOkResponse({ type: StepRunVersionPageDto })
@@ -157,6 +162,7 @@ export class CandidateStepRailController {
     operationId: 'getCandidateStepStaleDiff',
     summary: '재실행 필요 단계의 바뀐 입력',
   })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam(CANDIDATE_ID_PARAM)
   @ApiParam(STEP_CODE_PARAM)
   @ApiOkResponse({ type: StepStaleDiffDto })
@@ -176,6 +182,9 @@ export class CandidateStepRailController {
     operationId: 'createCandidateStepOwnerEdit',
     summary: '오너 수정 새 버전 만들기',
   })
+  @ApiResponse({ status: 400, description: 'MALFORMED_REQUEST' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
+  @ApiResponse({ status: 503, description: 'SETTINGS_INVALID' })
   @ApiParam(CANDIDATE_ID_PARAM)
   @ApiParam(STEP_CODE_PARAM)
   @ApiHeader(CLIENT_HEADER)

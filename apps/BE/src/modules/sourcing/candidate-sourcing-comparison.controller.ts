@@ -5,10 +5,12 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import { SourcingComparisonDetailDto } from './dto/sourcing-comparison.dto.js';
 import { NotFoundIdPipe } from './sourcing-ids.js';
 import { SourcingComparisonsService } from './sourcing-comparisons.service.js';
 
@@ -25,7 +27,26 @@ export class CandidateSourcingComparisonController {
   @Get()
   @ApiOperation({ operationId: 'getSourcingComparison', summary: '② 비교표 조회' })
   @ApiParam({ name: 'candidateId', type: 'integer', required: true })
-  @ApiOkResponse({ description: '비교표 한 장' })
+  @ApiQuery({
+    name: 'stepRunId',
+    type: 'integer',
+    required: false,
+    description: '볼 ② 버전의 실행 id. 없으면 현재 버전',
+  })
+  @ApiQuery({
+    name: 'includeNoMatch',
+    type: Boolean,
+    required: false,
+    description: 'NO_MATCH 행도 줄지(기본 false)',
+  })
+  @ApiQuery({
+    name: 'sort',
+    type: String,
+    isArray: true,
+    required: false,
+    description: 'effectivePriceYen(기본, asc)·searchRank·fetchOrder. `필드,asc|desc`',
+  })
+  @ApiOkResponse({ type: SourcingComparisonDetailDto, description: '비교표 한 장' })
   @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host)' })
   @ApiNotFoundResponse({
     description: 'CANDIDATE_NOT_FOUND · STEP_RUN_NOT_FOUND · STEP_OUTPUT_NOT_FOUND',

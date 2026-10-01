@@ -6,6 +6,7 @@ import {
   ApiOperation,
   ApiProduces,
   ApiPropertyOptional,
+  ApiResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
@@ -53,13 +54,18 @@ export class EventsController {
    */
   @Sse('events')
   @ApiOperation({ operationId: 'streamProgressEvents', summary: 'SSE 진행 알림 스트림' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiProduces('text/event-stream')
   @ApiHeader({
     name: 'Last-Event-ID',
     required: false,
     description: '재연결 때 브라우저가 붙이는 마지막 이벤트 id. 재전송은 하지 않는다',
   })
-  @ApiOkResponse({ description: '이벤트 스트림' })
+  @ApiOkResponse({
+    description: '이벤트 스트림',
+    // 프레임 모양(이벤트 이름별 oneOf)은 05-2 ProgressEventFrame이 원본이다(구현 명세는 글 스트림으로만 적는다)
+    schema: { type: 'string', description: 'SSE 프레임(05-2 ProgressEventFrame)' },
+  })
   @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host)' })
   @ApiUnprocessableEntityResponse({ description: 'INVALID_QUERY_PARAMETER — candidateId 형식' })
   stream(@Query() query: StreamProgressEventsQuery): Observable<MessageEvent> {

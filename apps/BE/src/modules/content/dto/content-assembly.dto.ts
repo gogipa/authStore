@@ -114,7 +114,12 @@ export class ContentAssemblyOutputDto {
   @ApiProperty({ description: '복수 원산지 표시' })
   originAreaPlural!: boolean;
 
-  @ApiPropertyOptional({ nullable: true, maxLength: 200, description: '03·04 코드일 때 상세 표기' })
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    maxLength: 200,
+    description: '03·04 코드일 때 상세 표기',
+  })
   originAreaContent!: string | null;
 
   @ApiProperty({ minLength: 1, maxLength: 100, description: '수입자(구매대행 프로필 스냅샷)' })

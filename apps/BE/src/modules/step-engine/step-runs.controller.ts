@@ -5,6 +5,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { ApiException } from '../../common/errors/api.exception.js';
@@ -34,6 +35,7 @@ export class StepRunsController {
 
   @Get(':stepRunId')
   @ApiOperation({ operationId: 'getStepRun', summary: '단계 실행 한 건' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam({ name: 'stepRunId', type: 'integer', required: true })
   @ApiOkResponse({ type: StepRunDetailDto })
   @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host)' })

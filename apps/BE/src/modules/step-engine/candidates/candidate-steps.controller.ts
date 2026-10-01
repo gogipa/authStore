@@ -3,6 +3,7 @@ import {
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
@@ -21,6 +22,7 @@ export class CandidateStepsController {
     operationId: 'listAttentionCandidateSteps',
     summary: '재실행 필요·멈춘 후보 단계 모아 보기',
   })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiOkResponse({ type: CandidateStepAttentionPageDto })
   @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host)' })
   @ApiUnprocessableEntityResponse({ description: 'INVALID_QUERY_PARAMETER' })

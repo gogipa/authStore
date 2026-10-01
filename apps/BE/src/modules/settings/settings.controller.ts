@@ -28,6 +28,7 @@ export class SettingsController {
     operationId: 'getSettings',
     summary: '현재 설정과 설정 파일 검사 결과 조회',
   })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiOkResponse({ type: SettingsViewDto, description: '현재 설정' })
   @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host)' })
   @ApiServiceUnavailableResponse({
@@ -43,6 +44,7 @@ export class SettingsController {
     operationId: 'createSettingsSnapshot',
     summary: '설정 파일 다시 읽기·검사',
   })
+  @ApiResponse({ status: 400, description: 'MALFORMED_REQUEST' })
   @ApiHeader({ name: 'X-AutoStore-Client', required: true, description: '앱 화면 요청 표시(값 1)' })
   @ApiOkResponse({ type: SettingsReloadResultDto, description: '같은 파일 — 기존 스냅샷' })
   @ApiCreatedResponse({

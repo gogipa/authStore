@@ -299,7 +299,7 @@ describe('④ 카테고리 구역(SCR-04 #category, P2-06)', () => {
     expect(
       await section.findByText('④ 카테고리를 실행하면 리프 카테고리 후보가 여기에 나옵니다.'),
     ).toBeInTheDocument();
-    await userEvent.click(section.getByRole('button', { name: '실행' }));
+    await userEvent.click(await section.findByRole('button', { name: '실행' }));
     await waitFor(() =>
       expect(
         api.requests.filter(

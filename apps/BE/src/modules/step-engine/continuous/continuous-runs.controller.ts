@@ -18,6 +18,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiServiceUnavailableResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
@@ -56,6 +57,8 @@ export class CandidateContinuousRunsController {
   @Post()
   @HttpCode(202)
   @ApiOperation({ operationId: 'startCandidateContinuousRun', summary: '연속 실행 시작' })
+  @ApiResponse({ status: 400, description: 'MALFORMED_REQUEST' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam({ name: 'candidateId', type: 'integer', required: true })
   @ApiHeader({ name: 'X-AutoStore-Client', required: true, description: '앱 화면 요청 표시(값 1)' })
   @ApiBody({ type: ContinuousRunStartRequestDto })
@@ -90,6 +93,7 @@ export class ContinuousRunsController {
 
   @Get(':stepChainId')
   @ApiOperation({ operationId: 'getContinuousRun', summary: '연속 실행 진행·멈춘 이유' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam({ name: 'stepChainId', type: 'integer', required: true })
   @ApiOkResponse({ type: ContinuousRunDetailDto })
   @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host)' })

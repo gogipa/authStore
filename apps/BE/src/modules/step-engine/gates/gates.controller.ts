@@ -9,6 +9,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
@@ -43,6 +44,8 @@ export class GatesController {
 
   @Post(':gateCode/pass')
   @ApiOperation({ operationId: 'passCandidateGate', summary: 'G2·G3 통과 기록' })
+  @ApiResponse({ status: 400, description: 'MALFORMED_REQUEST' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam(CANDIDATE_ID_PARAM)
   @ApiParam({ name: 'gateCode', required: true, enum: ['G2', 'G3'] })
   @ApiHeader({ name: 'X-AutoStore-Client', required: true, description: '앱 화면 요청 표시(값 1)' })
@@ -79,6 +82,7 @@ export class GatesController {
 
   @Get()
   @ApiOperation({ operationId: 'listCandidateGates', summary: '게이트 상태(G1~G4)' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam(CANDIDATE_ID_PARAM)
   @ApiOkResponse({ type: CandidateGateListDto })
   @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host)' })

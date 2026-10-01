@@ -14,8 +14,22 @@ import { CandidateBlockReasonDto } from './step-run-response.dto.js';
  * 칸 검사는 `parseGatePassBody`가 한 곳에서 한다(422 VALIDATION_FAILED). 여기서는 받을 칸만 연다(그 밖 칸은 전역
  * ValidationPipe가 422).
  */
+/** 05-2 GateThumbnailChecklist(G3 체크리스트 7칸 — 검사는 `parseGatePassBody`·G3 공급자) */
+export class GateThumbnailChecklistDto {
+  @ApiProperty({ type: Boolean, description: '신발 비중 70% 이상' }) shoeRatioOver70!: boolean;
+  @ApiProperty({ type: Boolean, description: '디테일 일치' }) detailMatch!: boolean;
+  @ApiProperty({ type: Boolean, description: '선택 색상과 일치' })
+  colorMatchesSelectedColor!: boolean;
+  @ApiProperty({ type: Boolean, description: '레퍼런스에 사람 없음' }) referenceNoPerson!: boolean;
+  @ApiProperty({ type: Boolean, description: '실존 인물 연상 없음' })
+  noRealPersonResemblance!: boolean;
+  @ApiProperty({ type: Boolean, description: '문구·가격 없음' }) noTextOrPrice!: boolean;
+  @ApiProperty({ type: Boolean, description: '상품 1개·모델 1명' })
+  singleProductSingleModel!: boolean;
+}
+
 export class GatePassRequestDto {
-  @ApiPropertyOptional({ type: 'integer', minimum: 1, description: 'G2 ③ 현재 버전 · G3 ⑤ 버전' })
+  @ApiProperty({ type: 'integer', minimum: 1, description: 'G2 ③ 현재 버전 · G3 ⑤ 버전' })
   @Allow()
   basisStepRunId?: unknown;
 
@@ -27,11 +41,11 @@ export class GatePassRequestDto {
   @Allow()
   additionalImageAssetIds?: unknown;
 
-  @ApiPropertyOptional({ type: 'object', additionalProperties: true, description: 'G3 체크리스트' })
+  @ApiPropertyOptional({ type: GateThumbnailChecklistDto, description: 'G3 체크리스트' })
   @Allow()
   checklist?: unknown;
 
-  @ApiPropertyOptional({ description: "G3 '같은 상품·색상' 확인" })
+  @ApiPropertyOptional({ type: Boolean, description: "G3 '같은 상품·색상' 확인" })
   @Allow()
   sameProductColorConfirmed?: unknown;
 }

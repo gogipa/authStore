@@ -20,6 +20,7 @@ import { AnchorService, comparisonLocation } from './anchor.service.js';
 import { AdultProductConfirmationDto } from './dto/rakuten.dto.js';
 import {
   SourcingAnchorRequestDto,
+  SourcingComparisonRowViewDto,
   SourcingJobAcceptedDto,
   SourcingManualRowRequestDto,
   SourcingSelectionRequestDto,
@@ -121,7 +122,7 @@ export class SourcingComparisonsController {
   @ApiParam({ name: 'sourcingComparisonId', type: 'integer', required: true })
   @ApiHeader(CLIENT_HEADER)
   @ApiBody({ type: SourcingManualRowRequestDto })
-  @ApiCreatedResponse({ description: '넣은 행(검증됨)' })
+  @ApiCreatedResponse({ type: SourcingComparisonRowViewDto, description: '넣은 행(검증됨)' })
   @ApiResponse({ status: 400, description: 'MALFORMED_REQUEST' })
   @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host·Origin·X-AutoStore-Client)' })
   @ApiNotFoundResponse({ description: 'SOURCING_COMPARISON_NOT_FOUND · RAKUTEN_ITEM_NOT_FOUND' })

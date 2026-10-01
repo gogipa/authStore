@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { FxRateRecordDto } from '../fx/dto/fx-rate.dto.js';
 
 const STEP_STATUSES = [
@@ -127,6 +127,7 @@ export class PriceJudgementDetailDto {
   rakutenItemId!: number | null;
 
   @ApiProperty({
+    type: String,
     format: 'date-time',
     nullable: true,
     description: '판정에 쓴 라쿠텐 페이지 수집 시각',
@@ -134,6 +135,7 @@ export class PriceJudgementDetailDto {
   rakutenPageCollectedAt!: string | null;
 
   @ApiProperty({
+    type: String,
     format: 'date-time',
     nullable: true,
     description: 'rakutenPageCollectedAt + 설정 6시간(계산)',
@@ -218,7 +220,7 @@ export class PriceJudgementDetailDto {
   @ApiProperty({ type: [PriceJudgementSizeBreakdownDto] })
   sizes!: PriceJudgementSizeBreakdownDto[];
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: [PriceJudgementUnjudgedSizeDto],
     description: '판정하지 않은 목표 사이즈(② 재고 칸 품절·取り寄せ·없음). P2-05 Proposed',
   })

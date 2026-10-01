@@ -88,3 +88,205 @@ export class SourcingSelectionResultDto {
   @ApiProperty({ type: [String], description: '재실행 필요로 바뀐 뒷단계' })
   staleDownstreamSteps!: string[];
 }
+
+/** 05-2 SourcingComparisonRow.aiMatch(AI 보조 판정 참고값) */
+export class SourcingAiMatchDto {
+  @ApiPropertyOptional({ type: Boolean })
+  match?: boolean;
+  @ApiPropertyOptional({ type: Number })
+  confidence?: number;
+  @ApiPropertyOptional({ type: String })
+  reason?: string;
+}
+
+/** 05-2 SourcingComparisonRow(응답 문서용 — 값은 sourcing-comparison.view.ts가 만든다) */
+export class SourcingComparisonRowViewDto {
+  @ApiProperty({ type: 'integer', minimum: 1 })
+  id!: number;
+  @ApiProperty({ type: 'integer', minimum: 1 })
+  sourcingComparisonId!: number;
+  @ApiProperty({ enum: ['API', 'MANUAL'] })
+  rowSource!: string;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  searchRank?: number | null;
+  @ApiProperty({ type: String, maxLength: 128 })
+  itemCode!: string;
+  @ApiProperty({ type: String, maxLength: 64 })
+  shopCode!: string;
+  @ApiPropertyOptional({ type: String, maxLength: 255, nullable: true })
+  shopName?: string | null;
+  @ApiProperty({ type: String })
+  itemName!: string;
+  @ApiProperty({ type: String, maxLength: 2048 })
+  itemUrl!: string;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  apiItemPriceYen?: number | null;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  apiItemPriceMin3Yen?: number | null;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  apiPointRate?: number | null;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  apiPostageFlag?: number | null;
+  @ApiPropertyOptional({ type: 'integer', minimum: 0, nullable: true })
+  reviewCount?: number | null;
+  @ApiPropertyOptional({ type: Number, minimum: 0, maximum: 5, nullable: true })
+  reviewAverage?: number | null;
+  @ApiPropertyOptional({ type: Boolean, nullable: true })
+  shipOverseas?: boolean | null;
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
+  apiCollectedAt?: string | null;
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
+  rakutenPageCollectedAt?: string | null;
+  @ApiPropertyOptional({ type: String, maxLength: 128, nullable: true })
+  modelCodeNorm?: string | null;
+  @ApiPropertyOptional({ type: String, maxLength: 64, nullable: true })
+  colorCode?: string | null;
+  @ApiPropertyOptional({ enum: ['MATCH', 'NEEDS_REVIEW', 'NO_MATCH'], nullable: true })
+  anchorMatch?: string | null;
+  @ApiPropertyOptional({ type: Boolean, nullable: true })
+  janMatch?: boolean | null;
+  @ApiPropertyOptional({ type: Boolean, nullable: true })
+  makerModelMatch?: boolean | null;
+  @ApiPropertyOptional({ type: SourcingAiMatchDto, nullable: true })
+  aiMatch?: SourcingAiMatchDto | null;
+  @ApiPropertyOptional({ enum: ['MATCH', 'NO_MATCH'], nullable: true })
+  ownerMatchDecision?: string | null;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  fetchOrder?: number | null;
+  @ApiProperty({ type: Boolean })
+  isVerified!: boolean;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  rakutenItemId?: number | null;
+  @ApiProperty({ type: Boolean })
+  manualCheckRequired!: boolean;
+  @ApiPropertyOptional({ type: String, maxLength: 500, nullable: true })
+  manualCheckReason?: string | null;
+  @ApiPropertyOptional({ type: 'integer', minimum: 0, nullable: true })
+  inStockSizeCount?: number | null;
+  @ApiPropertyOptional({ type: Boolean, nullable: true })
+  stockPass?: boolean | null;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  representativeRakutenSkuId?: number | null;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  representativePriceYen?: number | null;
+  @ApiPropertyOptional({ type: 'integer', minimum: 0, nullable: true })
+  shippingYen?: number | null;
+  @ApiPropertyOptional({ enum: ['FREE', 'DEFAULT_ESTIMATE', 'OWNER_INPUT'], nullable: true })
+  shippingSource?: string | null;
+  @ApiProperty({ type: 'integer', minimum: 0 })
+  couponYen!: number;
+  @ApiProperty({ type: Number, minimum: 0 })
+  shopEventMultiplier!: number;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  pointBaseAmountYen?: number | null;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  pointsBasePt?: number | null;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  pointsItemPt?: number | null;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  pointsShopEventPt?: number | null;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  pointsSpuPt?: number | null;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  pointsTotalPt?: number | null;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  effectivePriceYen?: number | null;
+  @ApiProperty({ type: Boolean })
+  isSelected!: boolean;
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
+  saleStartsAt?: string | null;
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
+  saleEndsAt?: string | null;
+  @ApiPropertyOptional({ type: Number, minimum: 0, nullable: true })
+  couponPercent?: number | null;
+  @ApiPropertyOptional({ type: 'integer', minimum: 0, nullable: true })
+  couponMinAmountYen?: number | null;
+  @ApiPropertyOptional({ type: Boolean, nullable: true })
+  couponCombinable?: boolean | null;
+  @ApiPropertyOptional({ type: String, maxLength: 2048, nullable: true })
+  couponPageUrl?: string | null;
+  @ApiPropertyOptional({ type: [String] })
+  riskFlags?: string[];
+  @ApiProperty({ type: String, format: 'date-time' })
+  createdAt!: string;
+  @ApiProperty({ type: String, format: 'date-time' })
+  updatedAt!: string;
+}
+
+/** 05-2 SourcingComparisonDetail(응답 문서용 — 값은 sourcing-comparison.view.ts가 만든다) */
+export class SourcingComparisonDetailDto {
+  @ApiProperty({ type: 'integer', minimum: 1 })
+  id!: number;
+  @ApiProperty({ type: 'integer', minimum: 1 })
+  stepRunId!: number;
+  @ApiProperty({ type: 'integer', minimum: 1 })
+  candidateId!: number;
+  @ApiProperty({ type: 'integer', minimum: 1 })
+  version!: number;
+  @ApiProperty({
+    enum: ['NOT_RUN', 'RUNNING', 'WAITING_INPUT', 'COMPLETED', 'FAILED', 'RERUN_REQUIRED'],
+  })
+  stepStatus!: string;
+  @ApiProperty({ type: Boolean })
+  isCurrent!: boolean;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  baseSourcingComparisonId?: number | null;
+  @ApiProperty({ enum: ['SEARCH_COMPARE', 'URL_CREATE', 'REFETCH'] })
+  action!: string;
+  @ApiPropertyOptional({ type: String, maxLength: 128, nullable: true })
+  searchKeyword?: string | null;
+  @ApiPropertyOptional({ type: String, maxLength: 2048, nullable: true })
+  sourceUrl?: string | null;
+  @ApiPropertyOptional({ enum: ['SEARCH_PICK', 'CODE_ENTRY', 'URL_ITEM'], nullable: true })
+  anchorInputMethod?: string | null;
+  @ApiPropertyOptional({ type: String, maxLength: 128, nullable: true })
+  anchorItemCode?: string | null;
+  @ApiPropertyOptional({ type: String, maxLength: 128, nullable: true })
+  anchorModelCode?: string | null;
+  @ApiPropertyOptional({ type: String, maxLength: 128, nullable: true })
+  anchorModelCodeNorm?: string | null;
+  @ApiPropertyOptional({ type: String, maxLength: 64, nullable: true })
+  anchorColorCode?: string | null;
+  @ApiPropertyOptional({ type: String, maxLength: 128, nullable: true })
+  anchorColorLabel?: string | null;
+  @ApiProperty({ type: Boolean })
+  exploreMode!: boolean;
+  @ApiProperty({ type: Boolean })
+  comparisonPerformed!: boolean;
+  @ApiPropertyOptional({ type: 'integer', nullable: true })
+  selectedRakutenItemId?: number | null;
+  @ApiPropertyOptional({ type: 'integer', minimum: 0, nullable: true })
+  shippingYen?: number | null;
+  @ApiPropertyOptional({ enum: ['FREE', 'DEFAULT_ESTIMATE', 'OWNER_INPUT'], nullable: true })
+  shippingSource?: string | null;
+  @ApiPropertyOptional({ enum: ['MALE', 'FEMALE'], nullable: true })
+  detectedGender?: string | null;
+  @ApiPropertyOptional({ enum: ['KEYWORD_CID', 'GENRE_PATH', 'ITEM_NAME'], nullable: true })
+  genderBasis?: string | null;
+  @ApiPropertyOptional({ enum: ['MALE', 'FEMALE'], nullable: true })
+  ownerGender?: string | null;
+  @ApiPropertyOptional({ type: Boolean, nullable: true })
+  childSizeSuspect?: boolean | null;
+  @ApiPropertyOptional({ enum: ['IN_SCOPE', 'OUT_OF_SCOPE', 'NOT_FOUND'], nullable: true })
+  genreScope?: string | null;
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
+  adultProductConfirmedAt?: string | null;
+  @ApiProperty({ type: 'object', additionalProperties: true })
+  params!: Record<string, unknown>;
+  @ApiProperty({ type: String })
+  creditText!: string;
+  @ApiProperty({ type: [SourcingComparisonRowViewDto] })
+  rows!: SourcingComparisonRowViewDto[];
+  @ApiProperty({ type: String, format: 'date-time' })
+  createdAt!: string;
+  @ApiProperty({ type: String, format: 'date-time' })
+  updatedAt!: string;
+}
+
+/** 05-2 SourcingRowRecalculation(행 수정 응답) */
+export class SourcingRowRecalculationDto {
+  @ApiProperty({ type: SourcingComparisonRowViewDto })
+  row!: SourcingComparisonRowViewDto;
+  @ApiProperty({ type: 'integer', isArray: true, description: '실질가 순서(행 id)' })
+  rankedRowIds!: number[];
+}

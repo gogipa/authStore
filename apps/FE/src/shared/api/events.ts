@@ -367,6 +367,25 @@ export function onProgressEvent<N extends ProgressEventName>(
   };
 }
 
+/**
+ * 이벤트 뒤 무효화. 첫 조회가 아직 오는 중인(데이터가 없는) 쿼리는 TanStack Query가 무효화를 그 요청에 합쳐 버린다(`cancelRefetch`는
+ * 데이터가 있을 때만 끊는다). 그 요청의 응답은 이벤트 전 상태일 수 있어 화면이 그대로 멈춘다 — P5-01 흐름 테스트가 찾았다
+ * (② 실행 직후 열린 후보 화면의 레일이 '실행중'에 머묾). 그런 쿼리는 먼저 끊고(되돌림) 다시 읽는다. 나머지는 바로 무효화한다.
+ */
+function invalidateAfterEvent(client: QueryClient, queryKey: QueryKey): void {
+  const firstInFlight = client
+    .getQueryCache()
+    .findAll({ queryKey })
+    .filter((query) => query.state.data === undefined && query.state.fetchStatus === 'fetching');
+  if (firstInFlight.length === 0) {
+    void client.invalidateQueries({ queryKey });
+    return;
+  }
+  void Promise.all(firstInFlight.map((query) => query.cancel({ revert: true }))).then(() =>
+    client.invalidateQueries({ queryKey }),
+  );
+}
+
 function handleProgressEvent(connection: SharedConnection, name: ProgressEventName, event: Event) {
   const resolve = EVENT_INVALIDATIONS[name] as ((data: unknown) => QueryKey[]) | undefined;
   const listeners = dataListeners.get(name);
@@ -381,7 +400,7 @@ function handleProgressEvent(connection: SharedConnection, name: ProgressEventNa
   if (resolve) {
     const keys = resolve(data);
     eachClient(connection, (client) => {
-      for (const queryKey of keys) void client.invalidateQueries({ queryKey });
+      for (const queryKey of keys) invalidateAfterEvent(client, queryKey);
     });
   }
   for (const listener of listeners ?? []) {

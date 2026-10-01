@@ -462,3 +462,65 @@ export function approveState(input: {
   }
   return { enabled: true, reason: null };
 }
+
+// ── 승인을 막는 필수 단계·게이트(US-33 AC6·RG-08 — P5-01 흐름 테스트가 찾은 빈칸) ──
+
+/** 필수 단계(②~⑧). ⑨는 승인이 만든다 */
+const REQUIRED_STEPS: readonly StepCode[] = [
+  'SOURCING',
+  'PRICING',
+  'CATEGORY',
+  'THUMBNAIL',
+  'COPY',
+  'NOTICE_RAW',
+  'NOTICE_HTML',
+  'TAGS',
+  'UPLOAD',
+];
+
+/** 승인을 막는 곳 하나: 단계(완료가 아님) 또는 게이트(G2·G3 통과 무효) — 고칠 단계 화면으로 잇는다 */
+export interface ApprovalBlocker {
+  /** 고칠 단계(게이트면 근거 단계) */
+  stepCode: StepCode;
+  /** 화면 글(예: '⑧ 이미지 업로드 · 재실행 필요', 'G3 썸네일 선택 · 다시 확인') */
+  text: string;
+}
+
+type RailLike = {
+  stepCode: StepCode;
+  status: components['schemas']['StepStatus'];
+  currentRun?: { failureKind?: string | null } | null;
+};
+type GateLike = { gate: string; passed: boolean };
+
+/**
+ * 후보가 승인대기가 아니어서 미리보기·사전 검증이 409일 때도(예: ⑤를 다시 골라 ⑧이 재실행 필요 → 작업중) 무엇이 승인을 막는지와 고칠
+ * 단계를 보인다(US-33 AC6 '최종 승인 버튼이 꺼지고 해당 단계로 가는 링크'). 레일·게이트 목록만 읽는다(새 API 없음).
+ * `statusLabel`은 단계 상태 글(shared/ui `stepStatusLabel`)을 화면이 넘긴다.
+ */
+export function approvalBlockersOf(
+  items: readonly RailLike[] | undefined,
+  gates: readonly GateLike[] | undefined,
+  statusLabel: (status: RailLike['status'], failureKind?: string | null) => string,
+  stepName: Record<StepCode, string>,
+): ApprovalBlocker[] {
+  const blockers: ApprovalBlocker[] = [];
+  for (const code of REQUIRED_STEPS) {
+    const item = items?.find((i) => i.stepCode === code);
+    if (!item || item.status === 'COMPLETED') continue;
+    blockers.push({
+      stepCode: code,
+      text: `${stepName[code]} · ${statusLabel(item.status, item.currentRun?.failureKind ?? null)}`,
+    });
+  }
+  for (const gate of ['G2', 'G3'] as const) {
+    const state = gates?.find((g) => g.gate === gate);
+    if (!state || state.passed) continue;
+    const label = gate === 'G2' ? 'G2 판정 확정' : 'G3 썸네일 선택';
+    blockers.push({ stepCode: GATE_STEP[gate]!, text: `${label} · 다시 확인` });
+  }
+  return blockers;
+}
+
+/** 막힌 곳 목록 머리글 */
+export const APPROVAL_BLOCKERS_TITLE = '승인 전에 끝낼 곳';

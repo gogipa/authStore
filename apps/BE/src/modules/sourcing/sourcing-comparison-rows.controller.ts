@@ -18,6 +18,7 @@ import { comparisonLocation } from './anchor.service.js';
 import {
   SourcingComparisonRowPatchDto,
   SourcingJobAcceptedDto,
+  SourcingRowRecalculationDto,
 } from './dto/sourcing-comparison.dto.js';
 import { RowUpdateService } from './row-update.service.js';
 import { NotFoundIdPipe } from './sourcing-ids.js';
@@ -50,7 +51,7 @@ export class SourcingComparisonRowsController {
   @ApiParam({ name: 'rowId', type: 'integer', required: true })
   @ApiHeader(CLIENT_HEADER)
   @ApiBody({ type: SourcingComparisonRowPatchDto })
-  @ApiOkResponse({ description: '다시 계산한 행과 실질가 순서' })
+  @ApiOkResponse({ type: SourcingRowRecalculationDto, description: '다시 계산한 행과 실질가 순서' })
   @ApiResponse({ status: 400, description: 'MALFORMED_REQUEST' })
   @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host·Origin·X-AutoStore-Client)' })
   @ApiNotFoundResponse({ description: 'SOURCING_COMPARISON_ROW_NOT_FOUND' })

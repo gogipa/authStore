@@ -215,4 +215,38 @@ describe('SCR-08 최종 승인 — 미리보기·사전 검증·승인 버튼(P4
     expect(screen.getByRole('button', { name: '승인·등록' })).toBeDisabled();
     expect(stub.requests.filter((r) => r.method === 'POST')).toHaveLength(0);
   });
+
+  it('필수 단계가 재실행 필요라 작업중이면 막는 단계와 그 단계로 가는 링크를 보인다(US-33 AC6, P5-01)', async () => {
+    const stub = setup({
+      preview: errorResponse(
+        409,
+        'CANDIDATE_STATUS_INVALID',
+        '지금 후보 상태(작업중)에서는 할 수 없습니다.',
+        { details: { status: 'WORKING', allowed: ['AWAITING_APPROVAL'] } },
+      ),
+    });
+    const done = { status: 'COMPLETED' as const };
+    stub.on(`GET /candidates/${CANDIDATE_ID}/steps`, () =>
+      jsonResponse(
+        stepRail({
+          SOURCING: done,
+          PRICING: done,
+          CATEGORY: done,
+          THUMBNAIL: done,
+          COPY: done,
+          NOTICE_RAW: done,
+          NOTICE_HTML: done,
+          TAGS: done,
+          UPLOAD: { status: 'RERUN_REQUIRED' },
+        }),
+      ),
+    );
+    open();
+    const blockers = await screen.findByRole('list', { name: '승인 전에 끝낼 곳' });
+    const links = within(blockers).getAllByRole('link');
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveTextContent('⑧ 이미지 업로드 · 재실행 필요');
+    expect(links[0]).toHaveAttribute('href', `/candidates/${CANDIDATE_ID}/approval`);
+    expect(screen.getByRole('button', { name: '승인·등록' })).toBeDisabled();
+  });
 });

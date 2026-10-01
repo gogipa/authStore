@@ -14,6 +14,7 @@
     "start": "pnpm --filter @autostore/be start:prod",
     "test": "pnpm -r test",
     "test:e2e": "pnpm --filter @autostore/be test:e2e",
+    "test:flow": "pnpm --filter @autostore/fe exec playwright test -c e2e/playwright.config.ts",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write .",

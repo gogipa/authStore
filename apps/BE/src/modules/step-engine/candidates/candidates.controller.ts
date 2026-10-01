@@ -21,6 +21,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
@@ -78,6 +79,7 @@ export class CandidatesController {
 
   @Get()
   @ApiOperation({ operationId: 'listCandidates', summary: '진행 중 후보 목록' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiOkResponse({ type: CandidatePageDto })
   @ApiForbiddenResponse(FORBIDDEN)
   @ApiUnprocessableEntityResponse({ description: 'INVALID_QUERY_PARAMETER' })
@@ -87,6 +89,8 @@ export class CandidatesController {
 
   @Post()
   @ApiOperation({ operationId: 'createCandidate', summary: '후보 만들기' })
+  @ApiResponse({ status: 400, description: 'MALFORMED_REQUEST' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiHeader(CLIENT_HEADER)
   @ApiBody({ type: CreateCandidateDto })
   @ApiCreatedResponse({
@@ -111,6 +115,7 @@ export class CandidatesController {
 
   @Get('status-counts')
   @ApiOperation({ operationId: 'getCandidateStatusCounts', summary: '상태별 후보 수' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiOkResponse({ type: CandidateStatusCountListDto })
   @ApiForbiddenResponse(FORBIDDEN)
   statusCounts(): Promise<CandidateStatusCountListDto> {
@@ -119,6 +124,7 @@ export class CandidatesController {
 
   @Get('resume-target')
   @ApiOperation({ operationId: 'getCandidateResumeTarget', summary: '이어서 할 곳 한 건' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiOkResponse({ type: CandidateResumeTargetDto })
   @ApiNoContentResponse({ description: '이어서 할 곳이 없다' })
   @ApiForbiddenResponse(FORBIDDEN)
@@ -135,6 +141,7 @@ export class CandidatesController {
 
   @Get(':candidateId')
   @ApiOperation({ operationId: 'getCandidate', summary: '후보 상세' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam(CANDIDATE_ID_PARAM)
   @ApiOkResponse({ type: CandidateDetailDto })
   @ApiForbiddenResponse(FORBIDDEN)
@@ -146,6 +153,8 @@ export class CandidatesController {
   @Post(':candidateId/exclude')
   @HttpCode(200)
   @ApiOperation({ operationId: 'excludeCandidate', summary: '후보 제외' })
+  @ApiResponse({ status: 400, description: 'MALFORMED_REQUEST' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam(CANDIDATE_ID_PARAM)
   @ApiHeader(CLIENT_HEADER)
   @ApiOkResponse({ type: CandidateStatusChangeResultDto, description: '제외했다' })
@@ -163,6 +172,8 @@ export class CandidatesController {
   @Post(':candidateId/reopen')
   @HttpCode(200)
   @ApiOperation({ operationId: 'reopenCandidate', summary: '제외된 후보 다시 작업' })
+  @ApiResponse({ status: 400, description: 'MALFORMED_REQUEST' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam(CANDIDATE_ID_PARAM)
   @ApiHeader(CLIENT_HEADER)
   @ApiOkResponse({ type: CandidateStatusChangeResultDto, description: '작업중으로 되돌렸다' })
@@ -180,6 +191,7 @@ export class CandidatesController {
 
   @Get(':candidateId/status-history')
   @ApiOperation({ operationId: 'listCandidateStatusHistory', summary: '후보 상태 전이 이력' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam(CANDIDATE_ID_PARAM)
   @ApiOkResponse({ type: CandidateStatusHistoryPageDto })
   @ApiForbiddenResponse(FORBIDDEN)
@@ -194,6 +206,8 @@ export class CandidatesController {
 
   @Put(':candidateId/gender')
   @ApiOperation({ operationId: 'setCandidateGender', summary: '후보 성별 직접 입력' })
+  @ApiResponse({ status: 400, description: 'MALFORMED_REQUEST' })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
   @ApiParam(CANDIDATE_ID_PARAM)
   @ApiHeader(CLIENT_HEADER)
   @ApiOkResponse({ type: CandidateGenderResultDto, description: '성별을 저장했다' })

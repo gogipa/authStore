@@ -89,6 +89,17 @@ export default defineConfig([
       globals: globals.node,
     },
   },
+  // 끝까지 흐름 테스트(Playwright, P5-01): Node에서 돈다. fixture의 `use()`는 React 훅이 아니다
+  {
+    files: ['e2e/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+    rules: {
+      'react-hooks/rules-of-hooks': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
   ...boundaries,
   // 포맷 규칙은 Prettier에 맡긴다(겹치는 ESLint 규칙 끄기). 항상 마지막에 둔다.
   prettier,
