@@ -1,0 +1,9 @@
+{
+  "_note": "가짜 커머스API restricted-tags 500(서버 오류) — TAGS만 실패, 전체는 200",
+  "status": 500,
+  "body": {
+    "code": "GW.INTERNAL_SERVER_ERROR",
+    "message": "가짜 서버 실패",
+    "traceId": "fixture-restricted-500"
+  }
+}

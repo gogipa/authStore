@@ -383,6 +383,21 @@ describe('error-codes', () => {
     expect(ERROR_CODES.PAYLOAD_TOO_LARGE.status).toBe(413);
   });
 
+  it('P4-02 승인 미리보기 코드 3개는 05-3 §5.1 문구·상태 그대로다', () => {
+    expect(ERROR_CODES.REGISTRATION_IN_PROGRESS).toEqual({
+      status: 409,
+      message: '이 후보의 등록이 진행 중이거나 결과 확인이 필요합니다.',
+    });
+    expect(ERROR_CODES.DUPLICATE_REGISTRATION).toEqual({
+      status: 409,
+      message: '같은 상품·색상이 이미 등록돼 있습니다. 기존 상품을 확인해 주세요.',
+    });
+    expect(formatErrorMessage('JUDGEMENT_EXPIRED', { n: 6 })).toBe(
+      "판정에 쓴 라쿠텐 페이지가 6시간이 넘었습니다. '재조회'로 다시 판정해 주세요.",
+    );
+    expect(ERROR_CODES.JUDGEMENT_EXPIRED.status).toBe(409);
+  });
+
   it('formatErrorMessage는 {…} 자리를 채우고 모르는 자리는 그대로 둔다', () => {
     expect(formatErrorMessage('DAILY_LIMIT_REACHED', { 대상: '라쿠텐 상품 페이지', n: 110 })).toBe(
       '오늘 라쿠텐 상품 페이지 조회 한도(110건)를 다 썼습니다. 내일 0시(한국 시간)에 다시 됩니다.',

@@ -1,12 +1,16 @@
-/* SCR-08 최종 승인(Approval.dc.html, P4-01). 화면 제목은 화면 읽기 프로그램용(h1) — 보드는 단계 구역 제목(h2)부터 보인다 */
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  border: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+/*
+ * SCR-08 최종 승인(Approval.dc.html, P4-01·P4-02). 화면 머리(PageHeader) 아래 단계 구역을 세로로 쌓는다: ⑧ 이미지 업로드 →
+ * [전체 미리보기 | 사전 검증 결과](2열) → ⑨ 등록. 색·크기는 토큰 변수만(라이트 테마).
+ */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
 }

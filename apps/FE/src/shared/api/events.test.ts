@@ -145,6 +145,30 @@ describe('진행 알림 이름', () => {
     });
     expect(uploadStale).toContainEqual(uploadKey);
     expect(uploadStale).toContainEqual(['step-engine', 'listCandidateSteps', { candidateId: 1 }]);
+    // G4 승인 화면(P4-02): 단계·게이트·후보 상태가 바뀌면 미리보기와 사전 검증을 다시
+    const approvalKey = ['registration', 'getCandidateApproval', { candidateId: 1 }];
+    const preValidationKey = ['registration', 'runCandidatePreValidation', { candidateId: 1 }];
+    expect(uploadStale).toContainEqual(approvalKey);
+    expect(uploadStale).toContainEqual(preValidationKey);
+    expect(
+      EVENT_INVALIDATIONS['gate.invalidated']?.({
+        candidateId: 1,
+        gate: 'G2',
+        previousGatePassId: 3,
+        changedBasisKeys: ['salePrices.250'],
+      }),
+    ).toEqual(expect.arrayContaining([approvalKey, preValidationKey]));
+    expect(
+      EVENT_INVALIDATIONS['candidate.status-changed']?.({
+        candidateId: 1,
+        fromStatus: 'WORKING',
+        toStatus: 'EXCLUDED',
+        reason: 'OWNER_EXCLUDED',
+        excludedReason: 'OWNER_EXCLUDED',
+        changedAt: '2026-09-28T00:00:00.000Z',
+      }),
+    ).toEqual(expect.arrayContaining([approvalKey, preValidationKey]));
+    expect(uploadRun).not.toContainEqual(preValidationKey);
     expect(
       EVENT_INVALIDATIONS['content-field.recheck-flagged']?.({
         candidateId: 1,
@@ -330,6 +354,9 @@ describe('진행 알림 이름', () => {
       ['step-engine', 'getCandidateResumeTarget'],
       ['step-engine', 'listCandidateStatusHistory', { candidateId: 12 }],
       ['step-engine', 'listAttentionCandidateSteps'],
+      // P4-02: G4 승인 미리보기·사전 검증
+      ['registration', 'getCandidateApproval', { candidateId: 12 }],
+      ['registration', 'runCandidatePreValidation', { candidateId: 12 }],
     ]);
     expect(
       EVENT_INVALIDATIONS['candidate-step.changed']?.({
@@ -351,6 +378,9 @@ describe('진행 알림 이름', () => {
       ['step-engine', 'getStepRun'],
       // 그 후보의 ④ 카테고리 결정도(P2-06 — 성별이 바뀌면 ③·⑥-3·⑦과 함께 후보를 다시 뽑는다)
       ['category', 'getCategoryDecision', { candidateId: 12 }],
+      // G4 승인 미리보기·사전 검증(P4-02)
+      ['registration', 'getCandidateApproval', { candidateId: 12 }],
+      ['registration', 'runCandidatePreValidation', { candidateId: 12 }],
     ]);
     // step-run.status-changed → 그 후보 레일·이력·바뀐 입력·상세·목록 + 그 실행 한 건(P1-05)
     expect(
@@ -472,6 +502,9 @@ describe('진행 알림 이름', () => {
       ['pricing', 'getPriceJudgement', { candidateId: 12 }],
       // P3-02: ⑤ 산출물의 G3 유효
       ['thumbnails', 'getCandidateThumbnail', { candidateId: 12 }],
+      // P4-02: G4 승인 미리보기·사전 검증(승인 버튼 꺼짐 GATE_NOT_PASSED·STEP_FRESHNESS)
+      ['registration', 'getCandidateApproval', { candidateId: 12 }],
+      ['registration', 'runCandidatePreValidation', { candidateId: 12 }],
     ]);
     // P3-02: 생성 시도 상태가 바뀌면 그 후보 ⑤ 산출물(후보 칸)과 그 시도 한 건
     expect(

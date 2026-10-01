@@ -20,10 +20,20 @@ import type {
   SourcingTargetSkus,
 } from './ports/sourcing-selection.port.js';
 import type {
+  CategoryDecisionView,
+  CategoryOutputReader,
+  ContentAssemblyView,
+  ContentCopyView,
+  ContentFactsView,
+  ContentOutputReader,
+  FinalTagsView,
   NoticeHtmlReader,
   NoticeHtmlView,
+  PricingJudgementView,
   PricingOutputReader,
   PricingSaleSizesView,
+  TagsOutputReader,
+  ThumbnailSelectionDetailView,
   ThumbnailSelectionReader,
   ThumbnailSelectionView,
 } from './ports/step-output-readers.port.js';
@@ -92,6 +102,15 @@ export type ResumeWaitingInput =
  *   thumbnails가 등록한 읽기 함수의 `readSelection`을 부른다
  * - `registerNoticeHtmlReader(reader)`·`readNoticeHtml(noticeHtmlStepRunId, db?)`: ⑥-3 버전의 상세 HTML(자리표시자 그대로)·
  *   `html_sha256`(⑧ 입력). content가 등록한다. 등록 전·산출물 없음이면 null
+ * P4-02(최종 승인 미리보기·사전 검증 — registration이 앞 단계 산출물을 읽는 창구. 버전은 `candidate_step` 현재 포인터로 고른다):
+ * - `readPricingJudgement(pricingStepRunId, db?)`: ③ 판정 스냅샷 전체(pricing 읽기 함수의 선택 메서드 `readJudgement`)
+ * - `registerCategoryOutputReader(reader)`·`readCategoryDecision(categoryStepRunId, db?)`: ④ 카테고리 결정(category가 등록)
+ * - `readThumbnailSelectionDetail(thumbnailStepRunId, db?)`: ⑤ G3 체크리스트·'같은 상품·색상' 확인·레퍼런스 출처(thumbnails
+ *   읽기 함수의 선택 메서드 `readSelectionDetail`)
+ * - `registerContentOutputReader(reader)`·`readContentAssembly`·`readContentFacts`·`readContentCopy`: ⑥-3 조립·⑥-2 사실·
+ *   ⑥-1 카피(content가 등록)
+ * - `registerTagsOutputReader(reader)`·`readFinalTags(tagsStepRunId, db?)`: ⑦ 최종 태그(tags가 등록)
+ * 모두 등록 전·산출물 없음이면 null이다.
  */
 @Injectable()
 export class StepEngineApi {
@@ -186,6 +205,78 @@ export class StepEngineApi {
   ): Promise<NoticeHtmlView | null> {
     const reader = this.ports.noticeHtmlReader;
     return reader ? reader.readHtml(db, noticeHtmlStepRunId) : null;
+  }
+
+  registerCategoryOutputReader(reader: CategoryOutputReader): void {
+    this.ports.registerCategoryOutputReader(reader);
+  }
+
+  registerContentOutputReader(reader: ContentOutputReader): void {
+    this.ports.registerContentOutputReader(reader);
+  }
+
+  registerTagsOutputReader(reader: TagsOutputReader): void {
+    this.ports.registerTagsOutputReader(reader);
+  }
+
+  /** ③ 버전의 판정 스냅샷 전체(P4-02). 읽기 함수가 없거나 판정이 없으면 null */
+  async readPricingJudgement(
+    pricingStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<PricingJudgementView | null> {
+    const reader = this.ports.pricingOutputReader;
+    return reader?.readJudgement ? reader.readJudgement(db, pricingStepRunId) : null;
+  }
+
+  /** ④ 버전의 카테고리 결정(P4-02). 읽기 함수가 없거나 결정 행이 없으면 null */
+  async readCategoryDecision(
+    categoryStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<CategoryDecisionView | null> {
+    const reader = this.ports.categoryOutputReader;
+    return reader ? reader.readDecision(db, categoryStepRunId) : null;
+  }
+
+  /** ⑤ 버전의 G3 체크리스트·확인·레퍼런스 출처(P4-02). 읽기 함수가 없거나 선택이 없으면 null */
+  async readThumbnailSelectionDetail(
+    thumbnailStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<ThumbnailSelectionDetailView | null> {
+    const reader = this.ports.thumbnailSelectionReader;
+    return reader?.readSelectionDetail ? reader.readSelectionDetail(db, thumbnailStepRunId) : null;
+  }
+
+  /** ⑥-3 버전의 조립 결과(P4-02). 읽기 함수가 없거나 산출물이 없으면 null */
+  async readContentAssembly(
+    noticeHtmlStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<ContentAssemblyView | null> {
+    const reader = this.ports.contentOutputReader;
+    return reader ? reader.readAssembly(db, noticeHtmlStepRunId) : null;
+  }
+
+  /** ⑥-2 버전의 사실(P4-02). 읽기 함수가 없거나 산출물이 없으면 null */
+  async readContentFacts(
+    noticeRawStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<ContentFactsView | null> {
+    const reader = this.ports.contentOutputReader;
+    return reader ? reader.readFacts(db, noticeRawStepRunId) : null;
+  }
+
+  /** ⑥-1 버전의 유효 카피 글(P4-02). 읽기 함수가 없거나 산출물이 없으면 null */
+  async readContentCopy(
+    copyStepRunId: number,
+    db: Db = this.prisma,
+  ): Promise<ContentCopyView | null> {
+    const reader = this.ports.contentOutputReader;
+    return reader ? reader.readCopy(db, copyStepRunId) : null;
+  }
+
+  /** ⑦ 버전의 최종 태그(P4-02). 읽기 함수가 없거나 산출물이 없으면 null */
+  async readFinalTags(tagsStepRunId: number, db: Db = this.prisma): Promise<FinalTagsView | null> {
+    const reader = this.ports.tagsOutputReader;
+    return reader ? reader.readFinalTags(db, tagsStepRunId) : null;
   }
 
   /** ③ 버전의 판매 사이즈(P3-04 — ⑥-3 입력). 읽기 함수가 없거나 판정이 없으면 null */

@@ -49,6 +49,10 @@ export interface SourcingTargetSkus {
     rakutenSkuId: number | null;
     /** 그 SKU의 taxIncludedPrice(엔, 쿠폰 전). 모르면 null */
     taxIncludedPriceYen: number | null;
+    /**
+     * 그 SKU의 라쿠텐 수량(`rakuten_sku.quantity`, P4-02 — 옵션 재고 = min(수량, 상한)). 모르면(무제한 재고 등) null
+     */
+    quantity?: number | null;
   }[];
   inStockSizeCount: number;
   /** 비교를 한 버전의 고른 행 포인트 합계(pt, 참고치). 없으면 null */

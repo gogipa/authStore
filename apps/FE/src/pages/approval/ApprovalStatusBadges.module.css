@@ -1,0 +1,15 @@
+/* SCR-08 ⑧ 줄의 후보 상태·G4 배지(P4-02). 색·크기는 토큰 변수만 */
+.badges {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}

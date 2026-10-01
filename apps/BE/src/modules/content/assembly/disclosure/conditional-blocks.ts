@@ -2,7 +2,11 @@ import type {
   NoticeBlockCondition,
   NoticeSettings,
 } from '../../../settings/schema/settings.types.js';
+import { hasLeather, needsLeatherNotice } from '../../../../common/rules/disclosure-conditions.js';
 import type { AssemblyMaterials } from '../assembly-facts.js';
+
+/** 판정 함수 원본은 common/rules(P4-02 — 최종 승인 사전 검증이 같이 쓴다). 기존 이름을 다시 내보낸다 */
+export { hasLeather, needsLeatherNotice };
 
 /**
  * 구매대행 고지 조건부 블록(P3-04 규칙 4, F-CT-01·03, US-16 AC3, PRD §8.5 '조건부 블록', §16 ②-15).
@@ -14,29 +18,6 @@ import type { AssemblyMaterials } from '../assembly-facts.js';
  * - AI_IMAGE_LABEL: 설정 `notice.aiImageLabel`(기본 켬, M1은 끄는 API 없음)
  * - MODE_A_PRICE_BREAKDOWN: 모드 A 판매가 구성(PR-07) — M1은 켜는 설정이 없어 넣지 않는다
  */
-
-function compare(text: string): string {
-  return text.normalize('NFKC').toUpperCase().replace(/\s+/gu, '');
-}
-
-/** 소재 글에 가죽 말이 있는가 */
-export function hasLeather(materials: AssemblyMaterials, terms: readonly string[]): boolean {
-  const texts = [materials.upper, materials.lining, materials.sole]
-    .filter((t): t is string => t !== null)
-    .map(compare);
-  return terms.some((term) => {
-    const key = compare(term);
-    return key !== '' && texts.some((text) => text.includes(key));
-  });
-}
-
-/** 안전관리대상 문장을 붙이는가(가죽 또는 겉감 정보 없음) */
-export function needsLeatherNotice(
-  materials: AssemblyMaterials,
-  terms: readonly string[],
-): boolean {
-  return materials.upper === null || hasLeather(materials, terms);
-}
 
 /** 이번 고지에서 켜진 조건 */
 export function activeConditions(input: {

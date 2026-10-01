@@ -1,12 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleInit } from '@nestjs/common';
 import { IntegrationsModule } from '../integrations/integrations.module.js';
 import { SettingsModule } from '../settings/settings.module.js';
+import { StepEngineApi } from '../step-engine/step-engine.api.js';
 import { StepEngineModule } from '../step-engine/step-engine.module.js';
 import { CompetitorInputsController } from './competitor-inputs/competitor-inputs.controller.js';
 import { CompetitorInputsService } from './competitor-inputs/competitor-inputs.service.js';
 import { TagSetController } from './tag-set.controller.js';
 import { TagSetService } from './tag-set.service.js';
 import { TagsOwnerEditHandler } from './tags-owner-edit.handler.js';
+import { tagsOutputReader } from './tags-output.reader.js';
 import { TagsStepRunner } from './tags-step.runner.js';
 
 /**
@@ -19,10 +21,18 @@ import { TagsStepRunner } from './tags-step.runner.js';
  * - API: `GET /candidates/{id}/tag-set`, `GET·POST /candidates/{id}/tag-competitor-inputs`, `DELETE /tag-competitor-inputs/{id}`
  * - 순수 함수: `pipeline/`(normalize·rule-filter·select-final·request-format·tag-pool·restricted-check·evaluate),
  *   `competitor-inputs/parsers/`(셀라파인더·브라우저 응답·자유 텍스트 — 태그·순위·상품 ID·빈도만 돌려준다)
+ * - P4-02: ⑦ 최종 태그 읽기(`tags-output.reader.ts`)를 앱 시작 때 `StepEngineApi.registerTagsOutputReader`로 끼운다 — 최종 승인
+ *   미리보기·사전 검증(registration)이 읽는다
  */
 @Module({
   imports: [IntegrationsModule, SettingsModule, StepEngineModule],
   controllers: [TagSetController, CompetitorInputsController],
   providers: [TagsStepRunner, TagsOwnerEditHandler, TagSetService, CompetitorInputsService],
 })
-export class TagsModule {}
+export class TagsModule implements OnModuleInit {
+  constructor(private readonly api: StepEngineApi) {}
+
+  onModuleInit(): void {
+    this.api.registerTagsOutputReader(tagsOutputReader);
+  }
+}

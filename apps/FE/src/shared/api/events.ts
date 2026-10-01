@@ -120,6 +120,9 @@ export type EventInvalidations = {
  *   경쟁 태그 입력 목록(`listTagCompetitorInputs`). 입력 넣기·빼기는 응답 뒤 훅이 무효화한다.
  * - P4-01: `step-run.status-changed`가 ⑧(UPLOAD)이면 그 후보의 ⑧ 산출물(`getCandidateUploadResult`). `candidate-step.changed`
  *   (재실행 필요로 바뀜 등)도 ⑧ 산출물을 다시 읽힌다(단계 레일은 위 공통 키).
+ * - P4-02: `candidate-step.changed`·`gate.invalidated`·`candidate.status-changed` → 그 후보의 G4 승인 미리보기
+ *   (`getCandidateApproval`)와 사전 검증(`runCandidatePreValidation` — POST지만 화면 상태로 둔 query. 서버로는 한 번에 하나만 간다,
+ *   features/registration `usePreValidation`). 옵션 방식(optionType)과 상관없이 부분 일치로 닿는다.
  */
 function stepEngineStepKeys(candidateId: number): QueryKey[] {
   return [
@@ -145,6 +148,14 @@ function keywordCollectionEndKeys(keywordSnapshotId: number): QueryKey[] {
     qk('keywords', 'listKeywordSnapshots'),
     ...keywordSnapshotKeys(keywordSnapshotId),
     qk('keywords', 'getKeywordCollectionStatus'),
+  ];
+}
+
+/** G4 승인 화면(미리보기·사전 검증 — P4-02) */
+function approvalKeys(candidateId: number): QueryKey[] {
+  return [
+    qk('registration', 'getCandidateApproval', { candidateId }),
+    qk('registration', 'runCandidatePreValidation', { candidateId }),
   ];
 }
 
@@ -174,6 +185,7 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     qk('step-engine', 'getCandidateResumeTarget'),
     qk('step-engine', 'listCandidateStatusHistory', { candidateId }),
     qk('step-engine', 'listAttentionCandidateSteps'),
+    ...approvalKeys(candidateId),
   ],
   'candidate-step.changed': ({ candidateId, stepCode }) => [
     ...stepEngineStepKeys(candidateId),
@@ -182,6 +194,7 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     ...(stepCode === 'UPLOAD'
       ? [qk('registration', 'getCandidateUploadResult', { candidateId })]
       : []),
+    ...approvalKeys(candidateId),
   ],
   'step-run.status-changed': ({ candidateId, stepRunId, stepChainId, stepCode }) => [
     ...stepEngineStepKeys(candidateId),
@@ -235,6 +248,7 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
     qk('sourcing', 'getSourcingComparison', { candidateId }),
     qk('pricing', 'getPriceJudgement', { candidateId }),
     qk('thumbnails', 'getCandidateThumbnail', { candidateId }),
+    ...approvalKeys(candidateId),
   ],
   'content-field.recheck-flagged': ({ candidateId, stepCode }) => [
     stepCode === 'NOTICE_HTML'

@@ -37,3 +37,22 @@ export function formatSaleSizes(sizes: readonly number[]): string {
   if (runs.length === 0) return '';
   return `${runsText(runs, String)}mm (JP ${runsText(runs, jpCm)}cm)`;
 }
+
+/**
+ * `formatSaleSizes` 표기를 되읽는다(P4-02 — 최종 승인 사전 검증 `OPTIONS`가 사양 블록의 사이즈 집합을 옵션 사이즈와 비교할 때,
+ * content 읽기 창구가 쓴다). `250~265·275mm (JP …)` → `[250,255,260,265,275]`. mm 부분만 읽고, 모양이 다르면 null.
+ */
+export function parseSaleSizes(text: string): number[] | null {
+  const match = /^\s*([0-9~·\s]+)mm(?:\s*\(JP [^)]*\))?\s*$/u.exec(text);
+  if (!match) return null;
+  const sizes: number[] = [];
+  for (const part of match[1]!.split('·')) {
+    const range = /^\s*(\d{2,3})\s*(?:~\s*(\d{2,3})\s*)?$/.exec(part);
+    if (!range) return null;
+    const from = Number(range[1]);
+    const to = range[2] !== undefined ? Number(range[2]) : from;
+    if (to < from || (to - from) % SIZE_STEP_MM !== 0) return null;
+    for (let mm = from; mm <= to; mm += SIZE_STEP_MM) sizes.push(mm);
+  }
+  return [...new Set(sizes)].sort((a, b) => a - b);
+}

@@ -1,0 +1,93 @@
+/*
+ * SCR-08 '사전 검증 결과'(Approval.dc.html, P4-02). 머리(제목 + 요약 칩 + 안내 문구) 아래 검사 13줄 목록. 줄 = 칩 · 이름 · 고칠 단계
+ * 링크(· 재조회) + 실패 사유. 색·크기는 토큰 변수만(라이트 테마).
+ */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-heading);
+  color: var(--color-ink);
+}
+
+.note {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.line:first-child {
+  border-top: 0;
+}
+
+.lineMain {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.label {
+  flex-grow: 1;
+  min-width: 0;
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.detail {
+  color: var(--color-ink-muted);
+}
+
+.link {
+  flex-shrink: 0;
+  font: var(--type-caption);
+  color: var(--color-accent);
+}
+
+.reasons {
+  margin: 0;
+  padding-left: var(--space-6);
+  font: var(--type-caption);
+  color: var(--color-failed);
+}
+
+.error {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}

@@ -155,7 +155,20 @@
       "카리나"
     ],
     "childCategoryWords": ["아동", "키즈", "주니어", "유아", "베이비"],
-    "excludedCategoryWords": ["바퀴", "롤러", "힐리스", "실버", "효도"]
+    "excludedCategoryWords": ["바퀴", "롤러", "힐리스", "실버", "효도"],
+    "minBlockWords": ["반품 불가", "환불 불가", "최저가", "공식", "정품 100%"],
+    "originConfusionWords": ["일본 제품", "일본산", "일본 생산", "일본 제조", "메이드 인 재팬"],
+    "extraChargeWords": [
+      "관부가세 별도",
+      "통관비 별도 청구",
+      "관세 별도",
+      "부가세 별도",
+      "통관비 별도",
+      "배송비 별도",
+      "추가 청구",
+      "별도 청구",
+      "착불"
+    ]
   },
   "category": {
     "leafMapping": []
@@ -1021,6 +1034,10 @@
       "deliveryDaysMax": null,
       "exchangePolicy": "해외 구매 특성상 사이즈 교환은 반품 후 재주문으로 처리됩니다"
     }
+  },
+  "registration": {
+    "initialSuspensionCount": 10,
+    "optionStockCap": 2
   },
   "delivery": {
     "dispatchCompanies": []

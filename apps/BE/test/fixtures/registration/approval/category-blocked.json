@@ -1,0 +1,8 @@
+{
+  "_note": "CATEGORY 실패: 예외 판단 BLOCKED(아동·제외 품목)",
+  "inputs": {
+    "category": {
+      "exceptionDecision": "BLOCKED"
+    }
+  }
+}

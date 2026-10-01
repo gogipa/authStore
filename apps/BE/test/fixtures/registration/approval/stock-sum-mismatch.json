@@ -1,0 +1,15 @@
+{
+  "_note": "OPTIONS 실패: 265 라쿠텐 수량 1 → 옵션 재고 합 9인데 원상품 stockQuantity 10",
+  "inputs": {
+    "sourcing": {
+      "sizes": {
+        "3": {
+          "quantity": 1
+        }
+      }
+    }
+  },
+  "draft": {
+    "stockQuantity": 10
+  }
+}

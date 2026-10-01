@@ -1,0 +1,15 @@
+{
+  "_note": "REPRESENTATIVE_IMAGE_SOURCE 실패: 레퍼런스가 다른 앵커(型番·색상)인데 '같은 상품·색상' 확인 없음",
+  "inputs": {
+    "thumbnail": {
+      "references": {
+        "0": {
+          "sourceItemCode": "shop-z:99999",
+          "sourceModelCodeNorm": "OTHER0001",
+          "sourceColorCode": "999"
+        }
+      },
+      "sameProductColorConfirmedAt": null
+    }
+  }
+}

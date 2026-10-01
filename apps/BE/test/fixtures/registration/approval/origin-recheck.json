@@ -1,0 +1,13 @@
+{
+  "_note": "ORIGIN 실패: ⑥-2 소재 오너 입력에 풀리지 않은 '재확인 필요'(itemCode가 바뀜)",
+  "inputs": {
+    "facts": {
+      "rechecks": [
+        {
+          "fieldKey": "fact.material_upper",
+          "recheckReason": "ITEM_CODE_CHANGED"
+        }
+      ]
+    }
+  }
+}

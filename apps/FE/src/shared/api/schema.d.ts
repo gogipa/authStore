@@ -6388,6 +6388,17 @@ export interface components {
             code: string;
             message: string;
         };
+        /** @description 소싱 방식(P4-02 Proposed). COMPARED=② 비교함, NO_COMPARISON_CONFIRMED=비교 없이 확정(URL 후보), NOT_CONFIRMED=비교도 확정 기록도 없음(사전 검증 STEP_FRESHNESS가 막는다) */
+        ApprovalSourcingMethod: {
+            /** @enum {string} */
+            method: "COMPARED" | "NO_COMPARISON_CONFIRMED" | "NOT_CONFIRMED";
+            /** @enum {string} */
+            creationPath: "KEYWORD" | "SEARCH_QUERY" | "RAKUTEN_URL";
+            /** Format: date-time */
+            noComparisonConfirmedAt?: string | null;
+            /** @description 고른 라쿠텐 상품(샵코드:상품ID) */
+            itemCode: string;
+        };
         /** @description G4 승인 미리보기(저장된 산출물만 읽음) */
         ApprovalPreview: {
             candidateId: number;
@@ -6423,10 +6434,14 @@ export interface components {
             };
             originAreaCode: string;
             originAreaContent?: string | null;
+            /** @description 상세 사양 블록의 제조국 표기(⑥-3 spec_origin_label, 예 '베트남'). P4-02(Proposed) — 화면 '상세' 요약 */
+            originLabel?: string | null;
             importer: string;
             leafCategoryId?: string | null;
             wholeCategoryName?: string | null;
             tags: components["schemas"]["FinalTagItem"][];
+            /** @description 소싱 방식(F-AP-08 'URL로 만든 후보는 비교함 / 비교 없이 확정'). ② 선택이 없으면 null. P4-02(Proposed) */
+            sourcingMethod?: components["schemas"]["ApprovalSourcingMethod"] | null;
             /** @description POST /v2/products 요청 본문 초안(비밀값 없음) */
             requestJsonDraft: {
                 [key: string]: unknown;

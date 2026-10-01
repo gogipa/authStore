@@ -3952,7 +3952,7 @@ paths:
       - F-AP-39
       - F-AP-40
       - F-AP-41
-      x-decision: §7.5-39 표준형 옵션 선택은 승인 전에 저장하지 않고 ?optionType 쿼리와 승인 body로만 전달한다; §7.1-4 비율(ERD numeric)은 JSON number로 준다.
+      x-decision: '§7.5-39 표준형 옵션 선택은 승인 전에 저장하지 않고 ?optionType 쿼리와 승인 body로만 전달한다; §7.1-4 비율(ERD numeric)은 JSON number로 준다. P4-02 구현(Proposed, 05-1 §7.5 ''P4-02 구현 결정''): 검사 순서 쿼리 422(optionType 밖·모르는 키) → 후보 404 → 승인대기 아님 409 CANDIDATE_STATUS_INVALID(details.allowed=[AWAITING_APPROVAL]) → ③ 판정·⑥-3 조립·⑧ 업로드 산출물이 현재 버전에 없으면 404 STEP_OUTPUT_NOT_FOUND(details.stepCode). 앞 단계 산출물은 후보의 현재 버전(candidate_step 포인터)이다. approveEnabled=false 사유는 승인 API(P4-03 표 E)의 409 순서대로 REGISTRATION_IN_PROGRESS → GATE_NOT_PASSED → JUDGEMENT_EXPIRED → DUPLICATE_REGISTRATION(로컬 기록) → 표준형(F-AP-41은 P4-03) VALIDATION_FAILED이고, 사전 검증 결과(PRE_VALIDATION_FAILED)는 화면이 따로 합친다. requestJsonDraft는 R04 §2.11 골격(P4-03 규칙 1~4 — 판매자관리코드 RKT:{itemCode}:{colorCode}, 처음 N건 SUSPENSION, 조합형 옵션 ''사이즈''·옵션값 mm 숫자, 옵션 재고 = min(라쿠텐 수량, 설정 registration.optionStockCap))이고 비밀값이 없다. warnings는 P4-03(SAME_MODEL_REGISTERED)까지 빈 배열이다. 소싱 방식 sourcingMethod·원산지 표기 originLabel을 더했다(F-AP-08 ''URL 후보 소싱 방식''·화면 ''상세'' 요약).'
       parameters:
       - $ref: '#/components/parameters/CandidateId'
       - name: optionType
@@ -4009,7 +4009,7 @@ paths:
       - F-AP-38
       - F-AP-44
       - F-AP-47
-      x-decision: §7.5-37 외부 조회가 실패하면 그 항목만 passed=false(BLOCK)로 200을 준다(제안, 승인 버튼 꺼짐); §7.5-38 M1은 결과를 저장하지 않고 화면을 열 때마다 새로 계산한다.
+      x-decision: '§7.5-37 외부 조회가 실패하면 그 항목만 passed=false(BLOCK)로 200을 준다(제안, 승인 버튼 꺼짐); §7.5-38 M1은 결과를 저장하지 않고 화면을 열 때마다 새로 계산한다. P4-02 구현(Proposed, 05-1 §7.5 ''P4-02 구현 결정''): 검사 순서 헤더 403 → body 형식 400·422 VALIDATION_FAILED(optionType 밖·모르는 키) → 후보 404 → 승인대기 아님 409 CANDIDATE_STATUS_INVALID(details.allowed). checks는 05-3 §5.3 순서의 15개(모두 BLOCK)이고 approvable = BLOCK 항목 모두 통과. restricted-tags는 최종 태그를 설정 tags.restrictedBatchSize로 나눠 다시 조회하고(P1-01 관문·call_log), 키 없음 409·외부 502·인증 실패는 TAGS 항목만 실패(reason에 원인)로 둔다. DUPLICATE는 로컬 등록 기록(uq_registration_live_key와 같은 조건)만 보고 SELLER_CODE 교차 조회·SAME_MODEL_REGISTERED 경고는 P4-03이 같은 항목·warnings에 더한다. 같은 후보·optionType 검사가 돌고 있으면 그 결과를 같이 준다(한 번에 하나). 시각은 앱 시계(CLOCK)로 정한다.'
       parameters:
       - $ref: '#/components/parameters/ClientHeader'
       - $ref: '#/components/parameters/CandidateId'
@@ -15466,6 +15466,35 @@ components:
           description: 승인 API가 돌려줄 409·422 코드와 같은 값
         message:
           type: string
+    ApprovalSourcingMethod:
+      type: object
+      description: 소싱 방식(P4-02 Proposed). COMPARED=② 비교함, NO_COMPARISON_CONFIRMED=비교 없이 확정(URL 후보), NOT_CONFIRMED=비교도 확정 기록도 없음(사전 검증 STEP_FRESHNESS가 막는다)
+      required:
+      - method
+      - creationPath
+      - itemCode
+      properties:
+        method:
+          type: string
+          enum:
+          - COMPARED
+          - NO_COMPARISON_CONFIRMED
+          - NOT_CONFIRMED
+        creationPath:
+          type: string
+          enum:
+          - KEYWORD
+          - SEARCH_QUERY
+          - RAKUTEN_URL
+        noComparisonConfirmedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        itemCode:
+          type: string
+          maxLength: 128
+          description: 고른 라쿠텐 상품(샵코드:상품ID)
     ApprovalPreview:
       type: object
       description: G4 승인 미리보기(저장된 산출물만 읽음)
@@ -15555,6 +15584,12 @@ components:
           - string
           - 'null'
           maxLength: 200
+        originLabel:
+          type:
+          - string
+          - 'null'
+          maxLength: 200
+          description: 상세 사양 블록의 제조국 표기(⑥-3 spec_origin_label, 예 '베트남'). P4-02(Proposed) — 화면 '상세' 요약
         importer:
           type: string
           maxLength: 100
@@ -15573,6 +15608,11 @@ components:
           maxItems: 10
           items:
             $ref: '#/components/schemas/FinalTagItem'
+        sourcingMethod:
+          description: 소싱 방식(F-AP-08 'URL로 만든 후보는 비교함 / 비교 없이 확정'). ② 선택이 없으면 null. P4-02(Proposed)
+          oneOf:
+          - $ref: '#/components/schemas/ApprovalSourcingMethod'
+          - type: 'null'
         requestJsonDraft:
           type: object
           additionalProperties: true

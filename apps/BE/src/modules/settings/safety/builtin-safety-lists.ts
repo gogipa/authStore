@@ -39,6 +39,24 @@ export const BUILTIN_CHILD_CATEGORY_WORDS: readonly string[] = COMMON_CHILD_CATE
 /** CON-08 판매 제외 품목 카테고리 말(F-CA-09, P2-06 Proposed). `safety.excludedCategoryWords`에 모두 있어야 한다 */
 export const BUILTIN_EXCLUDED_CATEGORY_WORDS: readonly string[] = COMMON_EXCLUDED_CATEGORY_WORDS;
 
+/**
+ * 최소 차단어(F-AP-18, D-11·②-11, P4-02). `safety.minBlockWords`에 모두 있어야 한다 — 최종 승인 사전 검증 `MIN_BLOCK_WORDS`.
+ * 전체 문구 린터(CT-05)는 M2다.
+ */
+export const BUILTIN_MIN_BLOCK_WORDS: readonly string[] = [
+  '반품 불가',
+  '환불 불가',
+  '최저가',
+  '공식',
+  '정품 100%',
+];
+
+/** 판매국·제조국 혼동 표현(F-AP-17, P4-02). `safety.originConfusionWords`에 모두 있어야 한다 — 사전 검증 `JAPAN_WORDING` */
+export const BUILTIN_ORIGIN_CONFUSION_WORDS: readonly string[] = ['일본 제품', '일본산'];
+
+/** 추가 청구 표현(F-AP-20, P4-02). `safety.extraChargeWords`에 모두 있어야 한다 — 사전 검증 `EXTRA_CHARGE_WORDING` */
+export const BUILTIN_EXTRA_CHARGE_WORDS: readonly string[] = ['관부가세 별도', '통관비 별도 청구'];
+
 /** 라쿠텐 검색 NGKeyword의 아동 단어(PRD §8.2). `sourcing.ngKeywords`에 모두 있어야 한다 */
 export const BUILTIN_NG_KEYWORD_CHILD_WORDS: readonly string[] = ['キッズ', 'ジュニア', 'ベビー'];
 

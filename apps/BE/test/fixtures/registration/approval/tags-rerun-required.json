@@ -1,0 +1,10 @@
+{
+  "_note": "STEP_FRESHNESS 실패: ⑦ 태그가 재실행 필요 → stepCode TAGS(링크 /candidates/{id}/tags)",
+  "inputs": {
+    "steps": {
+      "TAGS": {
+        "status": "RERUN_REQUIRED"
+      }
+    }
+  }
+}

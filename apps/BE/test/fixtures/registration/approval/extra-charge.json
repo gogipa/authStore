@@ -1,0 +1,25 @@
+{
+  "_note": "EXTRA_CHARGE_WORDING 실패 둘: 카피의 '관부가세 별도' / 유료 배송비",
+  "wording": {
+    "inputs": {
+      "copy": {
+        "texts": {
+          "4": "관부가세 별도 상품입니다. 통관 뒤 따로 냅니다."
+        }
+      }
+    }
+  },
+  "paidDelivery": {
+    "inputs": {
+      "profile": {
+        "fragment": {
+          "deliveryInfo": {
+            "deliveryFee": {
+              "deliveryFeeType": "PAID"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -229,6 +229,7 @@ const schema: JSONSchemaType<AppSettings> = {
     'content',
     'tags',
     'notice',
+    'registration',
     'delivery',
     'ai',
   ],
@@ -467,6 +468,9 @@ const schema: JSONSchemaType<AppSettings> = {
         'personBlockWords',
         'childCategoryWords',
         'excludedCategoryWords',
+        'minBlockWords',
+        'originConfusionWords',
+        'extraChargeWords',
       ],
       properties: {
         childShoeMaxSizeMm: { type: 'integer', minimum: 0, maximum: 400 },
@@ -477,6 +481,9 @@ const schema: JSONSchemaType<AppSettings> = {
         personBlockWords: wordList,
         childCategoryWords: wordList,
         excludedCategoryWords: wordList,
+        minBlockWords: wordList,
+        originConfusionWords: wordList,
+        extraChargeWords: wordList,
       },
     },
     category: {
@@ -653,6 +660,15 @@ const schema: JSONSchemaType<AppSettings> = {
             exchangePolicy: { type: 'string', minLength: 1, maxLength: 500 },
           },
         },
+      },
+    },
+    registration: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['initialSuspensionCount', 'optionStockCap'],
+      properties: {
+        initialSuspensionCount: { type: 'integer', minimum: 0, maximum: 1000 },
+        optionStockCap: { type: 'integer', minimum: 1, maximum: 99 },
       },
     },
     delivery: {

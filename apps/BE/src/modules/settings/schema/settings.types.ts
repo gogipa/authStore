@@ -288,6 +288,31 @@ export interface SafetySettings {
    * 없다. 내장 말은 뺄 수 없고 더하기만 된다
    */
   excludedCategoryWords: string[];
+  /**
+   * 최소 차단어(P4-02 Proposed 키, F-AP-18, D-11·②-11): 상품명·상세에 들어 있으면 최종 승인 사전 검증 `MIN_BLOCK_WORDS`가 막는다.
+   * 내장 5말('반품 불가'·'환불 불가'·'최저가'·'공식'·'정품 100%')은 뺄 수 없고 더하기만 된다. 비교는 NFKC·소문자·공백 무시 부분 일치
+   */
+  minBlockWords: string[];
+  /**
+   * 판매국·제조국 혼동 표현(P4-02 Proposed 키, F-AP-17): 제조국이 일본이 아닌데 상품명·상세에 있으면 `JAPAN_WORDING`이 막는다.
+   * 내장 2말('일본 제품'·'일본산')은 뺄 수 없다
+   */
+  originConfusionWords: string[];
+  /**
+   * 추가 청구 표현(P4-02 Proposed 키, F-AP-20): 상품명·상세·카피에 있으면 `EXTRA_CHARGE_WORDING`이 막는다. 내장 2말('관부가세 별도'·
+   * '통관비 별도 청구')은 뺄 수 없다
+   */
+  extraChargeWords: string[];
+}
+
+/**
+ * 등록(⑨)·최종 승인 미리보기 값(P4-02 Proposed 섹션 — 06-4 §2.2). P4-03 등록 본문이 같은 값을 쓴다.
+ * - `initialSuspensionCount`: 처음 N건은 전시중지(SUSPENSION)로 등록(F-AP-27, PRD §8.7 RG-09 '처음 10건(설정)'). 기본 10
+ * - `optionStockCap`: 사이즈별 표기 재고 상한 — 옵션 재고 = min(라쿠텐 수량, 상한)(F-AP-40, PRD §17 '사이즈별 표기 재고 2개'). 기본 2
+ */
+export interface RegistrationSettings {
+  initialSuspensionCount: number;
+  optionStockCap: number;
 }
 
 /** 구매대행 고지 블록 한 줄(PRD §8.5 CT-04) */
@@ -576,6 +601,8 @@ export interface AppSettings {
   /** P3-05: ⑦ 용도어·추천 캐시·restricted 1회 개수·경쟁 입력 크기 상한·규칙 필터 사전 */
   tags: TagSettings;
   notice: NoticeSettings;
+  /** P4-02: 등록 모드(처음 N건 전시중지)·옵션 재고 상한 */
+  registration: RegistrationSettings;
   /** P1-09: 발송 택배사 코드 목록(GET /dispatch-delivery-companies) */
   delivery: DeliverySettings;
   ai: AiSettings;

@@ -1,0 +1,44 @@
+{
+  "_note": "OPTIONS 실패: 250mm 옵션이 두 줄(같은 mm 옵션명)",
+  "draft": {
+    "options": [
+      {
+        "sizeMm": 250,
+        "optionName": "250",
+        "optionPriceKrw": 0,
+        "stockQuantity": 2
+      },
+      {
+        "sizeMm": 250,
+        "optionName": "250",
+        "optionPriceKrw": 0,
+        "stockQuantity": 2
+      },
+      {
+        "sizeMm": 255,
+        "optionName": "255",
+        "optionPriceKrw": 0,
+        "stockQuantity": 2
+      },
+      {
+        "sizeMm": 260,
+        "optionName": "260",
+        "optionPriceKrw": 0,
+        "stockQuantity": 2
+      },
+      {
+        "sizeMm": 265,
+        "optionName": "265",
+        "optionPriceKrw": 0,
+        "stockQuantity": 2
+      },
+      {
+        "sizeMm": 275,
+        "optionName": "275",
+        "optionPriceKrw": 0,
+        "stockQuantity": 2
+      }
+    ],
+    "stockQuantity": 12
+  }
+}

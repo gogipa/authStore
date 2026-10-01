@@ -7,8 +7,11 @@ import type {
 import type { GenderInputListener } from './gender-input.port.js';
 import type { SourcingSelectionReader } from './sourcing-selection.port.js';
 import type {
+  CategoryOutputReader,
+  ContentOutputReader,
   NoticeHtmlReader,
   PricingOutputReader,
+  TagsOutputReader,
   ThumbnailSelectionReader,
 } from './step-output-readers.port.js';
 
@@ -22,6 +25,8 @@ import type {
  * - ⑤ G3 선택본 읽기(`ThumbnailSelectionReader`, P3-04): thumbnails가 등록하고 ⑥-3 미리보기가 `readThumbnailSelection`으로,
  *   ⑧ 업로드(P4-01)가 `readThumbnailSelectionOf`로 쓴다
  * - ⑥-3 상세 HTML 읽기(`NoticeHtmlReader`, P4-01): content가 등록하고 ⑧ 업로드가 `readNoticeHtml`로 쓴다
+ * - P4-02(최종 승인 미리보기·사전 검증): ④ 카테고리 결정(`CategoryOutputReader` — category), ⑥ 조립·사실·카피
+ *   (`ContentOutputReader` — content), ⑦ 최종 태그(`TagsOutputReader` — tags)를 registration이 `StepEngineApi.read…`로 쓴다
  * 리스너를 뺀 자리는 둘째 등록이 앱 시작을 멈춘다(한 자리에 구현 하나).
  */
 @Injectable()
@@ -31,6 +36,9 @@ export class StepModulePorts {
   private pricingOutput: PricingOutputReader | null = null;
   private thumbnailSelection: ThumbnailSelectionReader | null = null;
   private noticeHtml: NoticeHtmlReader | null = null;
+  private categoryOutput: CategoryOutputReader | null = null;
+  private contentOutput: ContentOutputReader | null = null;
+  private tagsOutput: TagsOutputReader | null = null;
   /**
    * 오너 성별 입력 리스너(`GENDER_INPUT_LISTENERS`의 값 — 같은 배열을 넘긴다, P2-03 Proposed). 단계 모듈(② P2-03·④ P2-06)이
    * 앱 시작 때 `StepEngineApi.registerGenderInputListener`로 더한다
@@ -62,6 +70,21 @@ export class StepModulePorts {
     this.noticeHtml = reader;
   }
 
+  registerCategoryOutputReader(reader: CategoryOutputReader): void {
+    if (this.categoryOutput) throw new Error('④ 카테고리 결정 읽기가 이미 등록되어 있습니다');
+    this.categoryOutput = reader;
+  }
+
+  registerContentOutputReader(reader: ContentOutputReader): void {
+    if (this.contentOutput) throw new Error('⑥ 산출물 읽기가 이미 등록되어 있습니다');
+    this.contentOutput = reader;
+  }
+
+  registerTagsOutputReader(reader: TagsOutputReader): void {
+    if (this.tagsOutput) throw new Error('⑦ 최종 태그 읽기가 이미 등록되어 있습니다');
+    this.tagsOutput = reader;
+  }
+
   registerGenderInputListener(listener: GenderInputListener): void {
     if (this.genderInputListeners.includes(listener)) return;
     this.genderInputListeners.push(listener);
@@ -85,6 +108,18 @@ export class StepModulePorts {
 
   get noticeHtmlReader(): NoticeHtmlReader | null {
     return this.noticeHtml;
+  }
+
+  get categoryOutputReader(): CategoryOutputReader | null {
+    return this.categoryOutput;
+  }
+
+  get contentOutputReader(): ContentOutputReader | null {
+    return this.contentOutput;
+  }
+
+  get tagsOutputReader(): TagsOutputReader | null {
+    return this.tagsOutput;
   }
 }
 

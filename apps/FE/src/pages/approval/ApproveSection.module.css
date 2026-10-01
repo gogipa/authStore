@@ -1,0 +1,40 @@
+/* SCR-08 '⑨ 등록'의 승인 바(Approval.dc.html 맨 아래, P4-02). 왼쪽 안내 글 · 오른쪽 주 버튼. 색·크기는 토큰 변수만 */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-heading);
+  color: var(--color-ink);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.text {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.summary {
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+}
+
+.note {
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}

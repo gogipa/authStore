@@ -6,6 +6,7 @@ import { StepEngineModule } from '../step-engine/step-engine.module.js';
 import { AssemblyOwnerEditHandler } from './assembly/assembly-owner-edit.handler.js';
 import { ContentAssemblyController } from './assembly/content-assembly.controller.js';
 import { ContentAssemblyService } from './assembly/content-assembly.service.js';
+import { contentOutputReader } from './assembly/content-output.reader.js';
 import { NoticeHtmlStepRunner } from './assembly/notice-html-step.runner.js';
 import { noticeHtmlReader } from './assembly/notice-html.reader.js';
 import { OriginCodeResolver } from './assembly/notice/origin-code.resolver.js';
@@ -42,6 +43,8 @@ import { SpecImageCollector } from './facts/spec-image.collector.js';
  * - 상세 HTML 계약(자리표시자·고지 블록 해시)은 공용 `common/rules/detail-html.ts`(P4-01·P4-02가 같이 쓴다)
  * P4-01: ⑥-3 상세 HTML 읽기(`assembly/notice-html.reader.ts`)를 앱 시작 때 `StepEngineApi.registerNoticeHtmlReader`로 끼운다 —
  * ⑧ 업로드(registration)가 `readNoticeHtml`로 읽는다
+ * P4-02: ⑥ 산출물 읽기(`assembly/content-output.reader.ts` — ⑥-3 조립·⑥-2 사실·⑥-1 카피)를 `StepEngineApi.registerContentOutputReader`
+ * 로 끼운다 — 최종 승인 미리보기·사전 검증(registration)이 읽는다
  */
 @Module({
   imports: [IntegrationsModule, SettingsModule, StepEngineModule],
@@ -72,5 +75,6 @@ export class ContentModule implements OnModuleInit {
 
   onModuleInit(): void {
     this.api.registerNoticeHtmlReader(noticeHtmlReader);
+    this.api.registerContentOutputReader(contentOutputReader);
   }
 }

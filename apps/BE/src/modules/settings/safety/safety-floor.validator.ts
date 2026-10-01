@@ -4,7 +4,10 @@ import {
   BUILTIN_CHILD_CATEGORY_WORDS,
   BUILTIN_CHILD_KEYWORDS,
   BUILTIN_EXCLUDED_CATEGORY_WORDS,
+  BUILTIN_EXTRA_CHARGE_WORDS,
+  BUILTIN_MIN_BLOCK_WORDS,
   BUILTIN_NG_KEYWORD_CHILD_WORDS,
+  BUILTIN_ORIGIN_CONFUSION_WORDS,
   BUILTIN_PERSON_BLOCK_WORDS,
   BUILTIN_SENIOR_SHOE_WORDS,
   BUILTIN_WHEELED_SHOE_WORDS,
@@ -24,6 +27,9 @@ export const SAFETY_ITEMS = {
   PERSON_BLOCK_WORD_REMOVED: '실존 인물 차단어 빼기',
   CHILD_CATEGORY_WORD_REMOVED: '아동 카테고리 말 빼기',
   EXCLUDED_CATEGORY_WORD_REMOVED: '판매 제외 품목 카테고리 말 빼기',
+  MIN_BLOCK_WORD_REMOVED: '최소 차단어 빼기',
+  ORIGIN_CONFUSION_WORD_REMOVED: '판매국·제조국 혼동 표현 빼기',
+  EXTRA_CHARGE_WORD_REMOVED: '추가 청구 표현 빼기',
   NOTICE_REQUIRED_BLOCK_REMOVED: '고지 필수 블록 빼기',
   NOTICE_REQUIRED_BLOCK_EDITED: '고지 필수 블록 고치기',
   CHILD_SHOE_SIZE_LOWERED: '아동화 의심 기준 낮추기',
@@ -113,6 +119,31 @@ export function validateSafetyFloor(settings: AppSettings): SafetyViolation[] {
       item: 'EXCLUDED_CATEGORY_WORD_REMOVED',
       field: '/safety/excludedCategoryWords',
       message: `내장 판매 제외 품목 카테고리 말 '${word}'는 뺄 수 없습니다. 더하기만 됩니다.`,
+    });
+  }
+
+  for (const word of missingWords(BUILTIN_MIN_BLOCK_WORDS, settings.safety.minBlockWords)) {
+    out.push({
+      item: 'MIN_BLOCK_WORD_REMOVED',
+      field: '/safety/minBlockWords',
+      message: `내장 최소 차단어 '${word}'는 뺄 수 없습니다. 더하기만 됩니다.`,
+    });
+  }
+  for (const word of missingWords(
+    BUILTIN_ORIGIN_CONFUSION_WORDS,
+    settings.safety.originConfusionWords,
+  )) {
+    out.push({
+      item: 'ORIGIN_CONFUSION_WORD_REMOVED',
+      field: '/safety/originConfusionWords',
+      message: `내장 판매국·제조국 혼동 표현 '${word}'는 뺄 수 없습니다. 더하기만 됩니다.`,
+    });
+  }
+  for (const word of missingWords(BUILTIN_EXTRA_CHARGE_WORDS, settings.safety.extraChargeWords)) {
+    out.push({
+      item: 'EXTRA_CHARGE_WORD_REMOVED',
+      field: '/safety/extraChargeWords',
+      message: `내장 추가 청구 표현 '${word}'는 뺄 수 없습니다. 더하기만 됩니다.`,
     });
   }
 

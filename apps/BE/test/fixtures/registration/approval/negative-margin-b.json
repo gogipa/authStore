@@ -1,0 +1,12 @@
+{
+  "_note": "NEGATIVE_MARGIN 실패: 250mm 모드 B 순이익 −1원(0이면 통과 — 단위 테스트)",
+  "inputs": {
+    "judgement": {
+      "sizes": {
+        "0": {
+          "profitBKrw": -1
+        }
+      }
+    }
+  }
+}

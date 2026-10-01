@@ -115,6 +115,7 @@ export async function readSourcingTargetSkus(
     },
   });
   const priceOf = new Map(item.skus.map((sku) => [sku.id, sku.taxIncludedPriceYen]));
+  const quantityOf = new Map(item.skus.map((sku) => [sku.id, sku.quantity]));
   const row = selection.comparisonPerformed
     ? await db.sourcingComparisonRow.findFirst({
         where: { sourcingComparisonId: selection.sourcingComparisonId, isSelected: true },
@@ -126,6 +127,7 @@ export async function readSourcingTargetSkus(
     status: size.status,
     rakutenSkuId: size.skuId,
     taxIncludedPriceYen: size.skuId !== null ? (priceOf.get(size.skuId) ?? null) : null,
+    quantity: size.skuId !== null ? (quantityOf.get(size.skuId) ?? null) : null,
   }));
   return {
     sourcingStepRunId,

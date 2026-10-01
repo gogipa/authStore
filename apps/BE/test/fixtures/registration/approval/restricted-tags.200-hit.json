@@ -1,0 +1,46 @@
+{
+  "_note": "가짜 커머스API restricted-tags — '쿠션운동화'만 제한 태그",
+  "status": 200,
+  "body": [
+    {
+      "tag": "젤카야노14",
+      "restricted": false
+    },
+    {
+      "tag": "아식스운동화",
+      "restricted": false
+    },
+    {
+      "tag": "조깅화",
+      "restricted": false
+    },
+    {
+      "tag": "남자운동화",
+      "restricted": false
+    },
+    {
+      "tag": "데일리운동화",
+      "restricted": false
+    },
+    {
+      "tag": "레트로운동화",
+      "restricted": false
+    },
+    {
+      "tag": "크림운동화",
+      "restricted": false
+    },
+    {
+      "tag": "쿠션운동화",
+      "restricted": true
+    },
+    {
+      "tag": "가벼운운동화",
+      "restricted": false
+    },
+    {
+      "tag": "커플운동화",
+      "restricted": false
+    }
+  ]
+}

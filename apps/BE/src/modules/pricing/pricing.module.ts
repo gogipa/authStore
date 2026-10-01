@@ -43,6 +43,7 @@ import { FxRatesService } from './fx/fx-rates.service.js';
  *
  * P3-04: ③ 판정 읽기(`pricing-output.reader.ts`)를 앱 시작 때 `StepEngineApi.registerPricingOutputReader`로 끼운다 — ⑥-3이
  * 판매 사이즈를 step-engine을 거쳐 읽는다(content는 pricing을 import하지 않는다).
+ * P4-02: 같은 읽기 함수에 판정 스냅샷 전체(`readJudgement`)를 더했다 — 최종 승인 미리보기·사전 검증(registration)이 읽는다.
  */
 @Module({
   imports: [IntegrationsModule, SettingsModule, StepEngineModule],

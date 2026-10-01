@@ -408,6 +408,23 @@ export const ERROR_CODES = {
     status: 422,
     message: '최종 태그는 10개까지입니다. 하나를 지운 뒤 넣어 주세요.',
   },
+  // ── registration 최종 승인(P4-02 — 05-3 §5.1 문구 그대로. 승인 미리보기 `approveDisabledReason.code`가 쓰고, 승인 API(P4-03)가 같은
+  //    코드로 409를 준다) ──
+  /** 05-3 §5.1: 등록요청중·결과확인필요 기록 있음(failed_at 없음) */
+  REGISTRATION_IN_PROGRESS: {
+    status: 409,
+    message: '이 후보의 등록이 진행 중이거나 결과 확인이 필요합니다.',
+  },
+  /** 05-3 §5.1: 로컬 등록 기록 또는 SELLER_CODE 조회로 같은 상품·색상이 있음 */
+  DUPLICATE_REGISTRATION: {
+    status: 409,
+    message: '같은 상품·색상이 이미 등록돼 있습니다. 기존 상품을 확인해 주세요.',
+  },
+  /** 05-3 §5.1: 판정에 쓴 라쿠텐 페이지 수집 시각부터 설정 유효 시간 초과(M1 막음, M2 자동 재조회) */
+  JUDGEMENT_EXPIRED: {
+    status: 409,
+    message: "판정에 쓴 라쿠텐 페이지가 {n}시간이 넘었습니다. '재조회'로 다시 판정해 주세요.",
+  },
   INTERNAL_ERROR: {
     status: 500,
     message: '앱 안에서 오류가 났습니다. 다시 해 보고, 계속되면 로그를 확인해 주세요.',

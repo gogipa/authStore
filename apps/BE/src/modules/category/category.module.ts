@@ -7,6 +7,7 @@ import { CategoryDecisionRepository } from './category-decision.repository.js';
 import { CategoryDecisionsController } from './category-decisions.controller.js';
 import { CategoryDecisionsService } from './category-decisions.service.js';
 import { CategoryGenderRecheckHandler } from './category-gender-recheck.handler.js';
+import { categoryOutputReader } from './category-output.reader.js';
 import { CategoryStepRunner } from './category-step.runner.js';
 
 /**
@@ -20,6 +21,8 @@ import { CategoryStepRunner } from './category-step.runner.js';
  * - 성별 재확인(`CategoryGenderRecheckHandler`): P1-04 성별 입력이 입력 대기 중인 ④를 만나면 같은 실행에서 후보를 다시 뽑는다.
  *   앱 시작 때 `StepEngineApi.registerGenderInputListener`로 끼운다(엔진 → 단계 방향만)
  * - 감사 기록은 common `UserActionLogService`(CATEGORY_DECISION)
+ * - P4-02: ④ 결정 읽기(`category-output.reader.ts`)를 앱 시작 때 `StepEngineApi.registerCategoryOutputReader`로 끼운다 — 최종 승인
+ *   사전 검증(registration)이 step-engine을 거쳐 읽는다
  */
 @Module({
   imports: [IntegrationsModule, SettingsModule, StepEngineModule],
@@ -39,5 +42,6 @@ export class CategoryModule implements OnModuleInit {
 
   onModuleInit(): void {
     this.api.registerGenderInputListener(this.genderRecheck);
+    this.api.registerCategoryOutputReader(categoryOutputReader);
   }
 }

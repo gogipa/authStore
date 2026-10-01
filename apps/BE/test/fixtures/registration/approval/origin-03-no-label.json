@@ -1,0 +1,9 @@
+{
+  "_note": "ORIGIN 실패: 원산지 코드 03(상세설명에 표시)인데 사양 블록 제조국 표기에 실제 나라가 없음",
+  "inputs": {
+    "assembly": {
+      "originAreaCode": "03",
+      "specOriginLabel": "상세설명 참조"
+    }
+  }
+}
