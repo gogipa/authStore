@@ -39,6 +39,7 @@ import type {
 } from './ports/step-output-readers.port.js';
 import { StepModulePorts } from './ports/step-module-ports.js';
 import { PropagationService } from './propagation/propagation.service.js';
+import { RestartRecoveryService } from './recovery/restart-recovery.service.js';
 
 /** 게이트 하나의 최신 통과·유효성(P3-02 — 05-2 ThumbnailG3Validity 모양) */
 export interface GateStateView {
@@ -111,6 +112,10 @@ export type ResumeWaitingInput =
  *   ⑥-1 카피(content가 등록)
  * - `registerTagsOutputReader(reader)`·`readFinalTags(tagsStepRunId, db?)`: ⑦ 최종 태그(tags가 등록)
  * 모두 등록 전·산출물 없음이면 null이다.
+ * P4-03(⑨ 등록 — registration만 부른다, 웹 화면 G4 승인 전용):
+ * - `openRegisterRun(scope, candidateId)`: G4 승인 트랜잭션 안에서 ⑨ 버전을 RUNNING으로 연다(②~⑧ 현재 완료 버전이 입력)
+ * - `closeRegisterRun(scope, stepRunId, outcome)`: 드라이런·등록 결과로 ⑨를 닫는다(COMPLETED·FAILED(EXTERNAL_API)). 이미 닫혔으면 null
+ * - `whenRestartRecovered()`: 앱 시작 재시작 정리가 끝나면 풀린다(결과확인필요 기록 자동 조회 — F-BS-18)
  */
 @Injectable()
 export class StepEngineApi {
@@ -122,7 +127,27 @@ export class StepEngineApi {
     private readonly status: CandidateStatusService,
     private readonly ports: StepModulePorts,
     private readonly gateValidity: GateValidityService,
+    private readonly recovery: RestartRecoveryService,
   ) {}
+
+  /** ⑨ 등록 버전 열기(P4-03 — G4 승인 트랜잭션 안). `StepExecutionService.openRegisterRun` */
+  openRegisterRun(scope: StepEngineTx, candidateId: number): Promise<StepRun> {
+    return this.executions.openRegisterRun(scope, candidateId);
+  }
+
+  /** ⑨ 등록 버전 닫기(P4-03 — 드라이런·등록 결과). 이미 닫혔으면 null */
+  closeRegisterRun(
+    scope: StepEngineTx,
+    stepRunId: number,
+    outcome: StepOutcome,
+  ): Promise<StepRun | null> {
+    return this.executions.closeRegisterRun(scope, stepRunId, outcome);
+  }
+
+  /** 앱 시작 재시작 정리(F-BS-18)가 끝나면 풀린다(P4-03 — 결과확인필요 기록 자동 조회가 기다린다) */
+  whenRestartRecovered(): Promise<void> {
+    return this.recovery.recovered;
+  }
 
   recordOwnerEditRun(
     scope: StepEngineTx,

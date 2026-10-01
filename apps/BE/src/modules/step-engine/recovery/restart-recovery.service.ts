@@ -30,7 +30,8 @@ export interface RecoveryResult {
  * - RUNNING step_run → FAILED + failure_kind INTERRUPTED + ended_at, 그 단계가 현재 버전이면 candidate_step도 FAILED.
  * - WAITING_INPUT은 그대로 둔다(오너 입력을 이어서 받는다).
  * - ⑨ REGISTER였으면 실행기 훅(`onInterrupted`, P4-03)이 등록 기록으로 후보 상태를 정한다(등록요청중 → 결과확인필요
- *   APP_RESTART, 기록 전·차단 스위치 켬 → 승인대기 RESTART_REVERTED). 여기서는 registration을 읽거나 쓰지 않는다.
+ *   APP_RESTART, 기록 전·차단 스위치 켬 → 승인대기 RESTART_REVERTED). 여기서는 registration을 읽거나 쓰지 않는다. 정리가 끝나면
+ *   `recovered`가 풀리고(P4-03), registration이 결과확인필요 기록을 판매자관리코드로 조회한다(F-BS-18 — `StepEngineApi.whenRestartRecovered`).
  * - 열린 연속 실행 묶음(ended_at NULL)은 stop_reason APP_RESTART로 닫고 다시 이어 가지 않는다(P1-06 규칙 7). 멈춘 단계는
  *   그 묶음의 마지막 실행 단계(중단된 단계, 없으면 null — Proposed). 커밋 뒤 SSE `continuous-run.stopped`.
  * 실행 한 건마다 트랜잭션 하나(한 건이 깨져도 나머지는 정리한다).
@@ -38,6 +39,11 @@ export interface RecoveryResult {
 @Injectable()
 export class RestartRecoveryService implements OnApplicationBootstrap {
   private readonly logger = new Logger(RestartRecoveryService.name);
+  private markRecovered: () => void = () => undefined;
+  /** 앱 시작 정리가 끝나면(실패해도) 풀린다(P4-03 — 재시작 뒤 결과확인 조회가 기다린다) */
+  readonly recovered: Promise<void> = new Promise((resolve) => {
+    this.markRecovered = resolve;
+  });
 
   constructor(
     private readonly prisma: PrismaService,
@@ -64,6 +70,8 @@ export class RestartRecoveryService implements OnApplicationBootstrap {
       }
     } catch (error) {
       this.logger.error({ err: error }, '재시작 정리에 실패했습니다');
+    } finally {
+      this.markRecovered();
     }
   }
 
@@ -110,7 +118,9 @@ export class RestartRecoveryService implements OnApplicationBootstrap {
               : null;
           const runner = this.registry.get(run.stepCode as StepCode);
           const effect = runner?.onInterrupted
-            ? await runner.onInterrupted(scope.tx, closed)
+            ? await runner.onInterrupted(scope.tx, closed, {
+                afterCommit: (fn) => scope.afterCommit(fn),
+              })
             : null;
           if (effect) {
             await this.status.transition(

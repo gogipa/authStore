@@ -1,0 +1,8 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-products-200" },
+  "body": {
+    "originProductNo": 10000000001,
+    "smartstoreChannelProductNo": 20000000001
+  }
+}

@@ -3,12 +3,15 @@ import {
   approvalContext,
   baseApprovalInputs,
   mergePatch,
+  standardOptionsInput,
 } from '../../../../test/fixtures/registration/approval/approval-fixtures.js';
+import { liveRegistrationCountOf } from './approval-inputs.js';
 import {
   buildRegistrationDraft,
   displayStatusTypeOf,
   sellerManagementCodeOf,
   sizeOptionsOf,
+  standardOptionSupportOf,
 } from './registration-draft.builder.js';
 
 describe('요청 초안 빌더(P4-02 §5 — P4-03 §4 규칙 1~4 값)', () => {
@@ -73,6 +76,64 @@ describe('요청 초안 빌더(P4-02 §5 — P4-03 §4 규칙 1~4 값)', () => {
   it('전시 모드: 진행 중·등록됨 9건 SUSPENSION / 10건 ON', () => {
     expect(displayStatusTypeOf(9, 10)).toBe('SUSPENSION');
     expect(displayStatusTypeOf(10, 10)).toBe('ON');
+  });
+
+  it('전시 모드(P4-03 규칙 4): 등록됨 9 + VALIDATED 5 + 4xx 종결 3 → 9건 → SUSPENSION(드라이런·종결 제외)', () => {
+    const rows = [
+      ...Array.from({ length: 9 }, () => ({ status: 'REGISTERED', failedAt: null })),
+      ...Array.from({ length: 5 }, () => ({ status: 'VALIDATED', failedAt: null })),
+      ...Array.from({ length: 3 }, () => ({
+        status: 'REGISTERING',
+        failedAt: '2026-10-01T00:00:00.000Z',
+      })),
+      { status: 'RESULT_CHECK_REQUIRED', failedAt: '2026-10-01T00:00:00.000Z' },
+    ];
+    expect(liveRegistrationCountOf(rows)).toBe(9);
+    expect(displayStatusTypeOf(liveRegistrationCountOf(rows), 10)).toBe('SUSPENSION');
+    expect(
+      liveRegistrationCountOf([...rows, { status: 'RESULT_CHECK_REQUIRED', failedAt: null }]),
+    ).toBe(10);
+  });
+
+  it('표준형(F-AP-41): 지원 카테고리면 standardOptionGroups·optionStandards(옵션가 칸 없음), 아니면 조합형 모양 + 이유', () => {
+    const inputs = { ...baseApprovalInputs(), standardOptions: standardOptionsInput() };
+    const standard = buildRegistrationDraft(inputs, { optionType: 'STANDARD' });
+    const info = standard.requestJson.originProduct.detailAttribute.optionInfo;
+    expect(standard.standardOption.supported).toBe(true);
+    expect(info.optionCombinations).toBeUndefined();
+    expect(info.standardOptionGroups?.[0]?.groupName).toBe('사이즈');
+    expect(
+      info.standardOptionGroups?.[0]?.standardOptionAttributes.map((a) => a.attributeValueName),
+    ).toEqual(['250', '255', '260', '265', '275']);
+    expect(info.optionStandards).toEqual(
+      [250, 255, 260, 265, 275].map((mm) => ({
+        optionName1: String(mm),
+        stockQuantity: 2,
+        usable: true,
+      })),
+    );
+    expect(standard.stockQuantity).toBe(10);
+    // 조합형을 고르면 문서가 있어도 조합형
+    expect(
+      buildRegistrationDraft(inputs, { optionType: 'COMBINATION' }).requestJson.originProduct
+        .detailAttribute.optionInfo.optionCombinations,
+    ).toHaveLength(5);
+    // 사이즈 목록에 없는 mm·옵션가가 있으면 못 쓴다
+    expect(
+      standardOptionSupportOf(
+        { standardOptions: standardOptionsInput([250, 255]) },
+        standard.options,
+      ).reason,
+    ).toContain('260, 265, 275mm');
+    const priced = standard.options.map((o, i) => (i === 0 ? { ...o, optionPriceKrw: 3000 } : o));
+    expect(
+      standardOptionSupportOf({ standardOptions: standardOptionsInput() }, priced).reason,
+    ).toContain('옵션가');
+    const unsupported = buildRegistrationDraft(baseApprovalInputs(), { optionType: 'STANDARD' });
+    expect(unsupported.standardOption.supported).toBe(false);
+    expect(
+      unsupported.requestJson.originProduct.detailAttribute.optionInfo.optionCombinations,
+    ).toHaveLength(5);
   });
 
   it('요청 본문: SALE·INCLUDED·false·true·SHOES, 태그 ≤ 10, deliveryInfo 있음, 본문 글자에 token·secret 없음', () => {

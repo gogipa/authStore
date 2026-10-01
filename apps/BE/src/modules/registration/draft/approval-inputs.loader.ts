@@ -13,6 +13,7 @@ import { readUploadResult } from '../upload/upload-result.store.js';
 import type {
   ApprovalInputs,
   ApprovalRegistrationsInput,
+  ApprovalStandardOptionsInput,
   ApprovalUploadInput,
 } from './approval-inputs.js';
 
@@ -24,6 +25,38 @@ export const IN_PROGRESS_REGISTRATION_STATUSES = ['REGISTERING', 'RESULT_CHECK_R
 const DERIVATION_DEPTH_MAX = 10;
 
 const iso = (value: Date | null | undefined): string | null => (value ? value.toISOString() : null);
+
+/**
+ * 표준옵션 문서 payload(P1-08 — `{ useStandardOption, standardOptionCategoryGroups: [{ attributeId, attributeName,
+ * standardOptionAttributes: [{ attributeValueId, attributeValueName }] }] }`, M0 S3 전 추정 모양) → 입력. 읽을 수 없으면 null
+ */
+export function standardOptionsOf(payload: unknown): ApprovalStandardOptionsInput | null {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  const doc = payload as Record<string, unknown>;
+  const groups = Array.isArray(doc.standardOptionCategoryGroups)
+    ? (doc.standardOptionCategoryGroups as unknown[])
+    : [];
+  const idOf = (v: unknown) => (typeof v === 'number' || typeof v === 'string' ? v : null);
+  let sizeGroup: ApprovalStandardOptionsInput['sizeGroup'] = null;
+  for (const raw of groups) {
+    if (!raw || typeof raw !== 'object') continue;
+    const group = raw as Record<string, unknown>;
+    const name = typeof group.attributeName === 'string' ? group.attributeName : '';
+    if (!name.includes('사이즈')) continue;
+    const values = (
+      Array.isArray(group.standardOptionAttributes) ? group.standardOptionAttributes : []
+    )
+      .filter((v): v is Record<string, unknown> => !!v && typeof v === 'object')
+      .filter((v) => typeof v.attributeValueName === 'string')
+      .map((v) => ({
+        attributeValueId: idOf(v.attributeValueId),
+        attributeValueName: v.attributeValueName as string,
+      }));
+    sizeGroup = { attributeId: idOf(group.attributeId), attributeName: name, values };
+    break;
+  }
+  return { useStandardOption: doc.useStandardOption === true, sizeGroup };
+}
 
 /**
  * 최종 승인 입력 읽기(P4-02 §5 `approval-inputs.loader.ts`). 후보 1건의 **현재 버전** 산출물(③④⑤⑥⑦⑧)과 프로필·설정·등록 기록을 읽어
@@ -90,6 +123,11 @@ export class ApprovalInputsLoader {
     const profile = await this.loadProfile();
     const registrations = await this.loadRegistrations(candidate, db);
     const switchRow = await db.registrationSwitch.findUnique({ where: { singletonKey: 1 } });
+    const standardOptions = candidate.leafCategoryId
+      ? standardOptionsOf(
+          (await this.meta.getDocument('STANDARD_OPTIONS', candidate.leafCategoryId))?.payload,
+        )
+      : null;
 
     return {
       candidate: {
@@ -175,6 +213,7 @@ export class ApprovalInputsLoader {
       },
       registrations,
       apiBlocked: switchRow?.apiBlocked ?? true,
+      standardOptions,
     };
   }
 
@@ -320,7 +359,13 @@ export class ApprovalInputsLoader {
               failedAt: null,
             },
             orderBy: { id: 'desc' },
-            select: { id: true, status: true, originProductNo: true, channelProductNo: true },
+            select: {
+              id: true,
+              status: true,
+              originProductNo: true,
+              channelProductNo: true,
+              registeredAt: true,
+            },
           })
         : null;
     return {
@@ -332,8 +377,38 @@ export class ApprovalInputsLoader {
             status: duplicate.status,
             originProductNo: duplicate.originProductNo,
             channelProductNo: duplicate.channelProductNo,
+            registeredAt: iso(duplicate.registeredAt),
           }
         : null,
+      sameModel: await this.sameModelRegistrations(candidate, db),
     };
+  }
+
+  /**
+   * 같은 모델·색상, 다른 샵(F-AP-38·RG-12 — `SAME_MODEL_REGISTERED`): 후보 앵커 型番이 같고(정규화 값 — 후보 행) `color_code`가
+   * 같은데 `item_code`가 다른 진행 중·등록됨 기록(failed_at 없음). 型番을 모르면 보지 않는다
+   */
+  private async sameModelRegistrations(
+    candidate: Candidate,
+    db: Db,
+  ): Promise<NonNullable<ApprovalRegistrationsInput['sameModel']>> {
+    if (!candidate.anchorModelCode || !candidate.anchorColorCode || !candidate.itemCode) return [];
+    const rows = await db.registration.findMany({
+      where: {
+        colorCode: candidate.anchorColorCode,
+        itemCode: { not: candidate.itemCode },
+        status: { in: LIVE_REGISTRATION_STATUSES },
+        failedAt: null,
+        stepRun: { candidate: { anchorModelCode: candidate.anchorModelCode } },
+      },
+      orderBy: { id: 'asc' },
+      take: 10,
+      select: { id: true, itemCode: true, originProductNo: true },
+    });
+    return rows.map((row) => ({
+      registrationId: row.id,
+      itemCode: row.itemCode,
+      originProductNo: row.originProductNo,
+    }));
   }
 }

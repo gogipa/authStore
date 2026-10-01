@@ -120,6 +120,10 @@ export type EventInvalidations = {
  *   경쟁 태그 입력 목록(`listTagCompetitorInputs`). 입력 넣기·빼기는 응답 뒤 훅이 무효화한다.
  * - P4-01: `step-run.status-changed`가 ⑧(UPLOAD)이면 그 후보의 ⑧ 산출물(`getCandidateUploadResult`). `candidate-step.changed`
  *   (재실행 필요로 바뀜 등)도 ⑧ 산출물을 다시 읽힌다(단계 레일은 위 공통 키).
+ * - P4-03: `registration.status-changed`(드라이런 저장·등록요청중·등록됨·4xx 종결·결과확인필요·조회 결과) → 그 후보의 등록 기록 이력
+ *   (`listCandidateRegistrations`)·그 기록(`getRegistration`)·게이트(G4)·단계 레일(⑨)과 승인 미리보기·사전 검증.
+ *   `registration-switch.changed` → 스위치(`getRegistrationSwitch` — 내비 칩·승인 화면 띠)·모든 후보의 승인 미리보기(apiBlocked)·
+ *   등록 기록 이력(되돌린 후보는 `candidate.status-changed`가 따로 온다). 202 뒤 폴링하지 않는다.
  * - P4-02: `candidate-step.changed`·`gate.invalidated`·`candidate.status-changed` → 그 후보의 G4 승인 미리보기
  *   (`getCandidateApproval`)와 사전 검증(`runCandidatePreValidation` — POST지만 화면 상태로 둔 query. 서버로는 한 번에 하나만 간다,
  *   features/registration `usePreValidation`). 옵션 방식(optionType)과 상관없이 부분 일치로 닿는다.
@@ -277,6 +281,18 @@ export const EVENT_INVALIDATIONS: EventInvalidations = {
   'keyword-collection.aborted': ({ keywordSnapshotId }) =>
     keywordCollectionEndKeys(keywordSnapshotId),
   'fx-rate.updated': () => [qk('pricing', 'getLatestFxRates'), qk('pricing', 'listFxRates')],
+  'registration.status-changed': ({ candidateId, registrationId }) => [
+    qk('registration', 'listCandidateRegistrations', { candidateId }),
+    qk('registration', 'getRegistration', { registrationId }),
+    qk('step-engine', 'listCandidateGates', { candidateId }),
+    ...stepEngineStepKeys(candidateId),
+    ...approvalKeys(candidateId),
+  ],
+  'registration-switch.changed': () => [
+    qk('registration', 'getRegistrationSwitch'),
+    qk('registration', 'getCandidateApproval'),
+    qk('registration', 'listCandidateRegistrations'),
+  ],
   'commerce-meta-sync.completed': () => [
     qk('integrations', 'getLatestCommerceMetaSyncRuns'),
     qk('integrations', 'listCommerceAddressbooks'),

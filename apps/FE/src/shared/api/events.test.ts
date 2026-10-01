@@ -65,6 +65,8 @@ describe('진행 알림 이름', () => {
       'keyword-collection.completed',
       'keyword-collection.aborted',
       'fx-rate.updated',
+      'registration.status-changed',
+      'registration-switch.changed',
       'commerce-meta-sync.completed',
     ]);
     // ⑥(P3-03): ⑥-1·⑥-2 실행 상태 → 카피·고시 원자료, 재확인 필요 → 고시 원자료·단계 레일
@@ -169,6 +171,40 @@ describe('진행 알림 이름', () => {
       }),
     ).toEqual(expect.arrayContaining([approvalKey, preValidationKey]));
     expect(uploadRun).not.toContainEqual(preValidationKey);
+    // ⑨ 등록(P4-03): 등록 기록 상태가 바뀌면 그 후보의 이력·그 기록·게이트(G4)·단계 레일·승인 화면
+    const registrationChanged = EVENT_INVALIDATIONS['registration.status-changed']?.({
+      registrationId: 31,
+      candidateId: 1,
+      stepRunId: 210,
+      status: 'RESULT_CHECK_REQUIRED',
+      originProductNo: null,
+      errorCode: 'TIMEOUT',
+      errorMessage: '…',
+      traceId: null,
+      failureKind: null,
+      candidateStatus: 'RESULT_CHECK_REQUIRED',
+    });
+    expect(registrationChanged).toEqual(
+      expect.arrayContaining([
+        ['registration', 'listCandidateRegistrations', { candidateId: 1 }],
+        ['registration', 'getRegistration', { registrationId: 31 }],
+        ['step-engine', 'listCandidateGates', { candidateId: 1 }],
+        ['step-engine', 'listCandidateSteps', { candidateId: 1 }],
+        approvalKey,
+        preValidationKey,
+      ]),
+    );
+    // 차단 스위치(P4-03): 내비 칩·띠·모든 후보의 미리보기(apiBlocked)·이력. 사전 검증(외부 조회)은 다시 돌리지 않는다
+    const switched = EVENT_INVALIDATIONS['registration-switch.changed']?.({
+      apiBlocked: false,
+      changedAt: '2026-09-28T00:00:00.000Z',
+      revertedCandidateIds: [1],
+    });
+    expect(switched).toEqual([
+      ['registration', 'getRegistrationSwitch'],
+      ['registration', 'getCandidateApproval'],
+      ['registration', 'listCandidateRegistrations'],
+    ]);
     expect(
       EVENT_INVALIDATIONS['content-field.recheck-flagged']?.({
         candidateId: 1,
@@ -567,8 +603,7 @@ describe('connectProgressEvents', () => {
     const source = FakeEventSource.latest();
 
     source.emit('unknown.event', { x: 1 });
-    // 표에 없는 M1 이벤트(P3-03이 content-field.recheck-flagged를 더해 등록 스위치 이벤트로 본다 — P4-03이 더한다)
-    source.emit('registration-switch.changed', { enabled: true });
+    // P4-03으로 M1 이벤트 22개가 모두 표에 들어갔다 — 모르는 이벤트와 읽을 수 없는 data만 남는다
     source.emitRaw('call-usage.changed', '{not json');
 
     expect(invalidate).not.toHaveBeenCalled();

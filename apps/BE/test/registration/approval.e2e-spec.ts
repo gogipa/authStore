@@ -17,6 +17,7 @@ import {
   type CommerceFixture,
   type RecordedCommerceRequest,
 } from '../support/fake-commerce-transport.js';
+import { FakeCommerceProductsServer } from '../support/fake-commerce-products.js';
 import { InMemorySecretStore } from '../support/in-memory-secret-store.js';
 
 const CLIENT = { 'X-AutoStore-Client': '1' };
@@ -109,6 +110,8 @@ describe('G4 승인 미리보기·사전 검증(P4-02) e2e — autostore_test·�
   let origin: string;
   const store = new InMemorySecretStore();
   const commerce = new FakeCommerceTransport();
+  // P4-03: 사전 검증이 판매자관리코드(SELLER_CODE)도 조회한다 — 기본은 '없음'
+  const products = new FakeCommerceProductsServer();
   let restricted = restrictedResponder('restricted-tags.200-none.json');
   const v = signatureVector();
 
@@ -146,7 +149,8 @@ describe('G4 승인 미리보기·사전 검증(P4-02) e2e — autostore_test·�
     };
     t.fetch.reset();
     // 가짜 커머스 서버를 가짜 fetch(HTTP_FETCH) 뒤에 둔다 → 실제 관문(허용 목록·UA·call_log)을 지난다
-    t.fetch.handler = commerce.fetchHandler;
+    products.reset();
+    t.fetch.handler = products.fetchHandler(commerce);
     t.app.get(CommerceTokenService).invalidate();
     t.clock.ms = TEST_START_MS;
   });
@@ -210,7 +214,7 @@ describe('G4 승인 미리보기·사전 검증(P4-02) e2e — autostore_test·�
       expect(t.fetch.calls).toHaveLength(0);
     });
 
-    it('?optionType=STANDARD는 표준형 미리보기(지금은 꺼짐 VALIDATION_FAILED), BAD는 422 INVALID_QUERY_PARAMETER', async () => {
+    it('?optionType=STANDARD는 표준형 미리보기(카테고리 표준옵션이 없으면 꺼짐 VALIDATION_FAILED), BAD는 422 INVALID_QUERY_PARAMETER', async () => {
       const standard = await preview(seed.candidate.id, '?optionType=STANDARD');
       expect(standard.status).toBe(200);
       expect((standard.body as PreviewBody).optionType).toBe('STANDARD');
@@ -245,6 +249,10 @@ describe('G4 승인 미리보기·사전 검증(P4-02) e2e — autostore_test·�
       expect(new URL(restrictedRequests()[0]!.url).searchParams.getAll('tags')).toEqual(
         seed.finalTags,
       );
+      // P4-03: SELLER_CODE 교차 조회 1회(판매자관리코드 = 요청 초안 값)
+      expect(products.searches.map((r) => r.body?.sellerManagementCode)).toEqual([
+        'RKT:shop-a:10000123:108',
+      ]);
       const logs = await t.prisma.callLog.findMany({ where: { candidateId: seed.candidate.id } });
       expect(
         logs.some(
@@ -282,6 +290,21 @@ describe('G4 승인 미리보기·사전 검증(P4-02) e2e — autostore_test·�
       expect(tags.stepCode).toBe('TAGS');
       expect(body.approvable).toBe(false);
       expect(body.checks.filter((c) => !c.passed).map((c) => c.checkCode)).toEqual(['TAGS']);
+    });
+
+    it('P4-03: SELLER_CODE 조회에 상품이 있으면 DUPLICATE 실패 + duplicate.source=COMMERCE_API(기존 상품 보기)', async () => {
+      const seed = await seedApprovableCandidate(t);
+      products.searchMode = 'FOUND';
+      const body = (await preValidate(seed.candidate.id)).body as PreValidationBody & {
+        duplicate: { duplicated: boolean; source: string; originProductNo: string };
+      };
+      expect(checkOf(body, 'DUPLICATE').passed).toBe(false);
+      expect(body.approvable).toBe(false);
+      expect(body.duplicate).toMatchObject({
+        duplicated: true,
+        source: 'COMMERCE_API',
+        originProductNo: '10000000001',
+      });
     });
 
     it("restricted-tags가 제한 태그를 돌려주면 TAGS 실패('쿠션운동화')", async () => {

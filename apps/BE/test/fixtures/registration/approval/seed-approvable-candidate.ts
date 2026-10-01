@@ -45,6 +45,8 @@ export interface ApprovableSeedOptions {
   /** 판정에 쓴 페이지 수집 시각(기본 시계 시작 − 1시간) */
   collectedAt?: Date;
   itemCode?: string;
+  /** ⑥-3 상품명(기본 시안 값 — P4-03 e2e는 101자로 PRE_VALIDATION_FAILED를 본다) */
+  productName?: string;
 }
 
 export interface ApprovableSeed {
@@ -431,7 +433,7 @@ export async function seedApprovableCandidate(
   await prisma.contentDraftAssembly.create({
     data: {
       stepRunId: noticeHtml.id,
-      productName: APPROVAL_SAMPLE.productName,
+      productName: options.productName ?? APPROVAL_SAMPLE.productName,
       noticeFields: approvalNoticeFields(),
       noticeSizesMm: [...APPROVAL_SAMPLE.saleSizesMm],
       originAreaCode: '0200037',
@@ -606,6 +608,7 @@ export const APPROVAL_TABLES = [
   'upload_result',
   'upload_result_image',
   'registration',
+  'registration_switch',
   'call_log',
   ...PROFILE_TABLES,
 ];

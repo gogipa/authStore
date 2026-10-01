@@ -243,8 +243,15 @@ export interface StepRunner {
   ownerInputsOf?(db: Tx, stepRunId: number): Promise<Record<string, unknown>>;
   /** ② 버전의 앵커 키(이전 버전 다시 고르기의 409 ANCHOR_KEY_MISMATCH 검사). 없으면 검사하지 않는다 */
   anchorKeyOf?(db: Tx, stepRunId: number): Promise<AnchorKeyInput | null>;
-  /** 재시작 정리(⑨, P4-03): 중단된 실행의 후보 상태 전이. null이면 후보는 그대로 */
-  onInterrupted?(tx: Tx, run: StepRunRow): Promise<CandidateStatusEffect | null>;
+  /**
+   * 재시작 정리(⑨, P4-03): 중단된 실행의 후보 상태 전이. null이면 후보는 그대로. `hooks.afterCommit`으로 커밋 뒤 SSE를 건다
+   * (P4-03 — 등록 기록 상태가 바뀌면 `registration.status-changed`)
+   */
+  onInterrupted?(
+    tx: Tx,
+    run: StepRunRow,
+    hooks?: StepPersistHooks,
+  ): Promise<CandidateStatusEffect | null>;
   /**
    * ② 재조회 모드(선택, P2-02, P1-06 6시간 규칙): 연속 실행이 판정에 쓴 라쿠텐 페이지가 판정 유효 시간(기본 6시간)을
    * 넘은 것을 보고 ③을 다시 판정하기 전에 ②를 다시 조회할 때 `run` 대신 부른다(검색 없이 선택 상품 페이지만 다시 받는 등).

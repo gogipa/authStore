@@ -1,0 +1,9 @@
+{
+  "status": 500,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-products-500" },
+  "body": {
+    "code": "InternalServerError",
+    "message": "fixture server error",
+    "traceId": "fixture-trace-products-500"
+  }
+}

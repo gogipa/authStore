@@ -499,6 +499,25 @@ describe('사전 검증 15항목(P4-02 §6 단위 — fixture ctx)', () => {
       expect(dup.passed).toBe(false);
       expect(dup.reason).toContain('#3');
     });
+
+    it('P4-03: 커머스API SELLER_CODE 조회에 상품이 있으면 실패, 조회 실패도 실패(사유), 없으면 통과', () => {
+      const found = duplicateCheck(
+        approvalContext({
+          sellerCode: { ok: true, product: { originProductNo: '9001', channelProductNo: null } },
+        }),
+      );
+      expect(found.passed).toBe(false);
+      expect(found.reason).toContain('RKT:shop-a:10000123:108');
+      expect(found.reason).toContain('9001');
+      const failed = duplicateCheck(
+        approvalContext({ sellerCode: { ok: false, reason: '커머스API 키가 아직 없습니다' } }),
+      );
+      expect(failed.passed).toBe(false);
+      expect(failed.reason).toContain('확인하지 못했습니다');
+      expect(
+        duplicateCheck(approvalContext({ sellerCode: { ok: true, product: null } })).passed,
+      ).toBe(true);
+    });
   });
 });
 

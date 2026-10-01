@@ -18,10 +18,18 @@ import {
   type RegistrationDraft,
 } from '../draft/registration-draft.builder.js';
 import { isApprovable, runPreValidationChecks } from './pre-validation.js';
+import {
+  approvalWarningsOf,
+  duplicateInfoOf,
+  DuplicateService,
+  type ApprovalDuplicateInfo,
+  type ApprovalWarning,
+} from '../duplicate/duplicate.service.js';
 import type {
   PreValidationCheck,
   PreValidationContext,
   RestrictedTagsLookup,
+  SellerCodeLookup,
 } from './pre-validation.types.js';
 
 /** 사전 검증을 받는 후보 상태(P4-02 규칙 1) */
@@ -33,7 +41,9 @@ export interface PreValidationResult {
   approvable: boolean;
   checks: PreValidationCheck[];
   checkedAt: string;
-  warnings: { code: string; message: string }[];
+  warnings: ApprovalWarning[];
+  /** 중복 정보(P4-03 — 로컬 + SELLER_CODE 교차 조회, '기존 상품 보기') */
+  duplicate: ApprovalDuplicateInfo;
 }
 
 /** 같은 후보·옵션 방식의 사전 검증 묶음(입력·초안·결과 — P4-03 승인이 `validation_result`·요청 본문에 쓴다) */
@@ -41,6 +51,8 @@ export interface PreValidationEvaluation {
   inputs: ApprovalInputs;
   draft: RegistrationDraft;
   result: PreValidationResult;
+  /** SELLER_CODE 교차 조회 결과(P4-03 승인이 409 DUPLICATE_REGISTRATION을 고른다) */
+  sellerCode: SellerCodeLookup;
 }
 
 function chunks<T>(items: readonly T[], size: number): T[][] {
@@ -56,6 +68,8 @@ function chunks<T>(items: readonly T[], size: number): T[][] {
  * §7.5-38). P4-03 승인 직전 재검증이 같은 서비스(`evaluate`)를 부른다.
  * - restricted-tags: 최종 태그를 설정 `tags.restrictedBatchSize`로 나눠 integrations `COMMERCE_TAGS_PORT`(P3-05 — P1-01 관문·`call_log`)로
  *   다시 확인한다. 키 없음·외부 실패·인증 실패는 `TAGS` 항목만 실패(사유에 원인)이고 전체는 200이다(§7.5-37)
+ * - SELLER_CODE 교차 조회(P4-03 F-AP-36): 요청 초안의 판매자관리코드로 커머스API 상품 검색(`DuplicateService` — 실패는 DUPLICATE만
+ *   실패). 결과에 중복 정보(`duplicate` — '기존 상품 보기')와 경고 `SAME_MODEL_REGISTERED`(같은 모델·색상, 다른 샵)를 넣는다
  * - 한 번에 하나: 같은 후보·옵션 방식의 검사가 돌고 있으면 새로 돌리지 않고 그 결과를 같이 쓴다(SSE로 연달아 다시 불려도
  *   restricted-tags를 겹쳐 부르지 않는다 — 규칙 '사전 검증은 부를 때마다 restricted-tags를 조회한다 … 한 번에 하나만')
  */
@@ -72,6 +86,7 @@ export class PreValidationService {
     @Inject(COMMERCE_TAGS_PORT) private readonly tagsPort: CommerceTagsPort,
     @Inject(SECRET_STORE) private readonly secrets: SecretStore,
     @Inject(CLOCK) private readonly clock: Clock,
+    private readonly duplicates: DuplicateService,
   ) {}
 
   /** `POST /candidates/{id}/pre-validations`: 404 → 409(승인대기 아님, details.allowed) → 검사 */
@@ -90,26 +105,35 @@ export class PreValidationService {
     return task;
   }
 
-  /** 상태 검사가 끝난 후보의 검사 한 번(P4-03 승인 직전 재검증도 부른다) */
+  /**
+   * 상태 검사가 끝난 후보의 검사 한 번(P4-03 승인 직전 재검증도 부른다 — 이미 읽은 입력을 `options.inputs`로 넘기면 다시 읽지 않는다).
+   * 외부 조회 두 가지(restricted-tags, SELLER_CODE 교차 조회 — P4-03)는 실패해도 그 항목만 실패다.
+   */
   async evaluate(
     candidate: Candidate,
     optionType: RegistrationOptionType,
+    options: { inputs?: ApprovalInputs } = {},
   ): Promise<PreValidationEvaluation> {
-    const inputs = await this.loader.load(candidate);
+    const inputs = options.inputs ?? (await this.loader.load(candidate));
     const draft = buildRegistrationDraft(inputs, { optionType });
     const restrictedTags = await this.lookupRestrictedTags(inputs, candidate.id);
+    const sellerCode = await this.duplicates.lookupSellerCode(draft.sellerManagementCode, {
+      candidateId: candidate.id,
+    });
     const now = this.clock.now();
-    const ctx: PreValidationContext = { inputs, draft, now, restrictedTags };
+    const ctx: PreValidationContext = { inputs, draft, now, restrictedTags, sellerCode };
     const checks = runPreValidationChecks(ctx);
     return {
       inputs,
       draft,
+      sellerCode,
       result: {
         candidateId: candidate.id,
         approvable: isApprovable(checks),
         checks,
         checkedAt: now.toISOString(),
-        warnings: [],
+        warnings: approvalWarningsOf(inputs),
+        duplicate: duplicateInfoOf(inputs, sellerCode),
       },
     };
   }

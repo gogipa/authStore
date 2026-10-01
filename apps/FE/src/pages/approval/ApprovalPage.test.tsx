@@ -5,6 +5,8 @@ import { callUsageList } from '@/test/fixtures/callUsage';
 import {
   approvalPreview,
   preValidationResult,
+  registrationPage,
+  registrationSwitch,
   uploadResultOutput,
 } from '@/test/fixtures/registration';
 import { candidateDetail, gateList, stepRail } from '@/test/fixtures/stepEngine';
@@ -33,6 +35,8 @@ function setup(
       options.preview ?? jsonResponse(approvalPreview(CANDIDATE_ID)),
     [`POST /candidates/${CANDIDATE_ID}/pre-validations`]: () =>
       jsonResponse(options.result ?? preValidationResult(CANDIDATE_ID)),
+    [`GET /candidates/${CANDIDATE_ID}/registrations`]: () => jsonResponse(registrationPage()),
+    'GET /registration-switch': () => jsonResponse(registrationSwitch(true)),
   });
 }
 
@@ -171,8 +175,9 @@ describe('SCR-08 최종 승인 — 미리보기·사전 검증·승인 버튼(P4
       `${window.location.origin}/api/v1/image-assets/31/file`,
       `${window.location.origin}/api/v1/image-assets/32/file`,
     ]);
-    // 요청 JSON은 URL 그대로 글로만 보인다(부르지 않는다)
-    expect(preview.getByLabelText('요청 JSON 초안').textContent).toContain('"statusType": "SALE"');
+    // 요청 JSON은 URL 그대로 글로만 보인다(부르지 않는다) — 시안대로 '⑨ 등록' 영역에 있다(P4-03)
+    const register = within(screen.getByRole('region', { name: '⑨ 등록' }));
+    expect(register.getByLabelText('요청 JSON 초안').textContent).toContain('"statusType": "SALE"');
   });
 
   it("미리보기 요약: 상품명 n/100자·순이익·소싱 방식·사이즈 옵션 '각 2개, 합 10개'·태그·상세·배송", async () => {

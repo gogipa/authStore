@@ -1,4 +1,7 @@
-import { approvalContext } from '../../../../test/fixtures/registration/approval/approval-fixtures.js';
+import {
+  approvalContext,
+  standardOptionsInput,
+} from '../../../../test/fixtures/registration/approval/approval-fixtures.js';
 import { approveDisabledReasonOf } from './approve-enabled.js';
 
 describe('승인 버튼 꺼짐 이유(P4-02 규칙 14 — 승인 API 409·422 코드와 같다)', () => {
@@ -48,5 +51,15 @@ describe('승인 버튼 꺼짐 이유(P4-02 규칙 14 — 승인 API 409·422 �
     expect(approveDisabledReasonOf(duplicate)?.code).toBe('DUPLICATE_REGISTRATION');
     const standard = approvalContext({}, { optionType: 'STANDARD' });
     expect(approveDisabledReasonOf(standard)?.code).toBe('VALIDATION_FAILED');
+    expect(approveDisabledReasonOf(standard)?.message).toContain('표준형 옵션을 지원하지 않습니다');
+  });
+
+  it('P4-03: 카테고리가 표준형을 지원하면 STANDARD도 켜짐', () => {
+    const standard = approvalContext(
+      { inputs: { standardOptions: standardOptionsInput() } as never },
+      { optionType: 'STANDARD' },
+    );
+    expect(standard.draft.standardOption).toEqual({ supported: true, reason: null });
+    expect(approveDisabledReasonOf(standard)).toBeNull();
   });
 });

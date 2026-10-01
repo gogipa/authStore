@@ -83,6 +83,44 @@ export class ApprovalWarningDto {
   message!: string;
 }
 
+/** 05-2 ApprovalDuplicateInfo */
+export class ApprovalDuplicateInfoDto {
+  @ApiProperty()
+  duplicated!: boolean;
+
+  @ApiPropertyOptional({ type: 'integer', nullable: true, minimum: 1 })
+  existingRegistrationId?: number | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, pattern: '^[0-9]+$' })
+  originProductNo?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, pattern: '^[0-9]+$' })
+  channelProductNo?: string | null;
+
+  @ApiPropertyOptional({
+    enum: ['LOCAL', 'COMMERCE_API'],
+    nullable: true,
+    description: 'P4-03: 찾은 곳(이 앱 등록 기록 / 커머스API SELLER_CODE 조회)',
+  })
+  source?: 'LOCAL' | 'COMMERCE_API' | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: "P4-03: 이 앱 기록이 '등록됨'이 된 시각",
+  })
+  registeredAt?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    maxLength: 500,
+    description: 'P4-03(Proposed): 스마트스토어센터 상품 화면 주소(새 창)',
+  })
+  smartstoreProductUrl?: string | null;
+}
+
 /** 05-2 PreValidationResult */
 export class PreValidationResultDto {
   @ApiProperty({ type: 'integer', minimum: 1 })
@@ -99,6 +137,12 @@ export class PreValidationResultDto {
 
   @ApiProperty({ type: [ApprovalWarningDto] })
   warnings!: ApprovalWarningDto[];
+
+  @ApiPropertyOptional({
+    type: ApprovalDuplicateInfoDto,
+    description: 'P4-03: 로컬 등록 기록 + SELLER_CODE 교차 조회로 본 중복(기존 상품 보기)',
+  })
+  duplicate?: ApprovalDuplicateInfoDto;
 }
 
 /** 05-2 ApprovalSizeOption: 사이즈 한 줄과 마진 분해 */
@@ -210,21 +254,6 @@ export class ApprovalImageItemDto {
 
   @ApiProperty({ maxLength: 500 })
   url!: string;
-}
-
-/** 05-2 ApprovalDuplicateInfo */
-export class ApprovalDuplicateInfoDto {
-  @ApiProperty()
-  duplicated!: boolean;
-
-  @ApiPropertyOptional({ type: 'integer', nullable: true, minimum: 1 })
-  existingRegistrationId?: number | null;
-
-  @ApiPropertyOptional({ type: String, nullable: true, pattern: '^[0-9]+$' })
-  originProductNo?: string | null;
-
-  @ApiPropertyOptional({ type: String, nullable: true, pattern: '^[0-9]+$' })
-  channelProductNo?: string | null;
 }
 
 /** 05-2 ApprovalDisabledReason */
@@ -357,4 +386,23 @@ export class ApprovalPreviewDto {
 
   @ApiProperty({ type: [ApprovalWarningDto] })
   warnings!: ApprovalWarningDto[];
+
+  @ApiPropertyOptional({
+    description: "P4-03: ④ 리프가 표준형 옵션을 지원하는지('표준형으로 바꾸기' 보이기, F-AP-41)",
+  })
+  standardOptionSupported?: boolean;
+
+  @ApiPropertyOptional({
+    type: 'integer',
+    minimum: 0,
+    description: "P4-03: 처음 N건 셈(진행 중·등록됨, failed_at 없음 — '(3/10)')",
+  })
+  liveRegistrationCount?: number;
+
+  @ApiPropertyOptional({
+    type: 'integer',
+    minimum: 0,
+    description: 'P4-03: 설정 registration.initialSuspensionCount(처음 N건)',
+  })
+  initialSuspensionCount?: number;
 }

@@ -26,6 +26,8 @@ export interface PreValidationPanelProps {
   checking: boolean;
   /** 검사 요청이 실패했다(409·네트워크 등) */
   error: { message: string } | null;
+  /** 막지 않는 경고(P4-03 — SAME_MODEL_REGISTERED 등). 없으면 빈 목록 */
+  warnings?: readonly { code: string; message: string }[];
 }
 
 /**
@@ -40,6 +42,7 @@ export function PreValidationPanel({
   lines,
   checking,
   error,
+  warnings = [],
 }: PreValidationPanelProps) {
   const summary = preValidationSummary(lines);
   const hasResult = lines.some((line) => line.passed !== null);
@@ -138,6 +141,18 @@ export function PreValidationPanel({
           </li>
         ))}
       </ul>
+      {warnings.length > 0 ? (
+        <ul aria-label="경고" className={styles.warnings}>
+          {warnings.map((warning) => (
+            <li key={warning.code} className={styles.warning} data-warning={warning.code}>
+              <Chip tone="waiting" icon="alert">
+                경고
+              </Chip>
+              <span>{warning.message}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </section>
   );
 }

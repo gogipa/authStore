@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { approvalPreview, CHECK_CODES, preValidationResult } from '@/test/fixtures/registration';
 import {
   approveState,
+  draftOptions,
   localizeDetailContent,
   optionStockText,
   PRE_VALIDATION_LINES,
@@ -47,9 +48,39 @@ describe('승인 화면 표시 규칙(P4-02)', () => {
     expect(byId.MARGIN).toMatchObject({ detail: '153,100원', linkStep: 'PRICING' });
     expect(byId.OPTIONS!.label).toBe('사이즈 옵션 5개가 재고와 일치');
     expect(byId.ORIGIN!.detail).toBe("· 베트남, '일본산' 표현 없음");
-    expect(byId.DUPLICATE!.detail).toBe('RKT:shop-a:10000123:108');
+    expect(byId.DUPLICATE!.detail).toBe('RKT:shop-a:10000123:108 · 같은 모델도 없음');
     expect(byId.JUDGEMENT_FRESHNESS!.label).toBe('라쿠텐 페이지 14:02 받음 · 20:02까지 유효');
     expect(preValidationSummary(lines)).toEqual({ allPassed: true, text: '13개 모두 통과' });
+  });
+
+  it('P4-03: SAME_MODEL_REGISTERED 경고가 있으면 중복 줄에 경고 글, 표준형 초안도 옵션을 읽는다', () => {
+    const result = {
+      ...preValidationResult(12),
+      warnings: [{ code: 'SAME_MODEL_REGISTERED', message: '같은 모델·색상이 다른 샵 상품으로…' }],
+    };
+    const line = preValidationLines(result, approvalPreview(12)).find((l) => l.id === 'DUPLICATE')!;
+    expect(line.passed).toBe(true);
+    expect(line.detail).toBe('RKT:shop-a:10000123:108 · 같은 모델 등록 있음(경고)');
+    const standard = approvalPreview(12, {
+      optionType: 'STANDARD',
+      requestJsonDraft: {
+        originProduct: {
+          detailAttribute: {
+            optionInfo: {
+              optionStandards: [
+                { optionName1: '250', stockQuantity: 2, usable: true },
+                { optionName1: '255', stockQuantity: 1, usable: true },
+              ],
+            },
+          },
+        },
+      },
+    });
+    expect(draftOptions(standard)).toEqual([
+      { sizeMm: 250, stockQuantity: 2, price: 0 },
+      { sizeMm: 255, stockQuantity: 1, price: 0 },
+    ]);
+    expect(optionStockText(standard)).toBe('표준형 · 합 3개');
   });
 
   it('상세 렌더링: 업로드 URL은 로컬 파일로 바꾸고 모르는 이미지는 지운다', () => {

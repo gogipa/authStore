@@ -18,6 +18,7 @@ import { CLOCK } from '../../src/modules/integrations/http/clock.token.js';
 import { AI_ENGINE_RELOAD_CHECK } from '../../src/modules/system/ai-cli-checks/ai-engine-reload.check.js';
 import { AI_ENGINE_STARTUP_CHECK } from '../../src/modules/system/ai-cli-checks/ai-engine-startup.check.js';
 import { HTTP_FETCH } from '../../src/modules/integrations/http/http-fetch.token.js';
+import { REGISTRATION_RESTART_CHECK } from '../../src/modules/registration/result-check/result-check.service.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { createFakeAiEngines, type FakeAiEngines } from '../support/fake-ai-engines.js';
 import { FakeClock, FakeFetch } from './fakes.js';
@@ -54,6 +55,11 @@ export interface CreateTestAppOptions {
   aiStartupCheck?: boolean;
   /** 설정 다시 읽기 뒤 선택 엔진 점검을 켠다(기본 꺼짐, P1-11 Proposed `AiEngineReloadCheck`). 켜도 가짜 어댑터만 부른다 */
   aiReloadCheck?: boolean;
+  /**
+   * 앱 시작 뒤 결과확인필요 등록 기록 자동 조회(P4-03 `RegistrationRestartCheck`, F-BS-18)를 켠다(기본 꺼짐 — 다른 e2e 파일이 남긴
+   * 기록으로 몰래 커머스API 가짜를 부르지 않게). 켜도 가짜 fetch만 부른다
+   */
+  registrationRestartCheck?: boolean;
 }
 
 /**
@@ -85,7 +91,9 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
     .overrideProvider(AI_ENGINE_STARTUP_CHECK)
     .useValue({ enabled: options.aiStartupCheck ?? false })
     .overrideProvider(AI_ENGINE_RELOAD_CHECK)
-    .useValue({ enabled: options.aiReloadCheck ?? false });
+    .useValue({ enabled: options.aiReloadCheck ?? false })
+    .overrideProvider(REGISTRATION_RESTART_CHECK)
+    .useValue({ enabled: options.registrationRestartCheck ?? false });
   for (const o of options.overrides ?? []) {
     builder = builder.overrideProvider(o.provide).useValue(o.useValue);
   }

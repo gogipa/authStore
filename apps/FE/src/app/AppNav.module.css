@@ -83,6 +83,16 @@
   font: var(--type-label);
 }
 
+.blocked {
+  background: var(--color-waiting-soft);
+  color: var(--color-waiting);
+}
+
+.live {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
 .mono {
   font-family: var(--font-mono);
 }

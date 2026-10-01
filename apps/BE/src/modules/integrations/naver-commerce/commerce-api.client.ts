@@ -35,6 +35,11 @@ export interface CommerceRequestOptions {
   candidateId?: number | null;
   stepRunId?: number | null;
   timeoutMs?: number;
+  /**
+   * 401 `GW.AUTHN` 뒤 토큰을 다시 받아 원 요청을 한 번 더 보낼지(기본 true). P4-03 상품 등록(`POST /v2/products`)은 false —
+   * 등록 요청은 자동으로 다시 보내지 않는다(멱등 규칙, Proposed). false면 401이 곧바로 502 `COMMERCE_AUTH_FAILED`다
+   */
+  authnRetry?: boolean;
 }
 
 /** 응답 한 건. 2xx가 아니어도 돌려준다(인증 실패만 예외) */
@@ -122,7 +127,8 @@ export class CommerceApiClient {
     let token = await this.tokens.getToken();
     let res = await this.send(method, url, token, body, contentType, options);
     let retried = false;
-    for (let attempt = 0; attempt < COMMERCE_AUTHN_RETRY_LIMIT && isAuthnRejected(res); attempt++) {
+    const retryLimit = options.authnRetry === false ? 0 : COMMERCE_AUTHN_RETRY_LIMIT;
+    for (let attempt = 0; attempt < retryLimit && isAuthnRejected(res); attempt++) {
       token = await this.tokens.reissue(token);
       res = await this.send(method, url, token, body, contentType, options);
       retried = true;

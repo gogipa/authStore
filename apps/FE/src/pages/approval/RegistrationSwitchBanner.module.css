@@ -1,0 +1,11 @@
+/* SCR-08 등록 API 차단 스위치 띠(Approval.dc.html, P4-03). 띠 + 실패 글. 색·크기는 토큰 변수만 */
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.error {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}

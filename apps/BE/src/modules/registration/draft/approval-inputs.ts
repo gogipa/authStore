@@ -225,7 +225,49 @@ export interface ApprovalRegistrationsInput {
     status: string;
     originProductNo: string | null;
     channelProductNo: string | null;
+    /** '등록됨'이 된 시각(F-AP-37 '기존 상품 보기' — P4-03). 진행 중이면 null */
+    registeredAt?: string | null;
   } | null;
+  /**
+   * 같은 모델·색상(후보 앵커 型番 + `color_code`)인데 `item_code`가 다른 진행 중·등록됨 기록(F-AP-38·RG-12 — P4-03
+   * `SAME_MODEL_REGISTERED` 경고, 막지 않음). 없으면 빈 배열
+   */
+  sameModel?: { registrationId: number; itemCode: string; originProductNo: string | null }[];
+}
+
+/**
+ * ④ 리프 카테고리의 표준옵션(메타 동기화 `STANDARD_OPTIONS` 문서 — P4-03 F-AP-41). 문서가 없으면 null(조합형만)
+ */
+export interface ApprovalStandardOptionsInput {
+  useStandardOption: boolean;
+  /** 이름에 '사이즈'가 든 첫 표준옵션 그룹(없으면 null) */
+  sizeGroup: {
+    attributeId: number | string | null;
+    attributeName: string;
+    values: { attributeValueId: number | string | null; attributeValueName: string }[];
+  } | null;
+}
+
+/** 처음 N건 셈의 기록 한 줄(P4-03 규칙 4) */
+export interface LiveCountRow {
+  status: string;
+  failedAt: Date | string | null;
+}
+
+/** 처음 N건 셈에 드는 상태(진행 중·등록됨 — 드라이런 VALIDATED 제외) */
+export const LIVE_COUNT_STATUSES: readonly string[] = [
+  'REGISTERING',
+  'RESULT_CHECK_REQUIRED',
+  'REGISTERED',
+];
+
+/**
+ * 처음 N건 셈(P4-03 규칙 4 — 순수 함수, DB 셈 `ApprovalInputsLoader`와 같은 조건): 진행 중·등록됨이고 `failed_at` 없음.
+ * 드라이런(VALIDATED)·4xx 종결(REGISTERING + failed_at)·조회 결과 없음 종결은 빠진다.
+ */
+export function liveRegistrationCountOf(rows: readonly LiveCountRow[]): number {
+  return rows.filter((row) => LIVE_COUNT_STATUSES.includes(row.status) && row.failedAt === null)
+    .length;
 }
 
 export interface ApprovalInputs {
@@ -249,4 +291,6 @@ export interface ApprovalInputs {
   registrations: ApprovalRegistrationsInput;
   /** 등록 API 차단 스위치(행이 없으면 기본 켬) */
   apiBlocked: boolean;
+  /** ④ 리프의 표준옵션(P4-03 — 표준형 옵션 전환). 문서가 없으면 null. 주지 않으면 null로 본다 */
+  standardOptions?: ApprovalStandardOptionsInput | null;
 }

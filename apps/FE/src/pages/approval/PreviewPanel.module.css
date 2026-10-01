@@ -158,14 +158,19 @@
   background: var(--color-surface);
 }
 
-.json {
-  max-height: 320px;
-  margin: 0;
-  padding: var(--space-3);
-  overflow: auto;
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-sunk);
-  font: var(--type-id);
-  color: var(--color-ink);
-  white-space: pre;
+/* '조합형 · 각 2개, 합 10개' + '표준형으로 바꾸기'(P4-03 — 보드의 밑줄 글자 버튼) */
+.optionRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.linkButton {
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: var(--type-label);
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
 }

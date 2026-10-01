@@ -1,0 +1,9 @@
+{
+  "status": 503,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-products-503" },
+  "body": {
+    "code": "ServiceUnavailable",
+    "message": "fixture service unavailable",
+    "traceId": "fixture-trace-products-503"
+  }
+}

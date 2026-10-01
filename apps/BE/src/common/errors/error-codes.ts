@@ -13,6 +13,16 @@ export const ERROR_CODES = {
     status: 400,
     message: '요청을 읽을 수 없습니다. 화면을 새로 고친 뒤 다시 해 주세요.',
   },
+  /** 05-3 §5.1: Idempotency-Key 필수 요청(G4 승인·등록 — P4-03)에 헤더 없음 */
+  IDEMPOTENCY_KEY_REQUIRED: {
+    status: 400,
+    message: '요청 번호가 빠졌습니다. 화면을 새로 고친 뒤 다시 해 주세요.',
+  },
+  /** 05-3 §5.1: 같은 Idempotency-Key, 다른 본문(P4-03 — 후보·optionType·expected* 비교) */
+  IDEMPOTENCY_KEY_REUSED: {
+    status: 422,
+    message: '같은 요청 번호로 다른 내용을 보냈습니다. 화면을 새로 고친 뒤 다시 해 주세요.',
+  },
   VALIDATION_FAILED: { status: 422, message: '입력값을 확인해 주세요.' },
   INVALID_QUERY_PARAMETER: { status: 422, message: '목록 조건이 올바르지 않습니다.' },
   PAYLOAD_TOO_LARGE: { status: 413, message: '파일(또는 붙여 넣은 글)이 너무 큽니다.' },
@@ -424,6 +434,19 @@ export const ERROR_CODES = {
   JUDGEMENT_EXPIRED: {
     status: 409,
     message: "판정에 쓴 라쿠텐 페이지가 {n}시간이 넘었습니다. '재조회'로 다시 판정해 주세요.",
+  },
+  // ── registration ⑨ 등록(P4-03 — 05-3 §5.1 문구 그대로) ──
+  /** 05-3 §5.1: 등록 기록 id 없음(경로가 1 이상 정수가 아니어도 같다 — P4-03 Proposed) */
+  REGISTRATION_NOT_FOUND: { status: 404, message: '등록 기록을 찾을 수 없습니다.' },
+  /** 05-3 §5.1: 승인 직전 재검증 BLOCK 실패(details.checks[] — 실패 항목만이 아니라 15개 전부, {항목}은 실패 코드) */
+  PRE_VALIDATION_FAILED: {
+    status: 422,
+    message: '승인 전 검사를 통과하지 못했습니다: {항목}.',
+  },
+  /** 05-3 §5.1: 결과확인 조회 대상(결과확인필요·종결 전)이 아님(details.status·failureKind) */
+  REGISTRATION_STATUS_INVALID: {
+    status: 409,
+    message: '지금 등록 상태({상태})에서는 할 수 없습니다.',
   },
   INTERNAL_ERROR: {
     status: 500,

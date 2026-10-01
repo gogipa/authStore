@@ -15,6 +15,7 @@ import { buildRegistrationDraft } from '../draft/registration-draft.builder.js';
 import type { ApprovalPreviewDto, ApprovalSourcingMethodDto } from '../dto/approval.dto.js';
 import { judgementExpiresAt } from '../pre-validation/checks/judgement-freshness.check.js';
 import { APPROVAL_ALLOWED_STATUSES } from '../pre-validation/pre-validation.service.js';
+import { approvalWarningsOf, duplicateInfoOf } from '../duplicate/duplicate.service.js';
 import { approveDisabledReasonOf } from './approve-enabled.js';
 
 function invalidQuery(field: string, message: string): ApiException {
@@ -66,7 +67,10 @@ export function sourcingMethodOf(inputs: ApprovalInputs): ApprovalSourcingMethod
  * 없으면 404 `STEP_OUTPUT_NOT_FOUND`(details.stepCode) → 요청 초안 → 응답. 저장된 산출물만 읽고 외부 호출은 없다(restricted-tags·
  * SELLER_CODE는 사전 검증). `priceJudgementId`·`uploadResultId`는 현재 버전 id(승인 body의 expected*로 돌아온다), `judgementExpiresAt`
  * = 수집 시각 + 설정 유효 시간. `approveEnabled=false`면 `approveDisabledReason.code`는 승인 API가 돌려줄 코드와 같다
- * (`approveDisabledReasonOf`). `?optionType=STANDARD`는 표준형 미리보기(지금은 조합형 옵션 모양 + 꺼짐 — 변환은 P4-03).
+ * (`approveDisabledReasonOf`). `?optionType=STANDARD`는 표준형 미리보기(P4-03 F-AP-41 — 카테고리가 지원하면 표준형 옵션 모양, 아니면
+ * 조합형 모양 + 꺼짐). P4-03이 더한 칸: `standardOptionSupported`('표준형으로 바꾸기' 보이기)·`liveRegistrationCount`·
+ * `initialSuspensionCount`('처음 10건(3/10)')·`duplicate.source·registeredAt·smartstoreProductUrl`('기존 상품 보기')·
+ * `warnings`(`SAME_MODEL_REGISTERED`). SELLER_CODE 교차 조회는 외부 호출이라 사전 검증만 한다.
  */
 @Injectable()
 export class ApprovalService {
@@ -98,7 +102,6 @@ export class ApprovalService {
     const collectedAt = judgement.rakutenPageCollectedAt
       ? new Date(judgement.rakutenPageCollectedAt)
       : null;
-    const duplicate = inputs.registrations.duplicate;
     return {
       candidateId,
       candidateStatus: candidate.status as ApprovalPreviewDto['candidateStatus'],
@@ -152,15 +155,13 @@ export class ApprovalService {
       requestJsonDraft: draft.requestJson as unknown as Record<string, unknown>,
       sellerManagementCode: draft.sellerManagementCode ?? '',
       displayStatusType: draft.displayStatusType,
-      duplicate: {
-        duplicated: duplicate !== null,
-        existingRegistrationId: duplicate?.registrationId ?? null,
-        originProductNo: duplicate?.originProductNo ?? null,
-        channelProductNo: duplicate?.channelProductNo ?? null,
-      },
+      duplicate: duplicateInfoOf(inputs),
       approveEnabled: disabled === null,
       approveDisabledReason: disabled,
-      warnings: [],
+      warnings: approvalWarningsOf(inputs),
+      standardOptionSupported: draft.standardOption.supported,
+      liveRegistrationCount: inputs.registrations.liveCount,
+      initialSuspensionCount: inputs.settings.initialSuspensionCount,
     };
   }
 }

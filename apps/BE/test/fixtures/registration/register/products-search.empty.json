@@ -1,0 +1,11 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-search-empty" },
+  "body": {
+    "contents": [],
+    "page": 1,
+    "size": 10,
+    "totalElements": 0,
+    "totalPages": 0
+  }
+}

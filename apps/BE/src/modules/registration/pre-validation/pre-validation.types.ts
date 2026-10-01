@@ -25,6 +25,25 @@ export const PRE_VALIDATION_CHECK_CODES = [
 ] as const;
 export type PreValidationCheckCode = (typeof PRE_VALIDATION_CHECK_CODES)[number];
 
+/** 검사 항목 한국어 이름(P4-03 — 422 PRE_VALIDATION_FAILED 문구의 {항목}) */
+export const PRE_VALIDATION_CHECK_LABEL: Record<PreValidationCheckCode, string> = {
+  REQUIRED_FIELDS: '필수 항목',
+  IMAGES: '이미지',
+  OPTIONS: '사이즈 옵션',
+  TAGS: '태그',
+  NOTICE_BLOCK: '구매대행 고지',
+  ORIGIN: '원산지',
+  JAPAN_WORDING: "'일본산' 표현",
+  MIN_BLOCK_WORDS: '최소 차단어',
+  NEGATIVE_MARGIN: '역마진',
+  EXTRA_CHARGE_WORDING: '추가 청구 표현',
+  JUDGEMENT_FRESHNESS: '판정 유효 시간',
+  REPRESENTATIVE_IMAGE_SOURCE: '대표이미지 출처',
+  STEP_FRESHNESS: '단계 최신성',
+  CATEGORY: '카테고리',
+  DUPLICATE: '중복',
+};
+
 export type PreValidationSeverity = 'BLOCK' | 'WARN';
 export type PreValidationGateCode = 'G1' | 'G2' | 'G3' | 'G4';
 
@@ -49,6 +68,14 @@ export type RestrictedTagsLookup =
   { ok: true; restrictedTags: string[] } | { ok: false; reason: string };
 
 /**
+ * 판매자관리코드(SELLER_CODE) 커머스API 교차 조회 결과(P4-03 F-AP-36 — `DuplicateService`가 만들어 넣는다). 미리보기(외부 호출
+ * 없음)는 null이고, 조회가 실패하면 `ok=false`와 사유(DUPLICATE 항목만 실패, 전체는 200 — restricted-tags와 같은 방식, §7.5-37)
+ */
+export type SellerCodeLookup =
+  | { ok: true; product: { originProductNo: string; channelProductNo: string | null } | null }
+  | { ok: false; reason: string };
+
+/**
  * 검사 함수 하나의 입력(규칙: 검사 함수는 순수 — 외부 조회 결과와 현재 시각은 여기로 받는다. `new Date()`를 직접 부르지 않는다)
  */
 export interface PreValidationContext {
@@ -56,6 +83,8 @@ export interface PreValidationContext {
   draft: RegistrationDraft;
   now: Date;
   restrictedTags: RestrictedTagsLookup | null;
+  /** SELLER_CODE 교차 조회(P4-03). 주지 않으면(미리보기) 로컬 기록만 본다 */
+  sellerCode?: SellerCodeLookup | null;
 }
 
 export type PreValidationCheckFn = (ctx: PreValidationContext) => PreValidationCheck;

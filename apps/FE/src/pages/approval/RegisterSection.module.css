@@ -1,0 +1,106 @@
+/*
+ * SCR-08 '⑨ 등록'(Approval.dc.html 맨 아래, P4-03). 머리(제목·상태 칩·G4 배지) → [등록 모드 | 직전 결과] 2열 → 요청 JSON 줄 →
+ * 승인 바(또는 '기존 상품 보기'). 색·크기는 토큰 변수만(라이트 테마).
+ */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-heading);
+  color: var(--color-ink);
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+.value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.caption {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+  white-space: pre-line;
+}
+
+.errorText {
+  font: var(--type-caption);
+  color: var(--color-failed);
+  white-space: pre-line;
+}
+
+.json {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
+}
+
+.pre {
+  max-height: 320px;
+  margin: 0;
+  overflow: auto;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunk);
+  font: var(--type-id);
+  color: var(--color-ink);
+  white-space: pre;
+}
+
+.existing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
+}
+
+.existingText {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}

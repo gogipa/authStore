@@ -37,6 +37,7 @@ describe('설정 — 최종 승인 문구 사전·registration 섹션(P4-02 Prop
     expect(DEFAULT_SETTINGS.registration).toEqual({
       initialSuspensionCount: 10,
       optionStockCap: 2,
+      requestTimeoutSeconds: 60,
     });
   });
 
@@ -59,6 +60,22 @@ describe('설정 — 최종 승인 문구 사전·registration 섹션(P4-02 Prop
     expect(validateSafetyFloor(withSettings((s) => s.safety.minBlockWords.push('사은품')))).toEqual(
       [],
     );
+  });
+
+  it('P4-03 등록 호출 응답 대기 requestTimeoutSeconds: 기본 60, 0·301은 형식 오류, 빠지면 기본값', () => {
+    expect(
+      checkSettingsValue(withSettings((s) => (s.registration.requestTimeoutSeconds = 0))).ok,
+    ).toBe(false);
+    expect(
+      checkSettingsValue(withSettings((s) => (s.registration.requestTimeoutSeconds = 301))).ok,
+    ).toBe(false);
+    const old = structuredClone(DEFAULT_SETTINGS) as unknown as {
+      registration: Record<string, unknown>;
+    };
+    delete old.registration.requestTimeoutSeconds;
+    const result = checkSettingsValue(old);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.settings.registration.requestTimeoutSeconds).toBe(60);
   });
 
   it('registration 범위 밖 값(상한 0·처음 N건 1001)은 형식 오류', () => {

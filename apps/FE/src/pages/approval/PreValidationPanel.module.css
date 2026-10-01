@@ -91,3 +91,22 @@
   font: var(--type-caption);
   color: var(--color-failed);
 }
+
+/* 막지 않는 경고(P4-03 — SAME_MODEL_REGISTERED). 보드에 없는 줄 */
+.warnings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) 0 0;
+  border-top: 1px solid var(--color-line);
+  list-style: none;
+}
+
+.warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font: var(--type-caption);
+  color: var(--color-ink);
+}

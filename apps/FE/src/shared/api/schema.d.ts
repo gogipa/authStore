@@ -1805,7 +1805,7 @@ export interface paths {
         };
         /**
          * 후보의 등록 기록 이력
-         * @description 승인마다 1행인 등록 기록 이력(페이징). 4xx 뒤 다시 승인하면 기록이 쌓인다. 직전 오류 안내와 ⑨ 버전 이력에 쓴다. sort 허용 필드는 approvedAt, createdAt이고 기본은 approvedAt,desc.
+         * @description 승인마다 1행인 등록 기록 이력(페이징). 4xx 뒤 다시 승인하면 기록이 쌓인다. 직전 오류 안내와 ⑨ 버전 이력에 쓴다. sort 허용 필드는 approvedAt, createdAt이고 기본은 approvedAt,desc. P4-03(Proposed) 같은 값이면 id 같은 방향, page·size·sort 밖 쿼리 키도 422 INVALID_QUERY_PARAMETER.
          */
         get: operations["listCandidateRegistrations"];
         put?: never;
@@ -1869,7 +1869,7 @@ export interface paths {
         };
         /**
          * 등록 API 차단 스위치 상태
-         * @description registration_switch 단일 행. 모든 화면 상단 드라이런 배너의 원본이다.
+         * @description registration_switch 단일 행. 모든 화면 상단 드라이런 배너의 원본이다. P4-03(Proposed) 행이 없으면 처음 읽을 때 기본값(켬)으로 만든다.
          */
         get: operations["getRegistrationSwitch"];
         /**
@@ -6309,7 +6309,7 @@ export interface components {
             createdAt: string;
             images: components["schemas"]["UploadResultImageItem"][];
         };
-        /** @description 막지 않는 경고(§5.2). 예 SAME_MODEL_REGISTERED, (M2) BRAND_CUSTOMS_HOLD_RISK·SALE_ENDING_SOON */
+        /** @description 막지 않는 경고(§5.2). 예 SAME_MODEL_REGISTERED(P4-03 — 같은 모델·색상이 다른 샵(itemCode)으로 이미 진행 중·등록됨, F-AP-38·RG-12), (M2) BRAND_CUSTOMS_HOLD_RISK·SALE_ENDING_SOON */
         ApprovalWarning: {
             code: string;
             message: string;
@@ -6376,12 +6376,24 @@ export interface components {
             sortOrder: number;
             url: string;
         };
-        /** @description 로컬 등록 기록 기준 중복(RG-12). 중복이면 '기존 상품 보기' */
+        /** @description 중복(RG-12). 미리보기는 로컬 등록 기록 기준, 사전 검증 결과(PreValidationResult.duplicate)는 로컬 + 커머스API SELLER_CODE 교차 조회 기준(P4-03). 중복이면 '기존 상품 보기' */
         ApprovalDuplicateInfo: {
             duplicated: boolean;
             existingRegistrationId?: number | null;
             originProductNo?: string | null;
             channelProductNo?: string | null;
+            /**
+             * @description P4-03 찾은 곳(LOCAL = 이 앱 등록 기록, COMMERCE_API = SELLER_CODE 조회). 중복이 아니면 null
+             * @enum {string|null}
+             */
+            source?: "LOCAL" | "COMMERCE_API" | null;
+            /**
+             * Format: date-time
+             * @description P4-03 이 앱 기록이 '등록됨'이 된 시각(F-AP-37 '기존 상품 보기'). 모르면 null
+             */
+            registeredAt?: string | null;
+            /** @description P4-03(Proposed) 스마트스토어센터 상품 화면 주소(새 창 — 원상품 번호로 여는 상품 수정 화면). 화면 소스에 외부 주소를 두지 않으려고 서버가 만든다. 상품 번호를 모르면 null */
+            smartstoreProductUrl?: string | null;
         };
         ApprovalDisabledReason: {
             /** @description 승인 API가 돌려줄 409·422 코드와 같은 값 */
@@ -6455,6 +6467,12 @@ export interface components {
             /** @description 꺼진 이유. 켜져 있으면 null */
             approveDisabledReason?: components["schemas"]["ApprovalDisabledReason"] | null;
             warnings: components["schemas"]["ApprovalWarning"][];
+            /** @description P4-03(Proposed) ④ 리프가 표준형 옵션을 지원하고 옵션 사이즈가 모두 표준옵션 사이즈 목록에 있으며 옵션가가 모두 0원인지(F-AP-41). true일 때만 화면이 '표준형으로 바꾸기'를 보인다 */
+            standardOptionSupported?: boolean;
+            /** @description P4-03(Proposed) 처음 N건 셈(진행 중·등록됨, failed_at 없음 — 드라이런·종결 제외). 화면 '처음 10건은 전시중지로 등록 (3/10)' */
+            liveRegistrationCount?: number;
+            /** @description P4-03(Proposed) 설정 registration.initialSuspensionCount(처음 N건, 기본 10) */
+            initialSuspensionCount?: number;
         };
         PreValidationRequest: {
             optionType?: components["schemas"]["RegistrationOptionType"];
@@ -6490,6 +6508,8 @@ export interface components {
             /** Format: date-time */
             checkedAt: string;
             warnings: components["schemas"]["ApprovalWarning"][];
+            /** @description P4-03 로컬 + SELLER_CODE 교차 조회로 본 중복('기존 상품 보기'). DUPLICATE 항목과 같은 판단이다 */
+            duplicate?: components["schemas"]["ApprovalDuplicateInfo"];
         };
         /** @description 표 E body. expected*는 화면이 본 버전 확인용이고 저장하지 않는다(다르면 409 VERSION_NOT_CURRENT) */
         RegistrationCreateRequest: {
@@ -6588,6 +6608,8 @@ export interface components {
             /** Format: date-time */
             failedAt?: string | null;
             failureKind?: components["schemas"]["RegistrationFailureKind"];
+            /** @description P4-03(Proposed) 스마트스토어센터 상품 화면 주소(상품 번호가 있을 때 — '기존 상품 보기' 새 창) */
+            smartstoreProductUrl?: string | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -11259,7 +11281,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
             /** @description CANDIDATE_STATUS_INVALID(승인대기 아님), GATE_NOT_PASSED(G2·G3 무효), DUPLICATE_REGISTRATION, REGISTRATION_IN_PROGRESS, VERSION_NOT_CURRENT(expected* 불일치), JUDGEMENT_EXPIRED(M1은 막음, M2는 자동 재조회 F-AP-52), (M2) TEMP_CANDIDATE_NOT_ALLOWED */
             409: components["responses"]["Conflict"];
-            /** @description PRE_VALIDATION_FAILED(details.checks[]), IDEMPOTENCY_KEY_REUSED, VALIDATION_FAILED */
+            /** @description PRE_VALIDATION_FAILED(details.checks[]), IDEMPOTENCY_KEY_REUSED, VALIDATION_FAILED(body·Idempotency-Key 모양·표준형을 쓸 수 없음) */
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
         };

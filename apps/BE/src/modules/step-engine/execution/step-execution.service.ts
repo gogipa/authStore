@@ -416,6 +416,63 @@ export class StepExecutionService {
     return this.closeRun(scope, run, runner, outcome);
   }
 
+  /**
+   * ⑨ 등록 버전 하나를 연다(P4-03 — G4 승인 트랜잭션 안, 웹 화면의 `POST /candidates/{id}/registrations`만 부른다). 후보 행을 잠그고
+   * ⑨ 실행기(`@StepRunnerFor('REGISTER')`)의 `readInputs`(②~⑧ 현재 완료 버전)로 시작 지문을 남긴 RUNNING 실행을 만든다
+   * (execution_mode STEP, ai_* NULL). 앞 단계가 완료가 아니면 409 STEP_START_CONDITION_UNMET(사전 검증 STEP_FRESHNESS가 먼저 막는다).
+   * 실행 대기열에 넣지 않는다 — 등록 호출은 registration이 트랜잭션 밖에서 하고 `closeRegisterRun`으로 닫는다.
+   */
+  async openRegisterRun(scope: StepEngineTx, candidateId: number): Promise<StepRun> {
+    const runner = this.registry.get('REGISTER');
+    if (!runner) throw new Error('⑨ 등록 실행기가 없습니다(registration 모듈)');
+    const candidate = await this.guard.lockForUpdate(scope.tx, candidateId);
+    const rows = await loadStepRows(scope.tx, candidateId);
+    const inputs = await readResolvedInputs(
+      runner,
+      inputContextOf(scope.tx, candidate, this.settings.current(), rows),
+    );
+    const missing = missingRequiredInputs(inputs);
+    if (missing.length > 0) {
+      throw toApiException({
+        code: 'STEP_START_CONDITION_UNMET',
+        stepCode: 'REGISTER',
+        missingInputs: missing,
+      });
+    }
+    return this.openRun(scope, {
+      candidate,
+      stepCode: 'REGISTER',
+      runner,
+      rows,
+      executionMode: 'STEP',
+      stepChainId: null,
+      settingsSnapshotId: this.settings.currentSnapshotId(),
+      aiEngine: null,
+      inputs,
+    });
+  }
+
+  /**
+   * ⑨ 등록 버전을 결과로 닫는다(P4-03 — ERD `registration` '⑨ StepRun과의 대응': 드라이런·2xx → COMPLETED, 4xx·응답 불명 →
+   * FAILED(EXTERNAL_API)). 호출자 트랜잭션 안에서 후보 행을 잠근다. 이미 닫혔으면(재시작 정리 등) 아무것도 하지 않고 null.
+   */
+  async closeRegisterRun(
+    scope: StepEngineTx,
+    stepRunId: number,
+    outcome: StepOutcome,
+  ): Promise<StepRun | null> {
+    const found = await scope.tx.stepRun.findUnique({ where: { id: stepRunId } });
+    if (!found || found.stepCode !== 'REGISTER') {
+      throw new Error(`⑨ 등록 실행이 아닙니다: #${stepRunId}`);
+    }
+    await this.guard.lockForUpdate(scope.tx, found.candidateId);
+    const run = await scope.tx.stepRun.findUniqueOrThrow({ where: { id: stepRunId } });
+    if (run.status !== 'RUNNING') return null;
+    const runner = this.registry.get('REGISTER');
+    if (!runner) throw new Error('⑨ 등록 실행기가 없습니다(registration 모듈)');
+    return this.closeRun(scope, run, runner, checkOutcome(outcome));
+  }
+
   /** 단계 코드가 실행할 수 있는 코드인지(REGISTER·실행기 없음 → 422 INVALID_STEP_CODE) */
   assertRunnableCode(stepCode: StepCode): StepRunner {
     if (stepCode === 'REGISTER') {

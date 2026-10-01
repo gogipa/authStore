@@ -309,10 +309,13 @@ export interface SafetySettings {
  * 등록(⑨)·최종 승인 미리보기 값(P4-02 Proposed 섹션 — 06-4 §2.2). P4-03 등록 본문이 같은 값을 쓴다.
  * - `initialSuspensionCount`: 처음 N건은 전시중지(SUSPENSION)로 등록(F-AP-27, PRD §8.7 RG-09 '처음 10건(설정)'). 기본 10
  * - `optionStockCap`: 사이즈별 표기 재고 상한 — 옵션 재고 = min(라쿠텐 수량, 상한)(F-AP-40, PRD §17 '사이즈별 표기 재고 2개'). 기본 2
+ * - `requestTimeoutSeconds`: ⑨ 상품 등록 호출(`POST /v2/products`) 응답 대기(P4-03 Proposed — 문서에 값 없음). 넘으면 결과확인필요(자동 재시도
+ *   없음). 기본 60(1~300)
  */
 export interface RegistrationSettings {
   initialSuspensionCount: number;
   optionStockCap: number;
+  requestTimeoutSeconds: number;
 }
 
 /** 구매대행 고지 블록 한 줄(PRD §8.5 CT-04) */

@@ -23,4 +23,12 @@ export const registrationKeys = {
   /** G4 사전 검증(POST지만 결과를 화면 상태로 둔다): `['registration','runCandidatePreValidation',{ candidateId, optionType }]` */
   preValidation: (candidateId: number, optionType: RegistrationOptionType) =>
     qk('registration', 'runCandidatePreValidation', { candidateId, optionType }),
+  /** 후보의 등록 기록 이력(P4-03): `['registration','listCandidateRegistrations',{ candidateId }]` */
+  registrations: (candidateId: number) =>
+    qk('registration', 'listCandidateRegistrations', { candidateId }),
+  /** 등록 기록 한 건(P4-03): `['registration','getRegistration',{ registrationId }]` */
+  registration: (registrationId: number) =>
+    qk('registration', 'getRegistration', { registrationId }),
+  /** 등록 API 차단 스위치(P4-03): `['registration','getRegistrationSwitch']` */
+  registrationSwitch: () => qk('registration', 'getRegistrationSwitch'),
 };

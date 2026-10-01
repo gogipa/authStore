@@ -12,6 +12,8 @@ const EXCEPTIONS: Record<string, string> = {
   localhost: '앱 자신(로컬 보안 Origin 비교·FE 개발 서버 Origin 기본값)',
   'search.shopping.naver.com':
     '네이버쇼핑 검색 링크(P2-05 F-PJ-12) — 앱은 URL만 만들어 화면에 주고 부르지 않는다(오너가 새 탭으로 연다)',
+  'sell.smartstore.naver.com':
+    "스마트스토어센터 상품 화면 링크(P4-03 F-AP-37 '기존 상품 보기') — 앱은 URL만 만들어 화면에 주고 부르지 않는다(오너가 새 창으로 연다)",
 };
 
 const SRC = join(BE_ROOT, 'src');

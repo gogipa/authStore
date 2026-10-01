@@ -4,8 +4,21 @@ import { SettingsModule } from '../settings/settings.module.js';
 import { StepEngineModule } from '../step-engine/step-engine.module.js';
 import { ApprovalController } from './approval/approval.controller.js';
 import { ApprovalService } from './approval/approval.service.js';
+import { ApproveService } from './approval/approve.service.js';
 import { ApprovalInputsLoader } from './draft/approval-inputs.loader.js';
+import { DuplicateService } from './duplicate/duplicate.service.js';
 import { PreValidationService } from './pre-validation/pre-validation.service.js';
+import { RegisterStepRunner } from './register/register.step-runner.js';
+import { RegistrationQueryService } from './registration-query.service.js';
+import { RegistrationController } from './registration.controller.js';
+import {
+  REGISTRATION_RESTART_CHECK,
+  RegistrationRestartCheck,
+  ResultCheckService,
+} from './result-check/result-check.service.js';
+import { RegistrationSubmitter } from './submit/registration-submitter.js';
+import { RegistrationSwitchController } from './switch/registration-switch.controller.js';
+import { RegistrationSwitchService } from './switch/registration-switch.service.js';
 import { ImageUploadService } from './upload/image-upload.service.js';
 import { UploadQueue } from './upload/upload-queue.js';
 import { UploadResultController } from './upload/upload-result.controller.js';
@@ -28,11 +41,25 @@ import { UploadStepRunner } from './upload/upload.step-runner.js';
  * - `pre-validation/` 검사 15개(`checks/*.check.ts` — 항목 하나 = 파일 하나 = 순수 함수)와 `PreValidationService`(restricted-tags
  *   재조회 — integrations `COMMERCE_TAGS_PORT`, 시계 `CLOCK`). P4-03 승인 직전 재검증이 같은 서비스를 부른다
  * - `approval/` API: `GET /candidates/{id}/approval`, `POST /candidates/{id}/pre-validations`
- * P4-03(등록·차단 스위치·결과 확인)이 이 모듈에 더한다.
+ * P4-03 ⑨ 등록·차단 스위치·결과 확인:
+ * - ⑨ 실행기 `RegisterStepRunner`(`@StepRunnerFor('REGISTER')` — 입력 지문·재시작 훅만. 단계 실행 API는 엔진이 422로 막는다)
+ * - `approval/approve.service.ts` G4 승인(검사 순서·재검증·드라이런/선커밋), `approval/idempotency.ts`(Idempotency-Key)
+ * - `submit/` 커밋 뒤 등록 호출·결과 반영(`RegistrationSubmitter` — 앱 전체 직렬, `register-outcome` 순수 분류)
+ * - `result-check/` 결과확인 조회(`ResultCheckService`)와 재시작 자동 조회(`RegistrationRestartCheck`, F-BS-18)
+ * - `duplicate/` SELLER_CODE 교차 확인·`SAME_MODEL_REGISTERED` 경고(`DuplicateService`), `errors/` invalidInputs 번역기
+ * - `switch/` 등록 API 차단 스위치, `registration-query.service.ts` 이력·상세
+ * - 커머스API는 integrations `COMMERCE_PRODUCTS_PORT`로만, ⑨ 버전은 `StepEngineApi.openRegisterRun`·`closeRegisterRun`으로만
+ * - API: `POST·GET /candidates/{id}/registrations`, `GET /registrations/{id}`, `POST /registrations/{id}/result-checks`,
+ *   `GET·PUT /registration-switch`
  */
 @Module({
   imports: [IntegrationsModule, SettingsModule, StepEngineModule],
-  controllers: [UploadResultController, ApprovalController],
+  controllers: [
+    UploadResultController,
+    ApprovalController,
+    RegistrationController,
+    RegistrationSwitchController,
+  ],
   providers: [
     UploadStepRunner,
     ImageUploadService,
@@ -41,6 +68,15 @@ import { UploadStepRunner } from './upload/upload.step-runner.js';
     ApprovalInputsLoader,
     PreValidationService,
     ApprovalService,
+    RegisterStepRunner,
+    DuplicateService,
+    RegistrationSwitchService,
+    RegistrationSubmitter,
+    ApproveService,
+    ResultCheckService,
+    RegistrationRestartCheck,
+    { provide: REGISTRATION_RESTART_CHECK, useValue: { enabled: true } },
+    RegistrationQueryService,
   ],
 })
 export class RegistrationModule {}

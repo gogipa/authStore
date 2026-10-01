@@ -665,10 +665,11 @@ const schema: JSONSchemaType<AppSettings> = {
     registration: {
       type: 'object',
       additionalProperties: false,
-      required: ['initialSuspensionCount', 'optionStockCap'],
+      required: ['initialSuspensionCount', 'optionStockCap', 'requestTimeoutSeconds'],
       properties: {
         initialSuspensionCount: { type: 'integer', minimum: 0, maximum: 1000 },
         optionStockCap: { type: 'integer', minimum: 1, maximum: 99 },
+        requestTimeoutSeconds: { type: 'integer', minimum: 1, maximum: 300 },
       },
     },
     delivery: {

@@ -77,6 +77,8 @@ interface DraftShape {
     detailAttribute?: {
       optionInfo?: {
         optionCombinations?: { optionName1?: string; stockQuantity?: number; price?: number }[];
+        /** 표준형(P4-03 F-AP-41) — 옵션가 칸 없음 */
+        optionStandards?: { optionName1?: string; stockQuantity?: number }[];
       };
     };
     deliveryInfo?: {
@@ -88,13 +90,14 @@ interface DraftShape {
 
 export function draftOptions(preview: Pick<ApprovalPreview, 'requestJsonDraft'>): DraftOption[] {
   const draft = preview.requestJsonDraft as DraftShape;
-  return (draft.originProduct?.detailAttribute?.optionInfo?.optionCombinations ?? []).map(
-    (row) => ({
-      sizeMm: Number(row.optionName1),
-      stockQuantity: row.stockQuantity ?? 0,
-      price: row.price ?? 0,
-    }),
-  );
+  const info = draft.originProduct?.detailAttribute?.optionInfo;
+  const rows: { optionName1?: string; stockQuantity?: number; price?: number }[] =
+    info?.optionCombinations ?? info?.optionStandards ?? [];
+  return rows.map((row) => ({
+    sizeMm: Number(row.optionName1),
+    stockQuantity: row.stockQuantity ?? 0,
+    price: row.price ?? 0,
+  }));
 }
 
 /** '조합형 · 각 2개, 합 10개'(재고가 사이즈마다 다르면 '합 n개') */
@@ -243,7 +246,17 @@ interface LineSpec {
   codes: PreValidationCheckCode[];
   /** 통과 줄의 링크(시안) */
   link: StepCode | null;
-  label: (preview: ApprovalPreview | undefined) => { label: string; detail?: string };
+  label: (
+    preview: ApprovalPreview | undefined,
+    result?: PreValidationResult,
+  ) => { label: string; detail?: string };
+}
+
+/** 같은 모델·색상이 다른 샵으로 등록돼 있다는 경고(P4-03 SAME_MODEL_REGISTERED)가 있는가 */
+export function hasSameModelWarning(
+  warnings: readonly { code: string }[] | null | undefined,
+): boolean {
+  return (warnings ?? []).some((warning) => warning.code === 'SAME_MODEL_REGISTERED');
 }
 
 /**
@@ -346,7 +359,13 @@ export const PRE_VALIDATION_LINES: readonly LineSpec[] = [
     id: 'DUPLICATE',
     codes: ['DUPLICATE'],
     link: null,
-    label: (p) => ({ label: '중복 없음', detail: p?.sellerManagementCode }),
+    // 시안 '중복 없음 RKT:… · 같은 모델도 없음'(P4-03 — 같은 모델·색상이 다른 샵으로 있으면 경고 글)
+    label: (p, r) => {
+      const warned = hasSameModelWarning(r?.warnings) || hasSameModelWarning(p?.warnings);
+      const sameModel =
+        r || p ? (warned ? ' · 같은 모델 등록 있음(경고)' : ' · 같은 모델도 없음') : '';
+      return { label: '중복 없음', detail: `${p?.sellerManagementCode ?? ''}${sameModel}`.trim() };
+    },
   },
   {
     id: 'JUDGEMENT_FRESHNESS',
@@ -397,7 +416,7 @@ export function preValidationLines(
     return {
       id: spec.id,
       passed,
-      ...spec.label(preview),
+      ...spec.label(preview, result),
       reasons: failed.map((check) => check.reason ?? '통과하지 못했습니다'),
       linkStep: passed === false ? failStep : spec.link,
     };

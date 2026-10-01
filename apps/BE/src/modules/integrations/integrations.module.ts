@@ -41,6 +41,8 @@ import { defaultHttpFetch, HTTP_FETCH } from './http/http-fetch.token.js';
 import { CommerceApiClient } from './naver-commerce/commerce-api.client.js';
 import { CommerceImagesHttpAdapter } from './naver-commerce/commerce-images.http-adapter.js';
 import { COMMERCE_IMAGES_PORT } from './naver-commerce/commerce-images.port.js';
+import { CommerceProductsHttpAdapter } from './naver-commerce/commerce-products.http-adapter.js';
+import { COMMERCE_PRODUCTS_PORT } from './naver-commerce/commerce-products.port.js';
 import { CommerceTagsHttpAdapter } from './naver-commerce/commerce-tags.http-adapter.js';
 import { COMMERCE_TAGS_PORT } from './naver-commerce/commerce-tags.port.js';
 import { RakutenGenreHttpAdapter } from './rakuten/rakuten-genre.http-adapter.js';
@@ -69,6 +71,8 @@ import {
  *   export한다. ⑦ tags가 이것으로만 추천·제한 태그를 부르고, P4-02 승인 재검증도 같은 포트를 쓴다.
  *   P4-01: 상품 이미지 업로드 포트 `COMMERCE_IMAGES_PORT`(→ `CommerceImagesHttpAdapter` — `POST /v1/product-images/upload`,
  *   multipart `imageFiles`)를 export한다. ⑧ registration이 이것으로만 이미지를 올린다(묶음 나누기·직렬 큐는 registration).
+ *   P4-03: 상품 등록·판매자관리코드 조회 포트 `COMMERCE_PRODUCTS_PORT`(→ `CommerceProductsHttpAdapter` — `POST /v2/products`
+ *   결과 SUCCESS·CLIENT_ERROR·UNKNOWN 분류(다시 보내지 않음), `POST /v1/products/search` SELLER_CODE)를 export한다.
  * commerce-meta(P1-08): 메타데이터 동기화(수동 API·하루 1회 자동·재시작 정리)와 캐시 목록 API.
  *   다른 모듈은 `CommerceMetaCacheService`로만 캐시를 읽는다(쓰기는 동기화기만). 자동 실행은 COMMERCE_META_SCHEDULE로 끈다.
  * ai-engine(P1-10): 어댑터 3개(claude·agy·codex)를 `AI_ENGINE_ADAPTERS` 배열로 등록하고 `AiExecutor`(단계 모듈의 유일한
@@ -115,6 +119,8 @@ import {
     { provide: COMMERCE_TAGS_PORT, useExisting: CommerceTagsHttpAdapter },
     CommerceImagesHttpAdapter,
     { provide: COMMERCE_IMAGES_PORT, useExisting: CommerceImagesHttpAdapter },
+    CommerceProductsHttpAdapter,
+    { provide: COMMERCE_PRODUCTS_PORT, useExisting: CommerceProductsHttpAdapter },
     {
       provide: COMMERCE_META_SCHEDULE,
       inject: [AppConfigService],
@@ -178,6 +184,7 @@ import {
     CommerceApiClient,
     COMMERCE_TAGS_PORT,
     COMMERCE_IMAGES_PORT,
+    COMMERCE_PRODUCTS_PORT,
     CommerceMetaCacheService,
     AiExecutor,
     IsolatedCliRunner,

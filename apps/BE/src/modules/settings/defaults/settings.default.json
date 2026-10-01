@@ -1037,7 +1037,8 @@
   },
   "registration": {
     "initialSuspensionCount": 10,
-    "optionStockCap": 2
+    "optionStockCap": 2,
+    "requestTimeoutSeconds": 60
   },
   "delivery": {
     "dispatchCompanies": []

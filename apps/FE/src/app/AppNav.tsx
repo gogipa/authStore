@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router';
 import { findCallUsage, formatUsageCount, useCallUsageQuery } from '@/features/integrations';
+import { navSwitchText, useRegistrationSwitch } from '@/features/registration';
 import { cx } from '@/shared/lib/cx';
 import { EMPTY_VALUE } from '@/shared/lib/format';
 import { Icon, type IconName } from '@/shared/ui';
@@ -43,6 +44,27 @@ function PageFetchUsage() {
   );
 }
 
+/**
+ * '등록 API 차단 켜짐 · 드라이런'(공통부품 §A·Approval 보드 상태 상자, P4-03). `getRegistrationSwitch`의 값이고 SSE
+ * `registration-switch.changed`가 다시 읽힌다. 켜짐이면 경고 색(waiting), 꺼짐이면 실행 색(accent — Proposed), 받는 중·실패면 '확인 전'.
+ */
+function RegistrationSwitchChip() {
+  const { data, isError } = useRegistrationSwitch();
+  const state = isError ? undefined : data;
+  return (
+    <span
+      className={cx(
+        styles.statusChip,
+        state?.apiBlocked === true && styles.blocked,
+        state?.apiBlocked === false && styles.live,
+      )}
+      data-api-blocked={state ? String(state.apiBlocked) : undefined}
+    >
+      {navSwitchText(state)}
+    </span>
+  );
+}
+
 /** 왼쪽 주 메뉴. NavLink가 현재 항목에 aria-current="page"를 단다. */
 export function AppNav() {
   return (
@@ -64,9 +86,9 @@ export function AppNav() {
           {item.label}
         </NavLink>
       ))}
-      {/* 안전장치 상태 상자. 등록 API 차단 칩은 getRegistrationSwitch(P4-03)를 붙일 때 실제 값으로 바꾼다. */}
+      {/* 안전장치 상태 상자: 등록 API 차단(P4-03 getRegistrationSwitch) · 오늘 페이지 조회 */}
       <div className={styles.statusBox}>
-        <span className={styles.statusChip}>등록 API 차단 · 확인 전</span>
+        <RegistrationSwitchChip />
         <PageFetchUsage />
       </div>
     </nav>

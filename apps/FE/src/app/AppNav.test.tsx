@@ -87,8 +87,30 @@ describe('내비 상태 상자(오늘 페이지 조회)', () => {
     renderRoute('/');
     await waitFor(() => expect(pageFetchLine('오늘 페이지 조회 38/110')).toBeInTheDocument());
     expect(callUsageRequests(api.requests)).toEqual(['GET /api/v1/call-usage']);
-    // 등록 차단 칩은 getRegistrationSwitch(P4-03)를 붙일 때까지 지금 문구를 둔다.
+    // 스위치를 읽지 못하면(이 테스트는 정하지 않음) '확인 전'(P4-03)
     expect(within(mainNav()).getByText('등록 API 차단 · 확인 전')).toBeInTheDocument();
+  });
+
+  it("등록 API 차단 스위치가 켜져 있으면 '등록 API 차단 켜짐 · 드라이런', 꺼지면 '꺼짐'(P4-03 getRegistrationSwitch)", async () => {
+    let apiBlocked = true;
+    stubApi({
+      'GET /call-usage': () => jsonResponse(callUsageList(38)),
+      'GET /registration-switch': () =>
+        jsonResponse({ apiBlocked, changedAt: '2026-09-28T00:00:00.000Z' }),
+    });
+    renderRoute('/', { EventSourceImpl: FakeEventSource });
+    expect(await within(mainNav()).findByText('등록 API 차단 켜짐 · 드라이런')).toBeInTheDocument();
+    apiBlocked = false;
+    act(() =>
+      FakeEventSource.latest().emit('registration-switch.changed', {
+        apiBlocked: false,
+        changedAt: '2026-09-28T01:00:00.000Z',
+        revertedCandidateIds: [],
+      }),
+    );
+    expect(
+      await within(mainNav()).findByText('등록 API 차단 꺼짐 · 실제 등록'),
+    ).toBeInTheDocument();
   });
 
   it('call-usage.changed 알림 뒤 다시 읽어 39/110으로 바뀐다(폴링 없음)', async () => {

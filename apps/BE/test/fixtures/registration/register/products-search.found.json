@@ -1,0 +1,23 @@
+{
+  "status": 200,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-search-found" },
+  "body": {
+    "contents": [
+      {
+        "originProductNo": 10000000001,
+        "channelProducts": [
+          {
+            "channelProductNo": 20000000001,
+            "sellerManagementCode": "{sellerManagementCode}",
+            "statusType": "SALE",
+            "channelProductDisplayStatusType": "SUSPENSION"
+          }
+        ]
+      }
+    ],
+    "page": 1,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1
+  }
+}

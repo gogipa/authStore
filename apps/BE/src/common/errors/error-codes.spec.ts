@@ -398,6 +398,29 @@ describe('error-codes', () => {
     expect(ERROR_CODES.JUDGEMENT_EXPIRED.status).toBe(409);
   });
 
+  it('P4-03 등록 코드 5개는 05-3 §5.1 문구·상태 그대로다', () => {
+    expect(ERROR_CODES.IDEMPOTENCY_KEY_REQUIRED).toEqual({
+      status: 400,
+      message: '요청 번호가 빠졌습니다. 화면을 새로 고친 뒤 다시 해 주세요.',
+    });
+    expect(ERROR_CODES.IDEMPOTENCY_KEY_REUSED).toEqual({
+      status: 422,
+      message: '같은 요청 번호로 다른 내용을 보냈습니다. 화면을 새로 고친 뒤 다시 해 주세요.',
+    });
+    expect(ERROR_CODES.REGISTRATION_NOT_FOUND).toEqual({
+      status: 404,
+      message: '등록 기록을 찾을 수 없습니다.',
+    });
+    expect(formatErrorMessage('PRE_VALIDATION_FAILED', { 항목: 'REQUIRED_FIELDS' })).toBe(
+      '승인 전 검사를 통과하지 못했습니다: REQUIRED_FIELDS.',
+    );
+    expect(ERROR_CODES.PRE_VALIDATION_FAILED.status).toBe(422);
+    expect(formatErrorMessage('REGISTRATION_STATUS_INVALID', { 상태: '등록됨' })).toBe(
+      '지금 등록 상태(등록됨)에서는 할 수 없습니다.',
+    );
+    expect(ERROR_CODES.REGISTRATION_STATUS_INVALID.status).toBe(409);
+  });
+
   it('formatErrorMessage는 {…} 자리를 채우고 모르는 자리는 그대로 둔다', () => {
     expect(formatErrorMessage('DAILY_LIMIT_REACHED', { 대상: '라쿠텐 상품 페이지', n: 110 })).toBe(
       '오늘 라쿠텐 상품 페이지 조회 한도(110건)를 다 썼습니다. 내일 0시(한국 시간)에 다시 됩니다.',

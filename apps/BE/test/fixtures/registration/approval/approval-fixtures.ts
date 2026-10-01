@@ -14,6 +14,7 @@ import {
 import type {
   PreValidationContext,
   RestrictedTagsLookup,
+  SellerCodeLookup,
 } from '../../../../src/modules/registration/pre-validation/pre-validation.types.js';
 import { readDefaultSettingsText } from '../../../../src/modules/settings/defaults/default-settings.js';
 import { buildProfileFragment } from '../../../../src/modules/settings/purchase-agency-profile/profile-registration-fragment.js';
@@ -354,6 +355,8 @@ export interface ApprovalVariant {
   draft?: Json;
   now?: string;
   restrictedTags?: RestrictedTagsLookup;
+  /** SELLER_CODE 교차 조회(P4-03). 주지 않으면 null(미리보기처럼 로컬만) */
+  sellerCode?: SellerCodeLookup | null;
 }
 
 export function readVariant(name: string): ApprovalVariant {
@@ -379,6 +382,24 @@ export function approvalContext(
     draft,
     now: new Date(variant.now ?? APPROVAL_SAMPLE.now),
     restrictedTags: variant.restrictedTags ?? { ok: true, restrictedTags: [] },
+    sellerCode: variant.sellerCode ?? null,
+  };
+}
+
+/** 표준옵션 문서 입력(P4-03 F-AP-41 — 메타 fixture `standard-options-50000791.json` 모양에 판매 사이즈를 모두 넣은 합성 값) */
+export function standardOptionsInput(
+  sizes: readonly number[] = APPROVAL_SAMPLE.saleSizesMm,
+): NonNullable<ApprovalInputs['standardOptions']> {
+  return {
+    useStandardOption: true,
+    sizeGroup: {
+      attributeId: 90001,
+      attributeName: '사이즈(공통)',
+      values: sizes.map((mm, i) => ({
+        attributeValueId: 900011 + i,
+        attributeValueName: String(mm),
+      })),
+    },
   };
 }
 

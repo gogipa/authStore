@@ -40,6 +40,9 @@ import { GateValidityService, type GateInspection } from './gate-validity.servic
 /** int4 상한 */
 const MAX_ID = 2_147_483_647;
 
+/** G4를 통과한 것으로 보는 후보 상태(P4-03) */
+const G4_APPROVED_STATUSES = ['VALIDATED', 'REGISTERING', 'RESULT_CHECK_REQUIRED', 'REGISTERED'];
+
 /** 경로 gateCode가 G2·G3인지(아니면 422 INVALID_GATE_CODE — G1·G4 포함) */
 export function parseGateCode(value: unknown): GateCode {
   if (value === 'G2' || value === 'G3') return value;
@@ -374,7 +377,7 @@ export class GateService {
       db.registration.findFirst({
         where: { stepRun: { candidateId } },
         orderBy: [{ approvedAt: 'desc' }, { id: 'desc' }],
-        select: { id: true, approvedAt: true },
+        select: { id: true, approvedAt: true, failedAt: true },
       }),
     ]);
     const g1: CandidateGateStateDto = {
@@ -410,9 +413,15 @@ export class GateService {
         warnings,
       };
     };
+    // P4-03(Proposed): G4 통과 = 마지막 등록 기록이 종결되지 않았고 후보가 승인 뒤 상태(검증완료·등록 진행·등록됨)일 때.
+    // 4xx·조회 결과 없음으로 종결됐거나 차단 스위치를 꺼 승인대기로 돌아오면 다시 '확인 필요'다(기록은 그대로 남는다)
+    const g4Passed =
+      approved !== null &&
+      approved.failedAt === null &&
+      (G4_APPROVED_STATUSES as readonly string[]).includes(candidate.status);
     const g4: CandidateGateStateDto = {
       gate: 'G4',
-      passed: approved !== null,
+      passed: g4Passed,
       gatePassId: null,
       passedAt: iso(approved?.approvedAt),
       basisStepRunId: null,

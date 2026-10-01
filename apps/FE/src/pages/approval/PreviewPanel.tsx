@@ -7,12 +7,13 @@ import {
   deliveryText,
   draftOptions,
   localizeDetailContent,
+  COMBINATION_OPTION_LABEL,
   optionStockText,
   PREVIEW_CAPTION,
   PREVIEW_TITLE,
   productNameLength,
-  requestSummaryText,
   sourcingMethodText,
+  STANDARD_OPTION_LABEL,
   summarySize,
   tagsSummaryText,
   uploadImageAlt,
@@ -20,6 +21,7 @@ import {
   useUploadResultQuery,
   type ApprovalPreview,
   type ApprovalSizeOption,
+  type RegistrationOptionType,
 } from '@/features/registration';
 import { formatKrw, formatPct } from '@/shared/lib/format';
 import { Chip, DataTable, Disclosure, Num, type DataTableColumn } from '@/shared/ui';
@@ -28,6 +30,8 @@ import styles from './PreviewPanel.module.css';
 export interface PreviewPanelProps {
   candidateId: number;
   preview: ApprovalPreview;
+  /** '표준형으로 바꾸기'·'조합형으로 바꾸기'(P4-03 F-AP-41 — `?optionType` search param을 바꾼다) */
+  onOptionTypeChange?: (optionType: RegistrationOptionType) => void;
 }
 
 const VAT_MODE_TEXT: Record<string, string> = { A: '모드 A', B: '모드 B', C: '모드 C' };
@@ -55,12 +59,13 @@ const BREAKDOWN_COLUMNS: readonly DataTableColumn<ApprovalSizeOption>[] = [
 /**
  * SCR-08 '전체 미리보기'(Approval.dc.html, P4-02 §5 FE `PreviewPanel.tsx`, F-AP-08). 05-2 `ApprovalPreview`로 그린다:
  * 대표이미지(로컬 파일) · 상품명과 'n/100자' · 판매가·순이익·마진율(순이익이 가장 낮은 판매 사이즈) · 소싱 방식 · 카테고리 경로 ·
- * 사이즈 옵션(Num mm) · 태그 · 상세 요약 · 배송·통관 · '비용 분해'·'상세 페이지'·'요청 JSON' Disclosure.
+ * 사이즈 옵션(Num mm — 카테고리가 표준형을 지원하면 '표준형으로 바꾸기', P4-03) · 태그 · 상세 요약 · 배송·통관 · '비용 분해'·'상세 페이지'
+ * Disclosure('요청 JSON'은 시안대로 '⑨ 등록' 영역으로 옮겼다 — P4-03).
  * 이미지·상세 렌더링은 외부 주소(shop-phinf)를 부르지 않는다: ⑧ 산출물(`getCandidateUploadResult`)의 `imageAssetId`로
  * `/api/v1/image-assets/{id}/file`(같은 출처)을 쓰고, 상세는 sandbox iframe(`sandbox=""` — 스크립트·같은 출처 권한 없음)에
  * 로컬 주소로 바꾼 HTML을 넣는다. 요청 JSON은 URL 그대로 글로만 보인다. 시안의 '내려받기'(M2 F-AP-49)는 그리지 않는다.
  */
-export function PreviewPanel({ candidateId, preview }: PreviewPanelProps) {
+export function PreviewPanel({ candidateId, preview, onOptionTypeChange }: PreviewPanelProps) {
   const upload = useUploadResultQuery(candidateId).data;
   const imageIdByUrl = useMemo(
     () => new Map((upload?.images ?? []).map((image) => [image.url, image.imageAssetId])),
@@ -137,7 +142,26 @@ export function PreviewPanel({ candidateId, preview }: PreviewPanelProps) {
             ))}
             <span className={styles.unit}>mm</span>
           </span>
-          <span className={styles.caption}>{optionStockText(preview)}</span>
+          <span className={styles.optionRow}>
+            <span className={styles.caption}>{optionStockText(preview)}</span>
+            {preview.optionType === 'STANDARD' ? (
+              <button
+                type="button"
+                className={styles.linkButton}
+                onClick={() => onOptionTypeChange?.('COMBINATION')}
+              >
+                {COMBINATION_OPTION_LABEL}
+              </button>
+            ) : preview.standardOptionSupported ? (
+              <button
+                type="button"
+                className={styles.linkButton}
+                onClick={() => onOptionTypeChange?.('STANDARD')}
+              >
+                {STANDARD_OPTION_LABEL}
+              </button>
+            ) : null}
+          </span>
         </dd>
         <dt>{`태그 ${preview.tags.length}개`}</dt>
         <dd>
@@ -183,11 +207,6 @@ export function PreviewPanel({ candidateId, preview }: PreviewPanelProps) {
             sandbox=""
             srcDoc={detailDocument}
           />
-        </Disclosure>
-        <Disclosure title="요청 JSON" meta={requestSummaryText(preview)}>
-          <pre className={styles.json} aria-label="요청 JSON 초안">
-            {JSON.stringify(preview.requestJsonDraft, null, 2)}
-          </pre>
         </Disclosure>
       </div>
     </section>

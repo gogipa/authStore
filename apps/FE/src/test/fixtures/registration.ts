@@ -213,6 +213,95 @@ export function approvalPreview(
     approveEnabled: true,
     approveDisabledReason: null,
     warnings: [],
+    standardOptionSupported: false,
+    liveRegistrationCount: 3,
+    initialSuspensionCount: 10,
     ...patch,
   };
+}
+
+type RegistrationSummary = components['schemas']['RegistrationSummary'];
+type RegistrationDetail = components['schemas']['RegistrationDetail'];
+type RegistrationSummaryPage = components['schemas']['RegistrationSummaryPage'];
+
+/** 등록 기록 이력 한 줄(05-2 RegistrationSummary — 기본 드라이런 검증완료) */
+export function registrationSummary(patch: Partial<RegistrationSummary> = {}): RegistrationSummary {
+  return {
+    registrationId: 31,
+    stepRunId: 210,
+    stepRunVersion: 1,
+    status: 'VALIDATED',
+    sellerManagementCode: 'RKT:shop-a:10000123:108',
+    optionType: 'COMBINATION',
+    displayStatusType: 'SUSPENSION',
+    approvedAt: '2026-09-28T06:00:00.000Z',
+    registeredAt: null,
+    originProductNo: null,
+    httpStatus: null,
+    errorCode: null,
+    errorMessage: null,
+    failedAt: null,
+    failureKind: null,
+    createdAt: '2026-09-28T06:00:00.000Z',
+    ...patch,
+  };
+}
+
+/** 이력 한 페이지(맨 앞이 직전 결과) */
+export function registrationPage(content: RegistrationSummary[] = []): RegistrationSummaryPage {
+  return {
+    content,
+    page: {
+      number: 0,
+      size: 20,
+      totalElements: content.length,
+      totalPages: content.length ? 1 : 0,
+    },
+  };
+}
+
+/** 등록 기록 상세(05-2 RegistrationDetail — request_json 없음). summary 값을 그대로 잇는다 */
+export function registrationDetail(
+  candidateId: number,
+  patch: Partial<RegistrationDetail> = {},
+): RegistrationDetail {
+  const summary = registrationSummary();
+  return {
+    registrationId: summary.registrationId,
+    candidateId,
+    stepRunId: summary.stepRunId,
+    priceJudgementId: 7,
+    uploadResultId: 1,
+    status: summary.status,
+    itemCode: 'shop-a:10000123',
+    selectedColor: '크림/블랙',
+    colorCode: '108',
+    sellerManagementCode: summary.sellerManagementCode,
+    displayStatusType: 'SUSPENSION',
+    optionType: 'COMBINATION',
+    validationResult: { checks: [] },
+    approvedAt: summary.approvedAt,
+    requestSentAt: null,
+    responseReceivedAt: null,
+    lastResultCheckAt: null,
+    registeredAt: null,
+    originProductNo: null,
+    channelProductNo: null,
+    httpStatus: null,
+    errorCode: null,
+    errorMessage: null,
+    invalidInputs: null,
+    traceId: null,
+    failedAt: null,
+    failureKind: null,
+    smartstoreProductUrl: null,
+    createdAt: summary.createdAt,
+    updatedAt: summary.createdAt,
+    ...patch,
+  };
+}
+
+/** 등록 API 차단 스위치(05-2 RegistrationSwitchState) */
+export function registrationSwitch(apiBlocked = true) {
+  return { apiBlocked, changedAt: '2026-09-28T00:00:00.000Z' };
 }

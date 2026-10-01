@@ -1,0 +1,22 @@
+{
+  "status": 400,
+  "headers": { "GNCP-GW-Trace-ID": "fixture-trace-products-400" },
+  "body": {
+    "code": "BadRequest",
+    "message": "요청 값이 올바르지 않습니다.(fixture)",
+    "timestamp": "2026-10-01T05:00:00.000+09:00",
+    "traceId": "fixture-trace-products-400",
+    "invalidInputs": [
+      {
+        "name": "originProduct.detailAttribute.seoInfo.sellerTags[7].text",
+        "type": "Restricted",
+        "message": "fixture restricted tag"
+      },
+      {
+        "name": "originProduct.detailAttribute.fixtureUnknownField",
+        "type": "FixtureRule",
+        "message": "fixture unknown field message"
+      }
+    ]
+  }
+}
