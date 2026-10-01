@@ -132,7 +132,7 @@ export function aiEngineSettings(
         defaultModels: { text: 'gemini-3.8-flash-medium', vision: 'gemini-3.8-flash-high' },
         loginCommand: '처음 실행할 때 로그인 창이 뜹니다',
         termsNote:
-          'Google 약관은 다른 프로그램과 함께 쓰는 것을 막을 수 있어 Google 계정이 정지될 위험이 있습니다. 사용자 MCP·규칙·플러그인도 함께 켜집니다(끌 수 없음).',
+          '실험적(결과 품질 기준 미달). 본인 Google 계정 한도를 쓰며, Google 약관과 계정 책임은 본인에게 있습니다. 사용자 MCP·규칙·플러그인도 함께 켜집니다(끌 수 없음).',
         experimental: true,
       },
       {

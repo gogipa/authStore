@@ -42,7 +42,8 @@ export const AI_ENGINE_DEFAULT_MODELS: Readonly<Record<AiEngineCode, AiEngineMod
 /**
  * '실험적' 표시(F-ST-27, PRD §8.9 R15). M0 S7(2026-10-01, 기준: 스키마 통과율 ≥ 95%, 호출당 ≤ 120초) 결과:
  * - CLAUDE 통과(50/50, 최대 44.5초) → false
- * - AGY 미달(43/50 = 86%, 비전 3/10 — headless 도구 권한 거부) → true. 약관 위험(S6 약관 '상')도 있다
+ * - AGY 미달(43/50 = 86%, 비전 3/10 — headless 도구 권한 거부) → true. 이유는 결과 품질뿐이다(D-18, 2026-10-02 —
+ *   오너 본인 사용의 약관 위험은 '중'이고 오너가 받아들였다. 원천자료 09)
  * - CODEX 미설치로 재지 못함 → true 유지
  */
 export const AI_ENGINE_EXPERIMENTAL: Readonly<Record<AiEngineCode, boolean>> = {
@@ -59,13 +60,14 @@ export const AI_ENGINE_LOGIN_COMMAND: Readonly<Record<AiEngineCode, string>> = {
 };
 
 /**
- * 엔진별 약관·쿼터 고지(R14). M0 S6 약관 §8 추천 문구(엔진마다 위험이 다르다 — Claude 중, agy 상, Codex 중). 오너 검토 대상(D-11).
- * AGY는 '실험적' 칩이 따로 붙으므로 문구 앞 '실험적:'은 뺐고, 사용자 MCP·규칙·플러그인을 끌 수 없다는 S6 격리 결과를 덧붙였다.
+ * 엔진별 약관·쿼터 고지(R14). M0 S6 약관 §8 문구(엔진마다 약관 문장이 다르다). 오너 본인 사용의 위험은 세 엔진 모두 '중'이다
+ * (agy는 D-18로 '상' → '중': 'OAuth를 빌려 쓰는 제3자 소프트웨어' 금지는 공식 agy를 본인 로그인으로 부르는 이 앱에 해당하지 않는다).
+ * AGY 문구의 '실험적'은 결과 품질 이유(S7)를 밝히는 말이고, 사용자 MCP·규칙·플러그인을 끌 수 없다는 S6 격리 결과를 덧붙였다.
  */
 export const AI_ENGINE_TERMS_NOTE: Readonly<Record<AiEngineCode, string>> = {
   CLAUDE:
     '본인 Claude 구독 한도를 씁니다. 대량·상시 사용은 Anthropic 약관상 제한될 수 있고, 계정 책임은 본인에게 있습니다.',
-  AGY: 'Google 약관은 다른 프로그램과 함께 쓰는 것을 막을 수 있어 Google 계정이 정지될 위험이 있습니다. 사용자 MCP·규칙·플러그인도 함께 켜집니다(끌 수 없음).',
+  AGY: '실험적(결과 품질 기준 미달). 본인 Google 계정 한도를 쓰며, Google 약관과 계정 책임은 본인에게 있습니다. 사용자 MCP·규칙·플러그인도 함께 켜집니다(끌 수 없음).',
   CODEX: '본인 ChatGPT 플랜 한도를 씁니다. OpenAI 약관과 계정 책임은 본인에게 있습니다.',
 };
 

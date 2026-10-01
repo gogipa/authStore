@@ -56,10 +56,10 @@ describe('엔진 안내 상수(P1-11 규칙 2)', () => {
       { text: 'gemini-3.8-flash-medium', vision: 'gemini-3.8-flash-high' },
       { text: null, vision: null },
     ]);
-    // M0 S6 약관 §8: 엔진마다 위험이 다른 고지(AGY는 계정 정지 위험 + 사용자 MCP를 끌 수 없음)
+    // M0 S6 약관 §8: 엔진마다 다른 고지. AGY는 D-18(2026-10-02)로 '실험적(품질) + 본인 계정 책임 + 사용자 MCP를 끌 수 없음'
     expect(engines.map((e) => e.termsNote)).toEqual([
       '본인 Claude 구독 한도를 씁니다. 대량·상시 사용은 Anthropic 약관상 제한될 수 있고, 계정 책임은 본인에게 있습니다.',
-      'Google 약관은 다른 프로그램과 함께 쓰는 것을 막을 수 있어 Google 계정이 정지될 위험이 있습니다. 사용자 MCP·규칙·플러그인도 함께 켜집니다(끌 수 없음).',
+      '실험적(결과 품질 기준 미달). 본인 Google 계정 한도를 쓰며, Google 약관과 계정 책임은 본인에게 있습니다. 사용자 MCP·규칙·플러그인도 함께 켜집니다(끌 수 없음).',
       '본인 ChatGPT 플랜 한도를 씁니다. OpenAI 약관과 계정 책임은 본인에게 있습니다.',
     ]);
     // M0 S7: CLAUDE 통과, AGY 미달(86%, 비전 3/10), CODEX 미측정
