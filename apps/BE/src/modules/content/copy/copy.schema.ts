@@ -6,7 +6,8 @@ import { COPY_FIELD_PROPS, type CopyFieldKey, type CopyFieldProp } from '../fiel
 /**
  * ⑥-1 카피 결과 스키마(P3-03 규칙 2, PRD §8.5 카피 스키마 CT-01, F-CT-05, US-14 AC1, AI-02). draft-07 공통 부분집합 —
  * `additionalProperties:false`, 모든 필드 required(P1-10 `assertAiSchemaRules`). 앱이 Ajv로 다시 검증하고(`AiExecutor.run`),
- * 어기면 ⑥-1은 FAILED(`failureKind=AI`, `AI_OUTPUT_INVALID`)다. M1은 자동 재시도가 없다(AI-05 재시도는 M2).
+ * 어기면 같은 엔진·모델로 1회 바로 다시 부르고(D-17, `CopyStepRunner`), 두 번째도 어기면 ⑥-1은 FAILED(`failureKind=AI`,
+ * `AI_OUTPUT_INVALID`)다. 그 밖의 자동 재시도(AI-04 일시 오류 재시도)는 M2다.
  * 길이 상한(헤드라인 40자·셀링포인트 3~5개 말고)은 Proposed다.
  */
 export const COPY_LIMITS = {

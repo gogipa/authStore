@@ -166,3 +166,13 @@ export class AiSchemaRuleError extends Error {
 export function isAiExecutionError(error: unknown): error is AiExecutionError {
   return error instanceof AiExecutionError;
 }
+
+/**
+ * 결과가 앱 검증에서 떨어졌는가(`AI_OUTPUT_INVALID` — 스키마 불일치·빈 결과·JSON 아님·부분 출력·모양 깨짐, 규칙 8).
+ * `AI_IMAGES_NOT_SEEN`(규칙 9)·시간 초과·CLI 실패·엔진 사용 불가·입력 차단은 아니다. D-17(⑥-1 1회 다시 부르기)이 이것만 다시 부른다
+ */
+export function isAiOutputInvalid(error: unknown): error is AiOutputInvalidError {
+  return (
+    error instanceof AiOutputInvalidError && error.errorCode === AI_RUN_ERROR_CODES.OUTPUT_INVALID
+  );
+}

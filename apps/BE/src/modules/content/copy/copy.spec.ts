@@ -7,7 +7,12 @@ import { checkAiSchemaRules } from '../../integrations/ai-engine/schema/ai-schem
 import { validateAiOutput } from '../../integrations/ai-engine/schema/ai-output-validator.js';
 import type { FieldDraft } from '../fields/content-field.store.js';
 import { applyCopyEdits, carryCopyFields, overlayCopy } from './copy-fields.js';
-import { buildCopyPrompt, COPY_DATA_BLOCK_RULE, COPY_PROMPT_RULES } from './copy.prompt.js';
+import {
+  buildCopyPrompt,
+  COPY_DATA_BLOCK_RULE,
+  COPY_PROMPT_RULES,
+  COPY_SHAPE_RULE,
+} from './copy.prompt.js';
 import { copyFieldErrors, COPY_SCHEMA, type CopyDraft } from './copy.schema.js';
 
 const AI_DIR = join(import.meta.dirname, '../../../../test/fixtures/content/ai');
@@ -84,6 +89,13 @@ describe('카피 프롬프트(P3-03 규칙 1·3, F-CT-06, AI-08)', () => {
     ]) {
       expect(input.instruction).toContain(word);
     }
+  });
+
+  it('결과 모양 안내(D-17, S7 §4.7 문구 그대로)가 지시문 끝 줄이다 — 첫 호출·재호출이 같은 지시문을 쓴다', () => {
+    expect(input.instruction.split('\n').at(-1)).toBe(COPY_SHAPE_RULE);
+    expect(COPY_SHAPE_RULE).toMatch(/^\[결과 모양\] /);
+    expect(COPY_SHAPE_RULE).toContain('JSON 문자열·중괄호·다른 항목 이름을 넣지 않는다');
+    expect(inspectAiInput(input)).toEqual([]);
   });
 
   it('⑥-2 값(원산지·소재·굽높이 추출 결과)을 넣지 않는다 — 입력은 상품명·설명·SKU 속성 블록뿐', () => {

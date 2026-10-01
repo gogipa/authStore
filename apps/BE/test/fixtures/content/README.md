@@ -12,6 +12,8 @@ e2e는 이 파일들로 ② 산출물을 DB에 직접 만들고(`seed-content.ts
 | `ai/copy-ok.json`                                  | ⑥-1 카피 녹화 모양(헤드라인 25자, 셀링포인트 3개, 원문 사실 3개)                                                                                                                  |
 | `ai/copy-headline-41.json`                         | 헤드라인 41자 — 스키마 위반(AI_OUTPUT_INVALID)                                                                                                                                    |
 | `ai/copy-extra-field.json`                         | 스키마 밖 필드(`price_note`) — 스키마 위반                                                                                                                                        |
+| `ai/copy-body-json.json`                           | (D-17) 결과 모양 깨짐: 스키마는 맞지만 `body`에 결과 JSON 전체가 글로 들어감. M0 S7 §4.5 claude C03·C09·C10 모양을 본뜬 합성본(녹화 원문은 저장소에 없다)                         |
+| `ai/copy-placeholder.json`                         | (D-17) 결과 모양 깨짐: `body`에 결과 JSON 전체, 나머지 필드는 모두 `placeholder`. S7 C08 모양을 본뜬 합성본                                                                       |
 | `ai/fact-ocr.json`                                 | ⑥-2 AI 결과: 원산지 NONE, 소재·굽높이를 스펙 이미지 1번에서 읽음(method IMAGE). 가짜 어댑터가 부른 스키마 필드만 남기고 `images_seen`을 더한다                                    |
 | `ai/fact-no-quote.json`                            | 값만 있고 원문 발췌가 없는 필드(쓰지 않는다 — 추측 금지)와 글 근거 필드                                                                                                           |
 | (P3-04) 두 `ai/fact-*.json`의 `color_ko`·`caution` | 색상 표기 보조·주의 문구 보완 결과(⑥-2 AI 호출에 묶는다). `fact-ocr`의 `caution` 발췌 `合成皮革`는 설명 글에 있을 때만 받는다                                                     |

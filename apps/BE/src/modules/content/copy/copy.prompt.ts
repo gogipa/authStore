@@ -34,6 +34,14 @@ export const COPY_OUTPUT_GUIDE: readonly string[] = [
   'source_facts_used: 카피에 쓴 사실을 자료의 원문(일본어) 표기 그대로 짧게 옮긴 목록',
 ];
 
+/**
+ * 결과 모양 안내(D-17 구현 결정, Proposed). M0 S7 §4.7에서 claude 카피가 깨졌던 4건을 이 줄을 지시문 끝에 더해 다시 부르자
+ * 3건이 정상이었다(같은 지시문 그대로 다시 부른 측정은 없다). 그래서 첫 호출부터 넣고, D-17 재호출도 같은 지시문을 쓴다.
+ * 문구는 S7 측정 그대로다. 그래도 깨지면 앱 재검증(`validateAiOutput` 모양 검사)이 막는다
+ */
+export const COPY_SHAPE_RULE =
+  "[결과 모양] 결과는 스키마의 각 항목에 나눠 넣는다. 각 항목 값에는 그 항목의 한국어 글만 넣고, 어떤 값에도 JSON 문자열·중괄호·다른 항목 이름을 넣지 않는다. 'placeholder' 같은 자리 표시 글을 쓰지 않는다.";
+
 export interface CopyPromptInput {
   itemName: string;
   descriptionText: string | null;
@@ -41,8 +49,8 @@ export interface CopyPromptInput {
 }
 
 /**
- * 카피 프롬프트(P3-03 규칙 1·3). 입력은 ② 상품명·설명 글·SKU 속성뿐이다 — ⑥-2 값(원산지·소재·굽높이 추출 결과)을 읽지 않는다.
- * 라쿠텐 글은 출처 RAKUTEN 데이터 블록으로만 넣는다(P1-10 `composeAiPrompt`가 `[자료 n · 이름]`으로 격리). 비밀·개인정보는
+ * 카피 프롬프트(P3-03 규칙 1·3, 끝 줄은 결과 모양 안내 — D-17). 입력은 ② 상품명·설명 글·SKU 속성뿐이다 — ⑥-2 값
+ * (원산지·소재·굽높이 추출 결과)을 읽지 않는다. 라쿠텐 글은 출처 RAKUTEN 데이터 블록으로만 넣는다(P1-10 `composeAiPrompt`가 `[자료 n · 이름]`으로 격리). 비밀·개인정보는
  * 넣지 않는다(실행기 입력 보호가 한 번 더 본다).
  */
 export function buildCopyPrompt(input: CopyPromptInput): AiExecutorInput {
@@ -56,6 +64,7 @@ export function buildCopyPrompt(input: CopyPromptInput): AiExecutorInput {
     '',
     '[결과 항목]',
     ...COPY_OUTPUT_GUIDE.map((line) => `- ${line}`),
+    COPY_SHAPE_RULE,
   ].join('\n');
   const attributeText = input.attributes.map((a) => `${a.name}: ${a.text}`).join('\n');
   return {

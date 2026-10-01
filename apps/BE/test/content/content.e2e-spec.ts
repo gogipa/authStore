@@ -3,7 +3,11 @@ import {
   type PublishedProgressEvent,
   ProgressEventsService,
 } from '../../src/common/events/progress-events.service.js';
-import { AiEngineUnavailableError } from '../../src/modules/integrations/ai-engine/ai-engine.errors.js';
+import {
+  AI_RUN_ERROR_CODES,
+  AiCallFailedError,
+  AiEngineUnavailableError,
+} from '../../src/modules/integrations/ai-engine/ai-engine.errors.js';
 import { readDefaultSettingsText } from '../../src/modules/settings/defaults/default-settings.js';
 import { writeSettingsFileAtomically } from '../../src/modules/settings/settings-file.loader.js';
 import { StepEngineTransactions } from '../../src/modules/step-engine/candidates/step-engine-tx.js';
@@ -232,22 +236,76 @@ describe('⑥-1 카피·⑥-2 사양 추출(P3-03) e2e — autostore_test·실�
         failureKind: 'AI',
         errorCode: 'AI_ENGINE_UNAVAILABLE',
       });
+      // D-17: 엔진 사용 불가는 다시 부르지 않는다
+      expect(t.ai.claude.calls.runStructured).toHaveLength(1);
       expect(t.ai.agy.calls.runStructured).toHaveLength(0);
       expect(await t.prisma.contentDraftCopy.count()).toBe(0);
     });
 
+    const aiCallLogOf = (stepRunId: number) =>
+      t.prisma.callLog.findMany({ where: { stepRunId }, orderBy: { id: 'asc' } });
+
     it.each([
       ['헤드라인 41자', 'copy-headline-41'],
       ['추가 필드', 'copy-extra-field'],
-    ])('결과가 스키마와 다르면(%s) FAILED(AI, AI_OUTPUT_INVALID)', async (_label, fixture) => {
-      ai({ copy: fixture });
+      ['모양 깨짐 — body에 결과 JSON', 'copy-body-json'],
+      ['모양 깨짐 — placeholder', 'copy-placeholder'],
+    ])(
+      '결과가 검증에서 두 번 떨어지면(%s) FAILED(AI, AI_OUTPUT_INVALID) — D-17로 정확히 2회 부르고 call_log 2행',
+      async (_label, fixture) => {
+        ai({ copy: fixture });
+        const seed = await seedContentSourcing(t.prisma, 'sku-attrs');
+        const { run } = await runStep(seed.candidate.id, 'COPY');
+        expect(run).toMatchObject({
+          status: 'FAILED',
+          failureKind: 'AI',
+          errorCode: 'AI_OUTPUT_INVALID',
+          aiEngine: 'CLAUDE',
+          aiModel: 'sonnet',
+        });
+        expect(t.ai.claude.calls.runStructured).toHaveLength(2);
+        const logs = await aiCallLogOf(run.id);
+        expect(logs.map((l) => [l.target, l.succeeded, l.errorCode])).toEqual([
+          ['AI_CLAUDE_CLI', false, 'AI_OUTPUT_INVALID'],
+          ['AI_CLAUDE_CLI', false, 'AI_OUTPUT_INVALID'],
+        ]);
+        expect(await t.prisma.contentDraftCopy.count()).toBe(0);
+      },
+    );
+
+    it('D-17: 첫 결과가 모양 깨짐이면 같은 엔진·모델로 1회 다시 불러 두 번째 결과로 완료한다(call_log 실패 1행 + 성공 1행)', async () => {
+      ai({ copyAttempts: ['copy-body-json', 'copy-ok'] });
       const seed = await seedContentSourcing(t.prisma, 'sku-attrs');
       const { run } = await runStep(seed.candidate.id, 'COPY');
-      expect(run).toMatchObject({
-        status: 'FAILED',
-        failureKind: 'AI',
-        errorCode: 'AI_OUTPUT_INVALID',
+      expect(run).toMatchObject({ status: 'COMPLETED', aiEngine: 'CLAUDE', aiModel: 'sonnet' });
+      const calls = t.ai.claude.calls.runStructured;
+      expect(calls.map((c) => [c.task, c.model])).toEqual([
+        ['CT-01', 'sonnet'],
+        ['CT-01', 'sonnet'],
+      ]);
+      expect(calls[1]!.promptLength).toBe(calls[0]!.promptLength);
+      const logs = await aiCallLogOf(run.id);
+      expect(logs.map((l) => [l.succeeded, l.errorCode, l.candidateId])).toEqual([
+        [false, 'AI_OUTPUT_INVALID', seed.candidate.id],
+        [true, null, seed.candidate.id],
+      ]);
+      const body = await copyOf(seed.candidate.id);
+      expect(body.generatedCopy).toEqual(COPY_OK);
+      expect(body.copy.headline).toBe(COPY_OK.headline);
+    });
+
+    it('D-17: 시간 초과는 다시 부르지 않는다 — FAILED(AI, AI_TIMEOUT), 1회', async () => {
+      ai({
+        copyAttempts: [
+          new AiCallFailedError('CLAUDE', AI_RUN_ERROR_CODES.TIMEOUT, '120초'),
+          'copy-ok',
+        ],
       });
+      const seed = await seedContentSourcing(t.prisma, 'sku-attrs');
+      const { run } = await runStep(seed.candidate.id, 'COPY');
+      expect(run).toMatchObject({ status: 'FAILED', failureKind: 'AI', errorCode: 'AI_TIMEOUT' });
+      expect(t.ai.claude.calls.runStructured).toHaveLength(1);
+      expect((await aiCallLogOf(run.id)).map((l) => l.errorCode)).toEqual(['AI_TIMEOUT']);
       expect(await t.prisma.contentDraftCopy.count()).toBe(0);
     });
   });

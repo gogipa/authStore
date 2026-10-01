@@ -228,9 +228,17 @@ export function withSeenImages(output: Record<string, unknown>, call: FakeAiRunC
   };
 }
 
+/** 가짜 AI 결과 하나: 녹화 이름·값, 또는 던질 오류(시간 초과·CLI 실패 등) */
+export type FakeContentAiOutput = string | Record<string, unknown> | Error;
+
 export interface FakeContentAiScript {
   /** ⑥-1 카피 결과(녹화 이름 또는 값). 기본 copy-ok */
   copy?: string | Record<string, unknown>;
+  /**
+   * ⑥-1 카피 결과를 부른 순서대로(D-17 1회 다시 부르기 시험). `copy`보다 먼저 본다. 다 쓰면 마지막 것을 되풀이하고,
+   * `Error`면 그 호출에서 던진다
+   */
+  copyAttempts?: readonly FakeContentAiOutput[];
   /** ⑥-2 AI 결과(녹화 이름 또는 값). 기본 fact-ocr */
   fact?: string | Record<string, unknown>;
   /** ⑥-2 비전 결과에서 `images_seen`을 빼 본다 */
@@ -244,10 +252,19 @@ export interface FakeContentAiScript {
 export function useFakeContentAi(engines: FakeAiEngines, script: FakeContentAiScript = {}): void {
   const resolve = (v: string | Record<string, unknown> | undefined, fallback: string) =>
     typeof v === 'object' ? v : contentAiFixture(v ?? fallback);
+  const attempts = script.copyAttempts ?? [];
+  let copyCalls = 0;
+  const nextCopy = () => {
+    copyCalls += 1;
+    if (attempts.length === 0) return resolve(script.copy, 'copy-ok');
+    const next = attempts[Math.min(copyCalls, attempts.length) - 1]!;
+    if (next instanceof Error) throw next;
+    return resolve(next, 'copy-ok');
+  };
   for (const adapter of [engines.claude, engines.agy, engines.codex]) {
     const fallback = adapter.runImpl;
     adapter.runImpl = (call: FakeAiRunCall) => {
-      if (call.task === 'CT-01') return resolve(script.copy, 'copy-ok');
+      if (call.task === 'CT-01') return nextCopy();
       if (call.task === 'CT-02') {
         const picked = pickForSchema(resolve(script.fact, 'fact-ocr'), call.schema);
         return script.factDropsImagesSeen ? picked : withSeenImages(picked, call);
