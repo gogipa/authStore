@@ -15,7 +15,7 @@ describe('설정 thumbnail 섹션(P3-01 — ⑤ 프롬프트 골격·얼굴 노�
     expect(t.faceOptionDefault).toBe('FULL_FACE');
     expect(t.candidateCount).toBe(2);
     expect(t.resolutionPx).toBe(2048);
-    // P3-02: 이미지 생성 공급자(M0 S1 전 가짜 공급자가 이 코드로 기록)·생성 타임아웃 15분
+    // P3-02: 이미지 생성 공급자(D-19 AGY)·생성 타임아웃 15분
     expect(t.imageProvider).toBe('AGY');
     expect(t.generationTimeoutSeconds).toBe(900);
     expect(t.promptTemplate).toContain('{resolution}');

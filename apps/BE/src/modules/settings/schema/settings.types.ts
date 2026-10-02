@@ -438,9 +438,9 @@ export interface ThumbnailSettings {
   faceOptionDefault: ThumbnailFaceOption;
   /** 생성 후보 수 N(IM-03 기본 2, P3-02가 쓴다). 1~4 */
   candidateCount: number;
-  /** 생성 해상도 px(PRD §16 ③ 2K = 2048, M0 S1에서 확정). 512~4096 */
+  /** 생성 해상도 px(PRD §16 ③ 2K = 2048). 512~4096. S1: agy는 늘 1024를 낸다(기본값은 오너 결정 S1 Q1) */
   resolutionPx: number;
-  /** 이미지 생성 공급자(P3-02 Proposed 키 — M0 S1에서 확정). 기본 AGY */
+  /** 이미지 생성 공급자(P3-02 Proposed 키, D-19로 AGY 확정). 기본 AGY */
   imageProvider: ThumbnailImageProvider;
   /** 생성 한 건 타임아웃(초, P3-02 Proposed 키). 1~900, 기본 900(15분 — 하드 상한). 테스트는 짧게 둔다 */
   generationTimeoutSeconds: number;

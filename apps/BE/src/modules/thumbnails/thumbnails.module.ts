@@ -39,7 +39,7 @@ import { ThumbnailStepRunner } from './thumbnail-step.runner.js';
  * - 생성 `generation/`: `POST /step-runs/{id}/generation-runs`(202 — 번호마다 generation_run RUNNING, 차단어 서버 재검사),
  *   `GET /generation-runs/{id}`, 생성 작업 `GenerationWorker`(이미지 슬롯 1개 직렬, 하드 타임아웃, 형식 판별, image_asset
  *   GENERATED, SSE `generation-run.updated`), 재시작 정리 `GenerationRecovery`(RUNNING → FAILED). 이미지 모델은 integrations
- *   `IMAGE_GEN_PROVIDER` 포트로만 부른다(M0 S1 전 가짜 공급자)
+ *   `IMAGE_GEN_PROVIDER` 포트로만 부른다(D-19: 개발·운영은 agy 어댑터, 테스트는 가짜 공급자)
  * - 산출물 조회 `GET /candidates/{id}/thumbnail`(`ThumbnailOutputService`)
  * - G3 공급자 `ThumbnailG3GateBasis`(`@GateBasisFor('G3')` — step-engine `GateService`가 부른다): 체크리스트·이미지·'같은
  *   상품·색상' 검사, 선택본 저장(실행기 `persist`), ⑤ 완료 또는 OWNER_EDIT 새 버전, 지문 구성값
