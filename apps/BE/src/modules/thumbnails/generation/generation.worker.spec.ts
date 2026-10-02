@@ -138,11 +138,13 @@ describe('GenerationWorker(P3-02 규칙 5·6 — 생성 한 건)', () => {
         resultImageAssetId: 77,
       },
     });
-    // 공급자에게는 레퍼런스 절대 경로·해상도·타임아웃만 넘긴다
+    // 공급자에게는 레퍼런스 절대 경로·해상도·타임아웃과 call_log 연결용 id만 넘긴다(M0 S1)
     expect(t.provider.calls[0]).toMatchObject({
       referenceImagePaths: ['/data/images/ab/ref.jpg'],
       sizePx: 2048,
       timeoutMs: 900_000,
+      stepRunId: 9,
+      candidateId: 3,
     });
   });
 
@@ -182,6 +184,31 @@ describe('GenerationWorker(P3-02 규칙 5·6 — 생성 한 건)', () => {
       errorMessage: GENERATION_ERROR_MESSAGES.timeout(20),
     });
     expect(t.row().finishedAt).toEqual(new Date('2026-09-28T05:21:00Z'));
+  });
+
+  it('타임아웃 뒤 행은 바로 마감하고, 끊긴 공급자가 끝날 때까지 대기열을 비우지 않는다(이미지 작업 동시 1개)', async () => {
+    const t = setup(0.02);
+    const order: string[] = [];
+    // 끊긴 뒤 50ms 지나서야 끝나는 공급자(agy 자식이 SIGTERM 뒤 끝나는 시간). ESM 모드라 jest.spyOn 대신 직접 바꾼다
+    t.provider.generate = (request) =>
+      new Promise((_resolve, reject) => {
+        request.signal.addEventListener('abort', () => {
+          order.push(`abort:${String(t.row().status)}`);
+          setTimeout(() => {
+            order.push(`end:${String(t.row().status)}`);
+            reject(new Error('killed'));
+          }, 50);
+        });
+      });
+    t.worker.submit([41]);
+    await t.worker.whenIdle();
+    order.push('idle');
+    // 끊긴 때는 아직 RUNNING, 공급자가 끝날 때는 이미 FAILED(행은 기다리지 않고 마감), 대기열은 그 뒤에 빈다
+    expect(order).toEqual(['abort:RUNNING', 'end:FAILED', 'idle']);
+    expect(t.row()).toMatchObject({
+      status: 'FAILED',
+      errorMessage: GENERATION_ERROR_MESSAGES.timeout(20),
+    });
   });
 
   it('마감 시각은 시작보다 이르지 않다(ck_gen_time)', () => {

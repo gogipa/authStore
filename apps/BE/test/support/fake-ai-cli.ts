@@ -1,4 +1,12 @@
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -23,6 +31,11 @@ export interface FakeCliScenario {
     lastMessage?: FakeText;
     exit?: number;
     sleepMs?: number;
+    /**
+     * agy 이미지 생성(M0 S1): `$HOME/.gemini/antigravity-cli/brain/<conversationId>/<name>`에 `from`(fixture 경로 또는 절대 경로)을
+     * 복사한다. 세계의 기본 `HOME`은 세계 폴더 안 `home/`(임시)이고, 가짜 CLI는 HOME이 임시 폴더가 아니면 쓰지 않고 실패한다
+     */
+    brain?: { conversationId: string; files: { name: string; from: string }[] };
   };
 }
 
@@ -37,6 +50,8 @@ export interface FakeCliRecord {
   disableAutoupdater: string | null;
   /** claude 부가 트래픽 끄기 값(M0 S6) */
   disableNonessentialTraffic: string | null;
+  /** agy 자동 업데이트 끄기 값(M0 S1 — 'true'여야 꺼진다) */
+  agyDisableAutoUpdate: string | null;
   stdin: string;
   addDir: string | null;
   addDirEntries: string[] | null;
@@ -48,8 +63,8 @@ export interface FakeCliWorld {
   /** 가짜 실행 파일이 있는 임시 폴더(os.tmpdir() 아래) */
   dir: string;
   /**
-   * 러너에 넘길 부모 환경변수: PATH = 이 폴더와 시스템 기본 폴더만(사용자 PC의 진짜 CLI가 잡히지 않게) +
-   * 허용 목록 밖·금지 변수(ANTHROPIC_API_KEY 등 — 걸러지는지 본다)
+   * 러너에 넘길 부모 환경변수: PATH = 이 폴더와 시스템 기본 폴더만(사용자 PC의 진짜 CLI가 잡히지 않게), HOME = 이 폴더 안
+   * `home/`(사용자 홈이 아님) + 허용 목록 밖·금지 변수(ANTHROPIC_API_KEY 등 — 걸러지는지 본다)
    */
   env: Record<string, string>;
   setScenario(scenario: Partial<Record<FakeCliEngine, FakeCliScenario>>): void;
@@ -75,11 +90,14 @@ export function createFakeCliWorld(
     chmodSync(file, 0o755);
   }
   const recordsFile = join(dir, 'records', 'calls.jsonl');
+  // 자식 HOME은 세계 폴더 안 임시 홈이다 — 가짜 CLI가 HOME 아래에 쓰는 파일(agy brain)이 사용자 홈에 남지 않게
+  const home = join(dir, 'home');
+  mkdirSync(home);
   return {
     dir,
     env: {
       PATH: [dir, '/usr/bin', '/bin'].join(':'),
-      HOME: process.env.HOME ?? '/tmp',
+      HOME: home,
       LANG: 'ko_KR.UTF-8',
       TMPDIR: tmpdir(),
       ANTHROPIC_API_KEY: 'x',

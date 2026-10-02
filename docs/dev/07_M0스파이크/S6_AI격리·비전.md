@@ -276,7 +276,7 @@
 
 - agy 실행 파일이 15:24:10에 1.2.9 → 1.2.14로 바뀌었다(`stat` 수정 시각, `agy --version`). 이 시각에 다른 agy 호출(S7)이 있었다. agy는 실행할 때 스스로 업데이트한다.
 - 바뀐 뒤 도움말의 `--effort` 값에 `max`가 생겼다. 버전이 호출 사이에 바뀔 수 있다는 뜻이다(R11 StepRun의 CLI 버전 기록이 중요하다).
-- 바이너리 문자열에 `AGY_CLI_DISABLE_AUTO_UPDATE`가 있다. 효과는 확인하지 못했다(새 버전이 없어 시험 불가).
+- 바이너리 문자열에 `AGY_CLI_DISABLE_AUTO_UPDATE`가 있다. 효과는 확인하지 못했다(새 버전이 없어 시험 불가). → S1(2026-10-02)에서 확인했다: `=1`은 무시되고 `=true`면 꺼진다([S1](S1_썸네일생성.md) §4.9).
 
 ---
 
@@ -333,7 +333,7 @@ AI_CLI_LIVE=1 AI_CLI_LIVE_ENGINES=claude,agy pnpm --filter @autostore/be test --
 | 5 | `adapters/agy.adapter.ts` 비전 프롬프트 | agy만 이미지 안내를 '파일 절대 경로 목록 + view_file로 하나씩 열 것 + 명령 실행·폴더 목록 도구 금지'로 바꾼다 | §6.5 |
 | 6 | `adapters/agy.adapter.ts` `parseAgyResult` | (a) stderr `print timeout after` → `TIMEOUT` (b) 봉투 `denied_actions` 비어 있지 않음 또는 stderr `no output produced` → 실패(비전이면 `AI_IMAGES_NOT_SEEN`, 아니면 `CLI_FAILED`, 메시지 '도구 권한 거부') | §6.3, §6.6 |
 | 7 | `ai-engine.constants.ts` | `AGY_ISOLATION_ARGS = ['--disable-slash-commands']`(효과는 작지만 라쿠텐 글의 `/` 확장 방어, 비용 0). `AGY_USER_MCP_DISABLE_KNOWN`은 **false 유지** | §6.1, §6.8 |
-| 8 | agy 환경변수 | `AGY_CLI_DISABLE_AUTO_UPDATE=1`은 효과를 확인한 뒤에 넣는다(지금은 문자열만 발견) | §6.9 |
+| 8 | agy 환경변수 | `AGY_CLI_DISABLE_AUTO_UPDATE=1`은 효과를 확인한 뒤에 넣는다(지금은 문자열만 발견). → **S1에서 확인·반영(2026-10-02)**: `1`은 효과가 없고 `true`여야 꺼진다. 앱은 agy 자식에만 `true`를 넣는다([S1](S1_썸네일생성.md) §4.9) | §6.9 |
 | 9 | 감지 호출 | `agy mcp list`는 부르지 않는다. agy 로그 파일을 읽어 판단하지 않는다(`not logged into` 잡음) | §6.7 |
 | 10 | `live-cli.spec.ts` | 비전 1건(이미지 1장) live 케이스를 더하고, claude는 `permission_denials`가 비었는지도 본다(Proposed) | §7 |
 
@@ -373,7 +373,7 @@ AI_CLI_LIVE=1 AI_CLI_LIVE_ENGINES=claude,agy pnpm --filter @autostore/be test --
 - 표본이 작다. 변형마다 1~2회다. 지연은 네트워크·서버 상태, 같은 시간 S7의 agy 호출에 따라 흔들린다.
 - 비전 이미지는 합성 글자 이미지 3장이다. 실제 라쿠텐 스펙 이미지(사진·작은 글씨·표)의 정확도는 S7이 본다.
 - agy의 MCP 도구 호출이 헤드리스에서 자동 거부되는지는 외부 연결이 생겨 시험하지 않았다.
-- `AGY_CLI_DISABLE_AUTO_UPDATE`, `JETSKI_APP_DATA_DIR`, `ANTIGRAVITY_PERM_GRANTS`의 효과는 확인하지 않았다.
+- `AGY_CLI_DISABLE_AUTO_UPDATE`, `JETSKI_APP_DATA_DIR`, `ANTIGRAVITY_PERM_GRANTS`의 효과는 확인하지 않았다. → `AGY_CLI_DISABLE_AUTO_UPDATE`는 S1에서 확인했다(`true`만 효과).
 - `--safe-mode`만 쓸 때 사용자 settings.json의 `env` 항목이 자식 환경에 들어가는지는 오너 설정을 바꿔야 해서 시험하지 않았다. `--setting-sources ""`를 더하면 이 걱정이 없다.
 - codex는 미설치라 하지 않았다.
 

@@ -5,12 +5,15 @@ import type { CallLogTarget } from '../http/external-targets.js';
  * `GenerationWorker`)은 이 포트로만 이미지 모델을 부른다. 선택 AI 엔진 어댑터(`AiEngineAdapter`, 텍스트·비전)와 섞지 않는다 —
  * 공급자 선택은 설정 `thumbnail.imageProvider`이고, ⑤ `step_run.ai_*`는 NULL이다(D-16 R1).
  *
- * 모양은 Proposed이고 M0 S1(이미지 생성 경로 — agy `generate_image` 또는 Gemini API) 계약으로 확정한다(03-2 C4 §3,
- * 05-1 §7.4 'P3-02 구현 결정'). 그 전에는 가짜 공급자(`FakeImageGenProvider`)만 붙는다. 실제 어댑터를 붙일 때:
+ * M0 S1(2026-10-02, docs/dev/07_M0스파이크/S1_썸네일생성.md)로 모양을 확정했다. 경로는 agy `generate_image`다(D-19).
+ * - 실제 어댑터: `AgyImageGenProvider`(agy-image-gen.provider.ts). 설정 공급자로 고르는 `RoutingImageGenProvider`가 이 토큰에
+ *   붙는다(운영·개발). 테스트 환경(NODE_ENV=test)은 가짜 공급자(`FakeImageGenProvider`)가 붙고, 테스트는
+ *   `overrideProvider(IMAGE_GEN_PROVIDER)`로 대본 가짜를 넣는다. GEMINI_API·OPENAI_API·CODEX는 아직 어댑터가 없다
  * - 밖으로 나가는 호출은 관문(`ExternalHttpGateway`, API 공급자) 또는 `IsolatedCliRunner`(CLI 공급자)로만 하고, 호출마다
  *   `call_log` 1행을 `IMAGE_GEN_CALL_TARGET[공급자]`로 남긴다(ERD `ck_call_log_target`). 가짜 공급자는 밖을 부르지 않아 남기지 않는다
  * - 요청의 `timeoutMs`·`signal`을 지킨다(하드 타임아웃 15분은 부르는 쪽도 건다)
- * - 결과 바이트의 형식·크기는 믿지 않는다(agy는 크기 지시를 무시하거나 확장자와 내용이 다를 수 있다 — 저장할 때 내용으로 판별)
+ * - 결과 바이트의 형식·크기는 믿지 않는다(agy는 요청 크기와 관계없이 1024×1024 JPEG를 낸다 — S1 12/12. 저장할 때 내용으로
+ *   판별하고, 1000×1000 JPEG 정규화는 ⑧ 업로드가 한다)
  * - 콘텐츠 필터 거부는 예외가 아니라 `{ kind: 'REFUSED', reason }`, 그 밖 실패는 `ImageGenError`(비밀·로컬 경로 없는 한국어 문구)
  */
 
@@ -48,6 +51,10 @@ export interface ImageGenRequest {
   /** 하드 타임아웃(ms). 넘으면 부르는 쪽이 `signal`을 끊는다 */
   timeoutMs: number;
   signal: AbortSignal;
+  /** `call_log` 연결용(선택) — ⑤ 실행 id */
+  stepRunId?: number | null;
+  /** `call_log` 연결용(선택) — 후보 id */
+  candidateId?: number | null;
 }
 
 /** 생성 결과: 이미지 또는 콘텐츠 필터 거부 */
@@ -60,7 +67,11 @@ export type ImageGenResult =
     }
   | { kind: 'REFUSED'; reason: string };
 
-/** 거부가 아닌 생성 실패(프로세스 오류·빈 응답·쿼터 등). `userMessage`는 비밀·로컬 경로 없는 한국어 문구 */
+/**
+ * 거부가 아닌 생성 실패(프로세스 오류·빈 응답·쿼터 등). `userMessage`는 비밀·로컬 경로 없는 한국어 문구.
+ * `code`는 `call_log.error_code`에 남긴다(agy는 AI 실행 오류 코드 `AI_TIMEOUT`·`AGY_ERROR`·`AI_CLI_FAILED`·`AI_OUTPUT_INVALID`·
+ * `AI_ENGINE_UNAVAILABLE`을 그대로 쓴다)
+ */
 export class ImageGenError extends Error {
   constructor(
     readonly userMessage: string,

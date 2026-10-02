@@ -1,0 +1,24 @@
+{
+  "conversation_id": "00000000-0000-4000-8000-0000000000a1",
+  "status": "SUCCESS",
+  "response": "{\"error\": \"IMAGE_SAFETY: The image could not be generated because it may violate the image safety policy.\", \"image_path\": \"\", \"toolAction\": \"Finishing task\", \"toolSummary\": \"Image generation refused\"}\n",
+  "duration_seconds": 86.411628,
+  "num_turns": 1,
+  "structured_output": {
+    "error": "IMAGE_SAFETY: The image could not be generated because it may violate the image safety policy.",
+    "image_path": ""
+  },
+  "json_schema": {
+    "type": "object",
+    "properties": { "image_path": { "type": "string" }, "error": { "type": ["string", "null"] } },
+    "required": ["image_path", "error"],
+    "additionalProperties": false
+  },
+  "usage": {
+    "input_tokens": 55479,
+    "output_tokens": 1148,
+    "thinking_tokens": 639,
+    "cache_read_tokens": 0,
+    "total_tokens": 56627
+  }
+}

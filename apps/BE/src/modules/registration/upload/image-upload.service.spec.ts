@@ -284,6 +284,10 @@ describe('image-upload.service — 참조 전용 거부·해시 재사용·정�
     const release = port.hold();
     const first = service.uploadSelection([rep(a)], CTX);
     const second = service.uploadSelection([rep(b)], { candidateId: 2, stepRunId: 60 });
+    // 첫 업로드가 포트에 닿을 때까지 기다린다(정규화 시간은 테스트 부하에 따라 50ms를 넘을 수 있다 — 고정 대기만으로는 흔들렸다)
+    for (let i = 0; i < 300 && port.calls.length === 0; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(port.calls).toHaveLength(1);
     release();

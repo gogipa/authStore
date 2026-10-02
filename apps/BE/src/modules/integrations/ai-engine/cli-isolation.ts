@@ -31,6 +31,8 @@ export const AI_CLI_ENV_ALLOWLIST = [
   'DISABLE_AUTOUPDATER',
   // claude 부가 트래픽 끄기(세션 제목용 haiku 호출·텔레메트리·오류 보고, M0 S6 §4.3). 앱이 claude에만 '1'로 넣는다
   'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC',
+  // agy 자동 업데이트 끄기(M0 S1 실측: 값이 'true'여야 꺼진다 — '1'은 무시됨). 앱이 agy에만 'true'로 넣는다
+  'AGY_CLI_DISABLE_AUTO_UPDATE',
 ] as const;
 
 /**

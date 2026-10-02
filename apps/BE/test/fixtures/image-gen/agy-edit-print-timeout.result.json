@@ -1,0 +1,20 @@
+{
+  "conversation_id": "00000000-0000-4000-8000-000000000004",
+  "status": "SUCCESS",
+  "response": "",
+  "duration_seconds": 7.7850719999999995,
+  "num_turns": 1,
+  "json_schema": {
+    "type": "object",
+    "properties": { "image_path": { "type": "string" }, "error": { "type": ["string", "null"] } },
+    "required": ["image_path", "error"],
+    "additionalProperties": false
+  },
+  "usage": {
+    "input_tokens": 26465,
+    "output_tokens": 770,
+    "thinking_tokens": 477,
+    "cache_read_tokens": 0,
+    "total_tokens": 27235
+  }
+}

@@ -144,12 +144,22 @@ export function clipText(text: string): string {
     : trimmed;
 }
 
-/** 시간 제한 결과 */
-export type TimedResult<T> = { kind: 'DONE'; value: T } | { kind: 'TIMEOUT' };
+/**
+ * 시간 제한 결과. TIMEOUT의 `settled`는 끊긴 `fn`이 실제로 끝났을 때(성공·실패 무관) 풀린다 — 부르는 쪽이 자식 프로세스가
+ * 끝날 때까지 다음 작업을 미루는 데 쓴다(`settleWithin`)
+ */
+export type TimedResult<T> =
+  { kind: 'DONE'; value: T } | { kind: 'TIMEOUT'; settled: Promise<void> };
+
+/**
+ * 하드 타임아웃 뒤 끊긴 공급자가 끝나기를 기다리는 최대 시간(ms, Proposed). 실행기는 SIGTERM 뒤 여유 5초(`AI_PROCESS_KILL_GRACE_MS`)
+ * 가 지나면 SIGKILL한다 — 그보다 조금 길게 둔다. 공급자가 끊김을 무시해도 이보다 오래 기다리지 않는다
+ */
+export const GENERATION_ABORT_SETTLE_MS = 10_000;
 
 /**
  * `fn`을 `timeoutMs` 안에 끝내게 한다. 넘으면 `signal`을 끊고(공급자가 프로세스·요청을 멈춘다) 곧바로 TIMEOUT을 돌려준다 —
- * 공급자가 끊김을 무시해도 기다리지 않는다. `fn`의 오류는 그대로 던진다.
+ * 시도 행은 바로 마감할 수 있다. 끊긴 `fn`이 끝나는 것은 TIMEOUT의 `settled`로 따로 기다린다. `fn`의 오류는 그대로 던진다.
  */
 export async function runWithTimeout<T>(
   fn: (signal: AbortSignal) => Promise<T>,
@@ -165,9 +175,27 @@ export async function runWithTimeout<T>(
   });
   const work = fn(controller.signal).then((value) => ({ kind: 'DONE' as const, value }));
   // 시간 제한이 먼저 끝나면 뒤늦은 거절을 삼킨다(처리하지 않은 거절 경고 방지)
-  work.catch(() => undefined);
+  const settled = work.then(
+    () => undefined,
+    () => undefined,
+  );
   try {
-    return await Promise.race([work, timeout]);
+    const first = await Promise.race([work, timeout]);
+    return first.kind === 'TIMEOUT' ? { kind: 'TIMEOUT', settled } : first;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** `settled`가 풀리거나 `maxMs`가 지날 때까지 기다린다(먼저 오는 쪽). 던지지 않는다 */
+export async function settleWithin(settled: Promise<void>, maxMs: number): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const limit = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, maxMs);
+    timer.unref();
+  });
+  try {
+    await Promise.race([settled, limit]);
   } finally {
     clearTimeout(timer);
   }

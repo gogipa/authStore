@@ -14,11 +14,12 @@ describe('buildAiCliEnv(P1-10 규칙 3, F-BS-27·29)', () => {
     CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '0',
     CODEX_API_KEY: 'c',
     GEMINI_API_KEY: 'g',
+    AGY_CLI_DISABLE_AUTO_UPDATE: '0',
     TZ: '',
   };
 
   it('허용 목록 안의 값만 넘기고 과금 키·허용 밖·빈 값은 넘기지 않는다', () => {
-    const env = buildAiCliEnv('agy', parent);
+    const env = buildAiCliEnv('codex', parent);
     expect(env).toEqual({ PATH: '/usr/bin:/bin', HOME: '/Users/someone', LANG: 'ko_KR.UTF-8' });
     for (const key of Object.keys(env)) {
       expect(AI_CLI_ENV_ALLOWLIST as readonly string[]).toContain(key);
@@ -45,5 +46,17 @@ describe('buildAiCliEnv(P1-10 규칙 3, F-BS-27·29)', () => {
     expect(buildAiCliEnv('codex', parent)).not.toHaveProperty(
       'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC',
     );
+  });
+
+  it("M0 S1: agy만 AGY_CLI_DISABLE_AUTO_UPDATE='true'('1'은 무시됨 — 실측), 부모 값은 쓰지 않는다", () => {
+    expect(buildAiCliEnv('agy', parent)).toEqual({
+      PATH: '/usr/bin:/bin',
+      HOME: '/Users/someone',
+      LANG: 'ko_KR.UTF-8',
+      AGY_CLI_DISABLE_AUTO_UPDATE: 'true',
+    });
+    expect(buildAiCliEnv('agy', {}).AGY_CLI_DISABLE_AUTO_UPDATE).toBe('true');
+    expect(buildAiCliEnv('claude', parent)).not.toHaveProperty('AGY_CLI_DISABLE_AUTO_UPDATE');
+    expect(buildAiCliEnv('codex', parent)).not.toHaveProperty('AGY_CLI_DISABLE_AUTO_UPDATE');
   });
 });

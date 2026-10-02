@@ -1,0 +1,24 @@
+{
+  "conversation_id": "00000000-0000-4000-8000-000000000003",
+  "status": "SUCCESS",
+  "response": "{\"error\":\"failed to read image file: <RUN_DIR>/ref/missing-ref.jpg: open <RUN_DIR>/ref/missing-ref.jpg: no such file or directory\",\"image_path\":\"\",\"toolAction\":\"Finishing image generation task\",\"toolSummary\":\"Complete image generation step\"}\n",
+  "duration_seconds": 10.974612,
+  "num_turns": 1,
+  "structured_output": {
+    "error": "failed to read image file: <RUN_DIR>/ref/missing-ref.jpg: open <RUN_DIR>/ref/missing-ref.jpg: no such file or directory",
+    "image_path": ""
+  },
+  "json_schema": {
+    "type": "object",
+    "properties": { "image_path": { "type": "string" }, "error": { "type": ["string", "null"] } },
+    "required": ["image_path", "error"],
+    "additionalProperties": false
+  },
+  "usage": {
+    "input_tokens": 29388,
+    "output_tokens": 1362,
+    "thinking_tokens": 852,
+    "cache_read_tokens": 24470,
+    "total_tokens": 30750
+  }
+}

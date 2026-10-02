@@ -9,6 +9,7 @@ import {
   nextAttempt,
   parseGenerationRequest,
   runWithTimeout,
+  settleWithin,
 } from './generation-rules.js';
 
 const sha = (c: string) => c.repeat(64);
@@ -126,8 +127,34 @@ describe('타임아웃(P3-02 규칙 5 — 하드 15분)', () => {
         }),
       10,
     );
-    expect(result).toEqual({ kind: 'TIMEOUT' });
+    expect(result).toMatchObject({ kind: 'TIMEOUT' });
     expect(aborted).toBe(true);
+  });
+
+  it('TIMEOUT의 settled는 끊긴 공급자가 실제로 끝날 때 풀린다(실패여도). settleWithin은 상한까지만 기다린다', async () => {
+    let finish: () => void = () => undefined;
+    const result = await runWithTimeout(
+      (signal) =>
+        new Promise<number>((_resolve, reject) => {
+          // 끊긴 뒤 자식이 끝나는 데 시간이 걸리는 공급자
+          signal.addEventListener('abort', () => {
+            finish = () => reject(new Error('killed'));
+          });
+        }),
+      10,
+    );
+    if (result.kind !== 'TIMEOUT') throw new Error('TIMEOUT이 아닙니다');
+    let settled = false;
+    void result.settled.then(() => (settled = true));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(settled).toBe(false);
+    finish();
+    await result.settled;
+    expect(settled).toBe(true);
+    // 끝나지 않는 약속도 상한 뒤에는 돌아온다
+    const started = Date.now();
+    await settleWithin(new Promise<void>(() => undefined), 30);
+    expect(Date.now() - started).toBeGreaterThanOrEqual(25);
   });
 
   it('공급자 오류는 그대로 던진다', async () => {

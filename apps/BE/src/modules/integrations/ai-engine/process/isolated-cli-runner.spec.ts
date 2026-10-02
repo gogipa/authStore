@@ -123,6 +123,7 @@ describe('IsolatedCliRunner(P1-10 규칙 1·2·3) — 가짜 CLI', () => {
     expect(spy.calls).toHaveLength(0);
   });
 
+  // 가짜 CLI 프로세스 3개를 차례로 띄운다 — 전체 실행 중 부하로 5초 기본값을 넘을 수 있어 20초를 준다
   it('규칙 3: 부모의 ANTHROPIC_API_KEY·OPENAI_API_KEY·허용 밖 변수는 넘기지 않고, claude만 DISABLE_AUTOUPDATER=1', async () => {
     const runner = new IsolatedCliRunner({ env: world.env });
     world.setScenario({
@@ -162,10 +163,14 @@ describe('IsolatedCliRunner(P1-10 규칙 1·2·3) — 가짜 CLI', () => {
     expect(byEngine.claude!.disableNonessentialTraffic).toBe('1');
     expect(byEngine.agy!.disableNonessentialTraffic).toBeNull();
     expect(byEngine.codex!.disableNonessentialTraffic).toBeNull();
+    // M0 S1: agy만 자동 업데이트 끄기('true'여야 꺼진다)
+    expect(byEngine.agy!.agyDisableAutoUpdate).toBe('true');
+    expect(byEngine.claude!.agyDisableAutoUpdate).toBeNull();
+    expect(byEngine.codex!.agyDisableAutoUpdate).toBeNull();
     for (const engine of ['claude', 'agy', 'codex'] as const) {
       expect(byEngine[engine]!.envNames).not.toContain('GEMINI_API_KEY');
     }
-  });
+  }, 20_000);
 
   it('작업 폴더가 비어 있지 않으면 격리 검사기가 spawn 전에 막는다', async () => {
     const spy = spawnSpy();
@@ -226,6 +231,48 @@ describe('IsolatedCliRunner(P1-10 규칙 1·2·3) — 가짜 CLI', () => {
     expect(err).toBeInstanceOf(AiCallFailedError);
     expect((err as AiCallFailedError).errorCode).toBe(AI_RUN_ERROR_CODES.TIMEOUT);
   });
+
+  it('signal이 끊기면 자식을 끝내고 signal 이유로 거절한다. 이미 끊겼으면 spawn하지 않는다(M0 S1 이미지 생성)', async () => {
+    world.setScenario({ agy: { run: { stdout: 'agy/success.json', sleepMs: 10_000 } } });
+    const spy = spawnSpy();
+    const runner = new IsolatedCliRunner({ env: world.env, spawn: spy.fn, killGraceMs: 50 });
+    const cwd = mkdtempSync(join(tmpdir(), 'autostore-ai-test-'));
+    try {
+      const before = new AbortController();
+      before.abort(new Error('먼저 끊김'));
+      await expect(
+        runner.run({
+          bin: 'agy',
+          args: ['-p', 'x', '--model', 'm'],
+          cwd,
+          timeoutMs: 60_000,
+          signal: before.signal,
+        }),
+      ).rejects.toThrow('먼저 끊김');
+      expect(spy.calls).toHaveLength(0);
+
+      const controller = new AbortController();
+      const started = Date.now();
+      const pending = runner
+        .run({
+          bin: 'agy',
+          args: ['-p', 'x', '--model', 'm'],
+          cwd,
+          timeoutMs: 60_000,
+          signal: controller.signal,
+        })
+        .catch((e: unknown) => e);
+      while (!world.records().some((r) => r.kind === 'run')) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      controller.abort(new Error('하드 타임아웃'));
+      await expect(pending).resolves.toEqual(new Error('하드 타임아웃'));
+      expect(Date.now() - started).toBeLessThan(5000);
+      expect(spy.calls).toHaveLength(1);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  }, 20_000);
 
   it('시간 제한 0·음수는 spawn하지 않는다(무제한 금지)', async () => {
     const spy = spawnSpy();

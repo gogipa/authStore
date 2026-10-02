@@ -15,8 +15,13 @@ M0 S6·S7(2026-10-01, [docs/dev/07_M0스파이크](../../../../../docs/dev/07_M0
 - 앱은 자식 환경변수를 허용 목록으로 거르므로 시나리오를 환경변수로 넘기지 않는다. 테스트는 `test/support/fake-ai-cli.ts`의
   `createFakeCliWorld()`로 임시 폴더에 같은 이름의 실행 파일(노드 절대 경로 shebang)과 `scenario.json`을 만들고 그 폴더만 `PATH`에 둔다.
   사용자 PC의 진짜 CLI가 잡히지 않는다.
-- `scenario.json` 모양: `{ "<엔진>": { "version": "<fixture 경로>" | null, "auth": { "stdout", "exit" }, "models": { "stdout", "exit" }(agy, P1-11), "run": { "stdout", "stderr", "lastMessage"(codex), "exit", "sleepMs" } } }`.
-  경로는 이 폴더 기준이고, `{ "text": "…" }`로 글을 바로 줄 수 있다. `version: null`이면 `--version`이 실패한다.
+- `scenario.json` 모양: `{ "<엔진>": { "version": "<fixture 경로>" | null, "auth": { "stdout", "exit" }, "models": { "stdout", "exit" }(agy, P1-11), "run": { "stdout", "stderr", "lastMessage"(codex), "brain"(agy 이미지, M0 S1), "exit", "sleepMs" } } }`.
+  경로는 이 폴더 기준(절대 경로도 된다)이고, `{ "text": "…" }`로 글을 바로 줄 수 있다. `version: null`이면 `--version`이 실패한다.
+- M0 S1(이미지 생성): 출력 글의 `<HOME>`·`<RUN_DIR>`(녹화본 자리표시자)은 그 호출의 `HOME`·`--add-dir` 상위 폴더로 바뀐다.
+  `run.brain = { conversationId, files: [{ name, from }] }`이면 `$HOME/.gemini/antigravity-cli/brain/<conversationId>/`에 결과 파일을 복사한다.
+  `createFakeCliWorld()`의 기본 `HOME`은 세계 폴더 안 `home/`(임시)이다. 가짜 CLI는 `HOME`이 임시 폴더(`os.tmpdir()` 아래, 사용자 홈 아님)가
+  아니면 brain 파일을 쓰지 않고 exit 97로 끝난다(사용자 홈의 `~/.gemini` 보호).
+  호출 기록에 `AGY_CLI_DISABLE_AUTO_UPDATE` 값(`agyDisableAutoUpdate`)도 남긴다. 이미지 녹화본은 [`../image-gen/`](../image-gen/README.md)에 있다.
 
 ## 출력
 
@@ -57,4 +62,5 @@ M0 S6·S7(2026-10-01, [docs/dev/07_M0스파이크](../../../../../docs/dev/07_M0
 ## 실제 CLI 테스트
 
 기본으로 돌지 않는다. `AI_CLI_LIVE=1`일 때만 `src/modules/integrations/ai-engine/live-cli.spec.ts`가 이 PC의 진짜 CLI로
-감지·연결 테스트('OK' 한 번)를 한다(구독 쿼터를 쓴다, 06-2 §9).
+감지·연결 테스트('OK' 한 번)를 한다(구독 쿼터를 쓴다, 06-2 §9). 이미지 생성(M0 S1)은 `AI_CLI_LIVE_ENGINES`에 `agy-image`를 넣을 때만
+`src/modules/integrations/image-gen/live-image-gen.spec.ts`가 진짜 agy로 1장 만든다.

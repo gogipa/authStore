@@ -19,6 +19,7 @@ import { buildAiCliEnv } from './env-allowlist.js';
  * 3. 자식 환경변수 = 허용 목록(규칙 3). 격리 검사기(`assertIsolatedCliInvocation`)를 통과해야 spawn한다
  * 4. `spawn(경로, 인자 배열, { shell: false, stdio: ['ignore','pipe','pipe'] })` — stdin은 닫는다(규칙 2)
  * 5. 시간 제한 + 여유(`AI_PROCESS_KILL_GRACE_MS`)가 지나면 SIGTERM, 그래도 살아 있으면 SIGKILL(Proposed, M1)
+ * 6. `signal`이 끊기면(이미지 생성 하드 타임아웃 — M0 S1) 같은 방법으로 자식을 끝내고 `signal.reason`으로 거절한다
  * CLI 설치·업데이트·전역 설정 쓰기는 하지 않는다(규칙 5).
  */
 
@@ -32,6 +33,11 @@ export interface CliRunRequest {
   timeoutMs: number;
   /** `invoke`(구조화 호출, 기본) · `probe`(`--version`·로그인 확인) */
   mode?: CliInvocationMode;
+  /**
+   * 부르는 쪽의 중단 신호(선택). 끊기면 SIGTERM → 여유 뒤 SIGKILL로 자식을 끝내고 `signal.reason`으로 거절한다.
+   * spawn 전에 이미 끊겼으면 spawn하지 않는다(M0 S1 — 이미지 생성 하드 타임아웃, `ImageGenRequest.signal`)
+   */
+  signal?: AbortSignal;
 }
 
 export interface CliRunResult {
@@ -110,6 +116,7 @@ export class IsolatedCliRunner {
     if (!Number.isFinite(req.timeoutMs) || req.timeoutMs <= 0) {
       throw new Error('AI CLI 시간 제한은 0보다 커야 한다(무제한 금지)');
     }
+    if (req.signal?.aborted) throw abortReason(req.signal);
     const binPath = locateCliBinary(req.bin, this.env);
     if (!binPath)
       throw new CliSpawnError('NOT_FOUND', `${req.bin} 실행 파일을 PATH에서 찾지 못했다`);
@@ -119,7 +126,7 @@ export class IsolatedCliRunner {
       { bin: binPath, args, cwd: req.cwd, env, shell: false },
       req.mode ?? 'invoke',
     );
-    return this.spawnAndCollect(binPath, args, req.cwd, env, req.timeoutMs);
+    return this.spawnAndCollect(binPath, args, req.cwd, env, req.timeoutMs, req.signal);
   }
 
   private spawnAndCollect(
@@ -128,6 +135,7 @@ export class IsolatedCliRunner {
     cwd: string,
     env: Record<string, string>,
     timeoutMs: number,
+    signal: AbortSignal | undefined,
   ): Promise<CliRunResult> {
     const started = performance.now();
     return new Promise<CliRunResult>((resolve, reject) => {
@@ -149,31 +157,48 @@ export class IsolatedCliRunner {
       child.stdout?.on('data', (chunk: Buffer) => out.push(chunk));
       child.stderr?.on('data', (chunk: Buffer) => err.push(chunk));
       let timedOut = false;
+      let aborted = false;
       let killTimer: NodeJS.Timeout | null = null;
-      const timer = setTimeout(() => {
-        timedOut = true;
+      const terminate = () => {
+        if (killTimer) return;
         child.kill('SIGTERM');
         killTimer = setTimeout(() => child.kill('SIGKILL'), this.killGraceMs);
         killTimer.unref();
+      };
+      const timer = setTimeout(() => {
+        timedOut = true;
+        terminate();
       }, timeoutMs + this.killGraceMs);
       timer.unref();
+      const onAbort = () => {
+        aborted = true;
+        terminate();
+      };
+      signal?.addEventListener('abort', onAbort, { once: true });
+      if (signal?.aborted) onAbort();
       let settled = false;
+      const cleanup = () => {
+        settled = true;
+        clearTimeout(timer);
+        if (killTimer) clearTimeout(killTimer);
+        signal?.removeEventListener('abort', onAbort);
+      };
       child.once('error', (error) => {
         if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        if (killTimer) clearTimeout(killTimer);
+        cleanup();
         reject(spawnFailure(binPath, error));
       });
-      child.once('close', (code, signal) => {
+      child.once('close', (code, exitSignal) => {
         if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        if (killTimer) clearTimeout(killTimer);
+        cleanup();
+        if (aborted && signal) {
+          reject(abortReason(signal));
+          return;
+        }
         resolve({
           binPath,
           exitCode: code,
-          signal,
+          signal: exitSignal,
           stdout: out.text(),
           stderr: err.text(),
           timedOut,
@@ -183,6 +208,12 @@ export class IsolatedCliRunner {
       });
     });
   }
+}
+
+/** 중단 신호의 이유(Error가 아니면 감싼다) */
+function abortReason(signal: AbortSignal): Error {
+  const reason: unknown = signal.reason;
+  return reason instanceof Error ? reason : new Error('AI CLI 호출을 중단했다');
 }
 
 function spawnFailure(binPath: string, error: unknown): CliSpawnError {

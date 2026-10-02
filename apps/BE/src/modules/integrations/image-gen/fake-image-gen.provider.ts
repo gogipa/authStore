@@ -45,7 +45,8 @@ export async function solidPng(sizePx: number, seed: number): Promise<Buffer> {
 }
 
 /**
- * 테스트·개발용 가짜 이미지 생성 공급자(P3-02 §5.1, M0 S1 전 기본 공급자). 밖을 부르지 않고 `call_log`도 남기지 않는다.
+ * 테스트용 가짜 이미지 생성 공급자(P3-02 §5.1). 테스트 환경(NODE_ENV=test)의 기본 공급자다 — 개발·운영은 M0 S1 뒤 실제 어댑터
+ * (`RoutingImageGenProvider` → `AgyImageGenProvider`, D-19)가 붙는다. 밖을 부르지 않고 `call_log`도 남기지 않는다.
  * 대본(`enqueue`)을 차례로 쓰고, 다 쓰면 기본 대본(`setDefault`, 처음에는 단색 PNG 성공)을 쓴다. `hold()`로 다음 결과를
  * 풀어 줄 때까지 붙잡을 수 있다(생성 중 상태를 보는 e2e). 기록 모델은 `fake-image-gen`이라 이력에서 가짜임이 보인다.
  */
@@ -96,7 +97,8 @@ export class FakeImageGenProvider implements ImageGenProvider {
   async generate(request: ImageGenRequest): Promise<ImageGenResult> {
     this.calls.push(request);
     const scenario = this.queue.shift() ?? this.fallback;
-    if (this.gate) await this.gate;
+    // 붙잡힌 동안 끊기면(하드 타임아웃) 실제 어댑터처럼 바로 끝낸다
+    if (this.gate) await Promise.race([this.gate, abortedOf(request.signal)]);
     switch (scenario.kind) {
       case 'success': {
         this.seed += 1;
@@ -108,21 +110,26 @@ export class FakeImageGenProvider implements ImageGenProvider {
       case 'failed':
         throw new ImageGenError(scenario.message ?? FAKE_FAILURE_MESSAGE, 'FAKE_FAILED');
       case 'timeout':
-        return new Promise<ImageGenResult>((_resolve, reject) => {
-          const abort = () => {
-            const reason: unknown = request.signal.reason;
-            reject(reason instanceof Error ? reason : new Error('aborted'));
-          };
-          if (request.signal.aborted) abort();
-          else request.signal.addEventListener('abort', abort, { once: true });
-        });
+        return abortedOf(request.signal);
     }
   }
 
-  /** 앱 기본 공급자로 쓸 때 한 번 알린다(M0 S1 전) */
+  /** 앱 기본 공급자로 쓸 때 한 번 알린다(테스트 환경) */
   announceDefault(): void {
     this.logger.warn(
-      '이미지 생성 공급자가 아직 정해지지 않아(M0 S1) 가짜 공급자를 씁니다. 만든 썸네일은 단색 시험 이미지입니다.',
+      '테스트 환경(NODE_ENV=test)이라 가짜 이미지 생성 공급자를 씁니다. 만든 썸네일은 단색 시험 이미지입니다.',
     );
   }
+}
+
+/** `signal`이 끊기면 그 이유로 거절하는 약속(끊기지 않으면 끝나지 않는다) */
+function abortedOf(signal: AbortSignal): Promise<never> {
+  return new Promise<never>((_resolve, reject) => {
+    const abort = () => {
+      const reason: unknown = signal.reason;
+      reject(reason instanceof Error ? reason : new Error('aborted'));
+    };
+    if (signal.aborted) abort();
+    else signal.addEventListener('abort', abort, { once: true });
+  });
 }

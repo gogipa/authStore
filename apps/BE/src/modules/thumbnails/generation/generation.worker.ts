@@ -16,10 +16,12 @@ import {
 import { SettingsService } from '../../settings/settings.service.js';
 import {
   clipText,
+  GENERATION_ABORT_SETTLE_MS,
   GENERATION_ERROR_MESSAGES,
   generationTimeoutMs,
   REFUSAL_REASON_UNKNOWN,
   runWithTimeout,
+  settleWithin,
   type GenerationStatus,
   type GenerationTriggerType,
 } from './generation-rules.js';
@@ -53,7 +55,7 @@ export function finishTimeOf(now: Date, startedAt: Date): Date {
 
 /**
  * 생성 결과 바이트의 형식을 **내용으로** 판별한다(P3-02 규칙 5 — 공급자가 `.jpg` 이름으로 PNG를 줘도 image/png). 이미지가
- * 아니면 null. 확장자·공급자가 말한 형식은 보지 않는다(agy는 확장자와 실제 형식이 다를 수 있다 — M0 S1 전)
+ * 아니면 null. 확장자·공급자가 말한 형식은 보지 않는다(M0 S1: agy는 12/12 JPEG·확장자 일치였지만 계속 내용으로 본다)
  */
 export async function detectGeneratedImage(
   bytes: Buffer,
@@ -70,7 +72,8 @@ export async function detectGeneratedImage(
 /**
  * ⑤ 썸네일 생성 작업(P3-02 §5.1 `generation.worker.ts`, 규칙 5~7). 이미지 슬롯 하나로 **순서대로** 돈다(이미지 작업은 동시에
  * 1개 — AI-03·D-16 R13. P1-10 실행기(StepExecutor)에는 이미지 슬롯이 없어 여기에 직렬 대기열을 둔다, Proposed).
- * 시도 하나: 레퍼런스 파일 → `ImageGenProvider.generate`(하드 타임아웃 = 설정 `thumbnail.generationTimeoutSeconds`, 최대 15분) →
+ * 시도 하나: 레퍼런스 파일 → `ImageGenProvider.generate`(하드 타임아웃 = 설정 `thumbnail.generationTimeoutSeconds`, 최대 15분.
+ * 넘으면 행을 바로 FAILED로 마감하고, 끊긴 공급자가 끝나기를 최대 `GENERATION_ABORT_SETTLE_MS` 기다린 뒤 다음 시도로 간다) →
  * - 이미지: 내용으로 형식을 판별해 `image_asset`(kind=GENERATED, usage_right=PERMITTED, candidate_id)을 만들고 같은 트랜잭션에서
  *   `status=SUCCEEDED`·`result_image_asset_id`·`finished_at`을 한 번에 채운다. 크기는 바꾸지 않는다(1000×1000 JPEG는 P4-01)
  * - 거부: `REFUSED` + `refusal_reason`(필수) / 그 밖: `FAILED` + 한국어 `error_message`(비밀·로컬 경로 없음)
@@ -159,6 +162,8 @@ export class GenerationWorker {
             sizePx: run.requestedSizePx,
             timeoutMs,
             signal,
+            stepRunId: run.stepRunId,
+            candidateId,
           }),
         timeoutMs,
       );
@@ -167,6 +172,9 @@ export class GenerationWorker {
           status: 'FAILED',
           errorMessage: GENERATION_ERROR_MESSAGES.timeout(timeoutMs),
         });
+        // 끊긴 공급자(agy 자식 — SIGTERM 뒤 최대 5초)가 끝날 때까지 다음 시도를 미룬다(이미지 작업 동시 1개, AI-03).
+        // 행은 이미 마감했다. 공급자가 끊김을 무시해도 GENERATION_ABORT_SETTLE_MS보다 오래 기다리지 않는다
+        await settleWithin(timed.settled, GENERATION_ABORT_SETTLE_MS);
         return;
       }
       result = timed.value;
