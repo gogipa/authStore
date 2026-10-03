@@ -5,6 +5,7 @@ import {
   AI_CLI_HISTORY_SIZE,
   engineCheckViews,
   lastCheckedAt,
+  StorageUsagePanel,
   useAiCliChecksQuery,
   useLatestAiCliChecksQuery,
 } from '@/features/system';
@@ -29,6 +30,7 @@ function useTrigger(): 'MANUAL' | 'FIRST_RUN' {
  * SCR-13 AI 엔진(AiEngine.dc.html, F-ST-27~32·F-SY-23, P1-11 규칙 11). 설정의 하위 화면이다.
  * - 머리: '설정 / AI 엔진', '마지막 감지 HH:mm', [다시 감지](세 엔진 감지만 — 호출 비용 없음)
  * - 엔진 카드 3개(`role="radiogroup"` 안의 진짜 라디오), 안내 띠 2개, 최근 점검 이력 표, 하단 고정 저장 바
+ * - 맨 아래 읽기 전용 '저장 공간'(D-25, F-ST-33 — 보드에 없다. 화면시안_명세 SCR-13 D-25 절). 저장 바와 관계없다
  * 화면을 열 때 세 엔진을 한 번 감지한다(`smokeTest: false`). 연결 테스트는 사용자가 누를 때만, 누른 엔진만 부른다(R7).
  * 결과는 SSE `ai-cli-check.completed` → 최신 점검·이력 다시 읽기로 받는다(폴링 없음).
  */
@@ -146,6 +148,8 @@ export function AiEnginePage() {
           rows={showAllHistory ? historyRows : historyRows.slice(0, HISTORY_PREVIEW_ROWS)}
         />
       </Panel>
+
+      <StorageUsagePanel />
 
       {saved && values ? (
         <SaveBar

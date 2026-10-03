@@ -1,4 +1,6 @@
 import type { AddressInfo } from 'node:net';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { ModuleMetadata } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModule } from '@nestjs/testing';
@@ -17,6 +19,10 @@ import {
 import { CLOCK } from '../../src/modules/integrations/http/clock.token.js';
 import { AI_ENGINE_RELOAD_CHECK } from '../../src/modules/system/ai-cli-checks/ai-engine-reload.check.js';
 import { AI_ENGINE_STARTUP_CHECK } from '../../src/modules/system/ai-cli-checks/ai-engine-startup.check.js';
+import {
+  defaultStorageUsageOptions,
+  STORAGE_USAGE_OPTIONS,
+} from '../../src/modules/system/storage-usage/storage-usage.options.js';
 import { HTTP_FETCH } from '../../src/modules/integrations/http/http-fetch.token.js';
 import { REGISTRATION_RESTART_CHECK } from '../../src/modules/registration/result-check/result-check.service.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
@@ -68,6 +74,7 @@ export interface CreateTestAppOptions {
  * (P2-04 — 수집은 `FxCollectorService.runOnce()`로 직접 부른다)은 끈다.
  * AI 엔진 어댑터는 늘 가짜(AI_ENGINE_ADAPTERS)이고 앱 시작 AI 점검·설정 다시 읽기 뒤 점검은 기본으로 끈다
  * (P1-10·P1-11 — 진짜 CLI·구독 쿼터를 쓰지 않게).
+ * 저장 공간(D-25 `GET /storage-usage`)의 agy 폴더는 데이터 폴더(임시) 안의 없는 폴더로 바꾼다 — 사용자 `~/.gemini`를 읽지 않게.
  */
 export async function createTestApp(options: CreateTestAppOptions = {}): Promise<TestApp> {
   const clock = new FakeClock(TEST_START_MS);
@@ -93,7 +100,12 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
     .overrideProvider(AI_ENGINE_RELOAD_CHECK)
     .useValue({ enabled: options.aiReloadCheck ?? false })
     .overrideProvider(REGISTRATION_RESTART_CHECK)
-    .useValue({ enabled: options.registrationRestartCheck ?? false });
+    .useValue({ enabled: options.registrationRestartCheck ?? false })
+    .overrideProvider(STORAGE_USAGE_OPTIONS)
+    .useValue({
+      ...defaultStorageUsageOptions(),
+      agyRoot: join(process.env.APP_DATA_DIR ?? tmpdir(), 'no-home', '.gemini', 'antigravity-cli'),
+    });
   for (const o of options.overrides ?? []) {
     builder = builder.overrideProvider(o.provide).useValue(o.useValue);
   }

@@ -93,3 +93,31 @@ export {
   FIRST_RUN_PANEL_ID,
   FirstRunChecklistPanel,
 } from './components/FirstRunChecklistPanel/FirstRunChecklistPanel';
+
+/**
+ * D-25: SCR-13 '저장 공간'(getStorageUsage — agy 기록·앱 이미지 폴더 크기, 디스크 남은 공간, 읽기 전용).
+ */
+export {
+  storageUsageQueryKey,
+  useRefreshStorageUsageMutation,
+  useStorageUsageQuery,
+} from './api/storageUsage';
+export {
+  formatBytes,
+  STORAGE_ITEM_LABEL,
+  STORAGE_ITEM_NOTE,
+  STORAGE_USAGE_HELP,
+  STORAGE_USAGE_ORDER,
+  storageDiskRow,
+  storageItemRow,
+  storageRows,
+} from './model/storageUsage';
+export type {
+  StorageDiskSpace,
+  StorageRowView,
+  StorageUsage,
+  StorageUsageItem,
+  StorageUsageKey,
+  StorageUsageStatus,
+} from './model/storageUsage';
+export { StorageUsagePanel } from './components/StorageUsagePanel/StorageUsagePanel';

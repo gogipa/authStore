@@ -12,6 +12,7 @@ import {
 } from '@/test/fixtures/aiEngine';
 import { callUsageList } from '@/test/fixtures/callUsage';
 import { moduleClassNames } from '@/test/cssModules';
+import { storageUsage } from '@/test/fixtures/storageUsage';
 import { renderRoute } from '@/test/renderRoute';
 import { SAVE_BAR_HELP, SaveBar, type SaveBarProps } from './SaveBar';
 
@@ -76,6 +77,7 @@ describe('SaveBar(04-3 organism, SCR-13 하단 고정 저장 바)', () => {
       'GET /settings/ai-engine': () => jsonResponse(aiEngineSettings()),
       'GET /ai-cli-checks/latest': () => jsonResponse(state.latest),
       'GET /ai-cli-checks': () => jsonResponse(aiCliCheckPage()),
+      'GET /storage-usage': () => jsonResponse(storageUsage()),
       'POST /ai-cli-checks': () =>
         jsonResponse(
           {

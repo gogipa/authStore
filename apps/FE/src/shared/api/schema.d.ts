@@ -2816,6 +2816,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/storage-usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 저장 공간 조회(agy 기록·앱 이미지 폴더 크기, 디스크 남은 공간)
+         * @description AI 엔진 페이지(SCR-13) '저장 공간' 패널의 값이다(D-25). agy 기록 폴더(`~/.gemini/antigravity-cli/`)와 앱 이미지 폴더(`APP_DATA_DIR/images/`)의 크기·파일 수, 앱 데이터 폴더가 있는 디스크의 남은 공간·전체를 준다(페이징 없음).
+         *     읽기 전용이다. 폴더 목록과 파일 크기(lstat)만 읽고 파일 내용은 읽지 않는다. 지우거나 쓰지 않는다. 바로가기(심볼릭 링크)는 따라가지 않고 세지도 않는다. 재는 폴더는 앱이 정한 두 곳뿐이고 요청 값이 경로에 닿지 않는다. DB를 쓰지 않는다.
+         *     경로는 절대 경로가 아니라 표시 글(`displayPath`)로만 준다(05-1 §1.2).
+         *     D-25 구현 결정(Proposed, 05-1 §2.14) — (1) 한 번 재기는 5초까지다. 두 폴더를 함께 재고, 5초가 지나면 그때까지 센 값과 `PARTIAL`을 준다. (2) 결과는 1분 동안 다시 쓴다. `refresh=true`면 캐시를 쓰지 않고 새로 잰다. 재는 중에 온 요청은 그 결과를 같이 받는다. (3) `bytes`는 일반 파일 크기(st_size)의 합, `fileCount`는 일반 파일 수다. 폴더·바로가기·특수 파일은 세지 않는다. (4) 디스크는 앱 데이터 폴더의 statfs다(남은 공간 = 일반 사용자가 쓸 수 있는 블록). 읽지 못하면 두 값이 null이다.
+         */
+        get: operations["getStorageUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/prerequisite-checks": {
         parameters: {
             query?: never;
@@ -7686,6 +7709,54 @@ export interface components {
             causeCategory: components["schemas"]["CommerceAuthCauseCategory"] | null;
             /** @description GNCP-GW-Trace-ID */
             lastTraceId: string | null;
+        };
+        /** @description 저장 공간(D-25, SCR-13). 읽기 전용 측정값 */
+        StorageUsage: {
+            /** @description 폴더 2개(AGY_RECORDS·APP_IMAGES 순서) */
+            items: components["schemas"]["StorageUsageItem"][];
+            disk: components["schemas"]["StorageDiskSpace"];
+            /**
+             * Format: date-time
+             * @description 잰 시각. 캐시 값이면 처음 잰 시각이다
+             */
+            measuredAt: string;
+        };
+        /** @description 폴더 하나의 크기·파일 수 */
+        StorageUsageItem: {
+            key: components["schemas"]["StorageUsageKey"];
+            /** @description 화면에 보일 위치. 절대 경로가 아니다 — 홈 아래면 `~/…`(예 `~/.gemini/antigravity-cli`), 앱 데이터 폴더가 홈 밖이면 `<데이터 폴더>/images` */
+            displayPath: string;
+            status: components["schemas"]["StorageUsageStatus"];
+            /**
+             * Format: int64
+             * @description 일반 파일 크기의 합(바이트). PARTIAL이면 센 만큼(실제는 이보다 크다). NOT_FOUND·UNREADABLE이면 null
+             */
+            bytes: number | null;
+            /** @description 일반 파일 수. PARTIAL이면 센 만큼. NOT_FOUND·UNREADABLE이면 null */
+            fileCount: number | null;
+        };
+        /**
+         * @description 잰 폴더. AGY_RECORDS=agy 기록(`~/.gemini/antigravity-cli/`), APP_IMAGES=앱 이미지(`APP_DATA_DIR/images/`). 표시 순서도 이 순서
+         * @enum {string}
+         */
+        StorageUsageKey: "AGY_RECORDS" | "APP_IMAGES";
+        /**
+         * @description OK=다 셈, PARTIAL=5초 한도에 닿았거나 읽을 수 없는 하위 폴더가 있어 센 만큼만, NOT_FOUND=폴더 없음, UNREADABLE=폴더를 읽을 수 없음(권한 없음·폴더가 아님·바로가기)
+         * @enum {string}
+         */
+        StorageUsageStatus: "OK" | "PARTIAL" | "NOT_FOUND" | "UNREADABLE";
+        /** @description 앱 데이터 폴더가 있는 디스크(볼륨). 읽지 못하면 두 값이 null */
+        StorageDiskSpace: {
+            /**
+             * Format: int64
+             * @description 남은 공간(바이트, 일반 사용자가 쓸 수 있는 만큼 — statfs bavail × bsize)
+             */
+            freeBytes: number | null;
+            /**
+             * Format: int64
+             * @description 전체 크기(바이트 — statfs blocks × bsize)
+             */
+            totalBytes: number | null;
         };
         /** @description 사전조건 항목의 현재 상태(prerequisite_check) */
         PrerequisiteCheck: {
@@ -13109,6 +13180,33 @@ export interface operations {
             /** @description ALREADY_IN_PROGRESS(details.job=AI_CLI_CHECK) */
             409: components["responses"]["Conflict"];
             /** @description VALIDATION_FAILED(smokeTest=true인데 engineCodes 없음 등) · AI_MODEL_INVALID */
+            422: components["responses"]["Unprocessable"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    getStorageUsage: {
+        parameters: {
+            query?: {
+                /** @description true면 1분 캐시를 쓰지 않고 새로 잰다([다시 재기]) */
+                refresh?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 저장 공간 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageUsage"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            /** @description INVALID_QUERY_PARAMETER(refresh가 true·false가 아님) */
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
         };

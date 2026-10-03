@@ -1,0 +1,39 @@
+/*
+ * SCR-13 '저장 공간'(D-25). 위치는 mono 12px, 크기·파일 수는 mono 오른쪽 정렬(뒤 글 '이상'·'남음'은 본문 글꼴),
+ * 안내는 칩 + 문장. 표 칸은 기본이 한 줄(줄임표)이라 위치·안내만 줄바꿈을 허용하고 위아래 8을 둔다.
+ */
+.caption {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.suffix {
+  color: var(--color-ink-muted);
+}
+
+.path {
+  display: block;
+  padding: var(--space-2) 0;
+  font: var(--type-caption);
+  font-family: var(--font-mono);
+  color: var(--color-ink-muted);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.notes {
+  display: block;
+  padding: var(--space-2) 0;
+  white-space: normal;
+}
+
+.chip {
+  margin-right: var(--space-2);
+}

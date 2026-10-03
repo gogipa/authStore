@@ -11,6 +11,7 @@ import {
   boardChecks,
 } from '@/test/fixtures/aiEngine';
 import { callUsageList } from '@/test/fixtures/callUsage';
+import { storageUsage } from '@/test/fixtures/storageUsage';
 import { renderRoute } from '@/test/renderRoute';
 
 const AGY_TEXT = 'gemini-3.8-flash-medium';
@@ -35,6 +36,7 @@ function setup(latest = aiCliCheckLatestList()) {
     'GET /settings/ai-engine': () => jsonResponse(aiEngineSettings()),
     'GET /ai-cli-checks/latest': () => jsonResponse(state.latest),
     'GET /ai-cli-checks': () => jsonResponse(aiCliCheckPage()),
+    'GET /storage-usage': () => jsonResponse(storageUsage()),
     'POST /ai-cli-checks': async (req) =>
       accepted((await req.clone().json()) as { smokeTest: boolean; trigger: string }),
   });
@@ -168,6 +170,24 @@ describe('AI 엔진 화면(SCR-13, P1-11 규칙 11)', () => {
     expect(agy.getByText('테스트 안 함')).toBeInTheDocument();
     expect(agy.getByLabelText('텍스트 모델')).toHaveValue(AGY_TEXT);
     expect(agy.getByLabelText('비전 모델')).toHaveValue('gemini-3.8-flash-high');
+  });
+
+  it("맨 아래 '저장 공간'(D-25): 이력 다음 패널, 행 3개, 화면을 열 때 refresh 없이 한 번 읽는다", async () => {
+    const { api } = setup();
+    await renderPage();
+    const storage = await screen.findByRole('region', { name: '저장 공간' });
+    const history = screen.getByRole('region', { name: '최근 점검 이력' });
+    expect(
+      history.compareDocumentPosition(storage) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    const table = await within(storage).findByRole('table', { name: '저장 공간' });
+    expect(within(table).getAllByRole('row')).toHaveLength(4);
+    expect(within(table).getByText('~/.gemini/antigravity-cli')).toBeInTheDocument();
+    expect(
+      within(table).getByText('앱은 지우지 않습니다. 필요하면 직접 정리하세요.'),
+    ).toBeInTheDocument();
+    const reads = api.requests.filter((r) => new URL(r.url).pathname === '/api/v1/storage-usage');
+    expect(reads.map((r) => [r.method, new URL(r.url).search])).toEqual([['GET', '']]);
   });
 });
 

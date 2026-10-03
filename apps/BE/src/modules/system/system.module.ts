@@ -22,6 +22,12 @@ import { CommerceAuthController } from './commerce-auth/commerce-auth.controller
 import { CommerceAuthStatusService } from './commerce-auth/commerce-auth-status.service.js';
 import { SecretsController } from './secrets/secrets.controller.js';
 import { SecretsService } from './secrets/secrets.service.js';
+import { StorageUsageController } from './storage-usage/storage-usage.controller.js';
+import {
+  defaultStorageUsageOptions,
+  STORAGE_USAGE_OPTIONS,
+} from './storage-usage/storage-usage.options.js';
+import { StorageUsageService } from './storage-usage/storage-usage.service.js';
 
 /**
  * 관리: 시스템 상태·첫 실행 점검·키체인 키 상태·로그,
@@ -36,10 +42,17 @@ import { SecretsService } from './secrets/secrets.service.js';
  * P1-11: `POST /ai-cli-checks`(감지·연결 테스트, 202 + 메모리 잠금 `AiCliCheckLock`), `GET /ai-cli-checks`(점검 이력, Proposed),
  * 설정 다시 읽기 뒤 선택 엔진 점검(`AiEngineReloadCheck`, Proposed). 읽기 창구 `AiCliCheckQueryService`는 따로 뗀
  * `AiCliCheckQueryModule`에 있고(SettingsModule도 import — 순환 없이) 이 모듈이 다시 export한다.
+ * D-25: `GET /storage-usage`(SCR-13 '저장 공간', 읽기 전용) — agy 기록 폴더·앱 이미지 폴더 크기와 디스크 남은 공간.
+ * DB를 쓰지 않는다. 재는 폴더는 `STORAGE_USAGE_OPTIONS`(기본 `~/.gemini/antigravity-cli`)와 APP_DATA_DIR/images뿐이다.
  */
 @Module({
   imports: [IntegrationsModule, SettingsModule, AiCliCheckQueryModule],
-  controllers: [AiCliChecksController, SecretsController, CommerceAuthController],
+  controllers: [
+    AiCliChecksController,
+    SecretsController,
+    CommerceAuthController,
+    StorageUsageController,
+  ],
   providers: [
     AiCliChecksService,
     SecretsService,
@@ -63,6 +76,8 @@ import { SecretsService } from './secrets/secrets.service.js';
       }),
     },
     AiEngineReloadCheck,
+    { provide: STORAGE_USAGE_OPTIONS, useFactory: () => defaultStorageUsageOptions() },
+    StorageUsageService,
   ],
   exports: [AiEngineAvailabilityService, AiCliCheckRecorder, AiCliCheckQueryModule],
 })
