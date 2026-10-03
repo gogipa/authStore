@@ -5,7 +5,7 @@
   "description": "autoStore 백엔드 (NestJS, /api/v1)",
   "type": "module",
   "scripts": {
-    "dev": "nest start --watch",
+    "dev": "nest start --watch -p tsconfig.dev.json",
     "build": "prisma generate && nest build",
     "start": "nest start",
     "start:prod": "NODE_ENV=production node dist/main.js",

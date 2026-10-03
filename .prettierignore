@@ -1,6 +1,7 @@
 docs/
 pnpm-lock.yaml
 dist/
+dist-dev/
 coverage/
 apps/BE/prisma/migrations/
 apps/BE/src/generated/

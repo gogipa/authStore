@@ -1,6 +1,7 @@
 # 의존성·빌드 산출물
 node_modules/
 dist/
+dist-dev/
 build/
 coverage/
 *.tsbuildinfo
@@ -25,3 +26,7 @@ test-results/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# AI 에이전트 및 문서
+.claude/
+docs/
