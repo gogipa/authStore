@@ -438,7 +438,10 @@ export interface ThumbnailSettings {
   faceOptionDefault: ThumbnailFaceOption;
   /** 생성 후보 수 N(IM-03 기본 2, P3-02가 쓴다). 1~4 */
   candidateCount: number;
-  /** 생성 해상도 px(PRD §16 ③ 2K = 2048). 512~4096. S1: agy는 늘 1024를 낸다(기본값은 오너 결정 S1 Q1) */
+  /**
+   * 생성 요청 해상도 px(1:1 한 변). 512~4096, 기본 1024(D-21 — agy는 요청과 관계없이 늘 1024×1024를 낸다, M0 S1).
+   * 업로드 크기와 다르다: ⑧이 고른 썸네일을 1000×1000 JPEG로 맞춘다(P4-01). 이미 있는 설정 파일의 값은 앱이 바꾸지 않는다
+   */
   resolutionPx: number;
   /** 이미지 생성 공급자(P3-02 Proposed 키, D-19로 AGY 확정). 기본 AGY */
   imageProvider: ThumbnailImageProvider;

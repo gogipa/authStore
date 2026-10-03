@@ -196,7 +196,7 @@ flowchart LR
 | 라쿠텐 앱 키(§0 6번), S2 | P2-02, P2-03 | 샵 페이지·API fixture |
 | S4 데이터랩 | P2-01 | 순위 붙여넣기 경로와 fixture |
 | S5 셀러라이프·manuTag 샘플 | P2-05, P3-05 | 샘플 fixture, 자유 텍스트 입력 |
-| S1 썸네일 이미지 생성 경로 | P3-02 | `ImageGenProvider` 포트와 가짜 공급자. **실측·반영함(2026-10-02)**: agy `generate_image` 실제 어댑터(`AgyImageGenProvider`)가 개발·운영 기본이다. 사람 채점(70%·디테일)은 오너가 실제 상품으로 한다 |
+| S1 썸네일 이미지 생성 경로 | P3-02 | `ImageGenProvider` 포트와 가짜 공급자. **실측·반영함(2026-10-02)**: agy `generate_image` 실제 어댑터(`AgyImageGenProvider`)가 개발·운영 기본이다. 해상도 기본은 1024다(D-21, 2026-10-03). 사람 채점(70%·디테일)은 오너가 실제 상품으로 한다 |
 
 ## M1 종료 조건 (PRD §17)
 

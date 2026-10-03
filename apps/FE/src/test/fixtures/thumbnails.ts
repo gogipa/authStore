@@ -66,13 +66,13 @@ export function referencesResult(
   };
 }
 
-/** 프롬프트 미리보기(기본: 전체 노출, 2K, 차단어 없음) */
+/** 프롬프트 미리보기(기본: 전체 노출, 1K = 1024 — D-21, 차단어 없음) */
 export function promptPreview(patch: Partial<ThumbnailPromptPreview> = {}): ThumbnailPromptPreview {
   return {
     prompt:
-      'Photorealistic studio product photo, square 1:1, 2048 pixels.\nModel framing: full face.',
+      'Photorealistic studio product photo, square 1:1, 1024 pixels.\nModel framing: full face.',
     faceOption: 'FULL_FACE',
-    requestedSizePx: 2048,
+    requestedSizePx: 1024,
     promptAdjusted: false,
     realPersonNameDetected: false,
     blockedTerms: [],
@@ -92,7 +92,7 @@ export function generationSummary(
     triggerType: 'INITIAL',
     promptAdjusted: false,
     faceOption: 'FULL_FACE',
-    requestedSizePx: 2048,
+    requestedSizePx: 1024,
     provider: 'AGY',
     model: 'fake-image-gen',
     providerVersion: 'fake-1',

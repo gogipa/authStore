@@ -36,7 +36,7 @@ export function normalizeAdjustment(adjustment: string | null | undefined): stri
 
 /**
  * ⑤ 프롬프트(F-TH-06·F-TH-11, P3-01 규칙 11·12) — 순수 함수. 미리보기(P3-01)와 생성 요청(P3-02)이 같은 함수를 쓴다.
- * 설정의 영어 골격에서 `{resolution}`을 해상도 px(기본 2048)로, `{face_option}`을 얼굴 노출 문장으로 모두 바꾸고, 오너 조정
+ * 설정의 영어 골격에서 `{resolution}`을 해상도 px(기본 1024 — D-21)로, `{face_option}`을 얼굴 노출 문장으로 모두 바꾸고, 오너 조정
  * 문구(앞뒤 공백 제거, 비었으면 붙이지 않는다)를 한 줄 띄워 뒤에 붙인다. 골격 끝의 공백·줄바꿈은 뺀다.
  */
 export function buildPrompt(

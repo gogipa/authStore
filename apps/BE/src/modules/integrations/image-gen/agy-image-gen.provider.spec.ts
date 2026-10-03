@@ -37,7 +37,7 @@ const fixture = (name: string) => join(IMAGE_FIXTURES, name);
 const SUCCESS_CONV = '00000000-0000-4000-8000-000000000002';
 const SUCCESS_FILE = 'thumbnail_1790895914530.jpg';
 const PROMPT =
-  'Photorealistic studio product photo, square 1:1, 2048 pixels.\nModel framing: full face.';
+  'Photorealistic studio product photo, square 1:1, 1024 pixels.\nModel framing: full face.';
 const HARD_TIMEOUT_MS = 900_000;
 /** 가짜 agy 프로세스를 띄우는 테스트의 시간 제한(전체 실행 중 부하로 5초 기본값을 넘을 수 있다) */
 const SPAWN_TIMEOUT_MS = 20_000;
@@ -91,7 +91,7 @@ describe('AgyImageGenProvider(M0 S1 — agy generate_image, D-19)', () => {
       identity: { provider: 'AGY', model: AGY_IMAGE_AGENT_MODEL, providerVersion: null },
       prompt: PROMPT,
       referenceImagePaths: [refPath],
-      sizePx: 2048,
+      sizePx: 1024,
       timeoutMs: HARD_TIMEOUT_MS,
       signal: new AbortController().signal,
       stepRunId: 9,
@@ -118,7 +118,7 @@ describe('AgyImageGenProvider(M0 S1 — agy generate_image, D-19)', () => {
         .jpeg()
         .toBuffer(),
     );
-    // agy는 2048을 요청해도 늘 1024×1024 JPEG를 낸다(S1 12/12)
+    // agy는 2048을 요청해도 늘 1024×1024 JPEG를 낸다(S1 12/12). 요청 기본도 1024다(D-21)
     generatedPath = join(refDir, 'generated-1024.jpg');
     generated = await sharp({
       create: { width: 1024, height: 1024, channels: 3, background: '#ddd' },
@@ -156,7 +156,8 @@ describe('AgyImageGenProvider(M0 S1 — agy generate_image, D-19)', () => {
     '성공(녹화본 json): brain/<대화 id>/ 아래 결과 파일을 읽는다. 요청 2048 → 실제 1024여도 실패가 아니다',
     async () => {
       scenario(successRun());
-      const result = await provider.generate(request());
+      // 오너가 설정 파일에 2048을 둔 경우(전 기본값): 요청과 실제 크기가 달라도 성공이다
+      const result = await provider.generate(request({ sizePx: 2048 }));
       if (result.kind !== 'IMAGE') throw new Error('이미지가 아닙니다');
       expect(result.fileName).toBe(SUCCESS_FILE);
       expect(result.bytes.equals(generated)).toBe(true);
@@ -187,10 +188,10 @@ describe('AgyImageGenProvider(M0 S1 — agy generate_image, D-19)', () => {
   );
 
   it(
-    '크기 후처리: 1024 결과는 ⑧ 업로드 정규화가 1000×1000 JPEG로 바꾼다(공급자는 바이트를 바꾸지 않는다)',
+    '크기 후처리(D-21): 기본 요청 1024 → agy 1024 결과는 ⑧ 업로드 정규화가 1000×1000 JPEG로 바꾼다(공급자는 바이트를 바꾸지 않는다)',
     async () => {
       scenario(successRun());
-      const result = await provider.generate(request({ sizePx: 2048 }));
+      const result = await provider.generate(request());
       if (result.kind !== 'IMAGE') throw new Error('이미지가 아닙니다');
       const normalized = await normalizeForUpload(result.bytes);
       expect(normalized).toMatchObject({

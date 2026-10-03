@@ -36,7 +36,7 @@ function request(provider: ImageGenIdentity['provider']): ImageGenRequest {
     identity: { provider, model: 'm', providerVersion: null },
     prompt: 'p',
     referenceImagePaths: ['/tmp/a.jpg'],
-    sizePx: 2048,
+    sizePx: 1024,
     timeoutMs: 1000,
     signal: new AbortController().signal,
   };

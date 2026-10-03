@@ -382,7 +382,7 @@ describe('⑤ 썸네일 준비(P3-01) e2e — autostore_test·실제 THUMBNAIL �
           triggerType: 'INITIAL',
           prompt: 'x',
           faceOption: 'FULL_FACE',
-          requestedSizePx: 2048,
+          requestedSizePx: 1024,
           provider: 'AGY',
           model: 'fixture',
           referenceSetSha256: 'a'.repeat(64),
@@ -524,20 +524,20 @@ describe('⑤ 썸네일 준비(P3-01) e2e — autostore_test·실제 THUMBNAIL �
   });
 
   describe('POST /thumbnail-prompt-previews — 프롬프트·실존 인물 차단어(규칙 11~15)', () => {
-    it('기본값 → 2048px·차단어 없음·레퍼런스 확인 전 generationAllowed=false, 확인 뒤 true', async () => {
+    it('기본값 → 1024px(D-21)·차단어 없음·레퍼런스 확인 전 generationAllowed=false, 확인 뒤 true', async () => {
       const seed = await waiting();
       const before = await preview({ stepRunId: seed.thumbnailStepRunId, faceOption: 'FULL_FACE' });
       expect(before.status).toBe(200);
       const body = before.body as PreviewBody;
       expect(body).toMatchObject({
         faceOption: 'FULL_FACE',
-        requestedSizePx: 2048,
+        requestedSizePx: 1024,
         promptAdjusted: false,
         realPersonNameDetected: false,
         blockedTerms: [],
         generationAllowed: false,
       });
-      expect(body.prompt).toContain('2048 pixels');
+      expect(body.prompt).toContain('1024 pixels');
       expect(body.prompt).toContain('Model framing: full face.');
       await saveRefs(seed.thumbnailStepRunId, [seed.originals[1]!.id]);
       const after = await preview({ stepRunId: seed.thumbnailStepRunId, faceOption: 'CHIN_CROP' });

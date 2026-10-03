@@ -9,12 +9,13 @@ function withSettings(edit: (s: AppSettings) => void) {
 }
 
 describe('설정 thumbnail 섹션(P3-01 — ⑤ 프롬프트 골격·얼굴 노출 기본값·후보 수·해상도)', () => {
-  it('기본 템플릿: PRD §8.4 영어 골격, 얼굴 노출 FULL_FACE, 후보 2장, 2048px', () => {
+  it('기본 템플릿: PRD §8.4 영어 골격, 얼굴 노출 FULL_FACE, 후보 2장, 1024px(D-21)', () => {
     expect(checkSettingsValue(DEFAULT_SETTINGS).ok).toBe(true);
     const t = DEFAULT_SETTINGS.thumbnail;
     expect(t.faceOptionDefault).toBe('FULL_FACE');
     expect(t.candidateCount).toBe(2);
-    expect(t.resolutionPx).toBe(2048);
+    // D-21: agy는 늘 1024×1024를 낸다. 업로드 1000×1000은 ⑧이 맞춘다
+    expect(t.resolutionPx).toBe(1024);
     // P3-02: 이미지 생성 공급자(D-19 AGY)·생성 타임아웃 15분
     expect(t.imageProvider).toBe('AGY');
     expect(t.generationTimeoutSeconds).toBe(900);
@@ -65,11 +66,22 @@ describe('설정 thumbnail 섹션(P3-01 — ⑤ 프롬프트 골격·얼굴 노�
     expect(
       withSettings((s) => {
         s.thumbnail.promptTemplate = 'Line one {resolution}\nLine two {face_option}\n';
-        s.thumbnail.resolutionPx = 1024;
+        s.thumbnail.resolutionPx = 2048;
         s.thumbnail.faceOptionDefault = 'HANDS_UPPER_BODY';
         s.thumbnail.candidateCount = 4;
       }).ok,
     ).toBe(true);
+  });
+
+  it('이미 있는 설정 파일의 해상도(예: 전 기본값 2048)는 그대로 쓰고, 키가 빠진 파일만 새 기본 1024로 채운다(D-21)', () => {
+    const kept = withSettings((s) => (s.thumbnail.resolutionPx = 2048));
+    expect(kept.ok && kept.settings.thumbnail.resolutionPx).toBe(2048);
+    const old = structuredClone(DEFAULT_SETTINGS) as unknown as {
+      thumbnail: Record<string, unknown>;
+    };
+    delete old.thumbnail.resolutionPx;
+    const filled = checkSettingsValue(old);
+    expect(filled.ok && filled.settings.thumbnail.resolutionPx).toBe(1024);
   });
 
   it('실존 인물 차단어: 더하기는 되고 내장 단어를 빼면 안전 기준 완화로 거부(P1-03, 규칙 14)', () => {

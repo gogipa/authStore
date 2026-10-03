@@ -42,18 +42,20 @@ describe('후보 칸(P3-02 CandidateGrid)', () => {
     ]);
   });
 
-  it("요약 줄: '14:20 생성 · 1:1 · 2K · 생성 거부 없음'(KST), 거부가 있으면 건수. 시도가 없으면 빈 글", () => {
+  it("요약 줄: '14:20 생성 · 1:1 · 1K · 생성 거부 없음'(KST, 기본 1024 — D-21), 거부가 있으면 건수. 시도가 없으면 빈 글", () => {
     expect(candidateSummaryText([])).toBe('');
     expect(candidateSummaryText([generationSummary({ slotNo: 1 })])).toBe(
-      '14:20 생성 · 1:1 · 2K · 생성 거부 없음',
+      '14:20 생성 · 1:1 · 1K · 생성 거부 없음',
     );
     expect(
       candidateSummaryText([
         generationSummary({ slotNo: 1, status: 'REFUSED' }),
         generationSummary({ slotNo: 2, startedAt: '2026-09-28T05:25:00.000Z' }),
       ]),
-    ).toBe('14:25 생성 · 1:1 · 2K · 생성 거부 1건');
+    ).toBe('14:25 생성 · 1:1 · 1K · 생성 거부 1건');
     expect(resolutionLabel(1024)).toBe('1K');
+    // 설정 파일에 전 기본값 2048을 둔 경우
+    expect(resolutionLabel(2048)).toBe('2K');
     expect(resolutionLabel(1500)).toBe('1500px');
   });
 

@@ -70,9 +70,9 @@ describe('CandidateGrid(SCR-05 썸네일 후보, P3-02)', () => {
     expect(onChooseRepresentative).toHaveBeenCalledWith(901);
   });
 
-  it("요약 줄은 '14:20 생성 · 1:1 · 2K · 생성 거부 1건'이고 M2 표시(신발 비중·디테일·AI 생성)는 없다", () => {
+  it("요약 줄은 '14:20 생성 · 1:1 · 1K · 생성 거부 1건'이고 M2 표시(신발 비중·디테일·AI 생성)는 없다", () => {
     renderGrid();
-    expect(screen.getByText('14:20 생성 · 1:1 · 2K · 생성 거부 1건')).toBeInTheDocument();
+    expect(screen.getByText('14:20 생성 · 1:1 · 1K · 생성 거부 1건')).toBeInTheDocument();
     expect(screen.queryByText(/신발 비중/)).not.toBeInTheDocument();
     expect(screen.queryByText(/디테일/)).not.toBeInTheDocument();
     expect(screen.queryByText('AI 생성')).not.toBeInTheDocument();

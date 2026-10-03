@@ -51,8 +51,8 @@ import {
  * 5. 결과 해석: `parseAgyResult`(AGY_ERROR·print timeout·exit·status·도구 권한 거부 — agy는 실패를 SUCCESS·exit 0으로 감춘다) →
  *    `structured_output.error`(`classifyAgyImageError` — 거부면 REFUSED, 그 밖은 실패) → `image_path`를 `~/.gemini/antigravity-cli/brain/<conversation_id>/`
  *    바로 아래인지 realpath로 확인(아니면 그 폴더 맨 위 이미지가 정확히 1개일 때 그것) → 바이트를 읽는다
- * 6. 크기·형식은 바꾸지 않는다. agy는 늘 1024×1024 JPEG를 낸다(요청 2048은 지켜지지 않음, S1 12/12). 형식 판별은 생성 작업
- *    (`detectGeneratedImage`), 1000×1000 JPEG 정규화는 ⑧ 업로드(P4-01 `normalizeUploadImage`)가 한다
+ * 6. 크기·형식은 바꾸지 않는다. agy는 늘 1024×1024 JPEG를 낸다(요청 2048도 1024, S1 12/12 — 그래서 요청 기본도 1024, D-21).
+ *    형식 판별은 생성 작업(`detectGeneratedImage`), 1000×1000 JPEG 정규화는 ⑧ 업로드(P4-01 `normalizeForUpload`)가 한다
  * 작업 폴더는 성공·실패 모두 지운다. agy가 오너 홈에 남기는 대화 기록(brain·conversations, 이미지 호출당 약 1.2~2.2MB)은 지우지 않는다
  * (오너 결정 대기 — S1 §7). 프롬프트·경로는 로그·call_log에 남기지 않는다.
  * 학습·텔레메트리를 호출 단위로 끄는 스위치는 S1에서 찾지 못했다 → 오너가 Antigravity 설정 › 계정 › 'Enable Telemetry'를 끈다(D-20).

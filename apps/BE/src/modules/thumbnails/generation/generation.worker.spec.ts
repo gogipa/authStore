@@ -21,10 +21,10 @@ function runRow(patch: Record<string, unknown> = {}) {
     slotNo: 2,
     attemptNo: 1,
     triggerType: 'INITIAL',
-    prompt: 'square 1:1, 2048 pixels. Model framing: full face.',
+    prompt: 'square 1:1, 1024 pixels. Model framing: full face.',
     promptAdjusted: false,
     faceOption: 'FULL_FACE',
-    requestedSizePx: 2048,
+    requestedSizePx: 1024,
     provider: 'AGY',
     model: 'fake-image-gen',
     providerVersion: 'fake-1',
@@ -141,7 +141,7 @@ describe('GenerationWorker(P3-02 규칙 5·6 — 생성 한 건)', () => {
     // 공급자에게는 레퍼런스 절대 경로·해상도·타임아웃과 call_log 연결용 id만 넘긴다(M0 S1)
     expect(t.provider.calls[0]).toMatchObject({
       referenceImagePaths: ['/data/images/ab/ref.jpg'],
-      sizePx: 2048,
+      sizePx: 1024,
       timeoutMs: 900_000,
       stepRunId: 9,
       candidateId: 3,

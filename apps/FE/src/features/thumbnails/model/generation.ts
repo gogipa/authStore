@@ -89,7 +89,7 @@ export function checklistComplete(state: G3ChecklistState): boolean {
   return G3_CHECKLIST_KEYS.every((key) => state[key]);
 }
 
-/** 해상도 글('2K' — 1024의 배수면 K, 아니면 px) */
+/** 해상도 글('1K' — 1024의 배수면 K, 아니면 px. 기본 1024 — D-21) */
 export function resolutionLabel(px: number): string {
   return px % 1024 === 0 ? `${px / 1024}K` : `${px}px`;
 }
@@ -135,7 +135,10 @@ export function hasRunning(runs: readonly ThumbnailGenerationSummary[]): boolean
   return runs.some((run) => run.status === 'RUNNING');
 }
 
-/** 후보 패널 요약 줄(보드 '14:20 생성 · 1:1 · 2K · 생성 거부 없음' — M2 '비중·디테일 자동 검사'는 뺀다). 시도가 없으면 '' */
+/**
+ * 후보 패널 요약 줄('14:20 생성 · 1:1 · 1K · 생성 거부 없음' — 보드의 '2K'는 D-21로 기본 1K, M2 '비중·디테일 자동 검사'는 뺀다).
+ * 해상도는 최신 시도의 요청값이다(업로드 크기 1000×1000은 ⑧이 맞춘다). 시도가 없으면 ''
+ */
 export function candidateSummaryText(runs: readonly ThumbnailGenerationSummary[]): string {
   if (runs.length === 0) return '';
   const latest = [...runs].sort((a, b) => a.startedAt.localeCompare(b.startedAt)).at(-1)!;

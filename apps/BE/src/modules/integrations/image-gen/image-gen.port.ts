@@ -46,7 +46,7 @@ export interface ImageGenRequest {
   prompt: string;
   /** 레퍼런스 원본 파일 절대 경로(1~3장, 순서 = sort_order). 공급자 밖으로는 파일만 넘긴다 */
   referenceImagePaths: readonly string[];
-  /** 요청 해상도 px(1:1 한 변, 기본 2048) */
+  /** 요청 해상도 px(1:1 한 변, 기본 1024 — D-21. 업로드 크기 1000×1000은 ⑧이 맞춘다) */
   sizePx: number;
   /** 하드 타임아웃(ms). 넘으면 부르는 쪽이 `signal`을 끊는다 */
   timeoutMs: number;

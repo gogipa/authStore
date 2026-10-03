@@ -203,7 +203,7 @@ export async function seedUploadReady(
         triggerType: 'INITIAL',
         prompt: 'fixture prompt',
         faceOption: 'FULL_FACE',
-        requestedSizePx: 2048,
+        requestedSizePx: 1024,
         provider: 'AGY',
         model: 'fake-image-gen',
         referenceSetSha256: 'a'.repeat(64),

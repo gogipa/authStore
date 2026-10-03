@@ -160,7 +160,7 @@ describe('⑤ 썸네일 생성·비교·선택 G3(P3-02) e2e — autostore_test�
         triggerType: attemptNo === 1 ? 'INITIAL' : 'OWNER_RETRY',
         prompt: 'fixture prompt',
         faceOption: 'FULL_FACE',
-        requestedSizePx: 2048,
+        requestedSizePx: 1024,
         provider: 'AGY',
         model: 'fake-image-gen',
         referenceSetSha256: 'a'.repeat(64),
@@ -235,7 +235,7 @@ describe('⑤ 썸네일 생성·비교·선택 G3(P3-02) e2e — autostore_test�
       expect(running[0]).toMatchObject({
         promptAdjusted: false,
         faceOption: 'FULL_FACE',
-        requestedSizePx: 2048,
+        requestedSizePx: 1024,
         provider: 'AGY',
         model: 'fake-image-gen',
         providerVersion: 'fake-1',
@@ -243,7 +243,7 @@ describe('⑤ 썸네일 생성·비교·선택 G3(P3-02) e2e — autostore_test�
         finishedAt: null,
         resultImageAssetId: null,
       });
-      expect(running[0]!.prompt).toContain('square 1:1, 2048 pixels');
+      expect(running[0]!.prompt).toContain('square 1:1, 1024 pixels');
       expect(running[0]!.prompt).toContain('Model framing: full face.');
 
       release();
