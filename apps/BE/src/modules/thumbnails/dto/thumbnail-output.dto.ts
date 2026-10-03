@@ -19,7 +19,10 @@ export class ThumbnailG3ChecklistDto {
   @ApiProperty({ description: '체크리스트 버전(앱 상수) 스냅샷' })
   version!: string;
 
-  @ApiProperty({ description: '신발 비중 70% 이상' })
+  @ApiProperty({
+    description:
+      '신발 길이가 화면 폭의 70% 이상(D-22 — 신발 박스 긴 변 ÷ 같은 방향 이미지 변 ≥ 0.70. 키 이름은 그대로)',
+  })
   shoeRatioOver70!: boolean;
 
   @ApiProperty({ description: '디테일이 원본과 같음' })

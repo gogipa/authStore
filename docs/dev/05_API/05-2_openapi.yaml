@@ -717,7 +717,7 @@ paths:
       - F-TH-16
       - F-TH-17
       - F-PJ-26
-      x-decision: '§7.2-12 제안대로 지문이 최신 통과와 같으면 새 gate_pass 행 없이 200 + 기존 기록을 준다. §7.4-30 G3 체크리스트 키 이름은 표 C 제안(shoeRatioOver70 외 6개)대로 쓴다. P1-06 Proposed — 검사 순서는 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → STEP_LOCKED_BY_RUNNING_STEP(근거 단계가 읽는 ②가 실행 중) → VERSION_NOT_CURRENT → STEP_NOT_COMPLETED → 게이트 조건(공급자). 통과할 수 있는 근거 버전은 G2 = ③ COMPLETED, G3 = ⑤ WAITING_INPUT(첫 선택으로 완료)·COMPLETED(다시 고름). 게이트 공급자(G2 P2-05·G3 P3-02)가 아직 없으면 422 INVALID_GATE_CODE(details.reason=NO_PROVIDER, 문구 ''이 게이트는 아직 준비 중이라 통과할 수 없습니다.''). 200(같은 지문)의 thumbnailSelectionId·thumbnailStepRunId는 null. P3-02 Proposed(G3) — (1) 같은 지문이면 200은 근거 버전이 산출물을 가진(COMPLETED·RERUN_REQUIRED) 때만이다. 입력 대기 ⑤(첫 선택)는 늘 새 gate_pass를 쓰고 ⑤를 끝낸다. (2) G3 검사 순서: 체크리스트 모양(모르는 키·boolean 아님 422 VALIDATION_FAILED, 대표를 추가에 다시 넣음도 VALIDATION_FAILED) → 422 CHECKLIST_INCOMPLETE(details.uncheckedKeys) → 422 IMAGE_COUNT_INVALID(추가 10장 이상 — 모양 검사는 100개까지 받는다) → 404 IMAGE_ASSET_NOT_FOUND → 422 IMAGE_NOT_ALLOWED(details.reason NOT_GENERATED 원본·참조 전용 | OTHER_RUN 이 ⑤ 버전의 SUCCEEDED 생성 결과가 아님) → 422 SAME_PRODUCT_COLOR_CONFIRMATION_REQUIRED(레퍼런스 가운데 앵커 키가 다르거나 색상 코드를 모르는 것이 있음) → 409 ALREADY_IN_PROGRESS(details.job=GENERATION). (3) ''이 ⑤ 버전의 생성본'' = 오너 수정(OWNER_EDIT) 버전이면 base_step_run_id를 따라 올라간 첫 오너 수정 아닌 버전의 generation_run. (4) 한 트랜잭션: gate_pass → ⑤ 입력 대기면 그 버전을 끝내고(실행기 persist가 닫기 전에 thumbnail_selection+image를 쓴다), 완료면 OWNER_EDIT(owner_action=EDIT, base = 화면이 본 버전) 새 버전을 열어 레퍼런스를 복사하고 새 선택으로 닫는다 — gate_pass.basis_step_run_id는 화면이 본 버전, 응답 thumbnailStepRunId는 선택을 가진 버전. (5) thumbnail_selection.checklist = 7개 true + version(앱 상수 M1-1), sameProductColorConfirmed=true면 same_product_color_confirmed_at = 통과 시각. (6) G3 지문 구성값 = referenceHashes(버전의 레퍼런스 파일 SHA-256) + selectedHash(선택본 대표 + 추가 전체를 sort_order 순 ''<순서>:<파일 SHA-256>''으로 이은 값의 SHA-256) + anchorKey.'
+      x-decision: '§7.2-12 제안대로 지문이 최신 통과와 같으면 새 gate_pass 행 없이 200 + 기존 기록을 준다. §7.4-30 G3 체크리스트 키 이름은 표 C 제안(shoeRatioOver70 외 6개)대로 쓴다. P1-06 Proposed — 검사 순서는 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → STEP_LOCKED_BY_RUNNING_STEP(근거 단계가 읽는 ②가 실행 중) → VERSION_NOT_CURRENT → STEP_NOT_COMPLETED → 게이트 조건(공급자). 통과할 수 있는 근거 버전은 G2 = ③ COMPLETED, G3 = ⑤ WAITING_INPUT(첫 선택으로 완료)·COMPLETED(다시 고름). 게이트 공급자(G2 P2-05·G3 P3-02)가 아직 없으면 422 INVALID_GATE_CODE(details.reason=NO_PROVIDER, 문구 ''이 게이트는 아직 준비 중이라 통과할 수 없습니다.''). 200(같은 지문)의 thumbnailSelectionId·thumbnailStepRunId는 null. P3-02 Proposed(G3) — (1) 같은 지문이면 200은 근거 버전이 산출물을 가진(COMPLETED·RERUN_REQUIRED) 때만이다. 입력 대기 ⑤(첫 선택)는 늘 새 gate_pass를 쓰고 ⑤를 끝낸다. (2) G3 검사 순서: 체크리스트 모양(모르는 키·boolean 아님 422 VALIDATION_FAILED, 대표를 추가에 다시 넣음도 VALIDATION_FAILED) → 422 CHECKLIST_INCOMPLETE(details.uncheckedKeys) → 422 IMAGE_COUNT_INVALID(추가 10장 이상 — 모양 검사는 100개까지 받는다) → 404 IMAGE_ASSET_NOT_FOUND → 422 IMAGE_NOT_ALLOWED(details.reason NOT_GENERATED 원본·참조 전용 | OTHER_RUN 이 ⑤ 버전의 SUCCEEDED 생성 결과가 아님) → 422 SAME_PRODUCT_COLOR_CONFIRMATION_REQUIRED(레퍼런스 가운데 앵커 키가 다르거나 색상 코드를 모르는 것이 있음) → 409 ALREADY_IN_PROGRESS(details.job=GENERATION). (3) ''이 ⑤ 버전의 생성본'' = 오너 수정(OWNER_EDIT) 버전이면 base_step_run_id를 따라 올라간 첫 오너 수정 아닌 버전의 generation_run. (4) 한 트랜잭션: gate_pass → ⑤ 입력 대기면 그 버전을 끝내고(실행기 persist가 닫기 전에 thumbnail_selection+image를 쓴다), 완료면 OWNER_EDIT(owner_action=EDIT, base = 화면이 본 버전) 새 버전을 열어 레퍼런스를 복사하고 새 선택으로 닫는다 — gate_pass.basis_step_run_id는 화면이 본 버전, 응답 thumbnailStepRunId는 선택을 가진 버전. (5) thumbnail_selection.checklist = 7개 true + version(앱 상수 M1-1 → D-22(2026-10-03)로 첫 항목 문구를 ''신발 길이가 화면 폭의 70% 이상''으로 바꿔 M1-2. 키 이름은 그대로), sameProductColorConfirmed=true면 same_product_color_confirmed_at = 통과 시각. (6) G3 지문 구성값 = referenceHashes(버전의 레퍼런스 파일 SHA-256) + selectedHash(선택본 대표 + 추가 전체를 sort_order 순 ''<순서>:<파일 SHA-256>''으로 이은 값의 SHA-256) + anchorKey.'
       parameters:
       - $ref: '#/components/parameters/ClientHeader'
       requestBody:
@@ -8446,7 +8446,7 @@ components:
       properties:
         shoeRatioOver70:
           type: boolean
-          description: 신발 비중 70% 이상
+          description: 신발 길이가 화면 폭의 70% 이상(D-22 — 신발 박스 긴 변 ÷ 같은 방향 이미지 변 ≥ 0.70. 키 이름은 그대로)
         detailMatch:
           type: boolean
           description: 디테일 일치
@@ -13760,7 +13760,7 @@ components:
           description: 체크리스트 버전(앱 상수) 스냅샷
         shoeRatioOver70:
           type: boolean
-          description: 신발 비중 70% 이상
+          description: 신발 길이가 화면 폭의 70% 이상(D-22 — 신발 박스 긴 변 ÷ 같은 방향 이미지 변 ≥ 0.70. 키 이름은 그대로)
         detailMatch:
           type: boolean
           description: 디테일이 원본과 같음

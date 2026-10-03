@@ -59,13 +59,16 @@ export function withAndParticle(word: string): string {
   return `${word}${(last - 0xac00) % 28 === 0 ? '와' : '과'}`;
 }
 
-/** G3 체크리스트 7개(보드 순서·문구 그대로 — '색상이 {선택 색상}과 같음') */
+/**
+ * G3 체크리스트 7개(보드 순서·문구 그대로 — '색상이 {선택 색상}과 같음'). 첫 항목만 보드('신발 비중 70% 이상')와 다르다:
+ * D-22로 '70%'는 신발 길이(신발 박스 긴 변 ÷ 같은 방향 화면 변)로 잰다. 키 `shoeRatioOver70`은 그대로다
+ */
 export function g3ChecklistItems(
   selectedColor: string | null | undefined,
 ): { key: G3ChecklistKey; label: string }[] {
   const color = selectedColor?.trim() || '선택 색상';
   return [
-    { key: 'shoeRatioOver70', label: '신발 비중 70% 이상' },
+    { key: 'shoeRatioOver70', label: '신발 길이가 화면 폭의 70% 이상' },
     { key: 'detailMatch', label: '디테일 일치' },
     { key: 'colorMatchesSelectedColor', label: `색상이 ${withAndParticle(color)} 같음` },
     { key: 'referenceNoPerson', label: '레퍼런스에 사람 없음' },

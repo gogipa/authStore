@@ -1,6 +1,9 @@
 import { DEFAULT_SETTINGS } from '../defaults/default-settings.js';
 import { checkSettingsValue } from '../settings-file.loader.js';
-import type { AppSettings } from './settings.types.js';
+import {
+  THUMBNAIL_GENERATION_TIMEOUT_DEFAULT_SECONDS,
+  type AppSettings,
+} from './settings.types.js';
 
 function withSettings(edit: (s: AppSettings) => void) {
   const settings = structuredClone(DEFAULT_SETTINGS) as AppSettings;
@@ -9,16 +12,18 @@ function withSettings(edit: (s: AppSettings) => void) {
 }
 
 describe('설정 thumbnail 섹션(P3-01 — ⑤ 프롬프트 골격·얼굴 노출 기본값·후보 수·해상도)', () => {
-  it('기본 템플릿: PRD §8.4 영어 골격, 얼굴 노출 FULL_FACE, 후보 2장, 1024px(D-21)', () => {
+  it('기본 템플릿: PRD §8.4 영어 골격, 얼굴 노출 FULL_FACE, 후보 2장, 1024px(D-21), 타임아웃 300초(D-23)', () => {
     expect(checkSettingsValue(DEFAULT_SETTINGS).ok).toBe(true);
     const t = DEFAULT_SETTINGS.thumbnail;
     expect(t.faceOptionDefault).toBe('FULL_FACE');
     expect(t.candidateCount).toBe(2);
     // D-21: agy는 늘 1024×1024를 낸다. 업로드 1000×1000은 ⑧이 맞춘다
     expect(t.resolutionPx).toBe(1024);
-    // P3-02: 이미지 생성 공급자(D-19 AGY)·생성 타임아웃 15분
+    // P3-02: 이미지 생성 공급자(D-19 AGY). 생성 하드 타임아웃 300초(D-23 — 상한 15분은 그대로)
     expect(t.imageProvider).toBe('AGY');
-    expect(t.generationTimeoutSeconds).toBe(900);
+    expect(t.generationTimeoutSeconds).toBe(300);
+    // 설정 값이 없을 때 생성 작업이 쓰는 상수와 같다(다른 모듈은 기본 템플릿을 읽지 않는다 — 규칙 14)
+    expect(THUMBNAIL_GENERATION_TIMEOUT_DEFAULT_SECONDS).toBe(t.generationTimeoutSeconds);
     expect(t.promptTemplate).toContain('{resolution}');
     expect(t.promptTemplate).toContain('{face_option}');
     expect(t.promptTemplate).toContain('NOT resembling any real person or celebrity');
@@ -82,6 +87,17 @@ describe('설정 thumbnail 섹션(P3-01 — ⑤ 프롬프트 골격·얼굴 노�
     delete old.thumbnail.resolutionPx;
     const filled = checkSettingsValue(old);
     expect(filled.ok && filled.settings.thumbnail.resolutionPx).toBe(1024);
+  });
+
+  it('이미 있는 설정 파일의 타임아웃(예: 전 기본값 900초)은 그대로 쓰고, 키가 빠진 파일만 새 기본 300초로 채운다(D-23)', () => {
+    const kept = withSettings((s) => (s.thumbnail.generationTimeoutSeconds = 900));
+    expect(kept.ok && kept.settings.thumbnail.generationTimeoutSeconds).toBe(900);
+    const old = structuredClone(DEFAULT_SETTINGS) as unknown as {
+      thumbnail: Record<string, unknown>;
+    };
+    delete old.thumbnail.generationTimeoutSeconds;
+    const filled = checkSettingsValue(old);
+    expect(filled.ok && filled.settings.thumbnail.generationTimeoutSeconds).toBe(300);
   });
 
   it('실존 인물 차단어: 더하기는 되고 내장 단어를 빼면 안전 기준 완화로 거부(P1-03, 규칙 14)', () => {

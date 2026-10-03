@@ -11,7 +11,7 @@ import type { CallLogTarget } from '../http/external-targets.js';
  *   `overrideProvider(IMAGE_GEN_PROVIDER)`로 대본 가짜를 넣는다. GEMINI_API·OPENAI_API·CODEX는 아직 어댑터가 없다
  * - 밖으로 나가는 호출은 관문(`ExternalHttpGateway`, API 공급자) 또는 `IsolatedCliRunner`(CLI 공급자)로만 하고, 호출마다
  *   `call_log` 1행을 `IMAGE_GEN_CALL_TARGET[공급자]`로 남긴다(ERD `ck_call_log_target`). 가짜 공급자는 밖을 부르지 않아 남기지 않는다
- * - 요청의 `timeoutMs`·`signal`을 지킨다(하드 타임아웃 15분은 부르는 쪽도 건다)
+ * - 요청의 `timeoutMs`·`signal`을 지킨다(하드 타임아웃 — 기본 300초(D-23), 최대 15분 — 은 부르는 쪽도 건다)
  * - 결과 바이트의 형식·크기는 믿지 않는다(agy는 요청 크기와 관계없이 1024×1024 JPEG를 낸다 — S1 12/12. 저장할 때 내용으로
  *   판별하고, 1000×1000 JPEG 정규화는 ⑧ 업로드가 한다)
  * - 콘텐츠 필터 거부는 예외가 아니라 `{ kind: 'REFUSED', reason }`, 그 밖 실패는 `ImageGenError`(비밀·로컬 경로 없는 한국어 문구)

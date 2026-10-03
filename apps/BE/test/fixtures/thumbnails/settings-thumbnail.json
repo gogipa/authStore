@@ -6,7 +6,7 @@
     "candidateCount": 2,
     "resolutionPx": 1024,
     "imageProvider": "AGY",
-    "generationTimeoutSeconds": 900
+    "generationTimeoutSeconds": 300
   },
   "personBlockWordsExtra": ["가상아이돌테스트", "Fixture Star"]
 }

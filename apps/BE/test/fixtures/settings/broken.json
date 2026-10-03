@@ -137,7 +137,7 @@
     "candidateCount": 2,
     "resolutionPx": 1024,
     "imageProvider": "AGY",
-    "generationTimeoutSeconds": 900
+    "generationTimeoutSeconds": 300
   },
   "notice": {
     "basisDate": "2026-09-24",

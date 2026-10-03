@@ -19,9 +19,10 @@ export type G3ChecklistKey = (typeof G3_CHECKLIST_KEYS)[number];
 
 /**
  * 체크리스트 버전(앱 상수 — `thumbnail_selection.checklist.version`, P3-02 Proposed). 항목·문구를 바꾸면 올린다. 형식은
- * `M1-<순번>`(M2에서 신발 비중·디테일 자동 검사가 붙으면 `M2-1`)
+ * `M1-<순번>`(M2에서 신발 길이·디테일 자동 검사가 붙으면 `M2-1`). `M1-2`: D-22로 첫 항목 문구를 '신발 비중 70% 이상'에서
+ * '신발 길이가 화면 폭의 70% 이상'으로 바꿨다(키 `shoeRatioOver70`은 그대로). 이미 저장된 `M1-1` 기록은 그대로 둔다
  */
-export const G3_CHECKLIST_VERSION = 'M1-1';
+export const G3_CHECKLIST_VERSION = 'M1-2';
 
 /** 저장하는 체크리스트(7개 모두 true + 버전) */
 export type G3ChecklistSnapshot = { version: string } & Record<G3ChecklistKey, boolean>;

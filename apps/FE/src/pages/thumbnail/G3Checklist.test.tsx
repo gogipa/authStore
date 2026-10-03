@@ -8,7 +8,7 @@ import { createTestQueryClient } from '@/test/renderRoute';
 import { G3Checklist, type G3ChecklistProps } from './G3Checklist';
 
 const LABELS = [
-  '신발 비중 70% 이상',
+  '신발 길이가 화면 폭의 70% 이상',
   '디테일 일치',
   '색상이 크림/블랙과 같음',
   '레퍼런스에 사람 없음',

@@ -72,7 +72,7 @@ export async function detectGeneratedImage(
 /**
  * ⑤ 썸네일 생성 작업(P3-02 §5.1 `generation.worker.ts`, 규칙 5~7). 이미지 슬롯 하나로 **순서대로** 돈다(이미지 작업은 동시에
  * 1개 — AI-03·D-16 R13. P1-10 실행기(StepExecutor)에는 이미지 슬롯이 없어 여기에 직렬 대기열을 둔다, Proposed).
- * 시도 하나: 레퍼런스 파일 → `ImageGenProvider.generate`(하드 타임아웃 = 설정 `thumbnail.generationTimeoutSeconds`, 최대 15분.
+ * 시도 하나: 레퍼런스 파일 → `ImageGenProvider.generate`(하드 타임아웃 = 설정 `thumbnail.generationTimeoutSeconds`, 기본 300초(D-23)·최대 15분.
  * 넘으면 행을 바로 FAILED로 마감하고, 끊긴 공급자가 끝나기를 최대 `GENERATION_ABORT_SETTLE_MS` 기다린 뒤 다음 시도로 간다) →
  * - 이미지: 내용으로 형식을 판별해 `image_asset`(kind=GENERATED, usage_right=PERMITTED, candidate_id)을 만들고 같은 트랜잭션에서
  *   `status=SUCCEEDED`·`result_image_asset_id`·`finished_at`을 한 번에 채운다. 크기는 바꾸지 않는다(1000×1000 JPEG는 P4-01)
@@ -116,8 +116,7 @@ export class GenerationWorker {
   }
 
   private timeoutMs(): number {
-    const seconds = this.settings.currentOrNull()?.thumbnail.generationTimeoutSeconds ?? 900;
-    return generationTimeoutMs(seconds);
+    return generationTimeoutMs(this.settings.currentOrNull()?.thumbnail.generationTimeoutSeconds);
   }
 
   /** 시도 하나 */

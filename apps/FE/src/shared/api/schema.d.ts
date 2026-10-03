@@ -3718,7 +3718,7 @@ export interface components {
         };
         /** @description G3 체크리스트(thumbnail_selection.checklist). 모두 true여야 한다. 빠지거나 false면 422 CHECKLIST_INCOMPLETE */
         GateThumbnailChecklist: {
-            /** @description 신발 비중 70% 이상 */
+            /** @description 신발 길이가 화면 폭의 70% 이상(D-22 — 신발 박스 긴 변 ÷ 같은 방향 이미지 변 ≥ 0.70. 키 이름은 그대로) */
             shoeRatioOver70: boolean;
             /** @description 디테일 일치 */
             detailMatch: boolean;
@@ -5727,7 +5727,7 @@ export interface components {
         ThumbnailG3Checklist: {
             /** @description 체크리스트 버전(앱 상수) 스냅샷 */
             version: string;
-            /** @description 신발 비중 70% 이상 */
+            /** @description 신발 길이가 화면 폭의 70% 이상(D-22 — 신발 박스 긴 변 ÷ 같은 방향 이미지 변 ≥ 0.70. 키 이름은 그대로) */
             shoeRatioOver70: boolean;
             /** @description 디테일이 원본과 같음 */
             detailMatch: boolean;

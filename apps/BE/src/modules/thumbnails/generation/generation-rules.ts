@@ -1,6 +1,9 @@
 import { ApiException } from '../../../common/errors/api.exception.js';
 import type { FieldError } from '../../../common/errors/error-response.js';
-import { THUMBNAIL_GENERATION_TIMEOUT_MAX_SECONDS } from '../../settings/schema/settings.types.js';
+import {
+  THUMBNAIL_GENERATION_TIMEOUT_DEFAULT_SECONDS,
+  THUMBNAIL_GENERATION_TIMEOUT_MAX_SECONDS,
+} from '../../settings/schema/settings.types.js';
 import {
   isThumbnailFaceOption,
   PROMPT_ADJUSTMENT_MAX,
@@ -105,9 +108,12 @@ export function generationReferenceSetSha256(refs: readonly { sha256: string }[]
 /** 하드 타임아웃 상한(ms, 규칙 5 — 15분) */
 export const GENERATION_TIMEOUT_MAX_MS = THUMBNAIL_GENERATION_TIMEOUT_MAX_SECONDS * 1000;
 
-/** 설정 초 → 타임아웃 ms(15분을 넘지 않는다) */
-export function generationTimeoutMs(settingSeconds: number): number {
-  const seconds = Number.isFinite(settingSeconds) && settingSeconds > 0 ? settingSeconds : 900;
+/** 설정 초 → 타임아웃 ms(15분을 넘지 않는다). 값이 없거나 0 이하면 기본값 300초(D-23 — 기본 템플릿과 같다) */
+export function generationTimeoutMs(settingSeconds: number | undefined): number {
+  const seconds =
+    settingSeconds !== undefined && Number.isFinite(settingSeconds) && settingSeconds > 0
+      ? settingSeconds
+      : THUMBNAIL_GENERATION_TIMEOUT_DEFAULT_SECONDS;
   return Math.min(Math.round(seconds * 1000), GENERATION_TIMEOUT_MAX_MS);
 }
 

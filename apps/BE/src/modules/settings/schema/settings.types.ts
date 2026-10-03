@@ -424,6 +424,12 @@ export type ThumbnailImageProvider = (typeof THUMBNAIL_IMAGE_PROVIDERS)[number];
 export const THUMBNAIL_GENERATION_TIMEOUT_MAX_SECONDS = 900;
 
 /**
+ * 생성 한 건 하드 타임아웃 기본값(초, D-23). 기본 템플릿 `thumbnail.generationTimeoutSeconds`와 같다(settings-thumbnail.spec이
+ * 확인). 다른 모듈은 기본 템플릿을 읽지 않으므로(규칙 14) 설정 값이 없을 때 이 상수를 쓴다
+ */
+export const THUMBNAIL_GENERATION_TIMEOUT_DEFAULT_SECONDS = 300;
+
+/**
  * ⑤ 썸네일(P3-01 — ERD `generation_run` '⑤ 입력 기록 규칙', PRD §8.4 '기본 프롬프트 골격', 06-4 §2.2).
  * `promptTemplate`·`faceOptionDefault`만 ⑤ 시작 조건(입력 지문)이다. 후보 수·해상도는 P3-01 Proposed 키 이름이다.
  * 실존 인물 차단어 추가분은 안전 목록 `safety.personBlockWords`(내장 목록은 뺄 수 없다)를 그대로 쓴다.
@@ -445,7 +451,10 @@ export interface ThumbnailSettings {
   resolutionPx: number;
   /** 이미지 생성 공급자(P3-02 Proposed 키, D-19로 AGY 확정). 기본 AGY */
   imageProvider: ThumbnailImageProvider;
-  /** 생성 한 건 타임아웃(초, P3-02 Proposed 키). 1~900, 기본 900(15분 — 하드 상한). 테스트는 짧게 둔다 */
+  /**
+   * 생성 한 건 하드 타임아웃(초, P3-02 Proposed 키). 1~900(15분 상한), 기본 300(D-23 — S1 최대 92.2초의 약 3배,
+   * '장당 ≤ 5분'). 이미 있는 설정 파일의 값은 앱이 바꾸지 않는다. 테스트는 짧게 둔다
+   */
   generationTimeoutSeconds: number;
 }
 

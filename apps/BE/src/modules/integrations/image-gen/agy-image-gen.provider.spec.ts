@@ -38,7 +38,7 @@ const SUCCESS_CONV = '00000000-0000-4000-8000-000000000002';
 const SUCCESS_FILE = 'thumbnail_1790895914530.jpg';
 const PROMPT =
   'Photorealistic studio product photo, square 1:1, 1024 pixels.\nModel framing: full face.';
-const HARD_TIMEOUT_MS = 900_000;
+const HARD_TIMEOUT_MS = 300_000;
 /** 가짜 agy 프로세스를 띄우는 테스트의 시간 제한(전체 실행 중 부하로 5초 기본값을 넘을 수 있다) */
 const SPAWN_TIMEOUT_MS = 20_000;
 
@@ -225,8 +225,8 @@ describe('AgyImageGenProvider(M0 S1 — agy generate_image, D-19)', () => {
       expect(value('--model')).toBe(AGY_IMAGE_AGENT_MODEL);
       expect(value('--output-format')).toBe('json');
       expect(value('--json-schema')).toBe(JSON.stringify(AGY_IMAGE_RESULT_SCHEMA));
-      // 하드 900초 - 20초
-      expect(value('--print-timeout')).toBe('880s');
+      // 하드 300초(기본 — D-23) - 20초
+      expect(value('--print-timeout')).toBe('280s');
       expect(args.at(-1)).toBe('--disable-slash-commands');
       for (const flag of ['--dangerously-skip-permissions', '--mode', '--yolo']) {
         expect(args).not.toContain(flag);
@@ -402,7 +402,7 @@ describe('AgyImageGenProvider(M0 S1 — agy generate_image, D-19)', () => {
       const err = await errorOf(provider.generate(request()));
       expect(err).toMatchObject({
         code: AI_RUN_ERROR_CODES.TIMEOUT,
-        userMessage: AGY_IMAGE_MESSAGES.timeout(880),
+        userMessage: AGY_IMAGE_MESSAGES.timeout(280),
       });
       expect(callLog.rows[0]!.result).toMatchObject({
         succeeded: false,

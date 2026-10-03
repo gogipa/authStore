@@ -105,10 +105,15 @@ describe('생성 요청 검사(P3-02 규칙 2)', () => {
 });
 
 describe('타임아웃(P3-02 규칙 5 — 하드 15분)', () => {
-  it('설정 초 → ms, 15분을 넘지 않는다', () => {
+  it('설정 초 → ms, 15분을 넘지 않는다. 값이 없거나 0 이하면 기본값 300초(D-23)', () => {
+    expect(generationTimeoutMs(300)).toBe(300_000);
     expect(generationTimeoutMs(900)).toBe(GENERATION_TIMEOUT_MAX_MS);
     expect(generationTimeoutMs(5000)).toBe(GENERATION_TIMEOUT_MAX_MS);
     expect(generationTimeoutMs(1)).toBe(1000);
+    for (const missing of [undefined, 0, -1, Number.NaN]) {
+      expect(generationTimeoutMs(missing)).toBe(300_000);
+    }
+    expect(durationText(300_000)).toBe('5분');
     expect(durationText(900_000)).toBe('15분');
     expect(durationText(1000)).toBe('1초');
     expect(durationText(90_000)).toBe('1분 30초');

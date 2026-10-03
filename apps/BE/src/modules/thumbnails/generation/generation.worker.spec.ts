@@ -40,7 +40,7 @@ function runRow(patch: Record<string, unknown> = {}) {
 }
 
 /** DB·파일·설정 대역(메모리) — 실제 형식 판별(sharp)과 ImageAssetsService.saveImage는 그대로 돈다 */
-function setup(timeoutSeconds = 900) {
+function setup(timeoutSeconds = 300) {
   let row = runRow();
   const createdAssets: Record<string, unknown>[] = [];
   const events: { name: string; data: Record<string, unknown> }[] = [];
@@ -142,7 +142,7 @@ describe('GenerationWorker(P3-02 규칙 5·6 — 생성 한 건)', () => {
     expect(t.provider.calls[0]).toMatchObject({
       referenceImagePaths: ['/data/images/ab/ref.jpg'],
       sizePx: 1024,
-      timeoutMs: 900_000,
+      timeoutMs: 300_000,
       stepRunId: 9,
       candidateId: 3,
     });

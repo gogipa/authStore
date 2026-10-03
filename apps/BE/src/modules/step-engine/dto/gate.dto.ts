@@ -16,7 +16,12 @@ import { CandidateBlockReasonDto } from './step-run-response.dto.js';
  */
 /** 05-2 GateThumbnailChecklist(G3 체크리스트 7칸 — 검사는 `parseGatePassBody`·G3 공급자) */
 export class GateThumbnailChecklistDto {
-  @ApiProperty({ type: Boolean, description: '신발 비중 70% 이상' }) shoeRatioOver70!: boolean;
+  @ApiProperty({
+    type: Boolean,
+    description:
+      '신발 길이가 화면 폭의 70% 이상(D-22 — 신발 박스 긴 변 ÷ 같은 방향 이미지 변 ≥ 0.70. 키 이름은 그대로)',
+  })
+  shoeRatioOver70!: boolean;
   @ApiProperty({ type: Boolean, description: '디테일 일치' }) detailMatch!: boolean;
   @ApiProperty({ type: Boolean, description: '선택 색상과 일치' })
   colorMatchesSelectedColor!: boolean;
