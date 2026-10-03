@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from 'react-router';
+import { EMPTY_STATE, fillText, ScreenHelp } from '@/features/guide';
 import {
   CANDIDATE_STATUS_LABEL,
   CandidateDetailHeader,
@@ -28,6 +29,7 @@ import {
   ButtonLink,
   Chip,
   DisabledReason,
+  EmptyState,
   FilterToggleGroup,
   GateBadge,
   PageHeader,
@@ -132,9 +134,17 @@ function InputPicker({ stepCode }: { stepCode: StepCode }) {
       <Panel title="입력 고르기" caption={`${STEP_NAME[stepCode]} 화면에서 작업할 후보를 고릅니다`}>
         {runnable.isError ? <Banner tone="warning">{runnable.error.message}</Banner> : null}
         {rows.length === 0 && !runnable.isPending ? (
-          <p className={styles.hint}>
-            지금 {STEP_NAME[stepCode]} 단계를 실행할 수 있는 후보가 없습니다.
-          </p>
+          // 빈 상태 안내(F-GD-03, D-29)
+          <EmptyState
+            title={fillText(EMPTY_STATE.inputPicker.title, { step: STEP_NAME[stepCode] })}
+            actions={
+              <ButtonLink to={EMPTY_STATE.inputPicker.primary.to} size="sm">
+                {EMPTY_STATE.inputPicker.primary.label}
+              </ButtonLink>
+            }
+          >
+            {EMPTY_STATE.inputPicker.text}
+          </EmptyState>
         ) : (
           <ul className={styles.pickList} aria-label="실행할 수 있는 후보">
             {rows.map((candidate) => (
@@ -290,6 +300,7 @@ export function CandidatesPage() {
       <PageHeader
         title="후보 작업"
         description="후보마다 단계 상태를 보고, 멈춘 단계만 골라 실행합니다"
+        help={<ScreenHelp screen="candidates" />}
       />
       <div className={styles.layout}>
         <section aria-labelledby="list-title" className={styles.listPanel}>
@@ -317,7 +328,26 @@ export function CandidatesPage() {
           />
           {list.isError ? <Banner tone="warning">{list.error.message}</Banner> : null}
           {rows.length === 0 && !list.isPending ? (
-            <p className={styles.hint}>이 조건의 후보가 없습니다.</p>
+            filter === 'ALL' && !list.isError ? (
+              // 빈 상태 안내(F-GD-03, D-29): 진행 중 후보가 하나도 없을 때 다음 행동
+              <EmptyState
+                title={EMPTY_STATE.candidatesList.title}
+                actions={
+                  <>
+                    <ButtonLink to={EMPTY_STATE.candidatesList.primary.to} size="sm">
+                      {EMPTY_STATE.candidatesList.primary.label}
+                    </ButtonLink>
+                    <ButtonLink to={EMPTY_STATE.candidatesList.secondary.to} size="sm">
+                      {EMPTY_STATE.candidatesList.secondary.label}
+                    </ButtonLink>
+                  </>
+                }
+              >
+                {EMPTY_STATE.candidatesList.text}
+              </EmptyState>
+            ) : (
+              <p className={styles.hint}>{EMPTY_STATE.candidatesFiltered.title}</p>
+            )
           ) : (
             <ul className={styles.list} aria-label="후보 목록">
               {rows.map((candidate) => (

@@ -1,0 +1,89 @@
+/* SCR-14 사용 안내(보드 없음, 화면시안_명세 §8). 2열: 왼쪽 나머지 · 오른쪽 400px. 1100px보다 좁으면 1열. 새 토큰 없음. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  align-items: start;
+  gap: var(--space-6);
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.main,
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.subTitle {
+  font: var(--type-label);
+  color: var(--color-ink-muted);
+}
+
+.ordered,
+.bullets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-6);
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.bullets {
+  gap: var(--space-1);
+  padding-left: var(--space-4);
+}
+
+.lead {
+  font: var(--type-body);
+  color: var(--color-ink-muted);
+}
+
+.link {
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.screens {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 화면 줄: 이름 120px + 설명. 표 행처럼 40px, 위 구분선. */
+.screenRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 40px;
+  border-top: 1px solid var(--color-line);
+}
+
+.screenRow:first-child {
+  border-top: none;
+}
+
+.screenName {
+  width: 120px;
+  flex-shrink: 0;
+  font: var(--type-body-strong);
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.screenText {
+  min-width: 0;
+  font: var(--type-body);
+  color: var(--color-ink-muted);
+}

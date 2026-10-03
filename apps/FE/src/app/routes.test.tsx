@@ -18,7 +18,7 @@ describe('경로', () => {
     expect(main.getByRole('link', { name: '설정' })).toHaveAttribute('href', '/settings');
   });
 
-  // lazy로 나눈 뒤에도 13개 화면 경로가 모두 그려진다(SCR-13은 위 테스트).
+  // lazy로 나눈 뒤에도 14개 화면 경로가 모두 그려진다(SCR-13은 위 테스트). SCR-14 사용 안내는 D-29로 더했다.
   it.each([
     ['/', '대시보드', 'SCR-01'],
     ['/keywords', '키워드', 'SCR-02'],
@@ -32,6 +32,7 @@ describe('경로', () => {
     ['/products', '등록 상품', 'SCR-09'],
     ['/settings', '설정', 'SCR-10'],
     ['/system', '시스템 상태', 'SCR-11'],
+    ['/guide', '사용 안내', 'SCR-14'],
   ])('%s → %s (%s 칩은 그리지 않는다, D-27)', async (path, title) => {
     renderRoute(path);
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
@@ -111,6 +112,7 @@ describe('경로', () => {
       'settings',
       'settings/ai-engine',
       'system',
+      'guide',
     ]) {
       expect(typeof byPath.get(key)?.lazy, key).toBe('function');
     }

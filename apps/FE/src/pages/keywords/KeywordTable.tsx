@@ -1,13 +1,16 @@
 import { useId } from 'react';
 import { Link } from 'react-router';
+import { EMPTY_STATE } from '@/features/guide';
 import { cidLabel, type RankedKeyword } from '@/features/keywords';
 import { formatCount } from '@/shared/lib/format';
 import {
   Button,
+  ButtonLink,
   Checkbox,
   Chip,
   DataTable,
   type DataTableColumn,
+  EmptyState,
   FilterToggleGroup,
 } from '@/shared/ui';
 import styles from './KeywordTable.module.css';
@@ -151,13 +154,25 @@ export function KeywordTable({
         rowKey={(row) => row.id}
         isRowSelected={(row) => row.id === activeKeywordId}
         empty={
-          loading
-            ? '불러오는 중입니다.'
-            : !hasSnapshot
-              ? '아직 키워드가 없습니다. 데이터랩에서 수집하거나 순위를 붙여 넣어 주세요.'
-              : excludedView
-                ? '아동 단어로 빠진 키워드가 없습니다.'
-                : '표시할 키워드가 없습니다.'
+          loading ? (
+            '불러오는 중입니다.'
+          ) : !hasSnapshot ? (
+            // 빈 상태 안내(F-GD-03, D-29): 수집·붙여넣기는 바로 위 패널, 키워드 없이 시작하는 입구 버튼
+            <EmptyState
+              title={EMPTY_STATE.keywords.title}
+              actions={
+                <ButtonLink to={EMPTY_STATE.keywords.primary.to} size="sm">
+                  {EMPTY_STATE.keywords.primary.label}
+                </ButtonLink>
+              }
+            >
+              {EMPTY_STATE.keywords.text}
+            </EmptyState>
+          ) : excludedView ? (
+            '아동 단어로 빠진 키워드가 없습니다.'
+          ) : (
+            '표시할 키워드가 없습니다.'
+          )
         }
       />
       {selectionError ? (

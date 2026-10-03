@@ -5,6 +5,7 @@ import {
   formatKrw,
   formatKstMonthDayTime,
   formatKstTime,
+  formatKstTimeOrDate,
   formatMm,
   formatPct,
   formatYen,
@@ -54,6 +55,18 @@ describe('숫자·시각 표기(공통부품 §J)', () => {
     // KST 0시 넘김: 날짜도 바뀐다
     expect(formatKstMonthDayTime('2026-09-27T15:30:00Z')).toBe('09-28 00:30');
     expect(formatKstMonthDayTime('nope')).toBe(EMPTY_VALUE);
+  });
+
+  it('오늘이면 HH:mm, 다른 날이면 MM-DD HH:mm(Asia/Seoul 날짜로 가른다)', () => {
+    const now = new Date('2026-09-27T06:00:00Z'); // KST 09-27 15:00
+    expect(formatKstTimeOrDate('2026-09-27T05:02:00Z', now)).toBe('14:02');
+    expect(formatKstTimeOrDate('2026-09-26T05:02:00Z', now)).toBe('09-26 14:02');
+    // UTC 날짜가 아니라 KST 날짜로 가른다: UTC 09-26 15:30 = KST 09-27 00:30(오늘), UTC 09-26 14:59 = KST 09-26 23:59(어제)
+    expect(formatKstTimeOrDate('2026-09-26T15:30:00Z', now)).toBe('00:30');
+    expect(formatKstTimeOrDate('2026-09-26T14:59:00Z', now)).toBe('09-26 23:59');
+    // 해가 다르면 같은 월일이어도 날짜를 붙인다
+    expect(formatKstTimeOrDate('2025-09-27T05:02:00Z', now)).toBe('09-27 14:02');
+    expect(formatKstTimeOrDate('nope', now)).toBe(EMPTY_VALUE);
   });
 
   it('개수: 천 단위 쉼표만', () => {

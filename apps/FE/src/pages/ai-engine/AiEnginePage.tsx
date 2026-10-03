@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
+import { ScreenHelp } from '@/features/guide';
 import { useAiEngineSettingsQuery } from '@/features/settings';
 import {
   AI_CLI_HISTORY_SIZE,
@@ -73,6 +74,7 @@ export function AiEnginePage() {
           </>
         }
         description="앱이 텍스트·비전 작업에 쓸 엔진을 하나 고릅니다. 검색어 변환, 동일 상품 판정, 원산지 추출, 상세 카피, 색상 표기, 썸네일 검사에 쓰입니다. 썸네일 이미지 생성은 '썸네일 생성 설정'에서 따로 정합니다."
+        help={<ScreenHelp screen="aiEngine" />}
         actions={
           <>
             <span className={styles.lastDetected}>

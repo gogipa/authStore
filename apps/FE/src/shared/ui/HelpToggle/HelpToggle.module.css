@@ -1,0 +1,60 @@
+/* '?' 버튼 28px: AiEngine 보드 복사 버튼(IconButton md)과 같은 크기. 토큰 없음(04-2 §5 방식). */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--color-bg);
+  color: var(--color-accent);
+}
+
+.expanded,
+.expanded:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-heading);
+  color: var(--color-ink);
+}
+
+.title > svg {
+  color: var(--color-accent);
+}

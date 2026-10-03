@@ -2,9 +2,9 @@
 
 | 항목 | 내용 |
 |---|---|
-| 버전 | 0.1 (2026-09-27) |
+| 버전 | 0.2 (2026-10-03, D-29 — 트리에 `GuidePage`(SCR-14), 내비 맨 아래 '사용 안내', 후보 작업 틀의 '?' 도움말 자리, 빈 목록 상태. 0.1은 2026-09-27) |
 | 상태 | **Proposed** (D-11) |
-| 근거 | [공통부품 §A·§F·§G·§H](../../../design/spec/공통부품_마크업.md) · [디자인 README §3·§6](../../../design/README.md) · [05-1](05-1_route맵.md) |
+| 근거 | [공통부품 §A·§F·§G·§H](../../../design/spec/공통부품_마크업.md) · [디자인 README §3·§6](../../../design/README.md) · [05-1](05-1_route맵.md) · (D-29) [화면시안_명세 §8](../../../design/spec/화면시안_명세.md) |
 
 ## 1. route group
 
@@ -30,6 +30,7 @@ RouterProvider
    ├─ SettingsPage                "settings"
    ├─ AiEnginePage                "settings/ai-engine"   (설정의 자식 route가 아님 — §4-3)
    ├─ SystemPage                  "system"
+   ├─ GuidePage                   "guide"           SCR-14 사용 안내(D-29)
    └─ NotFoundPage                "*"
 ```
 
@@ -37,8 +38,8 @@ RouterProvider
 
 | layout | 공유 요소 | 데이터 | 규칙 |
 |---|---|---|---|
-| `AppLayout`(+ `AppNav`) | 왼쪽 내비(순서·아이콘·라벨은 공통부품 §A), 내비 아래 상태 상자, 본문 여백(`24px 32px`, gap 24) | `getRegistrationSwitch`(P4-03) · `getCallUsage`(P1-02 연결: '오늘 페이지 조회 38/110', 실패·받는 중 `—`) · SSE 연결 1개(`app/providers.tsx`) | 현재 항목은 `NavLink`가 `aria-current="page"`. 아래 §5 |
-| `CandidateLayout` | 후보 머리(§F: 상품명·앵커 키·게이트·페이지 받은 시각), 단계 레일(§G), 레일 아래 '재실행 필요 단계 모두 실행' | `getCandidate` · `listCandidateSteps` · `listCandidateGates` · SSE(해당 후보) | 레일 현재 행 `aria-current="step"`. 404면 "후보를 찾을 수 없습니다" + '후보 목록' |
+| `AppLayout`(+ `AppNav`) | 왼쪽 내비(순서·아이콘·라벨은 공통부품 §A. 맨 아래 '사용 안내'(`help` 아이콘)는 D-29로 더했다), 내비 아래 상태 상자, 본문 여백(`24px 32px`, gap 24) | `getRegistrationSwitch`(P4-03) · `getCallUsage`(P1-02 연결: '오늘 페이지 조회 38/110', 실패·받는 중 `—`) · SSE 연결 1개(`app/providers.tsx`) | 현재 항목은 `NavLink`가 `aria-current="page"`. 아래 §5 |
+| `CandidateLayout` | 후보 머리(§F: 상품명·앵커 키·게이트·페이지 받은 시각), 단계 레일(§G), 레일 아래 '재실행 필요 단계 모두 실행', (D-29) 후보 머리 오른쪽 '?' 도움말 버튼('후보 목록' 앞)과 후보 머리 바로 아래 도움말 판 — 단계 화면일 때만, 내용은 지금 단계 화면의 도움말(04-3 §24) | `getCandidate` · `listCandidateSteps` · `listCandidateGates` · SSE(해당 후보) | 레일 현재 행 `aria-current="step"`. 404면 "후보를 찾을 수 없습니다" + '후보 목록' |
 | (단계 화면 각자) | 단계 본문 맨 위 상태 줄(§H) | `listCandidateStepRuns` · `getCandidateStepStaleDiff` | layout이 아니라 공통 부품 `StepStatusBar`로 각 화면이 둔다. ③④·⑧⑨처럼 한 화면에 단계가 둘이면 상태 줄도 둘이다 |
 
 ## 4. 경계가 애매한 곳 (옵션 2개)
@@ -76,6 +77,7 @@ AI 엔진은 URL이 `/settings/ai-engine`이지만 설정의 **자식 route로 �
 | 후보 작업 | `to="/candidates"` | `/candidates`, `/candidates/:id/…` 전부 | 단계 화면의 현재 항목은 '후보 작업'(공통부품 §A) |
 | 설정 | `to="/settings" end` | `/settings`만 | AI 엔진 화면에서는 '설정'이 보통 모양(디자인 README §6-10) |
 | AI 엔진 | `to="/settings/ai-engine"` | `/settings/ai-engine` | 하위 항목만 현재 항목 |
+| 사용 안내 | `to="/guide"` | `/guide` | D-29. '시스템 상태' 다음 맨 아래(화면시안_명세 §8) |
 | 나머지 | 기본 | 그 경로와 하위 | — |
 
 `*`(없는 화면)에서는 현재 항목이 없다.
@@ -89,4 +91,5 @@ AI 엔진은 URL이 `/settings/ai-engine`이지만 설정의 **자식 route로 �
 | 없는 경로 | `*` → `NotFoundPage`(앱 틀 안) | "없는 화면입니다" + 대시보드 링크 |
 | 없는 후보 | `CandidateLayout`(`CANDIDATE_NOT_FOUND`) | 틀 안에 안내 + '후보 목록' |
 | 아직 안 한 단계 | 단계 화면(`STEP_OUTPUT_NOT_FOUND`) | "아직 {단계}를 실행하지 않았습니다" + 상태 줄의 '실행' |
+| 빈 목록 | 대시보드 진행 중 후보 · 후보 목록('전체') · 입력 고르기 · 키워드 표(스냅숏 없음) · 등록 상품(M2) | `EmptyState` — 무엇이 비었는지 + 다음 행동 보조 버튼(D-29, 04-3 §24) |
 | 예상 못 한 오류 | §4-2의 `ErrorBoundary` | 오류 봉투 `message` + 다시 시도 |

@@ -24,6 +24,7 @@
     "src/app/eslint-boundaries.test.ts",
     "src/app/source-rules.test.ts",
     "src/shared/ui/structure.test.ts",
-    "src/shared/ui/tokens-only.test.ts"
+    "src/shared/ui/tokens-only.test.ts",
+    "src/features/guide/content.test.ts"
   ]
 }

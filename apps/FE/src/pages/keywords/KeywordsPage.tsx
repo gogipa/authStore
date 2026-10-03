@@ -13,6 +13,7 @@ import {
   useSnapshotKeywordsQuery,
   useUnselectKeywordMutation,
 } from '@/features/keywords';
+import { ScreenHelp } from '@/features/guide';
 import { PageHeader } from '@/shared/ui';
 import { ChildTermsPanel } from './ChildTermsPanel';
 import { type CollectAbortInfo, CollectPanel } from './CollectPanel';
@@ -176,7 +177,11 @@ export function KeywordsPage() {
 
   return (
     <>
-      <PageHeader title="키워드" description={DESCRIPTION} />
+      <PageHeader
+        title="키워드"
+        description={DESCRIPTION}
+        help={<ScreenHelp screen="keywords" />}
+      />
       <div className={styles.top}>
         <CollectPanel
           status={status.data}

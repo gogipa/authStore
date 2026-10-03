@@ -1,0 +1,112 @@
+/* '시작 준비' 카드(F-DB-10, 화면시안_명세 §8). 새 토큰 없음. */
+.progress {
+  font-weight: var(--type-label-weight);
+  color: var(--color-ink-muted);
+}
+
+.region {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.region[hidden] {
+  display: none;
+}
+
+.allDone {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-body);
+  color: var(--color-done);
+}
+
+/* 항목 타일: 1440 화면 본문(약 1156px)에서 3열, 좁으면 2열·1열로 줄어든다. 최소 폭 280px. */
+.items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+}
+
+.itemHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.label {
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+}
+
+.text {
+  flex-grow: 1;
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+.link {
+  align-self: flex-start;
+  font: var(--type-caption);
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
+}
+
+.infoTitle {
+  font: var(--type-label);
+  color: var(--color-ink-faint);
+}
+
+.infoList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.infoRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
+  font: var(--type-caption);
+}
+
+.infoLabel {
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-ink);
+}
+
+.infoText {
+  color: var(--color-ink-muted);
+}

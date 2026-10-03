@@ -2,6 +2,8 @@
 //   node test/flow/flow-server.mjs   (cwd = apps/BE)
 // - 자식 = flow-app.ts(가짜를 끼운 AppModule, 127.0.0.1:3100). DB는 autostore_test(TEST_DATABASE_URL)만 쓴다
 // - 제어 API(127.0.0.1:3101, 테스트 전용 — 앱 API가 아니다)
+// - 포트 바꾸기(개발 서버 `pnpm dev`가 3100·5173을 쓰는 동안 돌릴 때): FLOW_BE_PORT(기본 3100)·FLOW_CONTROL_PORT(기본 3101)·
+//   FLOW_FE_PORT(기본 5173 — 이 Origin만 받는다). Playwright 설정(apps/FE/e2e/playwright.config.ts)이 같은 값을 읽는다
 //   GET  /__flow/health            자식이 떠 있으면 200
 //   POST /__flow/reset   {fakes?}  자식을 끄고 DB를 비운 뒤 시작점 시드로 다시 켠다(테스트마다)
 //   POST /__flow/restart {fakes?}  자식을 끄고(SIGTERM) DB는 그대로 다시 켠다(앱 재시작 시험)
@@ -22,9 +24,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const BE_ROOT = join(HERE, '..', '..');
 const { applyTestDbEnv } = require('../../scripts/test-db-env.cjs');
 
-const BE_PORT = 3100;
+const BE_PORT = Number(process.env.FLOW_BE_PORT ?? 3100);
 const CONTROL_PORT = Number(process.env.FLOW_CONTROL_PORT ?? 3101);
-const FE_ORIGIN = 'http://127.0.0.1:5173';
+const FE_ORIGIN = `http://127.0.0.1:${Number(process.env.FLOW_FE_PORT ?? 5173)}`;
 const READY_TIMEOUT_MS = 120_000;
 const STOP_GRACE_MS = 8_000;
 
@@ -60,7 +62,7 @@ function startChild({ truncate, fakes }) {
     const env = {
       ...process.env,
       DATABASE_URL: testDbUrl,
-      // 개발 모드여야 FE 개발 서버(5173) Origin을 받는다(DEV_FE_ORIGINS). DB는 위에서 테스트 DB로 고정
+      // 개발 모드여야 FE 개발 서버(FLOW_FE_PORT, 기본 5173) Origin을 받는다(DEV_FE_ORIGINS). DB는 위에서 테스트 DB로 고정
       NODE_ENV: 'development',
       DEV_FE_ORIGINS: FE_ORIGIN,
       PORT: String(BE_PORT),

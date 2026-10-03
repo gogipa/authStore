@@ -1,10 +1,13 @@
 import { test as base, expect, type APIRequestContext } from '@playwright/test';
 
-/** 가짜 연동 BE(apps/BE/test/flow) 주소 — 앱 API는 Vite 프록시를 거치지만 준비·확인은 바로 부른다 */
-export const BE_URL = 'http://127.0.0.1:3100';
+/**
+ * 가짜 연동 BE(apps/BE/test/flow) 주소 — 앱 API는 Vite 프록시를 거치지만 준비·확인은 바로 부른다.
+ * 포트는 playwright.config.ts와 같은 환경 변수(FLOW_BE_PORT 기본 3100, FLOW_CONTROL_PORT 기본 3101)를 읽는다.
+ */
+export const BE_URL = `http://127.0.0.1:${Number(process.env.FLOW_BE_PORT ?? 3100)}`;
 /** 흐름 테스트 제어 API(테스트 전용, 앱 API가 아니다) */
-export const CONTROL_URL = 'http://127.0.0.1:3101';
-/** 브라우저가 부를 수 있는 호스트(앱 = Vite 127.0.0.1:5173, 이미지 = /api/v1/image-assets) */
+export const CONTROL_URL = `http://127.0.0.1:${Number(process.env.FLOW_CONTROL_PORT ?? 3101)}`;
+/** 브라우저가 부를 수 있는 호스트(앱 = Vite 127.0.0.1:FLOW_FE_PORT(기본 5173), 이미지 = /api/v1/image-assets) */
 const APP_HOST = '127.0.0.1';
 /** 가짜 키체인 값의 표식(flow-app.ts FLOW_SECRETS) — 화면에 나오면 안 된다 */
 const SECRET_MARKERS = ['TEST-SECRET-', 'TESTSECRETCOMMERCE'];

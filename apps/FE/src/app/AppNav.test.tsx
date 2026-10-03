@@ -13,6 +13,7 @@ const NAV_LABELS = [
   '설정',
   'AI 엔진',
   '시스템 상태',
+  '사용 안내',
 ];
 
 function mainNav() {
@@ -57,7 +58,17 @@ describe('왼쪽 내비', () => {
       'sliders',
       null,
       'activity',
+      'help',
     ]);
+  });
+
+  it("맨 아래 '사용 안내'는 /guide로 가고, 그 화면에서 현재 항목이다(D-29)", async () => {
+    renderRoute('/guide');
+    const nav = within(mainNav());
+    const link = nav.getByRole('link', { name: '사용 안내' });
+    expect(link).toHaveAttribute('href', '/guide');
+    await waitFor(() => expect(link).toHaveAttribute('aria-current', 'page'));
+    expect(nav.getByRole('link', { name: '시스템 상태' })).not.toHaveAttribute('aria-current');
   });
 
   it('AI 엔진 하위 항목은 /settings/ai-engine으로 간다', () => {

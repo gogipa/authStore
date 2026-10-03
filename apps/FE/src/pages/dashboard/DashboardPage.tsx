@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { EMPTY_STATE, ReadinessCard, ScreenHelp, WorkFlowCard } from '@/features/guide';
 import { useSettingsQuery } from '@/features/settings';
 import {
   CandidateStatusChip,
@@ -27,6 +28,7 @@ import {
   Banner,
   ButtonLink,
   DataTable,
+  EmptyState,
   Icon,
   PageHeader,
   Panel,
@@ -219,9 +221,26 @@ function ProgressSection({
         rows={candidates}
         rowKey={(row) => row.id}
         empty={
-          pending
-            ? '불러오는 중입니다.'
-            : '진행 중인 후보가 없습니다. 키워드나 검색어로 후보를 만드세요.'
+          pending ? (
+            '불러오는 중입니다.'
+          ) : (
+            // 빈 상태 안내(F-GD-03, D-29): 다음 행동 버튼
+            <EmptyState
+              title={EMPTY_STATE.dashboardProgress.title}
+              actions={
+                <>
+                  <ButtonLink to={EMPTY_STATE.dashboardProgress.primary.to} size="sm">
+                    {EMPTY_STATE.dashboardProgress.primary.label}
+                  </ButtonLink>
+                  <ButtonLink to={EMPTY_STATE.dashboardProgress.secondary.to} size="sm">
+                    {EMPTY_STATE.dashboardProgress.secondary.label}
+                  </ButtonLink>
+                </>
+              }
+            >
+              {EMPTY_STATE.dashboardProgress.text}
+            </EmptyState>
+          )
         }
       />
       <StepDotLegend />
@@ -278,6 +297,8 @@ function SystemWarnings() {
 
 /**
  * SCR-01 대시보드(Main.dc.html)의 M1 부분: 이어서 할 곳, 재실행 필요·멈춘 후보, 진행 중 후보(②~⑨ 점), 설정 파일 검사.
+ * D-29(화면시안_명세 §8): 머리 아래 맨 위에 '시작 준비'(F-DB-10), 그 아래 '작업 흐름'(F-DB-11, 숨길 수 있음) 카드,
+ * 제목 옆 '?' 도움말(F-GD-02), 진행 중 후보가 없을 때 다음 행동 버튼(F-GD-03).
  * M2 부분(오늘 처리량·단계별 대기 건수·조치 필요·등록 한도·판매상품비중·공지·자격증명 경고·일괄 실행)은 만들지 않는다.
  * 값은 SSE `candidate.status-changed`·`candidate-step.changed`가 오면 다시 읽는다(폴링하지 않는다).
  */
@@ -292,7 +313,10 @@ export function DashboardPage() {
         title="대시보드"
         description="오늘 할 일과 멈춘 곳을 봅니다"
         actions={<ResumeBanner names={names} />}
+        help={<ScreenHelp screen="dashboard" />}
       />
+      <ReadinessCard />
+      <WorkFlowCard variant="dashboard" />
       <div className={styles.layout}>
         <div className={styles.main}>
           <AttentionSection names={names} />

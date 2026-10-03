@@ -1,0 +1,138 @@
+/* '작업 흐름' 카드(F-DB-11·F-GD-01, 화면시안_명세 §8). 새 토큰 없음. */
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: var(--space-2);
+}
+
+.stepCell {
+  display: inline-flex;
+  align-items: center;
+}
+
+.arrow {
+  display: inline-flex;
+  padding: 0 var(--space-1);
+  color: var(--color-ink-faint);
+}
+
+/* 단계 탭: 32px(표 안 버튼 높이, 공통부품 §I). 고른 탭은 accent-soft 바탕 + accent 테두리. */
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: var(--type-body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.step:hover {
+  border-color: var(--color-line-strong);
+}
+
+/* 게이트가 있는 단계(G1~G4): 굵은 테두리 대신 점선으로 '사람이 확인하는 곳'을 표시한다(색만으로 알리지 않는다). */
+.step[data-gate='true'] {
+  border-style: dashed;
+  border-color: var(--color-line-strong);
+}
+
+.step[aria-selected='true'] {
+  border-style: solid;
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: var(--type-body-strong-weight);
+}
+
+.no {
+  font-weight: var(--type-body-strong-weight);
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.detailHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.detailTitle {
+  font: var(--type-heading);
+  color: var(--color-ink);
+}
+
+.open {
+  margin-left: auto;
+}
+
+/* 세 칸: 1440에서 3열, 좁으면 줄어든다. 최소 폭 220px. */
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.term {
+  font: var(--type-label);
+  color: var(--color-ink-muted);
+}
+
+.desc {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.note {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}
+
+.hiddenNote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+.shownNote {
+  font: var(--type-caption);
+  color: var(--color-done);
+}
+
+/* '다시 보지 않기' 뒤 초점을 받는 안내 띠 감싸개(tabIndex -1): 포커스 링이 띠 모서리를 따른다. */
+.dismissedNote {
+  border-radius: var(--radius-md);
+}
+
+.link {
+  font-weight: var(--type-body-strong-weight);
+  color: var(--color-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}

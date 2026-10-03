@@ -130,6 +130,14 @@ export const routes: RouteObject[] = [
               (m) => m.SystemPage,
             ),
           },
+          {
+            // SCR-14 사용 안내(D-29). 보드 없음 — 화면시안_명세 §8
+            path: 'guide',
+            lazy: page(
+              () => import('@/pages/guide/GuidePage'),
+              (m) => m.GuidePage,
+            ),
+          },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

@@ -92,3 +92,22 @@ export function formatKstMonthDayTime(value: string | Date): string {
   const day = parts.find((p) => p.type === 'day')?.value ?? '';
   return `${month}-${day} ${formatKstTime(date)}`;
 }
+
+const kstDateFormat = new Intl.DateTimeFormat('en-CA', {
+  timeZone: KST_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+/**
+ * 지난 시각(Asia/Seoul)을 오늘 기준으로: 오늘이면 `HH:mm`, 다른 날이면 `MM-DD HH:mm`.
+ * 오래된 기록이 방금 것처럼 보이지 않게 한다(D-29 '시작 준비'의 마지막 연결 테스트 통과 시각). `now`는 테스트용.
+ */
+export function formatKstTimeOrDate(value: string | Date, now: Date = new Date()): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return EMPTY_VALUE;
+  return kstDateFormat.format(date) === kstDateFormat.format(now)
+    ? formatKstTime(date)
+    : formatKstMonthDayTime(date);
+}

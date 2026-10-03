@@ -1,6 +1,7 @@
 /**
  * 흐름 테스트(P5-01) 가짜 연동 BE — 자식 프로세스. 운영 코드를 바꾸지 않고 `Test.createTestingModule({ imports: [AppModule] })`에
- * `overrideProvider`로 가짜(HTTP_FETCH·CLOCK·SECRET_STORE·AI 어댑터·이미지 생성·자동 작업 끔)를 끼워 127.0.0.1:3100에 띄운다.
+ * `overrideProvider`로 가짜(HTTP_FETCH·CLOCK·SECRET_STORE·AI 어댑터·이미지 생성·자동 작업 끔)를 끼워 127.0.0.1:3100에 띄운다
+ * (포트는 감독이 넣는 PORT — FLOW_BE_PORT, 기본 3100).
  * `flow-server.mjs`(감독 프로세스)가 `node --import ./test/flow/register-ts.mjs test/flow/flow-app.ts`로 띄우고 IPC로 부린다.
  *
  * 환경변수(감독이 넣는다)
@@ -43,7 +44,8 @@ import {
   truncateAll,
 } from './flow-seed.js';
 
-export const FLOW_BE_PORT = 3100;
+/** 감독(flow-server.mjs)이 넣는 PORT(= FLOW_BE_PORT). 앱의 Host 검사도 같은 PORT를 본다 */
+export const FLOW_BE_PORT = Number(process.env.PORT ?? 3100);
 
 interface ControlMessage {
   id: number;

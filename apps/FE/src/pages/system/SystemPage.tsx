@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
+import { ScreenHelp } from '@/features/guide';
 import { MetaSyncPanel } from '@/features/integrations';
 import {
   AiToolStatusPanel,
@@ -92,6 +93,7 @@ export function SystemPage() {
     <>
       <PageHeader
         title="시스템 상태"
+        help={<ScreenHelp screen="system" />}
         description={
           lastChecked ? `${DESCRIPTION} 마지막 점검 ${formatKstTime(lastChecked)}.` : DESCRIPTION
         }
