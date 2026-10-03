@@ -14,6 +14,7 @@ import {
   useTagCompetitorInputsQuery,
   useTagSetQuery,
 } from '@/features/tags';
+import { documentTitle } from '@/shared/lib/appName';
 import { Button, Chip, DisabledReason } from '@/shared/ui';
 import { CandidateTagsPanel } from './CandidateTagsPanel';
 import { CompetitorInputPanel } from './CompetitorInputPanel';
@@ -25,7 +26,7 @@ const TITLE = '태그';
 
 /**
  * SCR-07 ⑦ 태그(Tags.dc.html, P3-05). 후보 작업 틀(CandidateLayout) 안 단계 본문:
- * - ⑦ 머리: 제목 + 화면 ID + ('카테고리 미확정' 칩 — ④ 전에 뽑은 버전) + 상태 줄(StepStatusBar — '실행'/'다시 실행', 입력 출처
+ * - ⑦ 머리: 제목 + ('카테고리 미확정' 칩 — ④ 전에 뽑은 버전) + 상태 줄(StepStatusBar — '실행'/'다시 실행', 입력 출처
  *   "시드 키워드 '…' · 경쟁 태그 …", '여기부터 연속 실행')
  * - '최종 태그'(FinalTagsPanel — n/10, RemovableTag 삭제·'태그 추가' = owner-edits TAGS EDIT 202, '다음: 최종 승인')
  * - [후보 태그(CandidateTagsPanel — 거르기·표·선정 순서·요약) | 경쟁 태그 입력(CompetitorInputPanel) + 뺀 태그와 사유
@@ -63,14 +64,13 @@ export function TagsPage() {
 
   return (
     <>
-      <title>{`${TITLE} · 신발 자동등록`}</title>
+      <title>{documentTitle(TITLE)}</title>
       <h1 className={styles.srOnly}>{TITLE}</h1>
       <section aria-labelledby="step7-title" className={styles.step}>
         <div className={styles.stepHead}>
           <h2 id="step7-title" className={styles.stepTitle}>
             ⑦ 태그
           </h2>
-          <span className={styles.screenId}>SCR-07</span>
           {set && set.leafCategoryId === null ? (
             <Chip tone="waiting">{CATEGORY_UNDECIDED_LABEL}</Chip>
           ) : null}

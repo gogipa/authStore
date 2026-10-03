@@ -33,19 +33,6 @@
   white-space: nowrap;
 }
 
-/* 화면 ID 칩(SCR-03~06과 같은 모양 — 보드에는 없다) */
-.screenId {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  height: 22px;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-sunk);
-  color: var(--color-ink);
-  font: var(--type-id);
-}
-
 .bar {
   flex-grow: 1;
   min-width: 0;

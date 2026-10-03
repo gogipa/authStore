@@ -290,7 +290,6 @@ export function DashboardPage() {
     <>
       <PageHeader
         title="대시보드"
-        screenId="SCR-01"
         description="오늘 할 일과 멈춘 곳을 봅니다"
         actions={<ResumeBanner names={names} />}
       />

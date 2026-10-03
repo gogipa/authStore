@@ -64,7 +64,7 @@ describe('AI 엔진 화면(SCR-13, P1-11 규칙 11)', () => {
   it('카드 3개가 순서대로, radiogroup 안에 라디오 3개(name=ai-engine)', async () => {
     setup();
     await renderPage();
-    expect(screen.getByText('SCR-13')).toBeInTheDocument();
+    expect(screen.queryByText('SCR-13')).not.toBeInTheDocument(); // 화면 ID 칩 없음(D-27)
     const group = screen.getByRole('radiogroup', { name: 'AI 엔진 고르기' });
     const radios = within(group).getAllByRole('radio');
     expect(radios.map((r) => (r as HTMLInputElement).value)).toEqual(['CLAUDE', 'AGY', 'CODEX']);

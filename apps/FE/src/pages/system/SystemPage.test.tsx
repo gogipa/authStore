@@ -32,10 +32,10 @@ const metaLatestGets = (api: ReturnType<typeof stubApi>) =>
   api.requests.filter((r) => new URL(r.url).pathname === '/api/v1/commerce-meta-sync-runs/latest');
 
 describe('시스템 상태 화면(SCR-11, P1-07)', () => {
-  it('머리(SCR-11)와 3열 틀, 열 A에 키 입력·인증 상태', async () => {
+  it('머리(화면 ID 칩 없음, D-27)와 3열 틀, 열 A에 키 입력·인증 상태', async () => {
     stubSystem();
     const { container } = await renderSystem();
-    expect(screen.getByText('SCR-11')).toBeInTheDocument();
+    expect(screen.queryByText('SCR-11')).not.toBeInTheDocument();
     expect(
       screen.getByText(
         '키·인증·동기화·AI 도구가 준비됐는지 봅니다. 막힌 곳은 할 일을 함께 알려 드립니다.',

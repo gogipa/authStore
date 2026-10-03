@@ -5,11 +5,15 @@ import { jsonResponse, stubApi } from '@/test/apiStub';
 import { candidateDetail } from '@/test/fixtures/stepEngine';
 import { renderRoute } from '@/test/renderRoute';
 
+/** 화면 ID 칩 글자(예: 'SCR-05'). 화면 ID는 설계 문서에만 쓰고 앱 화면에는 그리지 않는다(D-27). */
+const SCREEN_ID_CHIP = /^SCR-\d{2}$/;
+
 describe('경로', () => {
   it('/settings/ai-engine은 AI 엔진 화면(SCR-13)을 그린다', async () => {
     renderRoute('/settings/ai-engine');
     expect(await screen.findByRole('heading', { level: 1, name: 'AI 엔진' })).toBeInTheDocument();
-    expect(screen.getByText('SCR-13')).toBeInTheDocument();
+    expect(screen.queryAllByText(SCREEN_ID_CHIP)).toHaveLength(0);
+    expect(document.title).toBe('AI 엔진 · 스마트스토어 정복');
     const main = within(screen.getByRole('main'));
     expect(main.getByRole('link', { name: '설정' })).toHaveAttribute('href', '/settings');
   });
@@ -28,10 +32,12 @@ describe('경로', () => {
     ['/products', '등록 상품', 'SCR-09'],
     ['/settings', '설정', 'SCR-10'],
     ['/system', '시스템 상태', 'SCR-11'],
-  ])('%s → %s (%s)', async (path, title, screenId) => {
+  ])('%s → %s (%s 칩은 그리지 않는다, D-27)', async (path, title) => {
     renderRoute(path);
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(screen.getByText(screenId)).toBeInTheDocument();
+    expect(screen.queryAllByText(SCREEN_ID_CHIP)).toHaveLength(0);
+    // 브라우저 탭 제목은 '<화면 제목> · 스마트스토어 정복'(D-28)
+    expect(document.title).toBe(`${title} · 스마트스토어 정복`);
   });
 
   it('/candidates/:candidateId는 이어 할 단계 화면으로 보낸다(resumeStepCode, P1-04)', async () => {

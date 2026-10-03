@@ -67,7 +67,6 @@ export function AiEnginePage() {
     <>
       <PageHeader
         title="AI 엔진"
-        screenId="SCR-13"
         breadcrumb={
           <>
             <Link to="/settings">설정</Link> / AI 엔진

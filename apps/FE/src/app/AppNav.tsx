@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router';
 import { findCallUsage, formatUsageCount, useCallUsageQuery } from '@/features/integrations';
 import { navSwitchText, useRegistrationSwitch } from '@/features/registration';
+import { APP_NAME } from '@/shared/lib/appName';
 import { cx } from '@/shared/lib/cx';
 import { EMPTY_VALUE } from '@/shared/lib/format';
 import { Icon, type IconName } from '@/shared/ui';
@@ -70,7 +71,7 @@ export function AppNav() {
   return (
     <nav aria-label="주 메뉴" className={styles.nav}>
       <div className={styles.brand}>
-        <span className={styles.appName}>신발 자동등록</span>
+        <span className={styles.appName}>{APP_NAME}</span>
         <span className={styles.caption}>로컬 · 오너</span>
       </div>
       {NAV_ITEMS.map((item) => (

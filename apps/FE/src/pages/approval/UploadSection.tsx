@@ -59,7 +59,6 @@ export function UploadSection({ candidateId, statusExtra }: UploadSectionProps) 
         <h2 id="step8-title" className={styles.title}>
           {UPLOAD_TITLE}
         </h2>
-        <span className={styles.screenId}>SCR-08</span>
         <div className={styles.bar}>
           {item ? (
             <StepStatusBar

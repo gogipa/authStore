@@ -4,7 +4,7 @@
   "v": 1,
   "at": "2026-09-27T08:40:00Z"
  },
- "title": "신발 자동등록 화면 시안",
+ "title": "스마트스토어 정복 화면 시안",
  "launch": {
   "view": "canvas"
  },
@@ -216,7 +216,7 @@
  },
  "designSystems": [
   {
-   "title": "신발 자동등록 디자인 시스템",
+   "title": "스마트스토어 정복 디자인 시스템",
    "namespace": "shoedesk",
    "artifact": "https://claude.ai/artifact/YNwhJchjCRBdwuJcKgJfbB",
    "version": null,

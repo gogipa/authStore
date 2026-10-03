@@ -22,6 +22,7 @@ import {
   useUpdateSourcingRow,
 } from '@/features/sourcing';
 import { isApiRequestError } from '@/shared/api/errors';
+import { documentTitle } from '@/shared/lib/appName';
 import { formatCount, formatKstTime, formatYen } from '@/shared/lib/format';
 import { cx } from '@/shared/lib/cx';
 import { Button, Checkbox, Chip, Icon } from '@/shared/ui';
@@ -272,13 +273,12 @@ export function ComparisonTable({
 
   return (
     <section aria-labelledby="sourcing-cmp-title" className={styles.comparison}>
-      <title>{`${TITLE} · 신발 자동등록`}</title>
+      <title>{documentTitle(TITLE)}</title>
       <div className={styles.cmpHead}>
         <div className={styles.titleRow}>
           <h1 id="sourcing-cmp-title" className={styles.title}>
             {TITLE}
           </h1>
-          <span className={styles.screenId}>SCR-03</span>
           {head && !head.comparisonPerformed ? <Chip tone="outline">비교 안 함</Chip> : null}
         </div>
         {head?.comparisonPerformed ? (

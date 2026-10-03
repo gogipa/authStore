@@ -1,4 +1,4 @@
-# FE 설계 — 신발 자동등록 로컬 웹앱
+# FE 설계 — 스마트스토어 정복 로컬 웹앱
 
 API 명세([05](../05_API/05-1_엔드포인트표.md)) 다음, 화면 구현 전에 정한 FE 구조다. 절차는 프로젝트 스킬 `.claude/skills/frontend` 03~05이고, 스킬의 Next.js·Tailwind·Figma 전제를 이 스택(Vite SPA · React Router 8 · TanStack Query · openapi-fetch · CSS 변수 + CSS Modules · 라이트 테마만)에 맞게 줄였다. 맞지 않는 항목은 각 `_검증체크리스트.md`의 '해당 없음'에 이유와 함께 적었다.
 

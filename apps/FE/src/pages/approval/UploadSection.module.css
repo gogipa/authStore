@@ -21,18 +21,6 @@
   white-space: nowrap;
 }
 
-.screenId {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  height: 22px;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-sunk);
-  color: var(--color-ink);
-  font: var(--type-id);
-}
-
 .bar {
   flex-grow: 1;
   min-width: 0;

@@ -30,6 +30,7 @@ import {
   type ThumbnailPick,
 } from '@/features/thumbnails';
 import { isApiRequestError } from '@/shared/api/errors';
+import { documentTitle } from '@/shared/lib/appName';
 import { Banner, Button, DisabledReason } from '@/shared/ui';
 import { CandidateGrid } from './CandidateGrid';
 import { G3Checklist } from './G3Checklist';
@@ -159,14 +160,13 @@ export function ThumbnailPage() {
 
   return (
     <>
-      <title>{`${TITLE} · 신발 자동등록`}</title>
+      <title>{documentTitle(TITLE)}</title>
       <h1 className={styles.srOnly}>{TITLE}</h1>
       <section aria-labelledby="step5-title" className={styles.step}>
         <div className={styles.stepHead}>
           <h2 id="step5-title" className={styles.stepTitle}>
             ⑤ 썸네일
           </h2>
-          <span className={styles.screenId}>SCR-05</span>
           <div className={styles.bar}>
             {item ? (
               <StepStatusBar

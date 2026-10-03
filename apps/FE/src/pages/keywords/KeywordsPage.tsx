@@ -176,7 +176,7 @@ export function KeywordsPage() {
 
   return (
     <>
-      <PageHeader title="키워드" screenId="SCR-02" description={DESCRIPTION} />
+      <PageHeader title="키워드" description={DESCRIPTION} />
       <div className={styles.top}>
         <CollectPanel
           status={status.data}

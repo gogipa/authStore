@@ -90,10 +90,10 @@ const requestsTo = (api: ReturnType<typeof stubApi>, method: string, path: strin
   api.requests.filter((r) => r.method === method && new URL(r.url).pathname === `/api/v1${path}`);
 
 describe('② 소싱 화면(SCR-03, P2-02)', () => {
-  it('보드 구성: 상태 줄(입력 출처 키워드)·검색 조건(장르 고정 靴 558885·아동화 필터 안내)·비교 칸(SCR-03)·URL 붙여넣기', async () => {
+  it('보드 구성: 상태 줄(입력 출처 키워드)·검색 조건(장르 고정 靴 558885·아동화 필터 안내)·비교 칸(화면 ID 칩 없음, D-27)·URL 붙여넣기', async () => {
     setup({ comparison: null });
     await renderSourcing();
-    expect(screen.getByText('SCR-03')).toBeInTheDocument();
+    expect(screen.queryByText('SCR-03')).not.toBeInTheDocument();
     expect(await screen.findByText("입력 출처: 키워드 '아식스 젤카야노14'")).toBeInTheDocument();
     const search = within(screen.getByRole('region', { name: '검색 조건' }));
     expect(search.getByText('장르 · 고정')).toBeInTheDocument();

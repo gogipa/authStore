@@ -49,7 +49,7 @@ describe('⑧ 이미지 업로드 영역(SCR-08 UploadSection, P4-01)', () => {
     expect(await section.findByText('완료')).toBeInTheDocument();
     expect(section.getByText(/버전 v1/)).toBeInTheDocument();
     expect(section.getByText('입력 출처: ⑤ 선택본 · ⑥-3 상세 HTML')).toBeInTheDocument();
-    expect(section.getByText('SCR-08')).toBeInTheDocument();
+    expect(section.queryByText('SCR-08')).not.toBeInTheDocument(); // 화면 ID 칩 없음(D-27)
     expect(await section.findByText('2장 · 1000×1000 JPEG')).toBeInTheDocument();
   });
 

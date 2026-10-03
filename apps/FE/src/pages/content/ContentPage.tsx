@@ -19,6 +19,7 @@ import {
   type CandidateStepRailItem,
 } from '@/features/step-engine';
 import { isApiRequestError } from '@/shared/api/errors';
+import { documentTitle } from '@/shared/lib/appName';
 import { formatKstTime } from '@/shared/lib/format';
 import { stepPath } from '@/shared/lib/steps';
 import { Button, ButtonLink, DisabledReason, StatusChip } from '@/shared/ui';
@@ -70,7 +71,7 @@ function SubRunButton({
 
 /**
  * SCR-06 ⑥ 상세 콘텐츠(Content.dc.html, P3-03·P3-04). 후보 작업 틀(CandidateLayout) 안 단계 본문:
- * - ⑥ 머리: 제목 + 화면 ID + 묶음 상태 줄(상태 칩 · 마지막 실행 · 입력 출처 · '실행'/'다시 실행' = ⑥-1→⑥-2→⑥-3 이어서
+ * - ⑥ 머리: 제목 + 묶음 상태 줄(상태 칩 · 마지막 실행 · 입력 출처 · '실행'/'다시 실행' = ⑥-1→⑥-2→⑥-3 이어서
  *   (`throughStepCode=NOTICE_HTML`) · '여기부터 연속 실행')
  * - 세부 단계 이동(⑥-1 카피 · ⑥-2 원산지·소재 · ⑥-3 고시·HTML) + '다음: ⑦ 태그'
  * - ⑥-1 카피(`CopySection`) · ⑥-2 원산지·소재(`FactTable`) · ⑥-3 고시·HTML(`AssemblySection` + HTML 미리보기 `DetailPreview`,
@@ -121,14 +122,13 @@ export function ContentPage() {
 
   return (
     <>
-      <title>{`${TITLE} · 신발 자동등록`}</title>
+      <title>{documentTitle(TITLE)}</title>
       <h1 className={styles.srOnly}>{TITLE}</h1>
       <section aria-labelledby="step6-title" className={styles.step}>
         <div className={styles.stepHead}>
           <h2 id="step6-title" className={styles.stepTitle}>
             ⑥ 상세 콘텐츠
           </h2>
-          <span className={styles.screenId}>SCR-06</span>
           {copyItem ? (
             <div className={styles.bar} data-step="CONTENT">
               <StatusChip status={groupStatus} />

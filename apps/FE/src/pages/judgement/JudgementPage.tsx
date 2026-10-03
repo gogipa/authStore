@@ -35,6 +35,7 @@ import {
   useStartStepRun,
   type CandidateStepRailItem,
 } from '@/features/step-engine';
+import { documentTitle } from '@/shared/lib/appName';
 import { stepPath } from '@/shared/lib/steps';
 import { Banner, Button, ButtonLink, DisabledReason, Icon } from '@/shared/ui';
 import { PricingSummary } from './PricingSummary';
@@ -187,14 +188,13 @@ export function JudgementPage() {
 
   return (
     <>
-      <title>{`${TITLE} · 신발 자동등록`}</title>
+      <title>{documentTitle(TITLE)}</title>
       <h1 className={styles.srOnly}>{TITLE}</h1>
       <section aria-labelledby="step3-title" className={styles.step}>
         <div className={styles.stepHead}>
           <h2 id="step3-title" className={styles.stepTitle}>
             ③ 판정
           </h2>
-          <span className={styles.screenId}>SCR-04</span>
           <div className={styles.bar}>
             {pricing ? (
               <StepStatusBar

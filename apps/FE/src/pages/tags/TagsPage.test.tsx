@@ -44,7 +44,7 @@ describe('⑦ 태그 화면(SCR-07, P3-05)', () => {
     renderRoute(`/candidates/${CANDIDATE_ID}/tags`);
     await screen.findByRole('heading', { level: 1, name: '태그' });
     expect(screen.getByRole('heading', { level: 2, name: '⑦ 태그' })).toBeInTheDocument();
-    expect(screen.getByText('SCR-07')).toBeInTheDocument();
+    expect(screen.queryByText('SCR-07')).not.toBeInTheDocument(); // 화면 ID 칩 없음(D-27)
     const list = await screen.findByRole('list', { name: '최종 태그 10개' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(10);
     expect(screen.getByText('10/10')).toBeInTheDocument();

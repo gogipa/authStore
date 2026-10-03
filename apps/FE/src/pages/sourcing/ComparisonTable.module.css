@@ -1,5 +1,5 @@
 /*
- * SCR-03 '라쿠텐 후보 비교'(Sourcing.dc.html). 제목은 16px h1(후보 작업 틀 안 — 후보 머리가 위에 있다) + 화면 ID 칩.
+ * SCR-03 '라쿠텐 후보 비교'(Sourcing.dc.html). 제목은 16px h1(후보 작업 틀 안 — 후보 머리가 위에 있다). 화면 ID 칩은 없다(D-27).
  * 표: 머리 36px(surface-sunk), 행 40px, 셀 좌우 12, 묶음 머리 28px(bg), 선택 행 accent-soft(화면시안_명세 §3 표).
  * DataTable은 묶음 머리·펼친 행이 없어 같은 규칙으로 표를 직접 그린다(P2-03 Proposed).
  */
@@ -26,17 +26,6 @@
   margin: 0;
   font: var(--type-heading);
   color: var(--color-ink);
-}
-
-.screenId {
-  display: inline-flex;
-  align-items: center;
-  height: 22px;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-sunk);
-  color: var(--color-ink);
-  font: var(--type-id);
 }
 
 .caption {

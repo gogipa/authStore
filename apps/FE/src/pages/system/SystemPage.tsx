@@ -92,7 +92,6 @@ export function SystemPage() {
     <>
       <PageHeader
         title="시스템 상태"
-        screenId="SCR-11"
         description={
           lastChecked ? `${DESCRIPTION} 마지막 점검 ${formatKstTime(lastChecked)}.` : DESCRIPTION
         }

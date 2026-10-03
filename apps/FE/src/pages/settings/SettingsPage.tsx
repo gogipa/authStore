@@ -102,7 +102,6 @@ export function SettingsPage() {
     <>
       <PageHeader
         title="설정"
-        screenId="SCR-10"
         description="모든 상품에 공통으로 쓰는 값입니다. 저장할 때 형식을 검사하고, 안전장치를 끄거나 기준을 낮추는 값은 저장하지 않습니다."
         actions={
           tab === 'profile' ? (

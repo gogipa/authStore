@@ -1,10 +1,10 @@
-# 05-2. OpenAPI 3.1 명세 — 신발 자동등록 로컬 API (원본, API-first)
+# 05-2. OpenAPI 3.1 명세 — 스마트스토어 정복 로컬 API (원본, API-first)
 # 버전 0.2 · 2026-09-27 · 근거: 05-1_엔드포인트표.md, 04-1_ERD.md(v0.4), 04-3_schema.prisma · D-16(AI 엔진 선택: GET·PUT /settings/ai-engine 신설, /ai-cli-checks M1 승격, StepRun aiEngine·aiModel·aiCliVersion) 반영
 # 확장 키: x-milestone(M1/M2), x-features(기능 ID), x-decision(명세 작성 중 정한 것, D-16 반영분은 'D-16'으로 시작하거나 포함), x-proposal(M2 전에 정할 스키마 추가 제안)
 # 검사: Redocly CLI 2.54 lint 통과(오류 0, 경고 0). 구현(@nestjs/swagger)이 내보내는 명세는 이 파일과 대조한다.
 openapi: 3.1.0
 info:
-  title: 신발 자동등록 로컬 API
+  title: 스마트스토어 정복 로컬 API
   version: 0.2.0
   description: '라쿠텐 신발을 네이버 스마트스토어에 해외구매대행으로 올리는 1인 로컬 웹앱의 API다.
 

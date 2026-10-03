@@ -37,6 +37,14 @@ function pageFetchLine(text: string) {
 }
 
 describe('왼쪽 내비', () => {
+  it("맨 위에 앱 이름 '스마트스토어 정복'과 캡션을 보인다(D-28)", () => {
+    renderRoute('/');
+    const nav = within(mainNav());
+    expect(nav.getByText('스마트스토어 정복')).toBeInTheDocument();
+    expect(nav.getByText('로컬 · 오너')).toBeInTheDocument();
+    expect(nav.queryByText(/신발 ?자동 ?등록/)).not.toBeInTheDocument();
+  });
+
   it('시안 순서대로 항목을 보여 준다(아이콘은 Icon 부품, 하위 항목 AI 엔진은 아이콘 없음)', () => {
     renderRoute('/');
     const links = within(mainNav()).getAllByRole('link');

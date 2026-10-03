@@ -1,4 +1,4 @@
-# 개발 설계 — 신발 자동등록 로컬 웹앱
+# 개발 설계 — 스마트스토어 정복 로컬 웹앱
 
 요구사항([docs/prd](../prd/README.md))과 디자인([docs/design](../design/README.md)) 다음 단계다. 오너 결정 D-14(apps/BE NestJS · apps/FE React+Vite · PostgreSQL)와 D-15(FE 개발 전에 ERD → API 명세)를 따른다. 절차는 프로젝트 스킬 `.claude/skills/backend` 02~06과 `.claude/skills/frontend` 03~06이다.
 
@@ -30,6 +30,7 @@ autoStore/
 ## 반영한 오너 결정
 
 - **D-16(2026-09-27) 반영**: 사용자가 AI 엔진(Claude Code·Antigravity CLI·Codex)을 설정 아래 별도 페이지(SCR-13)에서 고른다. 세부는 추천안(D-11). ERD v0.4(`ai_cli_check` 신설, `step_run.ai_engine`·`ai_model`·`ai_cli_version`), API v0.2(`GET·PUT /settings/ai-engine`, `/ai-cli-checks` M1 승격, 오류 코드 3개), 아키텍처(`AiEngineAdapter` 포트 + 어댑터 3개)에 반영했다.
+- **D-27·D-28(2026-10-03) 반영**: 화면 ID 칩(SCR-xx)을 앱 화면에서 뺐다. 화면 ID는 설계 문서·코드 주석·테스트 이름에만 쓴다(D-27). 앱 표시 이름은 '스마트스토어 정복'이다(D-28). 저장소·패키지(`@autostore/*`)·DB·환경 변수·`X-AutoStore-Client` 같은 내부 이름은 그대로다([원천자료 11](../prd/원천자료/11_화면표시_2026-10-03.md)).
 
 ## 결정 표시
 

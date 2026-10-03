@@ -1,6 +1,8 @@
-# autoStore — 신발 자동등록 로컬 웹앱
+# autoStore — 스마트스토어 정복 로컬 웹앱
 
 라쿠텐 재팬의 신발을 네이버 스마트스토어(해외구매대행)에 등록하는 과정을 자동화하는 로컬 웹앱이다. 이 PC 안(127.0.0.1)에서만 돌고, AI 작업은 사용자가 고른 로컬 AI CLI(Claude Code·Antigravity CLI·Codex)로 처리한다.
+
+앱 화면에 보이는 이름은 '스마트스토어 정복'이다(D-28). 저장소·패키지(`@autostore/*`)·DB·환경 변수 같은 내부 이름은 autoStore를 그대로 쓴다.
 
 - 요구사항: [docs/prd](docs/prd/README.md)
 - 화면 시안: [docs/design](docs/design/README.md)

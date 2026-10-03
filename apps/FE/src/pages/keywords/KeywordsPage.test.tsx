@@ -64,10 +64,10 @@ const requestsTo = (api: ReturnType<typeof stubApi>, method: string, path: strin
   api.requests.filter((r) => r.method === method && new URL(r.url).pathname === `/api/v1${path}`);
 
 describe('키워드 화면(SCR-02, P2-01)', () => {
-  it('머리(SCR-02)·패널 배치·보드 문구, 기간은 읽기 전용, M2 부분은 그리지 않는다', async () => {
+  it('머리(화면 ID 칩 없음, D-27)·패널 배치·보드 문구, 기간은 읽기 전용, M2 부분은 그리지 않는다', async () => {
     setup();
     await renderKeywords();
-    expect(screen.getByText('SCR-02')).toBeInTheDocument();
+    expect(screen.queryByText('SCR-02')).not.toBeInTheDocument();
     expect(
       screen.getByText(
         '데이터랩 인기 검색어를 모아 소싱할 키워드를 고르고, 라쿠텐 검색어를 확인합니다.',
