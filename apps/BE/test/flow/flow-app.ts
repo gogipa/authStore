@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module.js';
-import { configureApp } from '../../src/app.setup.js';
+import { configureApp, NEST_APP_OPTIONS } from '../../src/app.setup.js';
 import { SECRET_STORE } from '../../src/common/secrets/secret-store.port.js';
 import {
   COMMERCE_META_SCHEDULE,
@@ -87,7 +87,7 @@ async function main(): Promise<void> {
     writeFileSync(join(dataDir, 'settings', 'settings.json'), flowSettingsText());
     await seedStart(prisma);
   }
-  const app = moduleRef.createNestApplication<NestExpressApplication>({ bufferLogs: true });
+  const app = moduleRef.createNestApplication<NestExpressApplication>(NEST_APP_OPTIONS);
   await configureApp(app);
   await app.listen(FLOW_BE_PORT, '127.0.0.1');
 

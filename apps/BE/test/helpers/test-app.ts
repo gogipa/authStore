@@ -5,7 +5,7 @@ import type { ModuleMetadata } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module.js';
-import { configureApp } from '../../src/app.setup.js';
+import { configureApp, NEST_APP_OPTIONS } from '../../src/app.setup.js';
 import { SSE_HEARTBEAT_INTERVAL_MS } from '../../src/common/events/events.controller.js';
 import {
   COMMERCE_META_SCHEDULE,
@@ -111,7 +111,7 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
   }
   const moduleRef = await builder.compile();
   if (options.beforeInit) await options.beforeInit(moduleRef.get(PrismaService), moduleRef);
-  const app = moduleRef.createNestApplication<NestExpressApplication>({ bufferLogs: true });
+  const app = moduleRef.createNestApplication<NestExpressApplication>(NEST_APP_OPTIONS);
   await configureApp(app);
   await app.listen(0, '127.0.0.1');
   const { port } = app.getHttpServer().address() as AddressInfo;

@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
-import { configureApp } from '../src/app.setup.js';
+import { configureApp, NEST_APP_OPTIONS } from '../src/app.setup.js';
 import { AI_ENGINE_ADAPTERS } from '../src/modules/integrations/ai-engine/ai-engine.port.js';
 import { SettingsService } from '../src/modules/settings/settings.service.js';
 import { writeSettingsFileAtomically } from '../src/modules/settings/settings-file.loader.js';
@@ -45,7 +45,7 @@ describe('apps/BE e2e (autostore_test)', () => {
       .overrideProvider(AI_ENGINE_ADAPTERS)
       .useValue(createFakeAiEngines().adapters)
       .compile();
-    app = moduleRef.createNestApplication<NestExpressApplication>({ bufferLogs: true });
+    app = moduleRef.createNestApplication<NestExpressApplication>(NEST_APP_OPTIONS);
     await configureApp(app);
     await app.listen(0, '127.0.0.1');
     const { port } = app.getHttpServer().address() as AddressInfo;
