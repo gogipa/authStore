@@ -2,10 +2,14 @@ import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router';
 import {
   DAY_SCENARIO,
+  DEMO_ENTRY_TEXT,
+  DemoEntry,
   GUIDE_PAGE_TEXT,
+  GUIDE_SETUP_WIZARD_TEXT,
   SAFETY_TEXT,
   SCREENS_TEXT,
   ScreenHelp,
+  SETUP_WIZARD_PATH,
   TRAINING_TEXT,
   WorkFlowCard,
 } from '@/features/guide';
@@ -16,7 +20,9 @@ import styles from './GuidePage.module.css';
  * SCR-14 사용 안내(`/guide`, F-GD-01, D-29 — 보드 없음, 화면시안_명세 §8). 처음 쓰는 사람을 위한 안내:
  * 작업 흐름(대시보드 카드와 같은 부품 — 숨겼으면 '대시보드에 다시 보이기'), 하루 작업 순서, 화면 안내,
  * 안전장치(게이트·등록 API 차단 스위치), AI 계정 학습 끄기(앱이 확인할 수 없는 일, D-20).
- * 다른 화면이 `/guide#safety`·`#training`처럼 보내면 그 패널로 옮긴다. API를 부르지 않는다.
+ * 다른 화면이 `/guide#safety`·`#training`처럼 보내면 그 패널로 옮긴다.
+ * D-30: 오른쪽 열 맨 위 '설정 마법사'(`#setup` — [설정 마법사 열기] → `/setup`). D-31: 맨 아래 '체험해 보기'(`#demo` —
+ * [체험해 보기] → `/demo` 새 탭, 체험 안에서는 '지금 체험 중' 글). API를 부르지 않는다.
  */
 export function GuidePage() {
   const { hash } = useLocation();
@@ -78,6 +84,14 @@ export function GuidePage() {
           </Panel>
         </div>
         <div className={styles.side}>
+          <Panel id="setup" title={GUIDE_SETUP_WIZARD_TEXT.title}>
+            <p className={styles.lead}>{GUIDE_SETUP_WIZARD_TEXT.text}</p>
+            <div>
+              <ButtonLink to={SETUP_WIZARD_PATH} size="sm">
+                {GUIDE_SETUP_WIZARD_TEXT.open}
+              </ButtonLink>
+            </div>
+          </Panel>
           <Panel id="safety" title={SAFETY_TEXT.title} caption={SAFETY_TEXT.caption}>
             <h3 className={styles.subTitle}>{SAFETY_TEXT.gatesTitle}</h3>
             <ul className={styles.bullets}>
@@ -107,6 +121,17 @@ export function GuidePage() {
                 <li key={text}>{text}</li>
               ))}
             </ul>
+          </Panel>
+          <Panel id="demo" title={DEMO_ENTRY_TEXT.title}>
+            <p className={styles.lead}>{DEMO_ENTRY_TEXT.lead}</p>
+            <ul className={styles.bullets}>
+              {DEMO_ENTRY_TEXT.points.map((text) => (
+                <li key={text}>{text}</li>
+              ))}
+            </ul>
+            <div>
+              <DemoEntry />
+            </div>
           </Panel>
         </div>
       </div>

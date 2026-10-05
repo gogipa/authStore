@@ -15,7 +15,7 @@ export interface FilterToggleItem<V extends string = string> {
  * 모양(보드마다 다르다, Proposed 04-3):
  * - chips(기본): 떨어진 32px 버튼(Keywords '목록 거르기'·Tags '최종 10').
  * - segmented: 붙은 36px 버튼 묶음(Keywords '분야'·'수집 범위').
- * - soft: 회색 바탕 안 알약(CandidateWork '후보 거르기'·Products 상태 필터).
+ * - soft: 회색 바탕 안 알약(CandidateWork '여정 거르기'·Products 상태 필터).
  */
 export type FilterToggleLook = 'chips' | 'segmented' | 'soft';
 

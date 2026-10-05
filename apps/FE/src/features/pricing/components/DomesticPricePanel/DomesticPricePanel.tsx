@@ -1,5 +1,6 @@
 import { useId, useState, type FormEvent } from 'react';
 import { isApiRequestError } from '@/shared/api/errors';
+import { externalLinkProps, useDemo } from '@/shared/lib/demo';
 import { formatKstTime } from '@/shared/lib/format';
 import { Button, Chip, DisabledReason, Icon, TextField } from '@/shared/ui';
 import { useCreateDomesticPriceMutation, useDomesticPricesQuery } from '../../api/domesticPrices';
@@ -9,7 +10,7 @@ import styles from './DomesticPricePanel.module.css';
 
 export interface DomesticPricePanelProps {
   candidateId: number;
-  /** 저장을 막는 이유(잠긴·제외 후보, ③ 실행 중). 있으면 저장 단추를 끈다 */
+  /** 저장을 막는 이유(잠긴·제외 여정, ③ 실행 중). 있으면 저장 단추를 끈다 */
   blockedReason?: string | null;
 }
 
@@ -22,7 +23,8 @@ function linkText(link: NaverShoppingLink, index: number): string {
 }
 
 /**
- * '국내 기준가' 패널(SCR-04, Judgement.dc.html, F-PJ-12·13, P2-05). 네이버쇼핑 검색 링크(새 탭, `rel=noopener noreferrer`)는
+ * '국내 기준가' 패널(SCR-04, Judgement.dc.html, F-PJ-12·13, P2-05). 네이버쇼핑 검색 링크(새 탭, `rel=noopener noreferrer`, 체험에서는
+ * 열지 않는 꺼진 링크 — `externalLinkProps`)는
  * 이 패널에만 둔다 — 라쿠텐 가격이 보이는 영역(사이즈 표·비용 분해)과 나눈다(CON-14). 금액 칸은 '판매가 + 고객 배송비'
  * 총액(원), 근거 링크는 선택. 저장하면 `POST …/domestic-prices` → ③이 기다리면 이어 계산하고, 완료였으면 값이 바뀔 때
  * 재실행 필요가 된다. 셀라파인더 엑셀 올리기(보드)는 M2라 두지 않는다.
@@ -30,6 +32,7 @@ function linkText(link: NaverShoppingLink, index: number): string {
 export function DomesticPricePanel({ candidateId, blockedReason = null }: DomesticPricePanelProps) {
   const titleId = useId();
   const reasonId = useId();
+  const demo = useDemo();
   const links = useNaverShoppingLinksQuery(candidateId).data?.items ?? [];
   const latest = useDomesticPricesQuery(candidateId, { size: 1 }).data?.content[0];
   const save = useCreateDomesticPriceMutation();
@@ -78,10 +81,7 @@ export function DomesticPricePanel({ candidateId, blockedReason = null }: Domest
         {links.map((link, i) => (
           <a
             key={link.kind}
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={link.query}
+            {...externalLinkProps(link.url, demo, link.query)}
             className={styles.link}
           >
             {linkText(link, i)}

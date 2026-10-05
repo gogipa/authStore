@@ -175,4 +175,65 @@ describe('상품 페이지 JSON 읽기(F-SO-13·14, P2-02 규칙 9·10)', () => 
     expect(colorCodeOf('クリーム', null)).toBeNull();
     expect(htmlToText('<p>a&amp;b</p><br><div>c</div>')).toBe('a&b\nc');
   });
+
+  /**
+   * 실제 라쿠텐 상품 페이지(2026-10-05 실측)의 모양: 구매 정보(`purchaseInfo`)가 `itemInfoSku` 안에 있고, 설명은
+   * `pcFields.productDescription`, 관리 번호는 `manageNumber`, 무제한 재고는 `unlimitedInventoryFlag`다. 이 경로를 못 읽으면
+   * 재고가 전부 비어 후보가 '재고 부족'으로 제외됐다(합성 fixture는 가정 경로를 써서 걸러지지 않았다). JSON은 ASCII(\u 이스케이프)로 쓴다.
+   */
+  it('실제 페이지 모양: itemInfoSku 안의 purchaseInfo에서 SKU별 재고를 읽는다(quantity가 null이 아니다)', () => {
+    const colorLabel = 'カラー';
+    const sizeLabel = 'サイズ';
+    const black = 'ブラック';
+    const info = {
+      title: 'loafer',
+      manageNumber: '38s12600034',
+      itemId: 10004029,
+      unlimitedInventoryFlag: false,
+      pcFields: { productDescription: 'desc<br>text', images: [] },
+      media: { images: [{ type: 'CABINET', location: '/a/1.jpg' }] },
+      variantSelectors: [
+        { key: 'Key0', label: colorLabel, values: [{ value: black, label: black }] },
+        {
+          key: 'Key1',
+          label: sizeLabel,
+          values: ['22cm', '23cm', '24cm'].map((v) => ({ value: v, label: v })),
+        },
+      ],
+      identicalVariants: { standardPrice: { identical: true }, backOrderFlag: { identical: true } },
+      sku: ['22cm', '23cm', '24cm'].map((size, i) => ({
+        variantId: `r-sku0000000${i + 1}`,
+        selectorValues: [black, size],
+        hidden: false,
+        taxIncludedPrice: 3000,
+      })),
+      purchaseInfo: {
+        variantMappedInventories: [
+          { sku: 'r-sku00000001', quantity: 333 },
+          { sku: 'r-sku00000002', quantity: 0 },
+          { sku: 'r-sku00000003', quantity: 5 },
+        ],
+        sku: [],
+      },
+    };
+    const data = { newApi: { itemInfoSku: info }, api: { data: { itemInfoSku: info } } };
+    // 페이지는 EUC-JP로 풀리므로 일본어 글자는 \u 이스케이프로 두어 ASCII만 담는다
+    const json = JSON.stringify(data).replace(
+      /[\u0080-\uffff]/g,
+      (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`,
+    );
+    const html = `<html><body><script type="application/json" id="item-page-app-data">${json}</script></body></html>`;
+    const result = parseItemPage(Buffer.from(html, 'utf8'));
+    if (result.kind !== 'PARSED') throw new Error(`파싱 실패: ${result.kind}`);
+    const page = result.page;
+    expect(page.skus.map((s) => [s.sizeMm, s.quantity])).toEqual([
+      [220, 333],
+      [230, 0],
+      [240, 5],
+    ]);
+    expect(page.missingKeys).not.toContain('purchaseInfo.variantMappedInventories');
+    expect(page.itemManageNumber).toBe('38s12600034');
+    expect(page.descriptionHtml).toBe('desc<br>text');
+    expect(page.unlimitedInventory).toBe(false);
+  });
 });

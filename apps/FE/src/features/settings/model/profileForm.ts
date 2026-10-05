@@ -186,6 +186,6 @@ export function formErrorsOf(
 /** 저장 뒤 재실행 필요 안내(Proposed — 보드에 문구가 없다) */
 export function saveResultText(result: PurchaseAgencyProfileSaveResult): string {
   return result.rerunRequiredStepCount > 0
-    ? `저장했습니다. 이 값을 쓰는 후보 단계 ${result.rerunRequiredStepCount}개(⑥-3·⑧·⑨)가 '재실행 필요'가 되었습니다. 후보 화면에서 다시 실행해 주세요.`
+    ? `저장했습니다. 이 값을 쓰는 여정 단계 ${result.rerunRequiredStepCount}개(⑥-3·⑧·⑨)가 '재실행 필요'가 되었습니다. 여정 화면에서 다시 실행해 주세요.`
     : '저장했습니다.';
 }

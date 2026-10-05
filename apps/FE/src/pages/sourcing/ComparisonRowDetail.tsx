@@ -57,8 +57,8 @@ function parseMultiplier(text: string): number | null {
  * - '재고 확인' + '하루 조회 38/110에 포함'
  * - 쿠폰 금액(¥)·샵·이벤트 배율(배) 칸: 바꾸고 칸을 떠나거나 Enter면 `PATCH` → 응답 순서로 다시 그린다. 송료는 읽기 전용(입력 M2)
  * - 포인트 분해 글('포인트 10배 = 기본 1 + 상품 추가 9 + 샵·이벤트 0 → 1,090pt (근사). …')
- * - 불확실한 행: 앵커와 이 상품(상품명·型番·색상 코드·JAN)을 나란히 + AI 판정 참고(확신도·이유) + 오너 '같은 상품'·
- *   '다른 상품'(최종 판단 — 링크를 열지 않아도 판단 근거가 보이게)
+ * - 불확실한 행: 기준 상품과 이 상품(상품명·型番·색상 번호·JAN)을 나란히 + AI 판정 참고(확신도·이유) + '같은 상품'·
+ *   '다른 상품'(내가 정하는 최종 판단 — 링크를 열지 않아도 판단 근거가 보이게). 표 칸 이름과 같은 '같은 상품인가'(D-47)
  */
 export function ComparisonRowDetail({
   head,
@@ -125,7 +125,7 @@ export function ComparisonRowDetail({
       <div className={styles.stockRow}>
         <div className={styles.stockHead}>
           <span className={styles.label}>목표 사이즈 재고</span>
-          <span className={styles.muted}>取り寄せ는 뺍니다</span>
+          <span className={styles.muted}>取り寄せ(주문 후 입고)는 뺍니다</span>
         </div>
         {sizes.length > 0 ? (
           <ul aria-label={`${shopName} 사이즈별 재고`} className={styles.sizes}>
@@ -168,6 +168,7 @@ export function ComparisonRowDetail({
           unit="¥"
           numeric
           inputMode="numeric"
+          hint="선택 · 비우면 0"
           value={couponText}
           disabled={!editable || savePending}
           error={coupon !== null && couponValue === null ? '0 이상 정수' : undefined}
@@ -183,6 +184,7 @@ export function ComparisonRowDetail({
           unit="배"
           numeric
           inputMode="decimal"
+          hint="선택 · 비우면 0"
           value={multiplierText}
           disabled={!editable || savePending}
           error={
@@ -196,7 +198,7 @@ export function ComparisonRowDetail({
           className={styles.input}
         />
         <TextField
-          label="송료"
+          label="일본 내 배송비"
           unit="¥"
           numeric
           locked
@@ -238,7 +240,7 @@ export function ComparisonRowDetail({
             </Button>
           </div>
           <dl className={styles.compare}>
-            <dt className={cx(styles.label, styles.rowHead)}>앵커</dt>
+            <dt className={cx(styles.label, styles.rowHead)}>기준 상품</dt>
             <dd className={styles.compareValue}>
               <span className={styles.itemName}>{anchorItemName ?? anchorLabel(head)}</span>
               {anchorItemName ? <span className={styles.muted}>{anchorLabel(head)}</span> : null}
@@ -256,7 +258,7 @@ export function ComparisonRowDetail({
             </span>
           ) : (
             <span className={styles.muted}>
-              규칙으로 가리지 못했습니다. 최종 판단은 오너가 합니다.
+              규칙으로 가리지 못했습니다. 같은 상품인지 직접 정해 주세요.
             </span>
           )}
         </div>

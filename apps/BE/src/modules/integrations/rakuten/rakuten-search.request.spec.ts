@@ -56,6 +56,44 @@ describe('Item Search 요청 조립(F-BS-34, P2-02 규칙 1)', () => {
     });
   });
 
+  it('정렬 선택(D-47): 기본은 +itemPrice, sort를 주면 그 값으로 덮어쓴다. 다른 조건은 그대로', () => {
+    const byPrice = buildRakutenSearchParams({ keyword: 'クロックス', page: 1 }, sourcing);
+    expect(byPrice.sort).toBe('+itemPrice');
+    const relevance = buildRakutenSearchParams(
+      { keyword: 'クロックス', page: 1, sort: 'standard' },
+      sourcing,
+    );
+    expect(relevance).toEqual({ ...byPrice, sort: 'standard' });
+    expect(relevance).toMatchObject({
+      genreId: '558885',
+      availability: '1',
+      imageFlag: '1',
+      minPrice: String(sourcing.minPriceYen),
+    });
+    expect(relevance.NGKeyword).toBe(byPrice.NGKeyword);
+    expect(
+      buildRakutenSearchParams({ keyword: 'クロックス', sort: '+itemPrice' }, sourcing).sort,
+    ).toBe('+itemPrice');
+  });
+
+  it('정렬이 다르면 캐시 키(요청 파라미터 해시)도 다르다', () => {
+    const hash = (sort?: 'standard' | '+itemPrice') =>
+      rakutenSearchQueryHash(
+        buildRakutenSearchParams({ keyword: 'asics', page: 1, sort }, sourcing),
+      );
+    expect(hash('standard')).not.toBe(hash());
+    expect(hash('+itemPrice')).toBe(hash());
+  });
+
+  it('보완 조회(sourcingFilters=false)에는 sort를 붙이지 않는다', () => {
+    expect(
+      buildRakutenSearchParams(
+        { itemCode: 'shop-a:10000123', sourcingFilters: false, sort: 'standard' },
+        sourcing,
+      ),
+    ).not.toHaveProperty('sort');
+  });
+
   it('호스트는 openapi.rakuten.co.jp(구 도메인 없음)이고 관문 허용 검사를 지난다', () => {
     const params = buildRakutenSearchParams({ keyword: 'asics' }, sourcing);
     const url = buildRakutenApiUrl(sourcing.rakutenApi.itemSearchUrl, keys, params);
@@ -128,5 +166,35 @@ describe('Item Search 요청 조립(F-BS-34, P2-02 규칙 1)', () => {
     });
     expect(toSearchItem({ Item: raw })?.itemCode).toBe('shop-a:10000123');
     expect(toSearchItem({ itemName: '코드 없음' })).toBeNull();
+  });
+
+  describe('사진 주소 뽑기(D-47) — mediumImageUrls 첫 값', () => {
+    const base = {
+      itemCode: 'shop-a:10000123',
+      itemName: 'アシックス',
+      itemUrl: 'https://item.rakuten.co.jp/shop-a/asics/',
+    };
+    const A = 'https://thumbnail.image.rakuten.co.jp/@0_mall/shop-a/cabinet/a_1.jpg?_ex=128x128';
+    const B = 'https://thumbnail.image.rakuten.co.jp/@0_mall/shop-a/cabinet/a_2.jpg?_ex=128x128';
+
+    it('formatVersion=2: 글자 배열의 첫 값', () => {
+      expect(toSearchItem({ ...base, mediumImageUrls: [A, B] })?.imageUrl).toBe(A);
+    });
+
+    it('formatVersion=1: { imageUrl } 객체 배열의 첫 값(Item 감싸기도)', () => {
+      const v1 = { ...base, mediumImageUrls: [{ imageUrl: A }, { imageUrl: B }] };
+      expect(toSearchItem(v1)?.imageUrl).toBe(A);
+      expect(toSearchItem({ Item: v1 })?.imageUrl).toBe(A);
+    });
+
+    it('없거나 비었거나 http(s)가 아니면 null', () => {
+      expect(toSearchItem(base)?.imageUrl).toBeNull();
+      expect(toSearchItem({ ...base, mediumImageUrls: [] })?.imageUrl).toBeNull();
+      expect(toSearchItem({ ...base, mediumImageUrls: [''] })?.imageUrl).toBeNull();
+      expect(
+        toSearchItem({ ...base, mediumImageUrls: ['javascript:alert(1)'] })?.imageUrl,
+      ).toBeNull();
+      expect(toSearchItem({ ...base, mediumImageUrls: 'not-an-array' })?.imageUrl).toBeNull();
+    });
   });
 });

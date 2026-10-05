@@ -41,7 +41,7 @@ describe('대시보드의 사용 안내(F-DB-10·F-DB-11)', () => {
     renderRoute('/');
     const readiness = await screen.findByRole('region', { name: '시작 준비' });
     const flow = screen.getByRole('region', { name: '작업 흐름' });
-    const table = screen.getByRole('table', { name: '재실행 필요·멈춘 후보' });
+    const table = screen.getByRole('table', { name: '재실행 필요·멈춘 여정' });
     const heading = screen.getByRole('heading', { level: 1, name: '대시보드' });
     const follows = (a: Element, b: Element) =>
       Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
@@ -51,11 +51,11 @@ describe('대시보드의 사용 안내(F-DB-10·F-DB-11)', () => {
     expect(await within(readiness).findByText('5개 중 4개 완료')).toBeInTheDocument();
   });
 
-  it('진행 중 후보가 없으면 표 안에 다음 행동 버튼 두 개(키워드 열기·검색어·URL로 시작)', async () => {
+  it('진행 중 여정이 없으면 표 안에 다음 행동 버튼 두 개(키워드 열기·검색어·URL로 시작)', async () => {
     stubEmptyDashboard();
     renderRoute('/');
-    const progress = within(await screen.findByRole('table', { name: '진행 중 후보' }));
-    expect(await progress.findByText('진행 중인 후보가 없습니다.')).toBeInTheDocument();
+    const progress = within(await screen.findByRole('table', { name: '진행 중 여정' }));
+    expect(await progress.findByText('진행 중인 여정이 없습니다.')).toBeInTheDocument();
     expect(progress.getByRole('link', { name: '키워드 열기' })).toHaveAttribute(
       'href',
       '/keywords',
@@ -83,9 +83,17 @@ describe('대시보드의 사용 안내(F-DB-10·F-DB-11)', () => {
 describe("모든 화면에 '?' 도움말이 하나씩 있다(F-GD-02)", () => {
   it.each([
     ['/', '대시보드', '시작 준비가 모두 끝났는지 봅니다.'],
-    ['/keywords', '키워드', '표에서 키워드를 고르고 [검색어로 쓰기]를 누릅니다.'],
-    ['/candidates', '후보 작업', '팔지 않을 후보는 [후보 제외]합니다.'],
-    ['/candidates/7/sourcing', '라쿠텐 후보 비교', '재고를 확인하지 않은 행은 고를 수 없습니다.'],
+    [
+      '/keywords',
+      '키워드',
+      '표에서 소싱할 키워드를 하나 고릅니다(G1). 다른 키워드를 고르면 고른 키워드가 바뀝니다.',
+    ],
+    ['/candidates', '여정', '팔지 않을 여정은 [삭제]합니다.'],
+    [
+      '/candidates/7/sourcing',
+      '같은 상품을 파는 샵 비교',
+      '재고를 확인하지 않은 행은 고를 수 없습니다.',
+    ],
     [
       '/candidates/7/judgement',
       '판정 · 소싱 확정 · 카테고리',
@@ -117,15 +125,15 @@ describe("모든 화면에 '?' 도움말이 하나씩 있다(F-GD-02)", () => {
 });
 
 describe('빈 상태 다음 행동(F-GD-03)', () => {
-  it('후보가 하나도 없으면 후보 목록 자리에 키워드 열기·검색어·URL로 시작', async () => {
+  it('여정이 하나도 없으면 여정 목록 자리에 키워드 열기·검색어·URL로 시작', async () => {
     stubApi({
       'GET /call-usage': () => jsonResponse(callUsageList()),
       'GET /candidates/status-counts': () => jsonResponse(statusCounts()),
       'GET /candidates': () => jsonResponse(page([])),
     });
     renderRoute('/candidates');
-    const list = within(await screen.findByRole('region', { name: '후보' }));
-    expect(await list.findByText('진행 중인 후보가 없습니다.')).toBeInTheDocument();
+    const list = within(await screen.findByRole('region', { name: '여정' }));
+    expect(await list.findByText('진행 중인 여정이 없습니다.')).toBeInTheDocument();
     expect(list.getByRole('link', { name: '키워드 열기' })).toHaveAttribute('href', '/keywords');
     expect(list.getByRole('link', { name: '검색어·URL로 시작' })).toHaveAttribute(
       'href',
@@ -133,19 +141,19 @@ describe('빈 상태 다음 행동(F-GD-03)', () => {
     );
   });
 
-  it("다른 필터에서 비면 버튼 없이 '이 조건의 후보가 없습니다.'", async () => {
+  it("다른 필터에서 비면 버튼 없이 '이 조건의 여정이 없습니다.'", async () => {
     stubApi({
       'GET /call-usage': () => jsonResponse(callUsageList()),
       'GET /candidates/status-counts': () => jsonResponse(statusCounts()),
       'GET /candidates': () => jsonResponse(page([])),
     });
     renderRoute('/candidates?status=EXCLUDED');
-    const list = within(await screen.findByRole('region', { name: '후보' }));
-    expect(await list.findByText('이 조건의 후보가 없습니다.')).toBeInTheDocument();
+    const list = within(await screen.findByRole('region', { name: '여정' }));
+    expect(await list.findByText('이 조건의 여정이 없습니다.')).toBeInTheDocument();
     expect(list.queryByRole('link', { name: '키워드 열기' })).toBeNull();
   });
 
-  it("'입력 고르기'에 실행할 수 있는 후보가 없으면 이유와 '후보 목록 보기'", async () => {
+  it("'입력 고르기'에 실행할 수 있는 여정이 없으면 이유와 '여정 목록 보기'", async () => {
     stubApi({
       'GET /call-usage': () => jsonResponse(callUsageList()),
       'GET /candidates/status-counts': () => jsonResponse(statusCounts()),
@@ -154,10 +162,10 @@ describe('빈 상태 다음 행동(F-GD-03)', () => {
     renderRoute('/candidates?runnableStep=PRICING');
     const picker = within(await screen.findByRole('region', { name: '입력 고르기' }));
     expect(
-      await picker.findByText('지금 ③ 판정 단계를 실행할 수 있는 후보가 없습니다.'),
+      await picker.findByText('지금 ③ 판정 단계를 실행할 수 있는 여정이 없습니다.'),
     ).toBeInTheDocument();
-    expect(picker.getByText('앞 단계를 먼저 끝낸 후보가 여기에 보입니다.')).toBeInTheDocument();
-    expect(picker.getByRole('link', { name: '후보 목록 보기' })).toHaveAttribute(
+    expect(picker.getByText('앞 단계를 먼저 끝낸 여정이 여기에 보입니다.')).toBeInTheDocument();
+    expect(picker.getByRole('link', { name: '여정 목록 보기' })).toHaveAttribute(
       'href',
       '/candidates',
     );
@@ -179,25 +187,22 @@ describe('빈 상태 다음 행동(F-GD-03)', () => {
     );
   });
 
-  it('등록 상품(M2)은 지금 할 곳을 말하고 후보 작업으로 잇는다', async () => {
+  it('등록 상품(M2)은 지금 할 곳을 말하고 여정으로 잇는다', async () => {
     renderRoute('/products');
     await screen.findByRole('heading', { level: 1, name: '등록 상품' });
     const panel = within(screen.getByRole('region', { name: '준비 중' }));
     expect(panel.getByText('등록 상품 화면은 M2에서 만듭니다.')).toBeInTheDocument();
-    expect(panel.getByRole('link', { name: '후보 작업 열기' })).toHaveAttribute(
-      'href',
-      '/candidates',
-    );
+    expect(panel.getByRole('link', { name: '여정 열기' })).toHaveAttribute('href', '/candidates');
   });
 });
 
-describe('후보 작업 틀의 도움말 자리', () => {
-  it("단계 화면의 '?'는 후보 머리 오른쪽('후보 목록' 앞)에 있다", async () => {
+describe('여정 화면 틀의 도움말 자리', () => {
+  it("단계 화면의 '?'는 여정 머리 오른쪽('여정 목록' 앞)에 있다", async () => {
     renderRoute('/candidates/7/tags');
     await screen.findByRole('heading', { level: 1, name: '태그' });
-    const header = within(screen.getByRole('region', { name: '후보 정보' }));
+    const header = within(screen.getByRole('region', { name: '여정 정보' }));
     const help = header.getByRole('button', { name: '이 화면 도움말' });
-    const back = header.getByRole('link', { name: '후보 목록' });
+    const back = header.getByRole('link', { name: '여정 목록' });
     expect(Boolean(help.compareDocumentPosition(back) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(
       true,
     );
@@ -208,7 +213,7 @@ describe('후보 작업 틀의 도움말 자리', () => {
     const { router } = renderRoute('/candidates/7/tags');
     await screen.findByRole('heading', { level: 1, name: '태그' });
     const helpButton = () =>
-      within(screen.getByRole('region', { name: '후보 정보' })).getByRole('button', {
+      within(screen.getByRole('region', { name: '여정 정보' })).getByRole('button', {
         name: '이 화면 도움말',
       });
     await userEvent.click(helpButton());
@@ -232,7 +237,7 @@ describe('후보 작업 틀의 도움말 자리', () => {
       ),
     ).toBeInTheDocument();
 
-    // 다른 후보로 옮겨도 닫힌다
+    // 다른 여정으로 옮겨도 닫힌다
     await act(() => router.navigate('/candidates/8/content'));
     await waitFor(() => expect(helpButton()).toHaveAttribute('aria-expanded', 'false'));
     expect(screen.queryByRole('region', { name: '이 화면 도움말' })).toBeNull();

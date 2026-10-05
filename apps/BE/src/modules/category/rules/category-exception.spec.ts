@@ -78,7 +78,7 @@ describe('category-exception: 예외 판단(F-CA-06~09, P2-06 규칙 8~11)', () 
     expect(judged).toMatchObject({ decision: 'BLOCKED', blockReason: 'GENDER_MISMATCH' });
     if (judged.decision === 'BLOCKED') {
       expect(judged.reasonText).toBe(
-        '후보 성별(남성)과 카테고리 경로(여성신발)가 맞지 않습니다(F-CA-06).',
+        '여정 성별(남성)과 카테고리 경로(여성신발)가 맞지 않습니다(F-CA-06).',
       );
       expect(BLOCK_ERROR_CODE[judged.blockReason]).toBe('CATEGORY_GENDER_MISMATCH');
     }

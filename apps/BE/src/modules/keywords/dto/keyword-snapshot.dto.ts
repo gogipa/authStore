@@ -220,40 +220,7 @@ export class KeywordSnapshotDto {
   excludedCount!: number;
 }
 
-/** 05-2 components.schemas.KeywordSnapshotDetail */
-export class KeywordSnapshotDetailDto extends KeywordSnapshotDto {
-  @ApiProperty({
-    description: 'ABORTED이고 사유가 NO_RANKS_KEY·HTTP_404·NOT_JSON·RETURN_CODE·COUNT_MISMATCH',
-  })
-  structureChangeSuspected!: boolean;
-
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
-  blockedUntil!: string | null;
-}
-
-export class KeywordSnapshotPageDto {
-  @ApiProperty({ type: [KeywordSnapshotDto] })
-  content!: KeywordSnapshotDto[];
-
-  @ApiProperty({ type: PageMetaDto })
-  page!: PageMetaDto;
-}
-
-/** 05-2 components.schemas.KeywordCollectionAccepted(202) */
-export class KeywordCollectionAcceptedDto {
-  @ApiProperty({ type: 'integer', minimum: 1 })
-  keywordSnapshotId!: number;
-
-  @ApiProperty({ enum: KEYWORD_SNAPSHOT_STATUSES })
-  status!: KeywordSnapshotStatus;
-
-  @ApiProperty({ type: 'integer', enum: [100, 500] })
-  rankLimit!: number;
-
-  @ApiProperty({ type: [String] })
-  requestedCids!: string[];
-}
-
+// 아래 KeywordSnapshotDetailDto가 `design:type` 메타데이터로 이 클래스를 참조하므로 먼저 선언한다(흐름 테스트는 소스를 그대로 실행한다)
 /** 05-2 components.schemas.RankedKeyword(M2 classification·brandPolicy는 M1에 없다) */
 export class RankedKeywordDto {
   @ApiProperty({ type: 'integer', minimum: 1 })
@@ -282,6 +249,48 @@ export class RankedKeywordDto {
     description: '이 키워드를 출처로 만든 후보(candidate.source_keyword_id)',
   })
   candidateIds!: number[];
+}
+
+/** 05-2 components.schemas.KeywordSnapshotDetail */
+export class KeywordSnapshotDetailDto extends KeywordSnapshotDto {
+  @ApiProperty({
+    description: 'ABORTED이고 사유가 NO_RANKS_KEY·HTTP_404·NOT_JSON·RETURN_CODE·COUNT_MISMATCH',
+  })
+  structureChangeSuspected!: boolean;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  blockedUntil!: string | null;
+
+  @ApiProperty({
+    type: () => RankedKeywordDto,
+    nullable: true,
+    description:
+      "지금 고른 키워드(D-33) — 이 묶음에서 selected_at이 가장 늦은 키워드(같으면 id가 큰 쪽). 고른 키워드가 없으면 null. 화면은 이 값으로 표의 선택 줄과 '라쿠텐 검색어 확인'을 그린다(표가 쪽으로 나뉘어 있어 줄만으로는 알 수 없다)",
+  })
+  selectedKeyword!: RankedKeywordDto | null;
+}
+
+export class KeywordSnapshotPageDto {
+  @ApiProperty({ type: [KeywordSnapshotDto] })
+  content!: KeywordSnapshotDto[];
+
+  @ApiProperty({ type: PageMetaDto })
+  page!: PageMetaDto;
+}
+
+/** 05-2 components.schemas.KeywordCollectionAccepted(202) */
+export class KeywordCollectionAcceptedDto {
+  @ApiProperty({ type: 'integer', minimum: 1 })
+  keywordSnapshotId!: number;
+
+  @ApiProperty({ enum: KEYWORD_SNAPSHOT_STATUSES })
+  status!: KeywordSnapshotStatus;
+
+  @ApiProperty({ type: 'integer', enum: [100, 500] })
+  rankLimit!: number;
+
+  @ApiProperty({ type: [String] })
+  requestedCids!: string[];
 }
 
 export class RankedKeywordPageDto {

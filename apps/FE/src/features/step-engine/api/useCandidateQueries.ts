@@ -9,8 +9,8 @@ import type {
 import { stepEngineKeys } from './queryKeys';
 
 /**
- * 후보 목록(`GET /candidates`, listCandidates). status를 주지 않으면 EXCLUDED·REGISTERED를 뺀다.
- * `runnableStep`이면 그 단계를 지금 실행할 수 있는 후보만(입력 고르기). SSE `candidate.status-changed`로 다시 읽는다.
+ * 여정 목록(`GET /candidates`, listCandidates). status를 주지 않으면 EXCLUDED·REGISTERED를 뺀다.
+ * `runnableStep`이면 그 단계를 지금 실행할 수 있는 여정만(입력 고르기). SSE `candidate.status-changed`로 다시 읽는다.
  */
 export function useCandidates(params: ListCandidatesParams = {}) {
   return useQuery({
@@ -22,8 +22,8 @@ export function useCandidates(params: ListCandidatesParams = {}) {
 }
 
 /**
- * 후보 상세(`GET /candidates/{candidateId}`, getCandidate). `candidateId`가 null이면 부르지 않는다
- * (경로 값이 정수가 아닐 때). 없는 후보는 404 `CANDIDATE_NOT_FOUND`(`error.code`).
+ * 여정 상세(`GET /candidates/{candidateId}`, getCandidate). `candidateId`가 null이면 부르지 않는다
+ * (경로 값이 정수가 아닐 때). 없는 여정은 404 `CANDIDATE_NOT_FOUND`(`error.code`).
  */
 export function useCandidate(candidateId: number | null) {
   return useQuery({
@@ -39,7 +39,7 @@ export function useCandidate(candidateId: number | null) {
   });
 }
 
-/** 상태별 후보 수(`GET /candidates/status-counts`). 목록 필터 배지가 쓴다 */
+/** 상태별 여정 수(`GET /candidates/status-counts`). 목록 필터 배지가 쓴다 */
 export function useCandidateStatusCounts() {
   return useQuery({
     queryKey: stepEngineKeys.statusCounts,
@@ -56,7 +56,7 @@ export function useResumeTarget() {
   });
 }
 
-/** 재실행 필요·멈춘 후보 단계(`GET /candidate-steps`, listAttentionCandidateSteps). 기본 RERUN_REQUIRED·FAILED·WAITING_INPUT */
+/** 재실행 필요·멈춘 여정 단계(`GET /candidate-steps`, listAttentionCandidateSteps). 기본 RERUN_REQUIRED·FAILED·WAITING_INPUT */
 export function useAttentionSteps(params: ListAttentionStepsParams = {}) {
   return useQuery({
     queryKey: stepEngineKeys.attentionSteps(params),
@@ -65,7 +65,7 @@ export function useAttentionSteps(params: ListAttentionStepsParams = {}) {
   });
 }
 
-/** 후보 상태 전이 이력(`GET /candidates/{candidateId}/status-history`) */
+/** 여정 상태 전이 이력(`GET /candidates/{candidateId}/status-history`) */
 export function useCandidateStatusHistory(
   candidateId: number | null,
   params: ListStatusHistoryParams = {},

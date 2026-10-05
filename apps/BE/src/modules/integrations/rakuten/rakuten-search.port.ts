@@ -8,6 +8,9 @@
  */
 export const RAKUTEN_SEARCH_PORT = Symbol('RAKUTEN_SEARCH_PORT');
 
+/** 검색 정렬: `standard`(라쿠텐 기본 관련도 순) · `+itemPrice`(가격 낮은 순) */
+export type RakutenSearchSort = 'standard' | '+itemPrice';
+
 /** 검색 요청 하나 */
 export interface RakutenSearchQuery {
   /** 검색어(keyword). itemCode 조회면 비운다 */
@@ -23,6 +26,11 @@ export interface RakutenSearchQuery {
    * 식별자·장르 보완 조회(itemCode·샵 코드 조회)는 false — 그 상품을 찾는 것이 목적이라 거르지 않는다
    */
   sourcingFilters?: boolean;
+  /**
+   * 정렬(소싱 검색 조건을 붙일 때만 쓴다). 기본 `+itemPrice`(가격 낮은순). ② 첫 검색(상품 고르기)은 `standard`(관련도 순).
+   * 정렬이 다르면 요청 파라미터가 달라 캐시 키도 달라진다
+   */
+  sort?: RakutenSearchSort;
 }
 
 /** 응답 Items 한 건(formatVersion=2 평탄형). 쓰는 필드만 꺼내고 원문은 `raw`에 둔다 */
@@ -42,6 +50,8 @@ export interface RakutenSearchItem {
   reviewAverage: number | null;
   shipOverseasFlag: number | null;
   genreId: number | null;
+  /** 상품 사진 주소(응답 `mediumImageUrls`의 첫 값 — formatVersion 2는 글자 배열, 1은 `{imageUrl}` 배열). 없으면 null */
+  imageUrl: string | null;
   raw: Record<string, unknown>;
 }
 

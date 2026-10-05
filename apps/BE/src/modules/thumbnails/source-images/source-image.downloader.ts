@@ -164,7 +164,7 @@ export class SourceImageDownloader {
     }
     if (skipped.length > 0) {
       this.logger.warn(
-        `⑤ 원본 이미지 ${skipped.length}장을 건너뛰었습니다(후보 #${ctx.candidateId}): ${skipped
+        `⑤ 원본 이미지 ${skipped.length}장을 건너뛰었습니다(여정 #${ctx.candidateId}): ${skipped
           .map((s) => s.reason)
           .join(', ')}`,
       );

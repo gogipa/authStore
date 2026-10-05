@@ -1,3 +1,4 @@
+import { imageAssetFileUrl } from '@/shared/api/client';
 import type { components } from '@/shared/api/schema';
 
 /** 05-2 UploadResultOutput(⑧ 한 버전) */
@@ -23,9 +24,12 @@ export const UPLOAD_ROLE_LABEL: Record<UploadResultImageItem['role'], string> = 
   ADDITIONAL: '추가',
 };
 
-/** 업로드 정규화본 파일 경로(05-2 getImageAssetFile — 로컬 파일을 같은 출처로 받는다. shop-phinf를 부르지 않는다) */
+/**
+ * 업로드 정규화본 파일 경로(05-2 getImageAssetFile — 로컬 파일을 같은 출처로 받는다. shop-phinf를 부르지 않는다).
+ * 체험(`/demo`, D-31)이면 앱에 묶은 예시 그림(shared/api `imageAssetFileUrl`).
+ */
 export function uploadImageFileUrl(imageAssetId: number): string {
-  return `/api/v1/image-assets/${imageAssetId}/file`;
+  return imageAssetFileUrl(imageAssetId);
 }
 
 /** 이미지 대체 글(대표 이미지 · 추가 이미지 n) */

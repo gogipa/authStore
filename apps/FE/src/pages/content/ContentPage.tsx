@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { useParams } from 'react-router';
 import {
+  missingAssemblyProfile,
+  pendingChoices,
   useContentAssemblyQuery,
   useContentCopyQuery,
   useContentFactQuery,
 } from '@/features/content';
+import { NowMark, ScreenGuidePanel, CONTENT_GUIDE, STEP_GUIDE_COMMON } from '@/features/guide';
+import { usePurchaseAgencyProfileQuery } from '@/features/settings';
 import {
   AiEngineSettingsLinkForError,
   CONTENT_GROUP_CODES,
@@ -19,12 +23,13 @@ import {
   type CandidateStepRailItem,
 } from '@/features/step-engine';
 import { isApiRequestError } from '@/shared/api/errors';
-import { documentTitle } from '@/shared/lib/appName';
+import { useDocumentTitle } from '@/shared/lib/appName';
 import { formatKstTime } from '@/shared/lib/format';
 import { stepPath } from '@/shared/lib/steps';
 import { Button, ButtonLink, DisabledReason, StatusChip } from '@/shared/ui';
 import { AssemblySection } from './AssemblySection';
 import styles from './ContentPage.module.css';
+import { contentNow, CONTENT_STEP_LABEL } from './contentNow';
 import { CopySection } from './CopySection';
 import { FactTable } from './FactTable';
 
@@ -70,16 +75,17 @@ function SubRunButton({
 }
 
 /**
- * SCR-06 ⑥ 상세 콘텐츠(Content.dc.html, P3-03·P3-04). 후보 작업 틀(CandidateLayout) 안 단계 본문:
+ * SCR-06 ⑥ 상세 콘텐츠(Content.dc.html, P3-03·P3-04). 여정 틀(CandidateLayout) 안 단계 본문:
  * - ⑥ 머리: 제목 + 묶음 상태 줄(상태 칩 · 마지막 실행 · 입력 출처 · '실행'/'다시 실행' = ⑥-1→⑥-2→⑥-3 이어서
  *   (`throughStepCode=NOTICE_HTML`) · '여기부터 연속 실행')
  * - 세부 단계 이동(⑥-1 카피 · ⑥-2 원산지·소재 · ⑥-3 고시·HTML) + '다음: ⑦ 태그'
  * - ⑥-1 카피(`CopySection`) · ⑥-2 원산지·소재(`FactTable`) · ⑥-3 고시·HTML(`AssemblySection` + HTML 미리보기 `DetailPreview`,
- *   P3-04 — 보드는 미리보기를 레일 아래에 두지만 후보 작업 틀의 레일 칸은 모든 단계가 같이 써서 ⑥-3 구획 안에 둔다, Proposed)
+ *   P3-04 — 보드는 미리보기를 레일 아래에 두지만 여정 틀의 레일 칸은 모든 단계가 같이 써서 ⑥-3 구획 안에 둔다, Proposed)
  * 시안의 '문구 검사'(M2 F-CT-38·39)는 만들지 않는다. 결과는 폴링하지 않고 SSE(`step-run.status-changed` COPY·NOTICE_RAW·
  * NOTICE_HTML, `content-field.recheck-flagged`, `gate.passed` — G3을 다시 고르면 미리보기가 새로 열린다)가 산출물을 다시 읽힌다.
  */
 export function ContentPage() {
+  const pageTitle = useDocumentTitle(TITLE);
   const { candidateId: rawId = '' } = useParams();
   const candidateId = parseCandidateId(rawId);
   const rail = useCandidateSteps(candidateId);
@@ -108,6 +114,19 @@ export function ContentPage() {
   const runAction = copyItem?.actions.run;
   const runReason =
     runAction && !runAction.enabled ? (runAction.disabledReason?.message ?? null) : null;
+  const profile = usePurchaseAgencyProfileQuery();
+  // 맨 위 안내(D-41): 하는 일 · 지금 할 일 · 낯선 말 풀이. 지금 할 일은 ⑥-1 → ⑥-2 → ⑥-3 순서로 첫 번째 막힌 일
+  const now = contentNow({
+    copyStatus: copyItem?.status,
+    factStatus: factItem?.status,
+    assemblyStatus: assemblyItem?.status,
+    runBlocked: runReason !== null,
+    copyChoicePending: copyOutput ? pendingChoices(copyOutput.fields).length > 0 : false,
+    factRecheck: factOutput?.fields.some((field) => field.recheckRequired) ?? false,
+    assemblyRecheck: assemblyOutput?.fields.some((field) => field.recheckRequired) ?? false,
+    profileMissing: missingAssemblyProfile(profile.data?.missingFields ?? []).length > 0,
+  });
+  const nowMark = STEP_GUIDE_COMMON.nowMark;
 
   const run = (stepCode: 'COPY' | 'NOTICE_RAW' | 'NOTICE_HTML', chain: boolean) => {
     if (candidateId === null) return;
@@ -122,8 +141,13 @@ export function ContentPage() {
 
   return (
     <>
-      <title>{documentTitle(TITLE)}</title>
+      <title>{pageTitle}</title>
       <h1 className={styles.srOnly}>{TITLE}</h1>
+      <ScreenGuidePanel
+        guide={CONTENT_GUIDE}
+        nowKey={now?.key ?? null}
+        values={{ step: now?.step ? CONTENT_STEP_LABEL[now.step] : '' }}
+      />
       <section aria-labelledby="step6-title" className={styles.step}>
         <div className={styles.stepHead}>
           <h2 id="step6-title" className={styles.stepTitle}>
@@ -145,20 +169,28 @@ export function ContentPage() {
                 </span>
               ) : null}
               <span className={styles.spacer} />
-              <Button
-                disabled={start.isPending || runReason !== null}
-                aria-describedby={runReason ? 'content-run-why' : undefined}
-                onClick={() => run('COPY', true)}
+              <NowMark
+                inline
+                label={nowMark}
+                active={now?.key === 'start' || now?.key === 'blocked'}
               >
-                {runButtonLabel(copyItem.status)}
-              </Button>
-              {candidateId !== null ? (
-                <ContinuousRunButton
-                  candidateId={candidateId}
-                  stepCode="COPY"
-                  action={copyItem.actions.continuousRun}
-                />
-              ) : null}
+                <span className={styles.runGroup}>
+                  <Button
+                    disabled={start.isPending || runReason !== null}
+                    aria-describedby={runReason ? 'content-run-why' : undefined}
+                    onClick={() => run('COPY', true)}
+                  >
+                    {runButtonLabel(copyItem.status)}
+                  </Button>
+                  {candidateId !== null ? (
+                    <ContinuousRunButton
+                      candidateId={candidateId}
+                      stepCode="COPY"
+                      action={copyItem.actions.continuousRun}
+                    />
+                  ) : null}
+                </span>
+              </NowMark>
             </div>
           ) : null}
         </div>
@@ -174,55 +206,63 @@ export function ContentPage() {
             <a href="#notice">⑥-3 고시·HTML</a>
           </nav>
           {candidateId !== null ? (
-            <ButtonLink to={stepPath(candidateId, 'TAGS')}>{NEXT_TAGS_LABEL}</ButtonLink>
+            <NowMark inline label={nowMark} active={now?.key === 'done'}>
+              <ButtonLink to={stepPath(candidateId, 'TAGS')}>{NEXT_TAGS_LABEL}</ButtonLink>
+            </NowMark>
           ) : null}
         </div>
         {candidateId !== null ? (
           <>
-            <CopySection
-              key={`copy-${copyOutput?.stepRunId ?? 'none'}`}
-              candidateId={candidateId}
-              item={copyItem}
-              output={copyOutput}
-              runAction={
-                <SubRunButton
-                  item={copyItem}
-                  label="⑥-1"
-                  pending={start.isPending}
-                  onRun={() => run('COPY', false)}
-                />
-              }
-            />
-            <FactTable
-              key={`fact-${factOutput?.stepRunId ?? 'none'}`}
-              candidateId={candidateId}
-              item={factItem}
-              output={factOutput}
-              runAction={
-                <SubRunButton
-                  item={factItem}
-                  label="⑥-2"
-                  pending={start.isPending}
-                  onRun={() => run('NOTICE_RAW', false)}
-                />
-              }
-            />
-            <AssemblySection
-              key={`assembly-${assemblyOutput?.stepRunId ?? 'none'}`}
-              candidateId={candidateId}
-              item={assemblyItem}
-              output={assemblyOutput}
-              reloadKey={assembly.dataUpdatedAt}
-              runError={lastRun === 'NOTICE_HTML' ? start.error : null}
-              runAction={
-                <SubRunButton
-                  item={assemblyItem}
-                  label="⑥-3"
-                  pending={start.isPending}
-                  onRun={() => run('NOTICE_HTML', false)}
-                />
-              }
-            />
+            <NowMark label={nowMark} active={now?.step === 'COPY'}>
+              <CopySection
+                key={`copy-${copyOutput?.stepRunId ?? 'none'}`}
+                candidateId={candidateId}
+                item={copyItem}
+                output={copyOutput}
+                runAction={
+                  <SubRunButton
+                    item={copyItem}
+                    label="⑥-1"
+                    pending={start.isPending}
+                    onRun={() => run('COPY', false)}
+                  />
+                }
+              />
+            </NowMark>
+            <NowMark label={nowMark} active={now?.step === 'NOTICE_RAW'}>
+              <FactTable
+                key={`fact-${factOutput?.stepRunId ?? 'none'}`}
+                candidateId={candidateId}
+                item={factItem}
+                output={factOutput}
+                runAction={
+                  <SubRunButton
+                    item={factItem}
+                    label="⑥-2"
+                    pending={start.isPending}
+                    onRun={() => run('NOTICE_RAW', false)}
+                  />
+                }
+              />
+            </NowMark>
+            <NowMark label={nowMark} active={now?.step === 'NOTICE_HTML'}>
+              <AssemblySection
+                key={`assembly-${assemblyOutput?.stepRunId ?? 'none'}`}
+                candidateId={candidateId}
+                item={assemblyItem}
+                output={assemblyOutput}
+                reloadKey={assembly.dataUpdatedAt}
+                runError={lastRun === 'NOTICE_HTML' ? start.error : null}
+                runAction={
+                  <SubRunButton
+                    item={assemblyItem}
+                    label="⑥-3"
+                    pending={start.isPending}
+                    onRun={() => run('NOTICE_HTML', false)}
+                  />
+                }
+              />
+            </NowMark>
           </>
         ) : null}
       </section>

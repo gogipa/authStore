@@ -75,25 +75,110 @@ export function kRankText(kRank: number): string {
   return String(Math.round(kRank * 10_000) / 10_000);
 }
 
-/** 비교표 캡션(보드 그대로, k_rank는 버전 사본) */
+/** 비교표 캡션(보드 그대로, k_rank는 버전 사본). D-47: '검증'이라는 말 대신 '재고 확인' */
 export function comparisonCaption(kRank: number): string {
-  return `실질가 = SKU가 + 송료 − 쿠폰 − 포인트 × ${kRankText(kRank)} · 검증된 샵만 실질가 낮은 순으로 세웁니다 · 포인트는 근사`;
+  return `실질가 = 상품 가격 + 일본 내 배송비 − 쿠폰 − 포인트 × ${kRankText(kRank)} · 상품 페이지를 읽어 재고를 확인한 샵만 실질가 낮은 순으로 순위를 매깁니다 · 포인트는 대략의 값`;
 }
 
 /** 표 아래 안내(보드 그대로, 최소 사이즈 수는 버전 사본) */
 export function selectionNote(minSizeCount: number): string {
-  return `다른 샵을 고르면 판정(G2)을 다시 통과해야 합니다 · 재고 사이즈가 ${minSizeCount}개보다 적은 샵은 뺍니다`;
+  return `다른 샵을 고르면 ③에서 소싱 확정(G2)을 다시 눌러야 합니다 · 재고 있는 사이즈가 ${minSizeCount}개보다 적은 샵은 뺍니다`;
 }
 
+/** 표 묶음 머리 — 상품 페이지를 읽어 재고·가격을 본 샵(API 이름 `isVerified`) */
 export function verifiedGroupText(count: number): string {
-  return `검증 ${count} · 상품 페이지와 JAN·メーカー型番으로 같은 상품인지 확인 · 실질가 낮은 순`;
+  return `재고 확인 ${count} · 상품 페이지와 JAN·メーカー型番으로 같은 상품인지 확인 · 실질가 낮은 순`;
 }
 
+/** 표 묶음 머리 — 상품 페이지를 아직 읽지 않은 샵 */
 export function unverifiedGroupText(count: number): string {
-  return `미검증 ${count} · 상품 페이지를 읽지 않아 고를 수 없고 실질가 순위에서 뺐습니다. '재고 확인'은 그 페이지만 읽습니다. 읽지 못한 칸은 '수동 확인'으로 둡니다.`;
+  return `아직 확인 안 함 ${count} · 상품 페이지를 읽지 않아 고를 수 없고 실질가 순위에서 뺐습니다. '재고 확인'은 그 페이지만 읽습니다. 읽지 못한 칸은 '수동 확인'으로 둡니다.`;
 }
 
-/** 앵커 줄 글('型番 1201A019 · 색상 코드 108 · クリーム×ブラック(108)') */
+/** 접어 둔 '확인 필요' 행 묶음 머리(D-47) */
+export function foldedGroupText(count: number): string {
+  return `같은 상품인지 확실하지 않은 ${count}개`;
+}
+
+/** 접어 둔 행을 펼쳤을 때 묶음 머리 아래 안내 */
+export const FOLDED_GROUP_NOTE =
+  '모델 번호·색상이 같은지 앱이 가리지 못한 상품입니다. 샵 이름을 눌러 펼친 뒤 AI 참고를 보고 [같은 상품]·[다른 상품]을 직접 정해 주세요. 정하면 이 묶음에서 나와 위 표에 보입니다.';
+
+/** 기준 상품의 뜻 한 줄(D-47 — 정한 뒤 머리 줄) */
+export const ANCHOR_MEANING_NOTE =
+  '팔고 싶은 상품 한 개 — 이 상품과 같은 모델·색상을 파는 샵을 아래에서 비교합니다';
+
+/** 모델 번호를 알 수 없는 상품을 기준 상품으로 정했을 때 비교표 위 안내 띠(D-47) */
+export const NO_MODEL_CODE_NOTE =
+  "이 상품은 모델 번호를 알 수 없어 같은 상품을 자동으로 찾지 못했습니다. '확인 필요' 행을 펼쳐 직접 정하거나, 모델 번호가 있는 상품으로 새 여정을 만드세요.";
+
+/** 기준 상품이 정해졌는데 모델 번호가 없는가(상품 고르기에서 모델 번호를 뽑지 못한 상품을 골랐다) */
+export function lacksAnchorModelCode(
+  head:
+    | Pick<
+        SourcingComparisonDetail,
+        'exploreMode' | 'comparisonPerformed' | 'anchorModelCode' | 'anchorModelCodeNorm'
+      >
+    | undefined,
+): boolean {
+  if (!head || head.exploreMode || !head.comparisonPerformed) return false;
+  return !(head.anchorModelCodeNorm ?? head.anchorModelCode);
+}
+
+/** 모델 번호는 있는데 색상 번호를 읽지 못한 상품을 기준 상품으로 정했을 때 비교표 위 안내 띠 */
+export const NO_COLOR_CODE_NOTE =
+  "이 상품은 이름에서 색상 번호를 읽지 못했습니다. 같은 상품인지 자동으로 가리지 못해 '확인 필요' 행이 많을 수 있고, 색상 번호를 알 수 있는 샵 상품만 고를 수 있습니다.";
+
+/** 기준 상품이 정해졌고 모델 번호는 있는데 색상 번호가 없는가(모델 번호까지 없으면 `lacksAnchorModelCode` 띠가 말한다) */
+export function lacksAnchorColorCode(
+  head:
+    | Pick<
+        SourcingComparisonDetail,
+        | 'exploreMode'
+        | 'comparisonPerformed'
+        | 'anchorModelCode'
+        | 'anchorModelCodeNorm'
+        | 'anchorColorCode'
+      >
+    | undefined,
+): boolean {
+  if (!head || head.exploreMode || !head.comparisonPerformed) return false;
+  return !!(head.anchorModelCodeNorm ?? head.anchorModelCode) && !head.anchorColorCode;
+}
+
+/** 상품 고르기 목록을 보이고 고를 수 있는가(D-47): 비교를 했고 기준 상품 전이며, 입력을 기다리는 현재 검색 버전 */
+export function canPickAnchor(
+  head:
+    | Pick<
+        SourcingComparisonDetail,
+        'comparisonPerformed' | 'exploreMode' | 'isCurrent' | 'stepStatus'
+      >
+    | undefined,
+): boolean {
+  return (
+    !!head &&
+    head.comparisonPerformed &&
+    head.exploreMode &&
+    head.isCurrent &&
+    head.stepStatus === 'WAITING_INPUT'
+  );
+}
+
+/**
+ * 표에서 기본으로 접는 행(D-47): 상품 페이지를 아직 읽지 않았고(재고 확인 전), 규칙으로 같은 상품인지 가리지 못했고
+ * (`NEEDS_REVIEW`), 내가 정한 것도 없는 행. JAN·メーカー型番이 달라 '확인 필요'가 된 재고 확인 행과 내가 정한 행은 접지 않는다
+ */
+export function isFoldedRow(
+  row: Pick<SourcingComparisonRow, 'isVerified' | 'anchorMatch' | 'ownerMatchDecision'>,
+): boolean {
+  return (
+    !row.isVerified &&
+    row.anchorMatch === 'NEEDS_REVIEW' &&
+    (row.ownerMatchDecision ?? null) === null
+  );
+}
+
+/** 기준 상품 줄 글('모델 번호 1201A019 · 색상 번호 108 · クリーム×ブラック(108)') */
 export function anchorLabel(
   head: Pick<
     SourcingComparisonDetail,
@@ -106,8 +191,8 @@ export function anchorLabel(
 ): string {
   const model = head.anchorModelCodeNorm ?? head.anchorModelCode;
   return [
-    model ? `型番 ${model}` : head.anchorItemCode,
-    head.anchorColorCode ? `색상 코드 ${head.anchorColorCode}` : null,
+    model ? `모델 번호 ${model}` : head.anchorItemCode,
+    head.anchorColorCode ? `색상 번호 ${head.anchorColorCode}` : null,
     head.anchorColorLabel,
   ]
     .filter((part): part is string => !!part)
@@ -115,7 +200,7 @@ export function anchorLabel(
 }
 
 export const ANCHOR_LOCKED_NOTE =
-  '이 후보에서는 바꿀 수 없습니다 · 다른 모델·색상은 새 후보로 만듭니다';
+  '이 여정에서는 바꿀 수 없습니다 · 다른 모델·색상은 새 여정으로 만듭니다';
 
 export interface CandidateGenderLike {
   gender: ComparisonGender | null;
@@ -123,7 +208,7 @@ export interface CandidateGenderLike {
   genderRecheckRequired: boolean;
 }
 
-/** 비교에 쓰는 성별(오너 → 자동 → ②에서 고른 성별 → 후보 ② 값)과 출처 */
+/** 비교에 쓰는 성별(오너 → 자동 → ②에서 고른 성별 → 여정 ② 값)과 출처 */
 export function comparisonGender(
   candidate: CandidateGenderLike | undefined,
   head: Pick<SourcingComparisonDetail, 'detectedGender' | 'ownerGender'> | undefined,
@@ -159,7 +244,10 @@ export function targetSizeCount(
 
 export type AnchorMatchTone = 'done' | 'waiting' | 'idle' | 'neutral';
 
-/** 앵커 일치 칸(보드: '일치' done·'확인 필요' waiting + 아래 설명·'확인 전' 등) */
+/**
+ * '같은 상품인가' 칸(API 이름 `anchorMatch`; D-47 — 일치·불일치 대신 '같은 상품·다른 상품', 내가 정한 것은 '내가 정함').
+ * 보드: '같은 상품' done·'확인 필요' waiting + 아래 설명·'확인 전' 등
+ */
 export function anchorMatchView(
   row: Pick<
     SourcingComparisonRow,
@@ -173,9 +261,9 @@ export function anchorMatchView(
   >,
 ): { label: string; tone: AnchorMatchTone; note: string | null } {
   if (row.ownerMatchDecision === 'MATCH')
-    return { label: '같은 상품', tone: 'done', note: '오너 판단' };
+    return { label: '같은 상품', tone: 'done', note: '내가 정함' };
   if (row.ownerMatchDecision === 'NO_MATCH')
-    return { label: '다른 상품', tone: 'idle', note: '오너 판단' };
+    return { label: '다른 상품', tone: 'idle', note: '내가 정함' };
   if (row.anchorMatch === null || row.anchorMatch === undefined) {
     return { label: '확인 전', tone: 'neutral', note: null };
   }
@@ -184,19 +272,19 @@ export function anchorMatchView(
     if (row.makerModelMatch === false) {
       return { label: '확인 필요', tone: 'waiting', note: 'メーカー型番 다름' };
     }
-    return { label: '일치', tone: 'done', note: null };
+    return { label: '같은 상품', tone: 'done', note: null };
   }
   if (row.anchorMatch === 'NEEDS_REVIEW') {
     return {
       label: '확인 필요',
       tone: 'waiting',
-      note: row.colorCode ? '시리즈만 같음' : '색상 코드 없음',
+      note: row.colorCode ? '시리즈만 같음' : '색상 번호 없음',
     };
   }
-  return { label: '불일치', tone: 'idle', note: null };
+  return { label: '다른 상품', tone: 'idle', note: null };
 }
 
-/** 오너 판단이 필요한(불확실한) 행 — 펼친 행에 AI 참고·'같은 상품'·'다른 상품'을 보인다 */
+/** 내가 정해야 하는(불확실한) 행 — 펼친 행에 AI 참고·'같은 상품'·'다른 상품'을 보인다 */
 export function needsOwnerDecision(
   row: Pick<
     SourcingComparisonRow,
@@ -274,7 +362,7 @@ export function itemFactsText(
 }
 
 /**
- * '같은 상품인가' 줄의 이 상품 식별 글: '型番 1201A019 · 색상 코드 없음 · JAN 확인 전'.
+ * '같은 상품인가' 줄의 이 상품 식별 글: '모델 번호 1201A019 · 색상 번호 없음 · JAN 확인 전'.
  * 페이지 재대조가 어긋나면 'JAN 다름'·'メーカー型番 다름'
  */
 export function rowIdentityText(
@@ -283,8 +371,8 @@ export function rowIdentityText(
   const jan =
     row.janMatch === true ? 'JAN 같음' : row.janMatch === false ? 'JAN 다름' : 'JAN 확인 전';
   const parts = [
-    `型番 ${row.modelCodeNorm ?? '없음'}`,
-    `색상 코드 ${row.colorCode ?? '없음'}`,
+    `모델 번호 ${row.modelCodeNorm ?? '없음'}`,
+    `색상 번호 ${row.colorCode ?? '없음'}`,
     jan,
   ];
   if (row.makerModelMatch === false) parts.push('メーカー型番 다름');

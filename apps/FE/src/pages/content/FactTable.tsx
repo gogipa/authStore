@@ -29,6 +29,7 @@ import {
 import { useOwnerEdit, type CandidateStepRailItem } from '@/features/step-engine';
 import { isApiRequestError } from '@/shared/api/errors';
 import { aiGeneratedLabel } from '@/shared/lib/aiEngine';
+import { externalLinkProps, useDemo } from '@/shared/lib/demo';
 import { Banner, Button, Chip, DisabledReason, StatusChip, TextField } from '@/shared/ui';
 import styles from './ContentPage.module.css';
 
@@ -66,13 +67,12 @@ function ValueLine({
 
 /** 출처 · 방법 칸 한 줄 */
 function SourceLine({ field }: { field: ContentDraftFieldItem | undefined }) {
+  const demo = useDemo();
   if (!field) return <span className={styles.caption}>—</span>;
   return (
     <span className={styles.factSource}>
       {field.valueSource === 'OWNER_INPUT' && field.evidenceUrl ? (
-        <a href={field.evidenceUrl} target="_blank" rel="noreferrer">
-          {factSourceText(field)}
-        </a>
+        <a {...externalLinkProps(field.evidenceUrl, demo)}>{factSourceText(field)}</a>
       ) : (
         <span>{factSourceText(field)}</span>
       )}

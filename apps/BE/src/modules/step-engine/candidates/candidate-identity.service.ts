@@ -71,7 +71,7 @@ function normalizeAnchor(input: AnchorKeyInput): AnchorFields {
     });
   }
   if (color === null) {
-    fieldErrors.push({ field: 'anchorColorCode', message: '앵커 색상 코드가 필요합니다.' });
+    fieldErrors.push({ field: 'anchorColorCode', message: '기준 상품의 색상 번호가 필요합니다.' });
   }
   if (fieldErrors.length > 0) throw new ApiException('VALIDATION_FAILED', { fieldErrors });
   return { anchorModelCode: model, anchorItemCode: item, anchorColorCode: color };

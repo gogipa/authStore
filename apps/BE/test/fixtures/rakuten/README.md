@@ -18,8 +18,8 @@
 | `err-403-client-ip.json`            | 403 `CLIENT_IP_NOT_ALLOWED` → 허용 IP 아님                                                                                                                                                                                |
 | `status-429.json`·`status-503.json` | 429 한도 초과·503 점검 → 지수 백오프로 최대 3회 다시 보낸 뒤 `RAKUTEN_RATE_LIMITED`·`RAKUTEN_UNAVAILABLE`                                                                                                                 |
 | `anchor-match12-p1.json`            | P2-03 앵커 분류: 앵커 1201A019·108 기준 `MATCH` 12 + `NEEDS_REVIEW`(색상 코드 없음, 샵 C) 1 + `NO_MATCH` 16 + 아동 단어 1(저장 안 함) → 29행. 샵 A·B·C·재고 부족·JAN 불일치·폭·hidden·여성 사이즈 페이지와 `itemUrl`이 짝 |
-| `anchor-match12-p2.json`            | `MATCH` < 20일 때 부르는 page 2(`MATCH` 2 더함)                                                                                                                                                                           |
-| `anchor-match20-p1.json`            | `MATCH` 22건인 page 1 → page 2를 부르지 않는다                                                                                                                                                                            |
+| `anchor-match12-p2.json`            | 둘째 답: 더 보기(관련도 page 2) 또는 앵커 뒤 같은 상품 검색(모델 번호 가격순 page 1, D-47)이 받는다(`MATCH` 2 더함)                                                                                                       |
+| `anchor-match20-p1.json`            | `MATCH` 22건인 page 1 → 같은 상품 검색 page 2를 부르지 않는다                                                                                                                                                             |
 
 ## genre/ — IchibaGenre Search(호출 경로 M0 S2)
 

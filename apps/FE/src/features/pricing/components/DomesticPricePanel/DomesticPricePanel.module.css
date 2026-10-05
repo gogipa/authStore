@@ -37,6 +37,12 @@
   white-space: nowrap;
 }
 
+/* 체험: 바깥 사이트를 열지 않는 꺼진 링크(href 없음, 마우스를 올리면 안내 — shared/lib/demo `externalLinkProps`) */
+.link[aria-disabled='true'] {
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
+
 .form {
   display: flex;
   flex-direction: column;

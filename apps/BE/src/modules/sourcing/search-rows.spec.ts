@@ -65,6 +65,8 @@ describe('검색 결과 아동화 거르기(F-SO-04, P2-02 규칙 5)', () => {
       shopName: 'ショップA',
       itemName: shopA.itemName,
       itemUrl: 'https://item.rakuten.co.jp/shop-a/asics-1201a019-108/',
+      imageUrl:
+        'https://thumbnail.image.rakuten.co.jp/@0_mall/shop-a/cabinet/asics-1201a019-108_1.jpg?_ex=128x128',
       apiItemPriceYen: 12000,
       apiItemPriceMin3Yen: 12000,
       apiPointRate: 10,

@@ -1,4 +1,11 @@
-import { Controller, Inject, type MessageEvent, Query, Sse } from '@nestjs/common';
+import {
+  type BeforeApplicationShutdown,
+  Controller,
+  Inject,
+  type MessageEvent,
+  Query,
+  Sse,
+} from '@nestjs/common';
 import {
   ApiForbiddenResponse,
   ApiHeader,
@@ -12,7 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsInt, IsOptional, Max, Min } from 'class-validator';
-import { interval, map, merge, type Observable } from 'rxjs';
+import { interval, map, merge, type Observable, ReplaySubject, takeUntil } from 'rxjs';
 import { ProgressEventsService } from './progress-events.service.js';
 
 /** SSE 연결 유지용 주석 줄(`: keep-alive`) 간격. Proposed(06-2 §9) */
@@ -20,6 +27,9 @@ export const SSE_HEARTBEAT_INTERVAL_MS = Symbol('SSE_HEARTBEAT_INTERVAL_MS');
 export const DEFAULT_SSE_HEARTBEAT_INTERVAL_MS = 25_000;
 
 const INT4_MAX = 2_147_483_647;
+
+/** 앱을 닫을 때 스트림을 끝낸 뒤 연결을 끊기 전까지 기다리는 시간(끝 표시가 소켓으로 나가게). Proposed(06-2 §9) */
+export const SSE_CLOSE_FLUSH_MS = 50;
 
 /** GET /events 쿼리. candidateId는 1 이상 정수(아니면 422 INVALID_QUERY_PARAMETER) */
 export class StreamProgressEventsQuery {
@@ -41,7 +51,14 @@ export class StreamProgressEventsQuery {
 
 @ApiTags('common')
 @Controller()
-export class EventsController {
+export class EventsController implements BeforeApplicationShutdown {
+  /**
+   * 앱을 닫을 때 열린 스트림을 모두 끝낸다. ReplaySubject(1)라 닫기 시작한 **뒤에** 붙은 스트림도 구독하자마자 끝난다 —
+   * Nest는 이 훅(+ 50ms 대기)과 그 뒤 HTTP 서버를 닫을 때까지 새 연결을 받는다. 그냥 Subject면 그런 연결은 끝 표시 없이
+   * `forceCloseConnections`에 끊겨 Vite 프록시 뒤 브라우저가 다시 붙지 않는다.
+   */
+  private readonly closing$ = new ReplaySubject<void>(1);
+
   constructor(
     private readonly events: ProgressEventsService,
     @Inject(SSE_HEARTBEAT_INTERVAL_MS) private readonly heartbeatMs: number,
@@ -76,10 +93,22 @@ export class EventsController {
         data: JSON.stringify(e.data),
       })),
     );
-    if (this.heartbeatMs <= 0) return frames;
+    if (this.heartbeatMs <= 0) return frames.pipe(takeUntil(this.closing$));
     const heartbeat = interval(this.heartbeatMs).pipe(
       map((): MessageEvent => ({ comment: 'keep-alive' })),
     );
-    return merge(frames, heartbeat);
+    return merge(frames, heartbeat).pipe(takeUntil(this.closing$));
+  }
+
+  /**
+   * 앱을 닫기 전에 열린 스트림을 정상으로 끝낸다(응답 끝 표시를 보낸다). 그 뒤 `forceCloseConnections`가 연결을 끊는다.
+   * 이렇게 하지 않으면 화면 개발 서버(Vite) 프록시를 거친 브라우저 쪽 연결이 BE가 다시 켜진 뒤에도 열린 채 남아, 브라우저가
+   * 다시 붙지 않고 진행 알림을 놓친다(D-29 5번 작업 중 찾음 — `pnpm dev` watch 재시작에서도 생긴다). Proposed(06-2 §9).
+   * 이 뒤에 새로 붙는 스트림은 `closing$`이 마지막 값을 다시 주므로 곧바로 끝 표시만 받고 끝난다.
+   */
+  async beforeApplicationShutdown(): Promise<void> {
+    this.closing$.next();
+    this.closing$.complete();
+    await new Promise((resolve) => setTimeout(resolve, SSE_CLOSE_FLUSH_MS));
   }
 }

@@ -8,6 +8,7 @@ import {
 import { KeywordCollectionRecovery } from '../src/modules/keywords/keyword-collection.recovery.js';
 import { KeywordCollectionService } from '../src/modules/keywords/keyword-collection.service.js';
 import { createTestApp, type TestApp, truncate } from './helpers/test-app.js';
+import { seedUsableAiEngine } from './support/fake-ai-engines.js';
 import { DatalabFixtureServer, datalabPasteFixture } from './support/datalab-fixture.adapter.js';
 
 /** setup-env.cjs가 이 파일에 준 임시 데이터 폴더(설정 파일 위치) */
@@ -44,6 +45,8 @@ interface SnapshotBody {
   excludedCount: number;
   structureChangeSuspected?: boolean;
   blockedUntil?: string | null;
+  /** 지금 고른 키워드(D-33) — 묶음 한 건 조회에만 있다 */
+  selectedKeyword?: KeywordBody | null;
 }
 interface KeywordBody {
   id: number;
@@ -172,6 +175,7 @@ describe('① 키워드 API(e2e, 가짜 데이터랩, P2-01)', () => {
         excludedCount: 3,
         structureChangeSuspected: false,
         blockedUntil: null,
+        selectedKeyword: null,
       });
 
       const logs = await t.prisma.callLog.findMany({ orderBy: { id: 'asc' } });
@@ -468,7 +472,7 @@ describe('① 키워드 API(e2e, 가짜 데이터랩, P2-01)', () => {
     });
   });
 
-  describe('G1 키워드 고르기', () => {
+  describe('G1 키워드 고르기(D-33 — 한 묶음에 하나)', () => {
     async function pasteKeywords(): Promise<KeywordBody[]> {
       const snap = (await paste(datalabPasteFixture('with-child-terms.txt')).expect(201))
         .body as SnapshotBody;
@@ -479,16 +483,29 @@ describe('① 키워드 API(e2e, 가짜 데이터랩, P2-01)', () => {
         ...(excluded.body as PageBody<KeywordBody>).content,
       ];
     }
+    const named = (rows: KeywordBody[], keyword: string): KeywordBody =>
+      rows.find((k) => k.keyword === keyword)!;
+    /** 묶음 조회가 돌려주는 '지금 고른 키워드' */
+    const currentOf = async (snapshotId: number): Promise<KeywordBody | null> =>
+      ((await getSnapshot(snapshotId).expect(200)).body as SnapshotBody)
+        .selectedKeyword as KeywordBody | null;
+    const selectedAtOf = async (id: number): Promise<string | null> =>
+      (await t.prisma.keyword.findUniqueOrThrow({ where: { id } })).selectedAt?.toISOString() ??
+      null;
+    const at = (offsetMs: number): string => new Date(NOW + offsetMs).toISOString();
+    const audit = () => t.prisma.userActionLog.findMany({ orderBy: { id: 'asc' } });
 
-    it('PUT 200 selectedAt · 두 번 → 같은 selectedAt · 제외 → 409 · 없는 id → 404 · 감사 기록 GATE_PASSED·G1 1행', async () => {
+    it('PUT 200 selectedAt · 두 번 → 같은 selectedAt · 제외 → 409 · 없는 id → 404 · 감사 기록 GATE_PASSED·G1 1행 · selectedKeyword', async () => {
       const rows = await pasteKeywords();
-      const target = rows.find((k) => k.keyword === '뉴발란스 530')!;
+      const target = named(rows, '뉴발란스 530');
       const child = rows.find((k) => k.excludedReason === 'CHILD')!;
+      expect(await currentOf(target.keywordSnapshotId)).toBeNull();
       const first = (await select(target.id).expect(200)).body as KeywordBody;
       expect(first).toMatchObject({ id: target.id, selectedAt: new Date(NOW).toISOString() });
       t.clock.advance(5_000);
       const second = (await select(target.id).expect(200)).body as KeywordBody;
       expect(second.selectedAt).toBe(first.selectedAt);
+      expect(await currentOf(target.keywordSnapshotId)).toEqual(first);
 
       const excluded = await select(child.id).expect(409);
       expect(excluded.body).toMatchObject({
@@ -497,10 +514,12 @@ describe('① 키워드 API(e2e, 가짜 데이터랩, P2-01)', () => {
       });
       expect((await select(999_999).expect(404)).body).toMatchObject({ code: 'KEYWORD_NOT_FOUND' });
       await select('x1').expect(404);
+      // 막힌 요청은 지금 고른 키워드를 바꾸지 않는다
+      expect((await currentOf(target.keywordSnapshotId))?.id).toBe(target.id);
 
-      const audit = await t.prisma.userActionLog.findMany();
-      expect(audit).toHaveLength(1);
-      expect(audit[0]).toMatchObject({
+      const logs = await audit();
+      expect(logs).toHaveLength(1);
+      expect(logs[0]).toMatchObject({
         eventType: 'GATE_PASSED',
         gate: 'G1',
         candidateId: null,
@@ -508,10 +527,184 @@ describe('① 키워드 API(e2e, 가짜 데이터랩, P2-01)', () => {
       });
     });
 
+    it('아동 제외 줄은 DB도 막는다(ck_keyword_excluded_not_selected) · selectedAt이 비어 있다', async () => {
+      const rows = await pasteKeywords();
+      const child = rows.find((k) => k.excludedReason === 'CHILD')!;
+      await select(child.id).expect(409);
+      expect(await selectedAtOf(child.id)).toBeNull();
+      await expect(
+        t.prisma.keyword.update({ where: { id: child.id }, data: { selectedAt: new Date(NOW) } }),
+      ).rejects.toThrow(/ck_keyword_excluded_not_selected/);
+      expect(await audit()).toHaveLength(0);
+    });
+
+    it('고른 것이 없는 묶음(붙여넣기)은 selectedKeyword null — 필드는 늘 들어 있다', async () => {
+      const rows = await pasteKeywords();
+      const snapshotId = rows[0]!.keywordSnapshotId;
+      const body = (await getSnapshot(snapshotId).expect(200)).body as SnapshotBody;
+      expect(body).toHaveProperty('selectedKeyword', null);
+      expect(await audit()).toHaveLength(0);
+    });
+
+    it('A → B: selectedKeyword가 B · A의 selectedAt은 그대로(null 아님) · 감사 2행', async () => {
+      const rows = await pasteKeywords();
+      const a = named(rows, '뉴발란스 530');
+      const b = named(rows, '아식스 젤카야노14');
+      const snapshotId = a.keywordSnapshotId;
+      await select(a.id).expect(200);
+      expect((await currentOf(snapshotId))?.id).toBe(a.id);
+      t.clock.advance(5_000);
+      const pickedB = (await select(b.id).expect(200)).body as KeywordBody;
+      expect(pickedB).toMatchObject({ id: b.id, selectedAt: at(5_000) });
+
+      expect(await currentOf(snapshotId)).toEqual(pickedB);
+      // 앞서 고른 A의 승인 이력(후보 G1 통과 시각)은 지우지 않는다
+      expect(await selectedAtOf(a.id)).toBe(at(0));
+      const logs = await audit();
+      expect(logs.map((l) => l.detail)).toEqual([
+        { keywordId: a.id, keywordSnapshotId: snapshotId },
+        { keywordId: b.id, keywordSnapshotId: snapshotId },
+      ]);
+      expect(logs.map((l) => l.occurredAt.toISOString())).toEqual([at(0), at(5_000)]);
+      expect(logs.every((l) => l.eventType === 'GATE_PASSED' && l.gate === 'G1')).toBe(true);
+    });
+
+    it('A → B → A: 앞서 고른 A를 다시 고르면 A가 지금 고른 키워드 · 고정 시계(NOW)여도 1ms씩 늦춰 순서가 선다 · 같은 키워드를 또 고르면 멱등 · 감사 3행', async () => {
+      const rows = await pasteKeywords();
+      const a = named(rows, '뉴발란스 530');
+      const b = named(rows, '아식스 젤카야노14');
+      const snapshotId = a.keywordSnapshotId;
+      // 시계가 움직이지 않는다 — 같은 시각에 세 번 고른다
+      expect(((await select(a.id).expect(200)).body as KeywordBody).selectedAt).toBe(at(0));
+      expect(((await select(b.id).expect(200)).body as KeywordBody).selectedAt).toBe(at(1));
+      const again = (await select(a.id).expect(200)).body as KeywordBody;
+      expect(again).toMatchObject({ id: a.id, selectedAt: at(2) });
+      expect(await currentOf(snapshotId)).toEqual(again);
+      expect(await selectedAtOf(b.id)).toBe(at(1));
+      expect((await audit()).map((l) => (l.detail as { keywordId: number }).keywordId)).toEqual([
+        a.id,
+        b.id,
+        a.id,
+      ]);
+
+      // 이미 지금 고른 키워드를 또 고르면 그대로(기록 없음)
+      t.clock.advance(7_000);
+      expect(((await select(a.id).expect(200)).body as KeywordBody).selectedAt).toBe(at(2));
+      expect(await audit()).toHaveLength(3);
+      // 시계가 앞서가면 지금 시각이 그대로 선다(+1ms 보정은 같거나 거꾸로 갈 때만)
+      const later = (await select(b.id).expect(200)).body as KeywordBody;
+      expect(later.selectedAt).toBe(at(7_000));
+      expect((await currentOf(snapshotId))?.id).toBe(b.id);
+      expect(await audit()).toHaveLength(4);
+    });
+
+    it('묶음마다 하나: 다른 묶음의 선택은 영향이 없다', async () => {
+      const first = await pasteKeywords();
+      const second = await pasteKeywords();
+      const a = named(first, '뉴발란스 530');
+      const b = named(second, '아식스 젤카야노14');
+      expect(a.keywordSnapshotId).not.toBe(b.keywordSnapshotId);
+      await select(a.id).expect(200);
+      t.clock.advance(1_000);
+      await select(b.id).expect(200);
+      // 뒤에 고른 b가 더 늦지만 a의 묶음에서는 여전히 a
+      expect((await currentOf(a.keywordSnapshotId))?.id).toBe(a.id);
+      expect((await currentOf(b.keywordSnapshotId))?.id).toBe(b.id);
+      expect(await selectedAtOf(a.id)).toBe(at(0));
+      expect(await audit()).toHaveLength(2);
+    });
+
+    it('한 묶음 안에서는 분야(여/남)·쪽과 관계없이 하나', async () => {
+      const snap = await collectButton();
+      // 수집 중 요청 간격 기다림이 가짜 시계를 앞으로 보냈다 → 고정 시각으로 되돌린다
+      t.clock.ms = NOW;
+      const women = (await listKeywords(snap.id, '?cid=50000173&size=10').expect(200))
+        .body as PageBody<KeywordBody>;
+      const menPage2 = (await listKeywords(snap.id, '?cid=50000174&size=10&page=1').expect(200))
+        .body as PageBody<KeywordBody>;
+      const a = women.content[0]!;
+      const b = menPage2.content[0]!;
+      expect([a.cid, b.cid]).toEqual(['50000173', '50000174']);
+      expect(await currentOf(snap.id)).toBeNull();
+      await select(a.id).expect(200);
+      t.clock.advance(1_000);
+      await select(b.id).expect(200);
+      expect((await currentOf(snap.id))?.id).toBe(b.id);
+      // 목록 줄에는 앞서 고른 a의 selectedAt이 그대로 남는다
+      const womenAgain = (await listKeywords(snap.id, '?cid=50000173&size=10').expect(200))
+        .body as PageBody<KeywordBody>;
+      expect(womenAgain.content[0]).toMatchObject({ id: a.id, selectedAt: at(0) });
+      expect(await t.prisma.keyword.count({ where: { selectedAt: { not: null } } })).toBe(2);
+    });
+
+    it('DELETE: 지금 고른 키워드를 비우면 그다음으로 늦게 고른 것이 지금 고른 키워드 · 지금 고른 것이 아닌 키워드를 비워도 그대로', async () => {
+      const rows = await pasteKeywords();
+      const a = named(rows, '뉴발란스 530');
+      const b = named(rows, '아식스 젤카야노14');
+      const c = named(rows, '아디다스 삼바');
+      const snapshotId = a.keywordSnapshotId;
+      for (const k of [a, b, c]) {
+        await select(k.id).expect(200);
+        t.clock.advance(1_000);
+      }
+      expect((await currentOf(snapshotId))?.id).toBe(c.id);
+
+      await unselect(c.id).expect(204);
+      expect(await selectedAtOf(c.id)).toBeNull();
+      expect(await currentOf(snapshotId)).toMatchObject({ id: b.id, selectedAt: at(1_000) });
+
+      // 지금 고른 b가 아닌 a를 비워도 b는 그대로
+      await unselect(a.id).expect(204);
+      expect((await currentOf(snapshotId))?.id).toBe(b.id);
+
+      await unselect(b.id).expect(204);
+      expect(await currentOf(snapshotId)).toBeNull();
+      // 비운 c를 다시 고르면 처음 고르는 것과 같다(감사 기록이 더 남는다)
+      await select(c.id).expect(200);
+      expect((await currentOf(snapshotId))?.id).toBe(c.id);
+      expect(await audit()).toHaveLength(4);
+    });
+
+    it('selected_at이 여러 개 이미 있으면(예전 데이터) 가장 늦은 것이 지금 고른 키워드(같으면 id가 큰 쪽) · 새로 고르면 그 가장 늦은 값 뒤 1ms부터', async () => {
+      const rows = await pasteKeywords();
+      const old = named(rows, '뉴발란스 530');
+      const tieA = named(rows, '아식스 젤카야노14');
+      const tieB = named(rows, '아디다스 삼바');
+      const fresh = named(rows, '나이키 코르테즈');
+      const snapshotId = old.keywordSnapshotId;
+      // 지금(NOW)보다 앞선 값 하나, 지금보다 뒤(시계가 거꾸로 간 경우)인 같은 값 둘
+      await t.prisma.keyword.update({
+        where: { id: old.id },
+        data: { selectedAt: new Date(NOW - 60_000) },
+      });
+      for (const k of [tieA, tieB]) {
+        await t.prisma.keyword.update({
+          where: { id: k.id },
+          data: { selectedAt: new Date(NOW + 60_000) },
+        });
+      }
+      const [winner, loser] = tieA.id > tieB.id ? [tieA, tieB] : [tieB, tieA];
+      expect(await currentOf(snapshotId)).toMatchObject({ id: winner.id, selectedAt: at(60_000) });
+
+      // 지금 고른 키워드가 아닌 쪽(같은 값의 id 작은 쪽)을 고르면 그 값보다 1ms 뒤
+      expect(((await select(loser.id).expect(200)).body as KeywordBody).selectedAt).toBe(
+        at(60_001),
+      );
+      expect((await currentOf(snapshotId))?.id).toBe(loser.id);
+      // 처음 고르는 키워드도, 한참 전에 골랐던 키워드도 가장 늦은 값 뒤로 간다
+      expect(((await select(fresh.id).expect(200)).body as KeywordBody).selectedAt).toBe(
+        at(60_002),
+      );
+      expect(((await select(old.id).expect(200)).body as KeywordBody).selectedAt).toBe(at(60_003));
+      expect((await currentOf(snapshotId))?.id).toBe(old.id);
+      expect(await selectedAtOf(winner.id)).toBe(at(60_000));
+      expect(await audit()).toHaveLength(3);
+    });
+
     it('DELETE 204(비어 있어도 204) · 그 키워드로 후보를 만든 뒤 → 409 KEYWORD_IN_USE · 고르지 않은 키워드로 후보 → 409 KEYWORD_NOT_SELECTED', async () => {
       const rows = await pasteKeywords();
-      const target = rows.find((k) => k.keyword === '아식스 젤카야노14')!;
-      const other = rows.find((k) => k.keyword === '아디다스 삼바')!;
+      const target = named(rows, '아식스 젤카야노14');
+      const other = named(rows, '아디다스 삼바');
       const child = rows.find((k) => k.excludedReason === 'CHILD')!;
       await unselect(target.id).expect(204);
       await select(target.id).expect(200);
@@ -544,12 +737,37 @@ describe('① 키워드 API(e2e, 가짜 데이터랩, P2-01)', () => {
       const inUse = await unselect(target.id).expect(409);
       expect(inUse.body).toMatchObject({
         code: 'KEYWORD_IN_USE',
-        message: '이 키워드로 만든 후보가 있어 선택을 취소할 수 없습니다.',
+        message: '이 키워드로 만든 여정이 있어 선택을 취소할 수 없습니다.',
         details: { keywordId: target.id, candidateIds: [candidateId] },
       });
       const list = (await listKeywords(target.keywordSnapshotId).expect(200))
         .body as PageBody<KeywordBody>;
       expect(list.content.find((k) => k.id === target.id)!.candidateIds).toEqual([candidateId]);
+      // 막힌 DELETE는 지금 고른 키워드를 바꾸지 않는다
+      expect((await currentOf(target.keywordSnapshotId))?.id).toBe(target.id);
+    });
+
+    it('앞서 고른(지금 고른 것이 아닌) 키워드로도 후보를 만들 수 있고, 그 키워드는 KEYWORD_IN_USE로 막힌다 · 지금 고른 키워드는 그대로', async () => {
+      const rows = await pasteKeywords();
+      const earlier = named(rows, '아식스 젤카야노14');
+      const current = named(rows, '아디다스 삼바');
+      await select(earlier.id).expect(200);
+      t.clock.advance(1_000);
+      await select(current.id).expect(200);
+      // selected_at이 비어 있지 않으면 후보를 만들 수 있다(화면은 지금 고른 키워드만 보낸다)
+      const created = await post('/candidates', {
+        creationPath: 'KEYWORD',
+        sourceKeywordId: earlier.id,
+        rakutenQuery: earlier.keyword,
+      }).expect(201);
+      const candidateId = (created.body as { id: number }).id;
+      const inUse = await unselect(earlier.id).expect(409);
+      expect(inUse.body).toMatchObject({
+        code: 'KEYWORD_IN_USE',
+        details: { keywordId: earlier.id, candidateIds: [candidateId] },
+      });
+      expect((await currentOf(earlier.keywordSnapshotId))?.id).toBe(current.id);
+      expect(await selectedAtOf(earlier.id)).toBe(at(0));
     });
   });
 
@@ -655,6 +873,79 @@ describe('① 키워드 API(e2e, 가짜 데이터랩, P2-01)', () => {
         collecting: false,
         lastAbortReason: 'APP_RESTART',
         disabledReasonCode: null,
+      });
+    });
+  });
+
+  describe('한글 키워드 → 일본어 검색어(AI, F-BS-70)', () => {
+    const convert = (id: number | string) =>
+      http().post(`/api/v1/keywords/${id}/rakuten-query-conversions`).set(CLIENT);
+    async function keywordRows(): Promise<KeywordBody[]> {
+      const snap = (await paste(datalabPasteFixture('with-child-terms.txt')).expect(201))
+        .body as SnapshotBody;
+      const all = (await listKeywords(snap.id)).body as PageBody<KeywordBody>;
+      const excluded = (await listKeywords(snap.id, '?excluded=true'))
+        .body as PageBody<KeywordBody>;
+      return [...all.content, ...excluded.content];
+    }
+    const callLogs = () => t.prisma.callLog.findMany({ where: { target: 'AI_CLAUDE_CLI' } });
+
+    beforeEach(async () => {
+      await seedUsableAiEngine(t.prisma, 'CLAUDE');
+      t.ai.resetCalls();
+      t.ai.claude.runImpl = () => ({ query_ja: 'ニューバランス 530' });
+    });
+
+    it('200: 고른 키워드 1개만 선택 엔진(CLAUDE)에 보내 바꾼 검색어를 받는다. 저장하지 않고 call_log AI 1행', async () => {
+      const target = (await keywordRows()).find((k) => k.keyword === '뉴발란스 530')!;
+      const res = await convert(target.id).expect(200);
+      expect(res.body).toEqual({
+        keywordId: target.id,
+        keyword: '뉴발란스 530',
+        rakutenQuery: 'ニューバランス 530',
+        engineCode: 'CLAUDE',
+        model: 'sonnet',
+      });
+      const calls = t.ai.claude.calls.runStructured;
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toMatchObject({ task: 'KW-06' });
+      expect(calls[0]!.promptIncludes('뉴발란스 530')).toBe(true);
+      expect(await callLogs()).toHaveLength(1);
+      // 저장하지 않는다: 키워드·고르기 기록 그대로
+      const after = await t.prisma.keyword.findUniqueOrThrow({ where: { id: target.id } });
+      expect(after.selectedAt).toBeNull();
+    });
+
+    it('가드 헤더가 없으면 403, 없는 id·글자 id는 404, 아동화로 빠진 키워드는 409 KEYWORD_EXCLUDED(AI 호출 없음)', async () => {
+      const rows = await keywordRows();
+      await http().post(`/api/v1/keywords/${rows[0]!.id}/rakuten-query-conversions`).expect(403);
+      expect((await convert(99999).expect(404)).body).toMatchObject({ code: 'KEYWORD_NOT_FOUND' });
+      await convert('abc').expect(404);
+      const child = rows.find((k) => k.excludedReason === 'CHILD')!;
+      expect((await convert(child.id).expect(409)).body).toMatchObject({
+        code: 'KEYWORD_EXCLUDED',
+      });
+      expect(t.ai.totalRuns()).toBe(0);
+    });
+
+    it('선택 엔진을 쓸 수 없으면 409 AI_ENGINE_UNAVAILABLE(NOT_CHECKED), AI를 부르지 않는다', async () => {
+      const target = (await keywordRows())[0]!;
+      await t.prisma.$executeRawUnsafe('TRUNCATE TABLE ai_cli_check RESTART IDENTITY');
+      const res = await convert(target.id).expect(409);
+      expect(res.body).toMatchObject({
+        code: 'AI_ENGINE_UNAVAILABLE',
+        details: { engineCode: 'CLAUDE', reason: 'NOT_CHECKED' },
+      });
+      expect(t.ai.totalRuns()).toBe(0);
+    });
+
+    it('결과에 한글이 남으면 502 AI_CALL_FAILED(AI_OUTPUT_INVALID)', async () => {
+      const target = (await keywordRows())[0]!;
+      t.ai.claude.runImpl = () => ({ query_ja: 'ローファー 레이디스' });
+      const res = await convert(target.id).expect(502);
+      expect(res.body).toMatchObject({
+        code: 'AI_CALL_FAILED',
+        details: { errorCode: 'AI_OUTPUT_INVALID' },
       });
     });
   });

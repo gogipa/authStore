@@ -95,7 +95,7 @@ describe('프로필 폼 변환(P1-09)', () => {
       '저장했습니다.',
     );
     expect(saveResultText({ profile: filledProfile(), rerunRequiredStepCount: 2 })).toContain(
-      "후보 단계 2개(⑥-3·⑧·⑨)가 '재실행 필요'가 되었습니다",
+      "여정 단계 2개(⑥-3·⑧·⑨)가 '재실행 필요'가 되었습니다",
     );
   });
 });

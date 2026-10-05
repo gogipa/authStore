@@ -21,16 +21,16 @@ export interface SourcingConfirmPanelProps {
   judgement: PriceJudgementDetail | undefined;
   /** G2 게이트 상태(listCandidateGates) */
   gate: GateStateItem | undefined;
-  /** ② 현재 버전이 비교를 하지 않은 URL 후보인가 — '비교 없이 확정'은 이때만 보인다 */
+  /** ② 현재 버전이 비교를 하지 않은 URL 여정인가 — '비교 없이 확정'은 이때만 보인다 */
   uncompared: boolean;
 }
 
 /** '비교 없이 확정' 설명(보드 그대로) */
-export const NO_COMPARISON_CAPTION = 'URL 후보만 체크합니다';
+export const NO_COMPARISON_CAPTION = 'URL 여정만 체크합니다';
 
 /**
  * '소싱 확정'(G2) 패널(Judgement.dc.html, F-PJ-02·20, P1-06 게이트 규약). 게이트 배지 · 통과 줄('통과 · 14:06 · 비교 결과로 확정') ·
- * 확정한 값('판매 사이즈 5개 · 167,300원 단일가') · '비교 없이 확정'(비교하지 않은 URL 후보만 보인다 — `PUT`·`DELETE
+ * 확정한 값('판매 사이즈 5개 · 167,300원 단일가') · '비교 없이 확정'(비교하지 않은 URL 여정만 보인다 — `PUT`·`DELETE
  * …/no-comparison-confirmation`) · '소싱 확정(G2)' 단추(P1-06 `usePassGate`, 막힌 이유는 게이트 목록의 blockedReasons).
  */
 export function SourcingConfirmPanel({

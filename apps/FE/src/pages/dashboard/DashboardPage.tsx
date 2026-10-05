@@ -1,5 +1,11 @@
 import { Link } from 'react-router';
-import { EMPTY_STATE, ReadinessCard, ScreenHelp, WorkFlowCard } from '@/features/guide';
+import {
+  EMPTY_STATE,
+  ReadinessCard,
+  ScreenHelp,
+  SetupWizardAutoOpen,
+  WorkFlowCard,
+} from '@/features/guide';
 import { useSettingsQuery } from '@/features/settings';
 import {
   CandidateStatusChip,
@@ -37,10 +43,10 @@ import {
 } from '@/shared/ui';
 import styles from './DashboardPage.module.css';
 
-/** 대시보드가 한 번에 읽는 진행 중 후보 수(목록 최대 크기) */
+/** 대시보드가 한 번에 읽는 진행 중 여정 수(목록 최대 크기) */
 const PROGRESS_PAGE_SIZE = 100;
 
-/** '이어서 할 곳: {후보} · {단계}' + '이어 하기'(Main.dc.html 머리 오른쪽). 이어 할 곳이 없으면(204) 그리지 않는다 */
+/** '이어서 할 곳: {여정} · {단계}' + '이어 하기'(Main.dc.html 머리 오른쪽). 이어 할 곳이 없으면(204) 그리지 않는다 */
 function ResumeBanner({ names }: { names: ReadonlyMap<number, string> }) {
   const resume = useResumeTarget();
   const target = resume.data ?? null;
@@ -48,7 +54,7 @@ function ResumeBanner({ names }: { names: ReadonlyMap<number, string> }) {
   if (!target) return null;
   const name = candidate.data
     ? candidateDisplayName(candidate.data)
-    : (names.get(target.candidateId) ?? `후보 #${target.candidateId}`);
+    : (names.get(target.candidateId) ?? `여정 #${target.candidateId}`);
   return (
     <>
       <span className={styles.resumeText}>
@@ -108,18 +114,18 @@ function SectionHead({
   );
 }
 
-/** '재실행 필요·멈춘 후보'(F-DB-01): 단계 단위 표. '단계 열기'는 그 단계 화면으로 */
+/** '재실행 필요·멈춘 여정'(F-DB-01): 단계 단위 표. '단계 열기'는 그 단계 화면으로 */
 function AttentionSection({ names }: { names: ReadonlyMap<number, string> }) {
   const attention = useAttentionSteps();
   const rows = attention.data?.content ?? [];
   const columns: DataTableColumn<CandidateStepAttentionItem>[] = [
     {
       key: 'candidate',
-      header: '후보',
+      header: '여정',
       width: 226,
       cell: (row) => (
         <span className={styles.strong}>
-          {names.get(row.candidateId) ?? `후보 #${row.candidateId}`}
+          {names.get(row.candidateId) ?? `여정 #${row.candidateId}`}
         </span>
       ),
     },
@@ -146,7 +152,7 @@ function AttentionSection({ names }: { names: ReadonlyMap<number, string> }) {
     <section aria-labelledby="stuck-title" className={styles.section}>
       <SectionHead
         id="stuck-title"
-        title="재실행 필요·멈춘 후보"
+        title="재실행 필요·멈춘 여정"
         count={attention.data?.page.totalElements}
         caption="재실행 필요 단계는 자동으로 다시 돌지 않습니다. 단계를 열어 다시 실행하세요."
       />
@@ -162,7 +168,7 @@ function AttentionSection({ names }: { names: ReadonlyMap<number, string> }) {
   );
 }
 
-/** '진행 중 후보'(F-CW-09·10): 후보 · 후보 상태 · ②~⑨ 점 · '{단계} 열기'. 선택 체크박스·일괄 실행은 M2 */
+/** '진행 중 여정'(F-CW-09·10): 여정 · 여정 상태 · ②~⑨ 점 · '{단계} 열기'. 선택 체크박스·일괄 실행은 M2 */
 function ProgressSection({
   candidates,
   total,
@@ -177,7 +183,7 @@ function ProgressSection({
   const columns: DataTableColumn<CandidateSummary>[] = [
     {
       key: 'candidate',
-      header: '후보',
+      header: '여정',
       cell: (row) => (
         <Link to={`/candidates/${row.id}`} className={styles.candidateLink}>
           {candidateDisplayName(row)}
@@ -186,7 +192,7 @@ function ProgressSection({
     },
     {
       key: 'status',
-      header: '후보 상태',
+      header: '여정 상태',
       width: 112,
       cell: (row) => <CandidateStatusChip status={row.status} />,
     },
@@ -213,7 +219,7 @@ function ProgressSection({
   ];
   return (
     <section aria-labelledby="progress-title" className={styles.section}>
-      <SectionHead id="progress-title" title="진행 중 후보" count={total} />
+      <SectionHead id="progress-title" title="진행 중 여정" count={total} />
       {error ? <Banner tone="warning">{error}</Banner> : null}
       <DataTable
         aria-labelledby="progress-title"
@@ -296,9 +302,10 @@ function SystemWarnings() {
 }
 
 /**
- * SCR-01 대시보드(Main.dc.html)의 M1 부분: 이어서 할 곳, 재실행 필요·멈춘 후보, 진행 중 후보(②~⑨ 점), 설정 파일 검사.
+ * SCR-01 대시보드(Main.dc.html)의 M1 부분: 이어서 할 곳, 재실행 필요·멈춘 여정, 진행 중 여정(②~⑨ 점), 설정 파일 검사.
  * D-29(화면시안_명세 §8): 머리 아래 맨 위에 '시작 준비'(F-DB-10), 그 아래 '작업 흐름'(F-DB-11, 숨길 수 있음) 카드,
- * 제목 옆 '?' 도움말(F-GD-02), 진행 중 후보가 없을 때 다음 행동 버튼(F-GD-03).
+ * 제목 옆 '?' 도움말(F-GD-02), 진행 중 여정이 없을 때 다음 행동 버튼(F-GD-03).
+ * D-30: 시작 준비에 할 일이 남아 있으면 브라우저 세션(탭)마다 한 번 설정 마법사(`/setup`, F-GD-04)로 보낸다(체험에서는 열지 않는다).
  * M2 부분(오늘 처리량·단계별 대기 건수·조치 필요·등록 한도·판매상품비중·공지·자격증명 경고·일괄 실행)은 만들지 않는다.
  * 값은 SSE `candidate.status-changed`·`candidate-step.changed`가 오면 다시 읽는다(폴링하지 않는다).
  */
@@ -315,6 +322,7 @@ export function DashboardPage() {
         actions={<ResumeBanner names={names} />}
         help={<ScreenHelp screen="dashboard" />}
       />
+      <SetupWizardAutoOpen />
       <ReadinessCard />
       <WorkFlowCard variant="dashboard" />
       <div className={styles.layout}>

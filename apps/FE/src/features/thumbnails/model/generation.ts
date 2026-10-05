@@ -23,13 +23,13 @@ export const ADDITIONAL_LABEL = '추가';
 export const SIDE_BY_SIDE_TITLE = '레퍼런스와 나란히 보기';
 export const G3_CHECKLIST_TITLE = '선택 전 확인';
 export const G3_PASS_LABEL = '썸네일 선택(G3)';
-export const G3_REPICK_NOTE = '레퍼런스·선택본·앵커 키가 바뀌면 다시 골라야 합니다.';
+export const G3_REPICK_NOTE = '레퍼런스·선택본·기준 상품이 바뀌면 다시 골라야 합니다.';
 export const NEXT_CONTENT_LABEL = '다음: ⑥ 상세 콘텐츠';
 export const SAME_PRODUCT_NOTE =
-  "레퍼런스가 이 후보의 라쿠텐 상품(같은 앵커 키) 이미지라서 '같은 상품·색상' 확인은 따로 받지 않습니다.";
+  "레퍼런스가 이 여정의 라쿠텐 상품(같은 기준 상품) 이미지라서 '같은 상품·색상' 확인은 따로 받지 않습니다.";
 export const SAME_PRODUCT_LABEL = '같은 상품·색상 확인';
 export const SAME_PRODUCT_DESCRIPTION =
-  '레퍼런스 가운데 이 후보의 앵커 키(型番·색상)와 다르거나 색상을 알 수 없는 원본이 있습니다. 같은 상품·색상인지 확인해 주세요.';
+  '레퍼런스 가운데 이 여정의 기준 상품(모델 번호·색상)과 다르거나 색상을 알 수 없는 원본이 있습니다. 같은 상품·색상인지 확인해 주세요.';
 
 /** 보드에 없는 문구(P3-02 Proposed) */
 export const SLOT_EMPTY_TEXT = '아직 만들지 않았습니다';
@@ -47,7 +47,7 @@ export const G3_CHECKLIST_REASON = '7개를 모두 확인해 주세요.';
 export const G3_SAME_PRODUCT_REASON = "'같은 상품·색상'을 확인해 주세요.";
 export const G3_SAME_AS_PASSED_REASON = '지금 선택으로 G3을 통과했습니다.';
 export const G3_REPICK_CAPTION = '다시 고르면 ⑤의 새 버전이 생기고 ⑧ 업로드를 다시 해야 합니다.';
-export const G3_INVALID_TEXT = '레퍼런스·선택본·앵커 키가 바뀌어 G3을 다시 통과해야 합니다.';
+export const G3_INVALID_TEXT = '레퍼런스·선택본·기준 상품이 바뀌어 G3을 다시 통과해야 합니다.';
 
 /** 추가이미지 최대 장수(RG-08) */
 export const ADDITIONAL_MAX = 9;

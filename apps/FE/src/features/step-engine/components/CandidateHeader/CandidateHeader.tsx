@@ -13,17 +13,17 @@ export interface CandidateHeaderProps {
   /** 게이트 줄 옆 캡션(예: '라쿠텐 페이지 14:02 받음 · 20:02까지 유효'). */
   caption?: ReactNode;
   /**
-   * 오른쪽 버튼 슬롯(04-3 §4의 2번). 단계 화면 틀은 '후보 목록'(공통부품 §F),
-   * SCR-12 목록 화면은 '후보 제외'를 넣는다.
+   * 오른쪽 버튼 슬롯(04-3 §4의 2번). 단계 화면 틀은 '여정 목록'(공통부품 §F),
+   * SCR-12 목록 화면은 '삭제'를 넣는다.
    */
   actions?: ReactNode;
 }
 
-/** 후보 머리(공통부품_마크업.md §F): 썸네일 자리 · 상품명 · 게이트 · 오른쪽 버튼. */
+/** 여정 머리(공통부품_마크업.md §F): 썸네일 자리 · 상품명 · 게이트 · 오른쪽 버튼. */
 export function CandidateHeader({ title, meta, gates, caption, actions }: CandidateHeaderProps) {
   const hasSecondLine = (gates !== undefined && gates.length > 0) || caption !== undefined;
   return (
-    <section aria-label="후보 정보" className={styles.header}>
+    <section aria-label="여정 정보" className={styles.header}>
       <div className={styles.thumb}>
         <Icon name="shoe" size={28} />
       </div>

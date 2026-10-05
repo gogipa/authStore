@@ -17,7 +17,7 @@ import styles from './RakutenUrlForm.module.css';
 
 const MODE_LABEL: Record<UrlPasteMode, string> = {
   TABLE: '비교표에 넣기',
-  CREATE: '바로 후보 만들기',
+  CREATE: '바로 여정 만들기',
 };
 
 export interface RakutenUrlFormProps {
@@ -30,7 +30,7 @@ export interface RakutenUrlFormProps {
   modes?: readonly UrlPasteMode[];
   /** 페이지를 읽을 수 없는 이유(하루 상한·24시간 쉼 — `pageReadBlockedReason`). 있으면 '넣기'를 끈다 */
   blockedReason?: string | null;
-  /** 만든 후보(또는 CANDIDATE_DUPLICATE의 기존 후보)를 연다 — 부르는 화면이 이동한다 */
+  /** 만든 여정(또는 CANDIDATE_DUPLICATE의 기존 여정)을 연다 — 부르는 화면이 이동한다 */
   onOpenCandidate: (candidateId: number) => void;
   /** 아래 줄 왼쪽 안내 글(보드 문구) */
   note?: ReactNode;
@@ -46,10 +46,10 @@ export interface RakutenUrlFormProps {
 
 /**
  * 라쿠텐 URL 붙여넣기(F-SO-31·32·33·35, P2-02). '넣기' → `fetchRakutenItem`(하루 페이지 조회 1건) → 상품·입구 검사 →
- * 색상 고르기(`getRakutenItem` SKU·variantSelectors) → '후보 만들기'(`createCandidate` RAKUTEN_URL). 만든 후보를 연다.
- * - 제외어(中古·キッズ 등)가 든 상품은 후보를 만들지 않고 문구를 보인다(입구 검사·422 RAKUTEN_ITEM_EXCLUDED_WORD 모두)
- * - 409 CANDIDATE_DUPLICATE면 `details.existingCandidateId` 후보를 연다
- * - 아동화 의심·대상 외 장르는 막지 않고 알린다 — 후보를 만든 뒤 ②가 '성인용 상품 확인' 입력 대기로 멈춘다
+ * 색상 고르기(`getRakutenItem` SKU·variantSelectors) → '여정 만들기'(`createCandidate` RAKUTEN_URL). 만든 여정을 연다.
+ * - 제외어(中古·キッズ 등)가 든 상품은 여정을 만들지 않고 문구를 보인다(입구 검사·422 RAKUTEN_ITEM_EXCLUDED_WORD 모두)
+ * - 409 CANDIDATE_DUPLICATE면 `details.existingCandidateId` 여정을 연다
+ * - 아동화 의심·대상 외 장르는 막지 않고 알린다 — 여정을 만든 뒤 ②가 '성인용 상품 확인' 입력 대기로 멈춘다
  * - '비교표에 넣기'(수동 행, P2-03 F-SO-34): 넣기 → 읽은 상품 → '비교표에 넣기'(`addSourcingComparisonManualRow`). 앵커 전·입력
  *   대기가 아닌 버전이면 그 방법을 끄고 이유를 보인다
  */
@@ -134,7 +134,7 @@ export function RakutenUrlForm({
     createCandidate.error && existingCandidateIdOf(createCandidate.error) === null
       ? isApiRequestError(createCandidate.error)
         ? createCandidate.error.message
-        : '후보를 만들지 못했습니다.'
+        : '여정을 만들지 못했습니다.'
       : null;
   const addError = addRow.error
     ? isApiRequestError(addRow.error)
@@ -266,7 +266,7 @@ export function RakutenUrlForm({
                   disabled={color.trim() === '' || createCandidate.isPending}
                   onClick={create}
                 >
-                  {createCandidate.isPending ? '만드는 중…' : '이 색상으로 후보 만들기'}
+                  {createCandidate.isPending ? '만드는 중…' : '이 색상으로 여정 만들기'}
                 </Button>
               </div>
             </>

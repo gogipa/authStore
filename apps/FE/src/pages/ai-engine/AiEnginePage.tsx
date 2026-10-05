@@ -83,7 +83,7 @@ export function AiEnginePage() {
                 {lastDetected ? formatKstTime(lastDetected) : '—'}
               </span>
             </span>
-            <Button onClick={form.detect} disabled={form.requesting}>
+            <Button onClick={form.detect} disabled={form.requesting || form.testingEngine !== null}>
               <Icon name="refresh" size={16} />
               다시 감지
             </Button>
@@ -109,7 +109,8 @@ export function AiEnginePage() {
                 onPick={() => form.pickEngine(option.engineCode)}
                 onModelChange={(kind, value) => form.setModel(option.engineCode, kind, value)}
                 onTest={() => form.testEngine(option.engineCode)}
-                requesting={form.requesting}
+                requesting={form.requesting || form.testingEngine !== null}
+                testing={form.testingEngine === option.engineCode}
                 locked={form.busy}
               />
             );

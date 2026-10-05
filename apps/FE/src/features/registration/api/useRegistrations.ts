@@ -18,7 +18,7 @@ import { registrationKeys } from './queryKeys';
 const retryServerErrorOnce = (count: number, error: ApiRequestError) =>
   error.status >= 500 && count < 1;
 
-/** 등록 화면이 다시 읽을 것(승인 미리보기·사전 검증·이력·후보·게이트) */
+/** 등록 화면이 다시 읽을 것(승인 미리보기·사전 검증·이력·여정·게이트) */
 function useInvalidateRegistration() {
   const queryClient = useQueryClient();
   return (candidateId: number) =>
@@ -82,7 +82,7 @@ export function useCreateRegistration(candidateId: number | null) {
   return { ...mutation, approve };
 }
 
-/** 후보의 등록 기록 이력(`GET /candidates/{candidateId}/registrations`, 첫 페이지 approvedAt 내림차순 — 맨 앞이 직전 결과) */
+/** 여정의 등록 기록 이력(`GET /candidates/{candidateId}/registrations`, 첫 페이지 approvedAt 내림차순 — 맨 앞이 직전 결과) */
 export function useCandidateRegistrations(candidateId: number | null) {
   return useQuery<RegistrationSummaryPage, ApiRequestError>({
     queryKey: registrationKeys.registrations(candidateId ?? 0),
@@ -143,14 +143,14 @@ export function useRegistrationSwitch() {
   });
 }
 
-/** 차단 스위치 켜기·끄기(`PUT /registration-switch`). 끄면 검증완료 후보가 승인대기로 돌아간다(`revertedCandidateIds`) */
+/** 차단 스위치 켜기·끄기(`PUT /registration-switch`). 끄면 검증완료 여정이 승인대기로 돌아간다(`revertedCandidateIds`) */
 export function usePutRegistrationSwitch() {
   const queryClient = useQueryClient();
   return useMutation<RegistrationSwitchChanged, ApiRequestError, boolean>({
     mutationFn: (apiBlocked) =>
       request(() => api.PUT('/registration-switch', { body: { apiBlocked } })),
     // 캐시에 직접 쓰지 않고 다시 읽는다(스위치·미리보기의 apiBlocked·이력). 사전 검증은 외부 조회라 여기서 다시 돌리지 않는다
-    // (되돌린 후보는 SSE candidate.status-changed가 다시 돌린다)
+    // (되돌린 여정은 SSE candidate.status-changed가 다시 돌린다)
     onSuccess: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: registrationKeys.registrationSwitch() }),

@@ -11,7 +11,7 @@ import type {
 import { thumbnailKeys } from './queryKeys';
 
 /**
- * 후보의 라쿠텐 원본 이미지 목록(`GET /candidates/{candidateId}/source-images`, listCandidateSourceImages). ② 선택 전이면
+ * 여정의 라쿠텐 원본 이미지 목록(`GET /candidates/{candidateId}/source-images`, listCandidateSourceImages). ② 선택 전이면
  * 409 `SOURCING_SELECTION_REQUIRED` — 다시 시도하지 않는다. candidateId가 null이면 부르지 않는다. 원본은 ⑤ 실행이 받으므로
  * ⑤가 끝날 때 SSE(`step-run.status-changed` THUMBNAIL)가 이 목록을 다시 읽힌다.
  */

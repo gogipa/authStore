@@ -7,7 +7,7 @@ import type {
   ThumbnailSourceImageList,
 } from '@/features/thumbnails';
 
-/** 예시 값(화면시안_명세 §4 후보 A — 샵 A 원본 6장, 14:02 받음). 주소는 스킴 없이(규칙 15: 소스에 외부 주소 없음) */
+/** 예시 값(화면시안_명세 §4 여정 A — 샵 A 원본 6장, 14:02 받음). 주소는 스킴 없이(규칙 15: 소스에 외부 주소 없음) */
 const AT = '2026-09-28T05:02:00.000Z';
 
 export function sourceImage(

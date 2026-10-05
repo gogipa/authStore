@@ -69,14 +69,14 @@ export type EventInvalidations = {
  * - P1-02: `call-usage.changed`
  * - P1-03: `settings.reloaded` → settings 태그 전체(`GET /settings` 등). 다시 읽기가 실패해도 오므로
  *   (settingsSnapshotId null) 화면의 검사 결과가 바로 바뀐다.
- * - P1-04: `candidate.status-changed` → 후보 목록·그 후보 상세·상태별 수·이어서 할 곳·그 후보 상태 이력·재실행 필요 모아 보기
- *   (제외되면 그 후보의 단계가 모아 보기에서 빠진다). `candidate-step.changed` → 후보 목록(단계 점)·그 후보 상세·
+ * - P1-04: `candidate.status-changed` → 여정 목록·그 여정 상세·상태별 수·이어서 할 곳·그 여정 상태 이력·재실행 필요 모아 보기
+ *   (제외되면 그 여정의 단계가 모아 보기에서 빠진다). `candidate-step.changed` → 여정 목록(단계 점)·그 여정 상세·
  *   이어서 할 곳·재실행 필요 모아 보기. 키는 features/step-engine의 `stepEngineKeys`와 같은 모양이다
  *   (shared는 features를 부르지 않아 여기서 qk로 만든다).
- * - P1-05: `step-run.status-changed`·`candidate-step.changed` → 그 후보의 단계 레일·버전 이력·바뀐 입력, 실행 한 건,
- *   그 후보 상세·목록·재실행 필요 모아 보기(+ 이어서 할 곳). `settings.reloaded`가 재실행 필요 단계를 만들었으면
+ * - P1-05: `step-run.status-changed`·`candidate-step.changed` → 그 여정의 단계 레일·버전 이력·바뀐 입력, 실행 한 건,
+ *   그 여정 상세·목록·재실행 필요 모아 보기(+ 이어서 할 곳). `settings.reloaded`가 재실행 필요 단계를 만들었으면
  *   (`rerunRequiredStepCount` > 0) step-engine 태그 전체도 다시 읽는다(설정 변경 전파).
- * - P1-06: `continuous-run.stopped`·`gate.passed`·`gate.invalidated` → 그 후보의 게이트 목록·상세·단계 레일, 후보 목록·
+ * - P1-06: `continuous-run.stopped`·`gate.passed`·`gate.invalidated` → 그 여정의 게이트 목록·상세·단계 레일, 여정 목록·
  *   이어서 할 곳(+ 멈춘 묶음 `getContinuousRun`). 묶음 안 실행의 `step-run.status-changed`(stepChainId)는 그 묶음도
  *   다시 읽는다(연속 실행 띠의 진행).
  * - P1-07: `auth.failed` → 커머스API 인증 상태(`getAuthStatus`). 재발급까지 실패하면 원인 안내가 바로 바뀐다.
@@ -90,41 +90,41 @@ export type EventInvalidations = {
  * - P2-01: `keyword-collection.progress` → 그 묶음·묶음 안 키워드(페이지마다 줄이 늘어난다). `.completed`·`.aborted` →
  *   묶음 목록·그 묶음·묶음 안 키워드·수집 상태. `settings.reloaded`의 changedKeys에 `safety.childKeywords`가 있으면
  *   아동 단어 목록(`listChildKeywordTerms`)도. 진행률 숫자(페이지 수)는 캐시가 아니라 `onProgressEvent` 구독으로 받는다.
- * - P2-02: `sourcing.search-completed` → 그 후보의 ② 비교표(`getSourcingComparison`). `sourcing.row-updated`·
- *   `sourcing.page-fetch-finished`(data에 후보 id가 없다) → 비교표 전체. `step-run.status-changed`가 ②(SOURCING)면 그 후보의
+ * - P2-02: `sourcing.search-completed` → 그 여정의 ② 비교표(`getSourcingComparison`). `sourcing.row-updated`·
+ *   `sourcing.page-fetch-finished`(data에 여정 id가 없다) → 비교표 전체. `step-run.status-changed`가 ②(SOURCING)면 그 여정의
  *   비교표도 다시 읽는다(URL로 만들기·재조회·성인용 확인 뒤 ②가 끝날 때 머리 행이 바뀐다).
  * - P2-03: 비교표 queryKey가 조회 조건을 더 가진다(`{ candidateId, stepRunId, includeNoMatch, sort }`) — 위 키는 부분 일치로
- *   모두 닿는다. `gate.invalidated` → 그 후보 비교표도(다른 샵을 고르면 G2가 무효가 된다 — '다른 샵을 고르면 판정(G2)을 다시
+ *   모두 닿는다. `gate.invalidated` → 그 여정 비교표도(다른 샵을 고르면 G2가 무효가 된다 — '다른 샵을 고르면 판정(G2)을 다시
  *   통과해야 합니다'). 행 수정(PATCH)은 SSE 없이 응답으로 캐시를 고친다.
  * - P2-04: `fx-rate.updated`(새 최신 환율·수집 실패·±20% 차이) → 환율 최신값(`getLatestFxRates`)·이력(`listFxRates` 전체).
- *   새 최신값이 ③을 재실행 필요로 만들면 그 후보마다 `candidate-step.changed`가 따로 온다. 요금표 가져오기는 SSE가 없고
+ *   새 최신값이 ③을 재실행 필요로 만들면 그 여정마다 `candidate-step.changed`가 따로 온다. 요금표 가져오기는 SSE가 없고
  *   응답으로 캐시를 고친다.
- * - P2-05: `step-run.status-changed`가 ③(PRICING)이면 그 후보의 판정(`getPriceJudgement`)·국내 기준가 이력. `gate.passed`·
- *   `gate.invalidated` → 그 후보 판정도(G2 줄·확정한 값). 국내 기준가 입력·'비교 없이 확정'은 응답 뒤 훅이 무효화한다.
- * - P2-06: `step-run.status-changed`가 ④(CATEGORY)이면 그 후보의 카테고리 결정(`getCategoryDecision` — 입력 대기·완료·성별
- *   재확인으로 다시 뽑은 후보). `candidate-step.changed`(어느 단계든) → 그 후보의 카테고리 결정도(성별이 바뀌면 ③·⑥-3·⑦의
+ * - P2-05: `step-run.status-changed`가 ③(PRICING)이면 그 여정의 판정(`getPriceJudgement`)·국내 기준가 이력. `gate.passed`·
+ *   `gate.invalidated` → 그 여정 판정도(G2 줄·확정한 값). 국내 기준가 입력·'비교 없이 확정'은 응답 뒤 훅이 무효화한다.
+ * - P2-06: `step-run.status-changed`가 ④(CATEGORY)이면 그 여정의 카테고리 결정(`getCategoryDecision` — 입력 대기·완료·성별
+ *   재확인으로 다시 뽑은 후보). `candidate-step.changed`(어느 단계든) → 그 여정의 카테고리 결정도(성별이 바뀌면 ③·⑥-3·⑦의
  *   '재실행 필요'와 함께 온다). 리프 고르기·성별 재확인은 응답 뒤 훅이 무효화한다.
- * - P3-01: `step-run.status-changed`가 ⑤(THUMBNAIL)이면 그 후보의 원본 이미지 목록(`listCandidateSourceImages` — ⑤가 원본을
+ * - P3-01: `step-run.status-changed`가 ⑤(THUMBNAIL)이면 그 여정의 원본 이미지 목록(`listCandidateSourceImages` — ⑤가 원본을
  *   받고 입력 대기가 될 때)과 ⑤ 산출물(`getCandidateThumbnail`, P3-02 훅). 레퍼런스 저장은 응답 뒤 훅이 무효화하고, 프롬프트
  *   미리보기는 캐시하지 않는 mutation이다.
- * - P3-02: `generation-run.updated`(생성 시도 RUNNING → SUCCEEDED·FAILED·REFUSED, 재시작 정리) → 그 후보의 ⑤ 산출물
+ * - P3-02: `generation-run.updated`(생성 시도 RUNNING → SUCCEEDED·FAILED·REFUSED, 재시작 정리) → 그 여정의 ⑤ 산출물
  *   (`getCandidateThumbnail` — 후보 칸)과 그 시도 한 건(`getThumbnailGenerationRun`). `gate.passed`·`gate.invalidated` → ⑤
  *   산출물도(G3 유효·선택본 — '선택 전 확인' 패널).
- * - P3-03: `step-run.status-changed`가 ⑥-1(COPY)이면 그 후보의 카피(`getCandidateContentCopy`), ⑥-2(NOTICE_RAW)면 고시 원자료
- *   (`getCandidateContentFact` — 입력 대기·완료). `content-field.recheck-flagged` → 그 후보의 고시 원자료와 단계 레일(재확인 필요
+ * - P3-03: `step-run.status-changed`가 ⑥-1(COPY)이면 그 여정의 카피(`getCandidateContentCopy`), ⑥-2(NOTICE_RAW)면 고시 원자료
+ *   (`getCandidateContentFact` — 입력 대기·완료). `content-field.recheck-flagged` → 그 여정의 고시 원자료와 단계 레일(재확인 필요
  *   칩). 카피 편집·원산지 직접 넣기는 응답 뒤 훅이 무효화한다.
  * - P3-04: `step-run.status-changed`가 ⑥-3(NOTICE_HTML)이면 조립 결과(`getCandidateContentAssembly`). `content-field.recheck-flagged`는
  *   stepCode가 NOTICE_HTML이면 조립 결과, 아니면 고시 원자료. `gate.passed`(G3 다시 고르기) → 조립 결과도(미리보기 iframe을 새로 연다 —
  *   ⑥-3은 다시 실행하지 않는다). 상품명·고시 고치기는 응답 뒤 화면이 무효화한다.
- * - P3-05: `step-run.status-changed`가 ⑦(TAGS)이면 그 후보의 ⑦ 산출물(`getCandidateTagSet` — 실행·태그 편집 202 재검증이 끝날 때)과
+ * - P3-05: `step-run.status-changed`가 ⑦(TAGS)이면 그 여정의 ⑦ 산출물(`getCandidateTagSet` — 실행·태그 편집 202 재검증이 끝날 때)과
  *   경쟁 태그 입력 목록(`listTagCompetitorInputs`). 입력 넣기·빼기는 응답 뒤 훅이 무효화한다.
- * - P4-01: `step-run.status-changed`가 ⑧(UPLOAD)이면 그 후보의 ⑧ 산출물(`getCandidateUploadResult`). `candidate-step.changed`
+ * - P4-01: `step-run.status-changed`가 ⑧(UPLOAD)이면 그 여정의 ⑧ 산출물(`getCandidateUploadResult`). `candidate-step.changed`
  *   (재실행 필요로 바뀜 등)도 ⑧ 산출물을 다시 읽힌다(단계 레일은 위 공통 키).
- * - P4-03: `registration.status-changed`(드라이런 저장·등록요청중·등록됨·4xx 종결·결과확인필요·조회 결과) → 그 후보의 등록 기록 이력
+ * - P4-03: `registration.status-changed`(드라이런 저장·등록요청중·등록됨·4xx 종결·결과확인필요·조회 결과) → 그 여정의 등록 기록 이력
  *   (`listCandidateRegistrations`)·그 기록(`getRegistration`)·게이트(G4)·단계 레일(⑨)과 승인 미리보기·사전 검증.
- *   `registration-switch.changed` → 스위치(`getRegistrationSwitch` — 내비 칩·승인 화면 띠)·모든 후보의 승인 미리보기(apiBlocked)·
- *   등록 기록 이력(되돌린 후보는 `candidate.status-changed`가 따로 온다). 202 뒤 폴링하지 않는다.
- * - P4-02: `candidate-step.changed`·`gate.invalidated`·`candidate.status-changed` → 그 후보의 G4 승인 미리보기
+ *   `registration-switch.changed` → 스위치(`getRegistrationSwitch` — 내비 칩·승인 화면 띠)·모든 여정의 승인 미리보기(apiBlocked)·
+ *   등록 기록 이력(되돌린 여정은 `candidate.status-changed`가 따로 온다). 202 뒤 폴링하지 않는다.
+ * - P4-02: `candidate-step.changed`·`gate.invalidated`·`candidate.status-changed` → 그 여정의 G4 승인 미리보기
  *   (`getCandidateApproval`)와 사전 검증(`runCandidatePreValidation` — POST지만 화면 상태로 둔 query. 서버로는 한 번에 하나만 간다,
  *   features/registration `usePreValidation`). 옵션 방식(optionType)과 상관없이 부분 일치로 닿는다.
  */
@@ -370,7 +370,7 @@ export function onProgressEvent<N extends ProgressEventName>(
 /**
  * 이벤트 뒤 무효화. 첫 조회가 아직 오는 중인(데이터가 없는) 쿼리는 TanStack Query가 무효화를 그 요청에 합쳐 버린다(`cancelRefetch`는
  * 데이터가 있을 때만 끊는다). 그 요청의 응답은 이벤트 전 상태일 수 있어 화면이 그대로 멈춘다 — P5-01 흐름 테스트가 찾았다
- * (② 실행 직후 열린 후보 화면의 레일이 '실행중'에 머묾). 그런 쿼리는 먼저 끊고(되돌림) 다시 읽는다. 나머지는 바로 무효화한다.
+ * (② 실행 직후 열린 여정 화면의 레일이 '실행중'에 머묾). 그런 쿼리는 먼저 끊고(되돌림) 다시 읽는다. 나머지는 바로 무효화한다.
  */
 function invalidateAfterEvent(client: QueryClient, queryKey: QueryKey): void {
   const firstInFlight = client
@@ -397,13 +397,27 @@ function handleProgressEvent(connection: SharedConnection, name: ProgressEventNa
     console.warn(`진행 알림 ${name}의 data를 읽지 못해 건너뜁니다.`);
     return;
   }
+  applyProgressEvent(connection.clients.keys(), name, data);
+}
+
+/**
+ * 이벤트 하나를 적용한다: 무효화 표(EVENT_INVALIDATIONS)의 쿼리를 무효화하고, 그 뒤 `onProgressEvent` 구독자에게 data를 준다.
+ * 연결(EventSource)이 받은 이벤트와 같은 길이다. 체험(`/demo`, D-32)은 연결이 없어 메모리 안 모델이 만든 이벤트를 이 함수로
+ * 직접 적용한다 — 화면이 진짜 알림을 받은 것과 똑같이 다시 읽고 진행률을 그린다.
+ */
+export function applyProgressEvent(
+  clients: Iterable<QueryClient>,
+  name: ProgressEventName,
+  data: unknown,
+): void {
+  const resolve = EVENT_INVALIDATIONS[name] as ((data: unknown) => QueryKey[]) | undefined;
   if (resolve) {
     const keys = resolve(data);
-    eachClient(connection, (client) => {
+    for (const client of clients) {
       for (const queryKey of keys) invalidateAfterEvent(client, queryKey);
-    });
+    }
   }
-  for (const listener of listeners ?? []) {
+  for (const listener of dataListeners.get(name) ?? []) {
     try {
       listener(data);
     } catch (error) {

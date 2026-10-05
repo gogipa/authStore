@@ -5,8 +5,8 @@ import { stepEngineKeys } from './queryKeys';
 
 /**
  * '비교 없이 확정' 체크·해제(`PUT`·`DELETE /candidates/{candidateId}/no-comparison-confirmation`, P2-05). 웹 화면 전용 기록.
- * 성공하면 후보 상세·게이트를 다시 읽는다(G2 막힌 이유 NO_COMPARISON_NOT_CONFIRMED가 바뀐다). 실패: 409
- * CONFIRMATION_NOT_APPLICABLE(비교한 후보)·GATE_ALREADY_PASSED(G2 뒤 해제)·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED.
+ * 성공하면 여정 상세·게이트를 다시 읽는다(G2 막힌 이유 NO_COMPARISON_NOT_CONFIRMED가 바뀐다). 실패: 409
+ * CONFIRMATION_NOT_APPLICABLE(비교한 여정)·GATE_ALREADY_PASSED(G2 뒤 해제)·CANDIDATE_LOCKED·CANDIDATE_EXCLUDED.
  */
 function useInvalidateNoComparison() {
   const queryClient = useQueryClient();

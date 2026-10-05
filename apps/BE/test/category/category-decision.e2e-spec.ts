@@ -445,7 +445,7 @@ describe('④ 카테고리(P2-06) e2e — autostore_test·실제 CATEGORY 실행
         [
           LEAF.FEMALE_RUNNING,
           'CATEGORY_GENDER_MISMATCH',
-          '후보 성별과 카테고리(남성·여성)가 맞지 않습니다.',
+          '여정 성별과 카테고리(남성·여성)가 맞지 않습니다.',
         ],
       ];
       for (const [leafCategoryId, code, message] of cases) {

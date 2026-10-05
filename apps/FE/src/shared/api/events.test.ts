@@ -44,7 +44,7 @@ describe('진행 알림 이름', () => {
     >();
   });
 
-  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 후보 이벤트 2개(P1-04), 단계 실행(P1-05), 연속 실행·게이트(P1-06), auth.failed(P1-07), commerce-meta-sync.completed(P1-08), ai-cli-check.completed(P1-11)', () => {
+  it('무효화 표: call-usage.changed(P1-02), settings.reloaded(P1-03), 여정 이벤트 2개(P1-04), 단계 실행(P1-05), 연속 실행·게이트(P1-06), auth.failed(P1-07), commerce-meta-sync.completed(P1-08), ai-cli-check.completed(P1-11)', () => {
     expect(Object.keys(EVENT_INVALIDATIONS)).toEqual([
       'call-usage.changed',
       'settings.reloaded',
@@ -147,7 +147,7 @@ describe('진행 알림 이름', () => {
     });
     expect(uploadStale).toContainEqual(uploadKey);
     expect(uploadStale).toContainEqual(['step-engine', 'listCandidateSteps', { candidateId: 1 }]);
-    // G4 승인 화면(P4-02): 단계·게이트·후보 상태가 바뀌면 미리보기와 사전 검증을 다시
+    // G4 승인 화면(P4-02): 단계·게이트·여정 상태가 바뀌면 미리보기와 사전 검증을 다시
     const approvalKey = ['registration', 'getCandidateApproval', { candidateId: 1 }];
     const preValidationKey = ['registration', 'runCandidatePreValidation', { candidateId: 1 }];
     expect(uploadStale).toContainEqual(approvalKey);
@@ -171,7 +171,7 @@ describe('진행 알림 이름', () => {
       }),
     ).toEqual(expect.arrayContaining([approvalKey, preValidationKey]));
     expect(uploadRun).not.toContainEqual(preValidationKey);
-    // ⑨ 등록(P4-03): 등록 기록 상태가 바뀌면 그 후보의 이력·그 기록·게이트(G4)·단계 레일·승인 화면
+    // ⑨ 등록(P4-03): 등록 기록 상태가 바뀌면 그 여정의 이력·그 기록·게이트(G4)·단계 레일·승인 화면
     const registrationChanged = EVENT_INVALIDATIONS['registration.status-changed']?.({
       registrationId: 31,
       candidateId: 1,
@@ -194,7 +194,7 @@ describe('진행 알림 이름', () => {
         preValidationKey,
       ]),
     );
-    // 차단 스위치(P4-03): 내비 칩·띠·모든 후보의 미리보기(apiBlocked)·이력. 사전 검증(외부 조회)은 다시 돌리지 않는다
+    // 차단 스위치(P4-03): 내비 칩·띠·모든 여정의 미리보기(apiBlocked)·이력. 사전 검증(외부 조회)은 다시 돌리지 않는다
     const switched = EVENT_INVALIDATIONS['registration-switch.changed']?.({
       apiBlocked: false,
       changedAt: '2026-09-28T00:00:00.000Z',
@@ -235,7 +235,7 @@ describe('진행 알림 이름', () => {
       ['pricing', 'getLatestFxRates'],
       ['pricing', 'listFxRates'],
     ]);
-    // ② 검색이 끝나면 그 후보의 비교표, 행·페이지 조회 이벤트는 비교표 전체(data에 후보 id가 없다, P2-02)
+    // ② 검색이 끝나면 그 여정의 비교표, 행·페이지 조회 이벤트는 비교표 전체(data에 여정 id가 없다, P2-02)
     expect(
       EVENT_INVALIDATIONS['sourcing.search-completed']?.({
         candidateId: 12,
@@ -373,7 +373,7 @@ describe('진행 알림 이름', () => {
         rerunRequiredStepCount: 2,
       }),
     ).toEqual([['settings'], ['step-engine']]);
-    // candidate.status-changed → 목록·그 후보 상세·상태별 수·이어서 할 곳·그 후보 이력·재실행 필요 모아 보기
+    // candidate.status-changed → 목록·그 여정 상세·상태별 수·이어서 할 곳·그 여정 이력·재실행 필요 모아 보기
     expect(
       EVENT_INVALIDATIONS['candidate.status-changed']?.({
         candidateId: 12,
@@ -412,13 +412,13 @@ describe('진행 알림 이름', () => {
       ['step-engine', 'getCandidateResumeTarget'],
       ['step-engine', 'listAttentionCandidateSteps'],
       ['step-engine', 'getStepRun'],
-      // 그 후보의 ④ 카테고리 결정도(P2-06 — 성별이 바뀌면 ③·⑥-3·⑦과 함께 후보를 다시 뽑는다)
+      // 그 여정의 ④ 카테고리 결정도(P2-06 — 성별이 바뀌면 ③·⑥-3·⑦과 함께 후보를 다시 뽑는다)
       ['category', 'getCategoryDecision', { candidateId: 12 }],
       // G4 승인 미리보기·사전 검증(P4-02)
       ['registration', 'getCandidateApproval', { candidateId: 12 }],
       ['registration', 'runCandidatePreValidation', { candidateId: 12 }],
     ]);
-    // step-run.status-changed → 그 후보 레일·이력·바뀐 입력·상세·목록 + 그 실행 한 건(P1-05)
+    // step-run.status-changed → 그 여정 레일·이력·바뀐 입력·상세·목록 + 그 실행 한 건(P1-05)
     expect(
       EVENT_INVALIDATIONS['step-run.status-changed']?.({
         stepRunId: 40,
@@ -440,7 +440,7 @@ describe('진행 알림 이름', () => {
       ['step-engine', 'listAttentionCandidateSteps'],
       ['step-engine', 'getStepRun', { stepRunId: 40 }],
       ['step-engine', 'listCandidateGates', { candidateId: 12 }],
-      // ② 실행이면 그 후보의 비교표도(P2-02)
+      // ② 실행이면 그 여정의 비교표도(P2-02)
       ['sourcing', 'getSourcingComparison', { candidateId: 12 }],
     ]);
     // 연속 실행 묶음 안의 실행이면 그 묶음도(P1-06 연속 실행 띠)
@@ -456,7 +456,7 @@ describe('진행 알림 이름', () => {
         occurredAt: '2026-09-28T00:00:00.000Z',
       }),
     ).toContainEqual(['step-engine', 'getContinuousRun', { stepChainId: 7 }]);
-    // ③ 실행이면 그 후보의 판정·국내 기준가 이력도(P2-05)
+    // ③ 실행이면 그 여정의 판정·국내 기준가 이력도(P2-05)
     const pricingRun = EVENT_INVALIDATIONS['step-run.status-changed']?.({
       stepRunId: 42,
       candidateId: 12,
@@ -475,7 +475,7 @@ describe('진행 알림 이름', () => {
       { candidateId: 12 },
     ]);
     expect(pricingRun).not.toContainEqual(['category', 'getCategoryDecision', { candidateId: 12 }]);
-    // ④ 실행이면 그 후보의 카테고리 결정도(P2-06)
+    // ④ 실행이면 그 여정의 카테고리 결정도(P2-06)
     expect(
       EVENT_INVALIDATIONS['step-run.status-changed']?.({
         stepRunId: 43,
@@ -532,7 +532,7 @@ describe('진행 알림 이름', () => {
       }),
     ).toEqual([
       ...gateKeys,
-      // P2-03: 다른 샵을 고르면 G2가 무효 → 그 후보 비교표도 다시 읽는다
+      // P2-03: 다른 샵을 고르면 G2가 무효 → 그 여정 비교표도 다시 읽는다
       ['sourcing', 'getSourcingComparison', { candidateId: 12 }],
       // P2-05: 판정 화면의 소싱 확정(G2) 줄
       ['pricing', 'getPriceJudgement', { candidateId: 12 }],
@@ -542,7 +542,7 @@ describe('진행 알림 이름', () => {
       ['registration', 'getCandidateApproval', { candidateId: 12 }],
       ['registration', 'runCandidatePreValidation', { candidateId: 12 }],
     ]);
-    // P3-02: 생성 시도 상태가 바뀌면 그 후보 ⑤ 산출물(후보 칸)과 그 시도 한 건
+    // P3-02: 생성 시도 상태가 바뀌면 그 여정 ⑤ 산출물(후보 칸)과 그 시도 한 건
     expect(
       EVENT_INVALIDATIONS['generation-run.updated']?.({
         candidateId: 12,

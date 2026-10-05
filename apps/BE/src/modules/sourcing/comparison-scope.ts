@@ -47,7 +47,7 @@ export class ComparisonScope {
   ): Promise<T> {
     return this.transactions.run(async (scope) => {
       const candidate = await this.guard.lockForUpdate(scope.tx, candidateId);
-      if (isLockedStatus(candidate.status)) throw new JobStopped('후보가 잠겨 멈춥니다');
+      if (isLockedStatus(candidate.status)) throw new JobStopped('여정이 잠겨 멈춥니다');
       const run = await scope.tx.stepRun.findUniqueOrThrow({ where: { id: stepRunId } });
       if (run.status !== 'WAITING_INPUT') {
         throw new JobStopped(`② 버전 #${stepRunId}이 입력 대기가 아니라(${run.status}) 멈춥니다`);

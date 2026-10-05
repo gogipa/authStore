@@ -68,7 +68,7 @@ export function GenderPanel({ candidateId, candidate, head }: GenderPanelProps) 
     <div className={styles.box}>
       <span className={styles.label}>성별 확인 · {source === 'OWNER' ? '직접' : '자동'}</span>
       {choosing ? (
-        <div role="radiogroup" aria-label="후보 성별" className={styles.radios}>
+        <div role="radiogroup" aria-label="여정 성별" className={styles.radios}>
           {(['MALE', 'FEMALE'] as const).map((value) => (
             <Radio
               key={value}

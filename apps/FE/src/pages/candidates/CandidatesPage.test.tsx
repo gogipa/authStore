@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { errorResponse, jsonResponse, stubApi } from '@/test/apiStub';
@@ -18,6 +18,7 @@ import {
   rakutenItemFetchResult,
   rakutenItemSnapshot,
 } from '@/test/fixtures/sourcing';
+import { DELETE_TIP, URL_CREATE_TIP } from './CandidatesPage';
 
 const NB530 = 13;
 const CORTEZ = 16;
@@ -88,15 +89,15 @@ const count = (api: ReturnType<typeof stubApi>, key: string) =>
 
 async function renderCandidates(path = '/candidates') {
   const view = renderRoute(path);
-  await screen.findByRole('heading', { level: 1, name: '후보 작업' });
+  await screen.findByRole('heading', { level: 1, name: '여정' });
   return view;
 }
 
-describe('후보 작업 목록(SCR-12, P1-04)', () => {
+describe('여정 목록(SCR-12, P1-04)', () => {
   it('필터 수 배지: 전체(진행 중) 7 · 작업중 5 · 승인대기 2 · 제외 0', async () => {
     stubCandidates();
     await renderCandidates();
-    const group = within(screen.getByRole('group', { name: '후보 거르기' }));
+    const group = within(screen.getByRole('group', { name: '여정 거르기' }));
     await group.findByRole('button', { name: '전체 7' });
     expect(group.getByRole('button', { name: '작업중 5' })).toBeInTheDocument();
     expect(group.getByRole('button', { name: '승인대기 2' })).toBeInTheDocument();
@@ -117,10 +118,10 @@ describe('후보 작업 목록(SCR-12, P1-04)', () => {
     await waitFor(() => expect(router.state.location.search).toBe(''));
   });
 
-  it("줄마다 표시명·상태·이어 할 단계 칩, URL 후보 줄에 '수동'·'비교 안 함', 승인대기는 G4 확인 필요", async () => {
+  it("줄마다 표시명·상태·이어 할 단계 칩, URL 여정 줄에 '수동'·'비교 안 함', 승인대기는 G4 확인 필요", async () => {
     stubCandidates();
     await renderCandidates();
-    const items = within(await screen.findByRole('list', { name: '후보 목록' }));
+    const items = within(await screen.findByRole('list', { name: '여정 목록' }));
     const nb = within(
       (await items.findByRole('link', { name: '뉴발란스 530 · 화이트/실버' })).closest('li')!,
     );
@@ -140,16 +141,16 @@ describe('후보 작업 목록(SCR-12, P1-04)', () => {
     expect(kayano.getByText('승인대기')).toBeInTheDocument();
     expect(kayano.getByText('G4 최종 승인 · 확인 필요')).toBeInTheDocument();
     // 'URL로 만들기'는 '입력 고르기'(② 소싱)의 URL 붙여넣기로 간다(P2-02)
-    expect(screen.getByRole('link', { name: 'URL로 만들기' })).toHaveAttribute(
-      'href',
-      '/candidates?runnableStep=SOURCING#rakuten-url',
-    );
+    const urlCreate = screen.getByRole('link', { name: 'URL로 만들기' });
+    expect(urlCreate).toHaveAttribute('href', '/candidates?runnableStep=SOURCING#rakuten-url');
+    // 마우스를 올리면 무엇을 하는 버튼인지 말해 준다
+    expect(urlCreate).toHaveAttribute('title', URL_CREATE_TIP);
   });
 
-  it("?candidateId= 후보 머리: 표시명·앵커 키·성별·소싱·게이트·출처 키워드와 '후보 제외'", async () => {
+  it("?candidateId= 여정 머리: 표시명·기준 상품 키·성별·소싱·게이트·출처 키워드와 '삭제'", async () => {
     stubCandidates();
     await renderCandidates(`/candidates?candidateId=${NB530}`);
-    const header = within(await screen.findByRole('region', { name: '후보 정보' }));
+    const header = within(await screen.findByRole('region', { name: '여정 정보' }));
     expect(await header.findByText('뉴발란스 530 · 화이트/실버')).toBeInTheDocument();
     expect(header.getByText('MR530SG · 화이트/실버')).toBeInTheDocument();
     expect(header.getByText('shop-b:20000456')).toBeInTheDocument();
@@ -157,16 +158,16 @@ describe('후보 작업 목록(SCR-12, P1-04)', () => {
     expect(header.getByText('G3 썸네일 선택 · 잠김')).toBeInTheDocument();
     expect(header.getByText('G4 최종 승인 · 잠김')).toBeInTheDocument();
     expect(header.getByText('출처 키워드: 뉴발란스 530')).toBeInTheDocument();
-    expect(header.getByRole('button', { name: '후보 제외' })).toBeEnabled();
+    expect(header.getByRole('button', { name: '삭제' })).toBeEnabled();
     const selected = screen.getByRole('link', { name: '뉴발란스 530 · 화이트/실버' });
     expect(selected).toHaveAttribute('aria-current', 'true');
   });
 
-  it("'후보 제외' 뒤 목록·상세를 다시 읽고 버튼이 '다시 작업'으로 바뀐다", async () => {
+  it("여정 머리 '삭제' 뒤 목록·상세를 다시 읽고 버튼이 '다시 작업'으로 바뀐다", async () => {
     const api = stubCandidates();
     await renderCandidates(`/candidates?candidateId=${NB530}`);
-    const header = within(await screen.findByRole('region', { name: '후보 정보' }));
-    const button = await header.findByRole('button', { name: '후보 제외' });
+    const header = within(await screen.findByRole('region', { name: '여정 정보' }));
+    const button = await header.findByRole('button', { name: '삭제' });
     const before = count(api, 'GET /candidates');
     await userEvent.click(button);
     await waitFor(() => expect(count(api, `POST /candidates/${NB530}/exclude`)).toBe(1));
@@ -189,26 +190,113 @@ describe('후보 작업 목록(SCR-12, P1-04)', () => {
       ),
     );
     await renderCandidates(`/candidates?candidateId=${NB530}`);
-    const header = within(await screen.findByRole('region', { name: '후보 정보' }));
-    await userEvent.click(await header.findByRole('button', { name: '후보 제외' }));
+    const header = within(await screen.findByRole('region', { name: '여정 정보' }));
+    await userEvent.click(await header.findByRole('button', { name: '삭제' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(
       '② 소싱이 실행 중이라 지금은 할 수 없습니다. 끝난 뒤 다시 해 주세요.',
     );
   });
 
-  it("잠긴 후보는 '후보 제외'가 꺼지고 이유를 보인다", async () => {
+  it("잠긴 여정은 '삭제'가 꺼지고 이유를 보인다", async () => {
     const api = stubCandidates();
     api.on(`GET /candidates/${NB530}`, () =>
       jsonResponse(candidateDetail({ id: NB530, status: 'REGISTERING', locked: true })),
     );
     await renderCandidates(`/candidates?candidateId=${NB530}`);
-    const header = within(await screen.findByRole('region', { name: '후보 정보' }));
-    const button = await header.findByRole('button', { name: '후보 제외' });
+    const header = within(await screen.findByRole('region', { name: '여정 정보' }));
+    const button = await header.findByRole('button', { name: '삭제' });
     expect(button).toBeDisabled();
-    expect(button).toHaveAccessibleDescription('등록을 진행 중이거나 끝난 후보입니다');
+    expect(button).toHaveAccessibleDescription('등록을 진행 중이거나 끝난 여정입니다');
   });
 
-  it("?runnableStep=PRICING이면 '입력 고르기' 패널: 그 단계를 지금 실행할 수 있는 후보와 단계 화면 링크", async () => {
+  it('목록 줄마다 [삭제]가 있고, 제외된 여정·등록 진행 중인 여정 줄에는 없다', async () => {
+    const api = stubCandidates();
+    api.on('GET /candidates', () =>
+      jsonResponse(
+        page([
+          ...list().content,
+          candidateSummary({ id: 21, status: 'REGISTERING', displayName: '등록 중인 여정' }),
+          candidateSummary({
+            id: 22,
+            status: 'EXCLUDED',
+            excludedReason: 'OWNER_EXCLUDED',
+            displayName: '이미 제외한 여정',
+          }),
+        ]),
+      ),
+    );
+    await renderCandidates();
+    const items = within(await screen.findByRole('list', { name: '여정 목록' }));
+    expect(
+      await items.findByRole('button', { name: '아식스 젤카야노 14 · 크림/블랙 삭제' }),
+    ).toBeEnabled();
+    expect(items.getByRole('button', { name: '뉴발란스 530 · 화이트/실버 삭제' })).toBeEnabled();
+    expect(items.getByRole('button', { name: '나이키 코르테즈 · 화이트/레드 삭제' })).toBeEnabled();
+    expect(items.queryByRole('button', { name: '등록 중인 여정 삭제' })).not.toBeInTheDocument();
+    expect(items.queryByRole('button', { name: '이미 제외한 여정 삭제' })).not.toBeInTheDocument();
+    // 지우는 게 아니라 되살릴 수 있다는 것을 마우스를 올리면 말해 준다
+    expect(items.getByRole('button', { name: '뉴발란스 530 · 화이트/실버 삭제' })).toHaveAttribute(
+      'title',
+      DELETE_TIP,
+    );
+  });
+
+  it('줄의 [삭제]는 그 여정을 제외하고 목록을 다시 읽는다(줄을 열지는 않는다)', async () => {
+    const api = stubCandidates();
+    api.on(`POST /candidates/${CORTEZ}/exclude`, () =>
+      jsonResponse({
+        candidateId: CORTEZ,
+        status: 'EXCLUDED',
+        excludedReason: 'OWNER_EXCLUDED',
+        statusChangedAt: '2026-09-28T05:10:00.000Z',
+        history: {
+          id: 9,
+          candidateId: CORTEZ,
+          fromStatus: 'WORKING',
+          toStatus: 'EXCLUDED',
+          reason: 'OWNER_EXCLUDED',
+          stepRunId: null,
+          gatePassId: null,
+          registrationId: null,
+          changedAt: '2026-09-28T05:10:00.000Z',
+        },
+        warnings: [],
+      }),
+    );
+    const { router } = await renderCandidates();
+    const before = count(api, 'GET /candidates');
+    await userEvent.click(
+      await screen.findByRole('button', { name: '나이키 코르테즈 · 화이트/레드 삭제' }),
+    );
+    await waitFor(() => expect(count(api, `POST /candidates/${CORTEZ}/exclude`)).toBe(1));
+    await waitFor(() => expect(count(api, 'GET /candidates')).toBeGreaterThan(before));
+    expect(api.requests.find((r) => r.method === 'POST')!.headers.get('X-AutoStore-Client')).toBe(
+      '1',
+    );
+    // 삭제는 줄을 여는 일이 아니다
+    expect(router.state.location.search).toBe('');
+  });
+
+  it('줄의 [삭제]가 409로 막히면 서버 문구를 목록 위에 보인다', async () => {
+    const api = stubCandidates();
+    api.on(`POST /candidates/${NB530}/exclude`, () =>
+      errorResponse(
+        409,
+        'STEP_LOCKED_BY_RUNNING_STEP',
+        '② 소싱이 실행 중이라 지금은 할 수 없습니다. 끝난 뒤 다시 해 주세요.',
+        { details: { stepCode: 'SOURCING' } },
+      ),
+    );
+    await renderCandidates();
+    await userEvent.click(
+      await screen.findByRole('button', { name: '뉴발란스 530 · 화이트/실버 삭제' }),
+    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '② 소싱이 실행 중이라 지금은 할 수 없습니다. 끝난 뒤 다시 해 주세요.',
+    );
+  });
+
+  it("?runnableStep=PRICING이면 '입력 고르기' 패널: 그 단계를 지금 실행할 수 있는 여정과 단계 화면 링크", async () => {
     const api = stubCandidates();
     api.on('GET /candidates', (req) =>
       jsonResponse(
@@ -219,13 +307,13 @@ describe('후보 작업 목록(SCR-12, P1-04)', () => {
     );
     await renderCandidates('/candidates?runnableStep=PRICING');
     const picker = within(await screen.findByRole('region', { name: '입력 고르기' }));
-    expect(picker.getByText('③ 판정 화면에서 작업할 후보를 고릅니다')).toBeInTheDocument();
+    expect(picker.getByText('③ 판정 화면에서 할 여정을 고릅니다')).toBeInTheDocument();
     const link = await picker.findByRole('link', { name: '③ 판정 열기' });
     expect(link).toHaveAttribute('href', `/candidates/${NB530}/judgement`);
     expect(picker.getByText('뉴발란스 530 · 화이트/실버')).toBeInTheDocument();
   });
 
-  it("?runnableStep=SOURCING(키워드 없이 시작, P2-02): '검색어로 시작' → 후보 만들기(SEARCH_QUERY) → ② 실행 → ② 화면", async () => {
+  it("?runnableStep=SOURCING(키워드 없이 시작, P2-02): '검색어로 시작' → 여정 만들기(SEARCH_QUERY) → ② 실행 → ② 화면", async () => {
     const api = stubCandidates();
     api.on('POST /rakuten-query-validations', async (req) => {
       const { rakutenQuery } = (await req.json()) as { rakutenQuery: string };
@@ -241,7 +329,7 @@ describe('후보 작업 목록(SCR-12, P1-04)', () => {
     expect(start).toBeDisabled();
     expect(start).toHaveAccessibleDescription('라쿠텐 검색어를 넣으면 켜집니다.');
     await userEvent.type(panel.getByLabelText('라쿠텐 검색어'), 'アシックス ゲルカヤノ');
-    expect(await panel.findByText(/형식 맞음/)).toBeInTheDocument();
+    expect(await panel.findByText(/사용 가능/)).toBeInTheDocument();
     await waitFor(() => expect(start).toBeEnabled());
     await userEvent.click(start);
     await waitFor(() => expect(router.state.location.pathname).toBe('/candidates/21/sourcing'));
@@ -254,7 +342,37 @@ describe('후보 작업 목록(SCR-12, P1-04)', () => {
     });
   });
 
-  it("?runnableStep=SOURCING: 'URL로 바로 후보 만들기' → 페이지 1건 읽기 → 색상 → RAKUTEN_URL 후보 → ② 화면", async () => {
+  it("?runnableStep=SOURCING: '검색어로 시작'을 화면이 다시 그려지기 전에 두 번 눌러도 여정은 1건만 만든다", async () => {
+    const api = stubCandidates();
+    api.on('POST /rakuten-query-validations', async (req) => {
+      const { rakutenQuery } = (await req.json()) as { rakutenQuery: string };
+      return jsonResponse(queryValidation(rakutenQuery, { halfWidthLength: 21 }));
+    });
+    let created = 0;
+    api.on('POST /candidates', () => {
+      created += 1;
+      return jsonResponse(candidateDetail({ id: 20 + created }), 201);
+    });
+    api.on('POST /candidates/21/steps/SOURCING/runs', () =>
+      jsonResponse({ stepRunId: 300, candidateId: 21 }, 202),
+    );
+    const { router } = await renderCandidates('/candidates?runnableStep=SOURCING');
+    const panel = within(await screen.findByRole('region', { name: '검색어로 시작' }));
+    const start = panel.getByRole('button', { name: '검색어로 시작' });
+    await userEvent.type(panel.getByLabelText('라쿠텐 검색어'), 'アシックス ゲルカヤノ');
+    expect(await panel.findByText(/사용 가능/)).toBeInTheDocument();
+    await waitFor(() => expect(start).toBeEnabled());
+    // 더블클릭: 요청 상태가 화면에 닿기 전(버튼이 아직 켜져 있을 때)에 클릭이 연달아 온다
+    fireEvent.click(start);
+    fireEvent.click(start);
+    await waitFor(() => expect(router.state.location.pathname).toBe('/candidates/21/sourcing'));
+    const posts = api.requests.filter(
+      (r) => r.method === 'POST' && new URL(r.url).pathname === '/api/v1/candidates',
+    );
+    expect(posts).toHaveLength(1);
+  });
+
+  it("?runnableStep=SOURCING: 'URL로 바로 여정 만들기' → 페이지 1건 읽기 → 색상 → RAKUTEN_URL 여정 → ② 화면", async () => {
     const api = stubCandidates();
     api.on('POST /rakuten-items', () =>
       jsonResponse(
@@ -267,21 +385,21 @@ describe('후보 작업 목록(SCR-12, P1-04)', () => {
       jsonResponse(candidateDetail({ id: 22, creationPath: 'RAKUTEN_URL' }), 201),
     );
     const { router } = await renderCandidates('/candidates?runnableStep=SOURCING');
-    const panel = within(await screen.findByRole('region', { name: 'URL로 바로 후보 만들기' }));
+    const panel = within(await screen.findByRole('region', { name: 'URL로 바로 여정 만들기' }));
     expect(panel.queryByRole('radiogroup')).toBeNull();
     await userEvent.type(
       panel.getByLabelText('라쿠텐 URL'),
       'item.rakuten.co.jp/shop-a/asics-1201a019-108/',
     );
     await userEvent.click(panel.getByRole('button', { name: '넣기' }));
-    // 아동화 의심은 막지 않고 알린다(후보를 만든 뒤 ②가 성인용 확인 입력 대기)
+    // 아동화 의심은 막지 않고 알린다(여정을 만든 뒤 ②가 성인용 확인 입력 대기)
     expect(
       await panel.findByText(
-        "아동화 의심(사이즈) 상품입니다. 후보를 만든 뒤 '성인용 상품 확인'을 체크해야 ②가 끝납니다.",
+        "아동화 의심(사이즈) 상품입니다. 여정을 만든 뒤 '성인용 상품 확인'을 체크해야 ②가 끝납니다.",
       ),
     ).toBeInTheDocument();
     await userEvent.selectOptions(await panel.findByLabelText('색상'), 'クリーム×ブラック(108)');
-    await userEvent.click(panel.getByRole('button', { name: '이 색상으로 후보 만들기' }));
+    await userEvent.click(panel.getByRole('button', { name: '이 색상으로 여정 만들기' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/candidates/22/sourcing'));
   });
 });

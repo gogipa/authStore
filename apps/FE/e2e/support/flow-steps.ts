@@ -9,10 +9,13 @@ import { expect, type Page } from '@playwright/test';
  * - ④ 매핑표(category/mapping.json) 러닝화 장르 → 남성 러닝화·워킹화(KC) 중 러닝화
  */
 export const KEYWORD = '아식스 젤카야노14';
+export const OTHER_KEYWORD = '뉴발란스 530';
 export const KEYWORD_PASTE = ['1 뉴발란스 530', '2 아식스 젤카야노14', '3 키즈 운동화'].join('\n');
 export const RAKUTEN_QUERY = 'アシックス ゲルカヤノ14 1201A019';
-export const SHOP_A_OPTION =
-  'ショップA · アシックス ゲルカヤノ 14 1201A019-108 クリーム×ブラック メンズ スニーカー';
+/** ② 상품 고르기 목록에서 기준 상품으로 정할 샵 A 줄(샵 이름 + 상품명) */
+export const SHOP_A_NAME = 'ショップA';
+export const SHOP_A_ITEM_NAME =
+  'アシックス ゲルカヤノ 14 1201A019-108 クリーム×ブラック メンズ スニーカー';
 export const RAKUTEN_URL = 'https://item.rakuten.co.jp/shop-a/asics-1201a019-108/';
 export const DOMESTIC_PRICE_KRW = '169000';
 export const RUNNING_LEAF = '패션잡화 > 남성신발 > 운동화 > 러닝화';
@@ -48,11 +51,11 @@ export async function expectStep(page: Page, label: StepLabel, status: string, t
 
 export function candidateIdOf(page: Page): number {
   const match = /\/candidates\/(\d+)\//.exec(page.url());
-  if (!match) throw new Error(`후보 화면이 아닙니다: ${page.url()}`);
+  if (!match) throw new Error(`여정 화면이 아닙니다:${page.url()}`);
   return Number(match[1]);
 }
 
-/** ① 순위 붙여넣기 → 키워드 고르기(G1) → '검색어로 쓰기' */
+/** ① 순위 붙여넣기 → 키워드 하나 고르기(G1, 라디오 — D-33) → 오른쪽 '라쿠텐 검색어 확인'에 나온다 */
 export async function pickKeyword(page: Page): Promise<void> {
   await page.goto('/keywords');
   await page.getByRole('button', { name: '순위 붙여넣기' }).click();
@@ -63,41 +66,64 @@ export async function pickKeyword(page: Page): Promise<void> {
   await expect(row).toBeVisible();
   // 아동 단어 줄은 목록에서 빠지고 '제외됨'에만 있다(F-KW-06)
   await expect(page.getByRole('row').filter({ hasText: '키즈 운동화' })).toHaveCount(0);
-  await row.getByRole('checkbox').click();
+  // 키워드는 하나만 고른다(D-33): 다른 줄을 먼저 골랐다가 바꿔도 고른 줄은 하나이고, 새로고침해도 마지막에 고른 줄이다
+  const panel = page.getByRole('region', { name: '라쿠텐 검색어 확인' });
+  const other = page.getByRole('radio', { name: `${OTHER_KEYWORD} 고르기` });
+  await other.check();
+  // 한국어 원문은 칸 위에 보이고 일본어 검색어 칸은 비어 있다(소싱을 누를 때 AI가 채운다)
+  await expect(panel).toContainText(OTHER_KEYWORD);
+  await expect(panel.getByRole('textbox', { name: '라쿠텐 검색어' })).toHaveValue('');
+  await expect(page.getByText('고름', { exact: true })).toHaveCount(1);
+  const radio = row.getByRole('radio', { name: `${KEYWORD} 고르기` });
+  await radio.check();
   await expect(row.getByText('고름')).toBeVisible();
-  await row.getByRole('button', { name: '검색어로 쓰기' }).click();
-  await expect(page.getByRole('region', { name: '라쿠텐 검색어 확인' })).toContainText(
-    'G1 키워드 선택 · 통과',
-  );
+  await expect(panel).toContainText(KEYWORD);
+  await expect(panel.getByRole('textbox', { name: '라쿠텐 검색어' })).toHaveValue('');
+  await expect(other).not.toBeChecked();
+  await expect(page.getByText('고름', { exact: true })).toHaveCount(1);
+  await expect(panel).toContainText('G1 키워드 선택 · 통과');
+  await page.reload();
+  await expect(radio).toBeChecked();
+  await expect(other).not.toBeChecked();
+  await expect(panel).toContainText('G1 키워드 선택 · 통과');
 }
 
-/** ② 라쿠텐 검색어(오너가 일본어로 고침) → '이 검색어로 소싱' = 후보 만들기 + ② 실행 → 앵커 입력 대기 */
+/** ② 라쿠텐 검색어(오너가 일본어로 고침) → '이 검색어로 소싱' = 여정 만들기 + ② 실행 → 앵커 입력 대기 */
 export async function startSourcing(page: Page): Promise<number> {
   const panel = page.getByRole('region', { name: '라쿠텐 검색어 확인' });
   await panel.getByRole('textbox', { name: '라쿠텐 검색어' }).fill(RAKUTEN_QUERY);
-  await expect(panel).toContainText('형식 맞음');
+  await expect(panel).toContainText('사용 가능');
   await panel.getByRole('button', { name: '이 검색어로 소싱' }).click();
   await page.waitForURL(/\/candidates\/\d+\/sourcing$/);
   await expectStep(page, '② 소싱', '입력 대기');
   return candidateIdOf(page);
 }
 
-/** ② 앵커(샵 A · 색상 108) → 상품 페이지 조회·재고·실질가 → 샵 A 고르기 = ② 완료 */
+/** ② 상품 고르기 목록의 한 줄(샵 이름과 상품명으로 찾는다) */
+export function searchResultItem(page: Page, shopName: string, itemName: string) {
+  return page
+    .getByRole('list', { name: '라쿠텐 검색 결과' })
+    .getByRole('listitem')
+    .filter({ hasText: shopName })
+    .filter({ hasText: itemName });
+}
+
+/** ② 상품 고르기(샵 A 줄의 [이 상품으로 정하기]) → 상품 페이지 조회·재고·실질가 → 샵 A 고르기 = ② 완료 */
 export async function anchorAndPickShopA(page: Page): Promise<void> {
-  await page.getByRole('combobox', { name: '기준 상품' }).selectOption({ label: SHOP_A_OPTION });
-  await page.getByRole('textbox', { name: '색상 코드(선택)' }).fill('108');
-  await page.getByRole('button', { name: '앵커 정하기' }).click();
-  const table = page.getByRole('table', { name: '라쿠텐 후보 비교' });
-  // 페이지 조회가 끝나 검증 행 5개(재고 통과 3)가 서면 고른다
-  await expect(table).toContainText('검증 5', { timeout: 60_000 });
+  await searchResultItem(page, SHOP_A_NAME, SHOP_A_ITEM_NAME)
+    .getByRole('button', { name: '이 상품으로 정하기' })
+    .click();
+  const table = page.getByRole('table', { name: '같은 상품을 파는 샵 비교' });
+  // 페이지 조회가 끝나 재고 확인 행 5개(재고 통과 3)가 서면 고른다
+  await expect(table).toContainText('재고 확인 5', { timeout: 60_000 });
   const shopA = table.getByRole('row', { name: 'ショップA', exact: true });
-  await expect(shopA.getByRole('cell').nth(1)).toHaveText('일치');
+  await expect(shopA.getByRole('cell').nth(1)).toHaveText('같은 상품');
   await expect(shopA).toContainText('¥11,455');
   await shopA.getByRole('radio', { name: 'ショップA 고르기' }).click();
   await expectStep(page, '② 소싱', '완료');
 }
 
-/** ③ 국내 기준가 입력 → 실행 → (URL 후보면 '비교 없이 확정') → 소싱 확정(G2) */
+/** ③ 국내 기준가 입력 → 실행 → (URL 여정이면 '비교 없이 확정') → 소싱 확정(G2) */
 export async function judgeAndPassG2(page: Page, options: { noComparison?: boolean } = {}) {
   await railStep(page, '③ 판정').click();
   const pricing = page.getByRole('region', { name: '③ 판정' });
@@ -237,9 +263,9 @@ export async function turnOffBlockSwitch(page: Page): Promise<void> {
   );
 }
 
-/** ⑧ 줄의 '후보 상태' 배지 글 */
+/** ⑧ 줄의 '여정 상태' 배지 글 */
 export async function expectCandidateStatus(page: Page, status: string): Promise<void> {
   await expect(page.getByRole('region', { name: '⑧ 이미지 업로드' })).toContainText(
-    `후보 상태 ${status}`,
+    `여정 상태 ${status}`,
   );
 }

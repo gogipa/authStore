@@ -64,7 +64,7 @@ export function PastePanel({ onSubmit, onClose, pending, error }: PastePanelProp
       </div>
       <div className={styles.foot}>
         <p className={styles.caption}>
-          모름이면 후보 성별은 ② 소싱에서 라쿠텐 장르·상품명으로 정합니다.
+          모름이면 여정 성별은 ② 소싱에서 라쿠텐 장르·상품명으로 정합니다.
         </p>
         <Button disabled={empty || pending} onClick={() => onSubmit(text, cid)}>
           <Icon name="list" size={16} />

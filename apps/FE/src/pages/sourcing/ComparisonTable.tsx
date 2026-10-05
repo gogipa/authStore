@@ -1,12 +1,20 @@
 import { Fragment, useState } from 'react';
 import {
   anchorMatchView,
+  canPickAnchor,
   comparisonCaption,
   comparisonParams,
   comparisonSummaryText,
+  FOLDED_GROUP_NOTE,
+  foldedGroupText,
   isComparisonEditable,
+  isFoldedRow,
   itemNameMarks,
+  lacksAnchorColorCode,
+  lacksAnchorModelCode,
   multiplierText,
+  NO_COLOR_CODE_NOTE,
+  NO_MODEL_CODE_NOTE,
   pointMultiplier,
   selectBlockedReason,
   selectionNote,
@@ -22,30 +30,29 @@ import {
   useUpdateSourcingRow,
 } from '@/features/sourcing';
 import { isApiRequestError } from '@/shared/api/errors';
-import { documentTitle } from '@/shared/lib/appName';
-import { formatCount, formatKstTime, formatYen } from '@/shared/lib/format';
+import { useDocumentTitle } from '@/shared/lib/appName';
 import { cx } from '@/shared/lib/cx';
-import { Button, Checkbox, Chip, Icon } from '@/shared/ui';
+import { externalLinkProps, useDemo } from '@/shared/lib/demo';
+import { formatCount, formatKstTime, formatYen } from '@/shared/lib/format';
+import { Banner, Button, Checkbox, Chip, Disclosure, Icon } from '@/shared/ui';
 import { ComparisonRowDetail } from './ComparisonRowDetail';
+import { SearchResultList } from './SearchResultList';
 import styles from './ComparisonTable.module.css';
 
-const TITLE = '라쿠텐 후보 비교';
+/** 기준 상품을 정하기 전(상품 고르기 목록)과 정한 뒤(같은 상품을 파는 샵 표)의 제목(D-47) */
+const PICK_TITLE = '상품 고르기';
+const SHOP_TITLE = '같은 상품을 파는 샵 비교';
 const COLUMNS = [
   { key: 'shop', header: '샵', width: 138, right: false },
-  { key: 'anchor', header: '앵커 일치', width: 100, right: false },
+  { key: 'anchor', header: '같은 상품인가', width: 100, right: false },
   { key: 'stock', header: '목표 사이즈 재고', width: 88, right: true },
-  { key: 'price', header: 'SKU가', width: 88, right: true },
-  { key: 'shipping', header: '송료', width: 88, right: true },
+  { key: 'price', header: '상품 가격', width: 88, right: true },
+  { key: 'shipping', header: '일본 내 배송비', width: 88, right: true },
   { key: 'points', header: '포인트', width: 114, right: true },
   { key: 'effective', header: '실질가', width: 96, right: true },
-  { key: 'marks', header: '표시', width: 92, right: false },
+  { key: 'marks', header: '주의 표시', width: 92, right: false },
   { key: 'at', header: '받은 시각', width: 66, right: true },
 ] as const;
-
-/** 탐색 모드(앵커 전) 묶음 머리 */
-function exploreGroupText(count: number): string {
-  return `검색 결과 ${count} · 앵커(型番·색상)를 정하면 같은 상품만 모아 비교합니다. 상품명에 아동 단어가 있는 상품은 뺐습니다.`;
-}
 
 export interface ComparisonTableProps {
   candidateId: number | null;
@@ -62,12 +69,16 @@ export interface ComparisonTableProps {
 }
 
 /**
- * SCR-03 '라쿠텐 후보 비교'(Sourcing.dc.html, F-SO-11·15·21·22·25~30, P2-03): 제목 + '불일치 결과도 보기', 실질가 캡션,
- * 표(샵·앵커 일치·목표 사이즈 재고·SKU가·송료·포인트·실질가·표시·받은 시각) — 묶음 머리 '검증 N'·'미검증 N'(앵커 전은
- * '검색 결과 N'), 행마다 라쿠텐 링크(새 창)·'선택'·'수동'·'추정'·'확인 필요' 칩. 검증 행은 서버 순서(재고 통과 → 실질가 낮은 순),
- * 미검증 행은 고를 수 없고 '재고 확인'만. 행을 펼치면 상품 줄(상품명·리뷰 수·평점·해외 배송 가능 — F-SO-28 열 중 보드 9열에
- * 없는 값, Proposed)·사이즈별 재고·쿠폰·배율·포인트 분해·같은 상품 판단(앵커와 나란히 + AI 참고). 샵 이름에 마우스를 올리면
- * 상품명. 아래 '다른 샵을 고르면…'과 크레딧(글자만 — 네이버 링크 없음, CON-14). 고르면 `selectSourcingComparisonRow`(② 완료).
+ * ② 비교 칸(Sourcing.dc.html, F-SO-11·15·21·22·25~30, P2-03, D-47). 한 자리에 두 모습이 번갈아 나온다.
+ * - 기준 상품 전(탐색 모드): '상품 고르기' — 쇼핑몰 같은 검색 결과 목록(SearchResultList). 표는 그리지 않는다(D-39)
+ * - 기준 상품을 정한 뒤: '같은 상품을 파는 샵 비교' — 제목 + '다른 상품도 보기', 실질가 캡션, 표(샵·같은 상품인가·목표 사이즈 재고·
+ *   상품 가격·일본 내 배송비·포인트·실질가·주의 표시·받은 시각). 묶음 머리 '재고 확인 N'·'아직 확인 안 함 N', 행마다 라쿠텐 링크(새 창)·
+ *   '선택'·'수동'·'추정'·'확인 필요' 칩. 재고 확인 행은 서버 순서(재고 통과 → 실질가 낮은 순), 아직 확인 안 한 행은 고를 수 없고
+ *   '재고 확인'만. 아직 읽지 않았고 같은 상품인지도 가리지 못한 행(확인 필요)은 '같은 상품인지 확실하지 않은 N개'로 접는다.
+ *   모델 번호를 모르는 상품을 기준 상품으로 정했으면 위에 안내 띠. 행을 펼치면 상품 줄(상품명·리뷰 수·평점·해외 배송 가능 —
+ *   F-SO-28 열 중 보드 9열에 없는 값, Proposed)·사이즈별 재고·쿠폰·배율·포인트 분해·같은 상품인가 판단(기준 상품과 나란히 + AI 참고).
+ *   샵 이름에 마우스를 올리면 상품명. 아래 '다른 샵을 고르면…'과 크레딧(글자만 — 네이버 링크 없음, CON-14).
+ *   고르면 `selectSourcingComparisonRow`(② 완료).
  */
 export function ComparisonTable({
   candidateId,
@@ -79,15 +90,24 @@ export function ComparisonTable({
   usageText,
   pageBlocked,
 }: ComparisonTableProps) {
+  // 기준 상품을 정하기 전(탐색 모드)에는 표를 그리지 않는다 — 고를 상품은 '상품 고르기' 목록에 있다(D-39·D-47)
+  const exploring = !!head?.comparisonPerformed && head.exploreMode;
+  const picking = canPickAnchor(head);
+  const title = exploring ? PICK_TITLE : SHOP_TITLE;
+  const pageTitle = useDocumentTitle(title);
+  const demo = useDemo();
   const params = comparisonParams(head);
   const select = useSelectSourcingRow();
   const stockCheck = useRequestStockCheck();
   const update = useUpdateSourcingRow(candidateId);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [foldOpen, setFoldOpen] = useState(false);
   const editable = isComparisonEditable(head);
   const rows = head?.comparisonPerformed ? head.rows : [];
   const verified = rows.filter((r) => r.isVerified);
-  const unverified = rows.filter((r) => !r.isVerified);
+  // 같은 상품인지 확실하지 않은 행은 접어 둔다(D-47). 서버 순서는 그대로
+  const folded = rows.filter(isFoldedRow);
+  const unverified = rows.filter((r) => !r.isVerified && !isFoldedRow(r));
   const selectedRow = rows.find((r) => r.isSelected);
   const openId = expanded ?? selectedRow?.id ?? verified[0]?.id ?? null;
   const target = targetSizeCount(gender, params);
@@ -168,9 +188,7 @@ export function ComparisonTable({
                 {shopName}
               </button>
               <a
-                href={row.itemUrl}
-                target="_blank"
-                rel="noreferrer noopener"
+                {...externalLinkProps(row.itemUrl, demo)}
                 aria-label={`${shopName} 상품을 라쿠텐에서 보기`}
                 className={styles.link}
               >
@@ -186,6 +204,15 @@ export function ComparisonTable({
                 {match.label}
               </Chip>
               {match.note ? <span className={styles.note}>{match.note}</span> : null}
+              {row.isVerified && row.stockPass === false ? (
+                <>
+                  <Chip tone="failed">재고 부족</Chip>
+                  <span className={styles.noteWrap}>
+                    재고 있는 사이즈 {row.inStockSizeCount ?? 0}개 · {params.minSizeCount}개 이상
+                    필요
+                  </span>
+                </>
+              ) : null}
             </div>
           </td>
           <td className={cx(styles.td, styles.num)}>
@@ -273,31 +300,35 @@ export function ComparisonTable({
 
   return (
     <section aria-labelledby="sourcing-cmp-title" className={styles.comparison}>
-      <title>{documentTitle(TITLE)}</title>
+      <title>{pageTitle}</title>
       <div className={styles.cmpHead}>
         <div className={styles.titleRow}>
           <h1 id="sourcing-cmp-title" className={styles.title}>
-            {TITLE}
+            {title}
           </h1>
           {head && !head.comparisonPerformed ? <Chip tone="outline">비교 안 함</Chip> : null}
         </div>
-        {head?.comparisonPerformed ? (
+        {picking ? <Chip tone="outline">관련도 순 · {rows.length}건</Chip> : null}
+        {head?.comparisonPerformed && !exploring ? (
           <Checkbox
-            label="불일치 결과도 보기"
+            label="다른 상품도 보기"
             checked={includeNoMatch}
-            disabled={head.exploreMode}
             onChange={(e) => onIncludeNoMatchChange(e.target.checked)}
           />
         ) : null}
       </div>
-      <p className={styles.caption}>{comparisonCaption(params.kRank)}</p>
+      {exploring ? null : <p className={styles.caption}>{comparisonCaption(params.kRank)}</p>}
+      {lacksAnchorModelCode(head) ? <Banner tone="info">{NO_MODEL_CODE_NOTE}</Banner> : null}
+      {lacksAnchorColorCode(head) ? <Banner tone="info">{NO_COLOR_CODE_NOTE}</Banner> : null}
       {error ? (
         <div className={styles.summary}>
           <span role="alert" className={styles.error}>
             {error}
           </span>
         </div>
-      ) : !head || !head.comparisonPerformed || rows.length === 0 ? (
+      ) : picking && head ? (
+        <SearchResultList head={head} />
+      ) : !head || !head.comparisonPerformed || rows.length === 0 || exploring ? (
         <div className={styles.summary}>{comparisonSummaryText(head)}</div>
       ) : (
         <div className={styles.frame}>
@@ -317,35 +348,37 @@ export function ComparisonTable({
               </tr>
             </thead>
             <tbody>
-              {head.exploreMode ? (
-                <>
-                  <tr>
-                    <td colSpan={COLUMNS.length} className={styles.group}>
-                      {exploreGroupText(rows.length)}
-                    </td>
-                  </tr>
-                  {rows.map(renderRow)}
-                </>
-              ) : (
-                <>
-                  {verified.length > 0 ? (
-                    <tr>
-                      <td colSpan={COLUMNS.length} className={styles.group}>
-                        {verifiedGroupText(verified.length)}
-                      </td>
-                    </tr>
-                  ) : null}
-                  {verified.map(renderRow)}
-                  {unverified.length > 0 ? (
-                    <tr>
-                      <td colSpan={COLUMNS.length} className={styles.group}>
-                        {unverifiedGroupText(unverified.length)}
-                      </td>
-                    </tr>
-                  ) : null}
-                  {unverified.map(renderRow)}
-                </>
-              )}
+              {verified.length > 0 ? (
+                <tr>
+                  <td colSpan={COLUMNS.length} className={styles.group}>
+                    {verifiedGroupText(verified.length)}
+                  </td>
+                </tr>
+              ) : null}
+              {verified.map(renderRow)}
+              {unverified.length > 0 ? (
+                <tr>
+                  <td colSpan={COLUMNS.length} className={styles.group}>
+                    {unverifiedGroupText(unverified.length)}
+                  </td>
+                </tr>
+              ) : null}
+              {unverified.map(renderRow)}
+              {folded.length > 0 ? (
+                <tr>
+                  <td colSpan={COLUMNS.length} className={styles.fold}>
+                    <Disclosure
+                      look="link"
+                      title={foldedGroupText(folded.length)}
+                      open={foldOpen}
+                      onOpenChange={setFoldOpen}
+                    >
+                      <p className={styles.foldNote}>{FOLDED_GROUP_NOTE}</p>
+                    </Disclosure>
+                  </td>
+                </tr>
+              ) : null}
+              {foldOpen ? folded.map(renderRow) : null}
             </tbody>
           </table>
         </div>
@@ -356,12 +389,14 @@ export function ComparisonTable({
         </span>
       ) : null}
       {select.data?.g2Invalidated ? (
-        <span className={styles.notice}>다른 샵으로 바꿔 판정(G2)을 다시 통과해야 합니다.</span>
+        <span className={styles.notice}>
+          다른 샵으로 바꿔 ③에서 소싱 확정(G2)을 다시 눌러야 합니다.
+        </span>
       ) : null}
       {head ? (
         <div className={styles.footer}>
           <span className={styles.caption}>
-            {head.comparisonPerformed ? selectionNote(params.minSizeCount) : ''}
+            {head.comparisonPerformed && !exploring ? selectionNote(params.minSizeCount) : ''}
           </span>
           <span className={styles.credit}>{head.creditText}</span>
         </div>

@@ -102,7 +102,7 @@ export class CandidateStatusService {
       const row = await scope.tx.candidate.findUniqueOrThrow({ where: { id: candidate.id } });
       if (!hasReadyFields(row)) {
         throw new Error(
-          `후보 ${candidate.id}: 승인대기 이상에 필요한 값이 없습니다(ck_candidate_ready)`,
+          `여정 ${candidate.id}: 승인대기 이상에 필요한 값이 없습니다(ck_candidate_ready)`,
         );
       }
     }

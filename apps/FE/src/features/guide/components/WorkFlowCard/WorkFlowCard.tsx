@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { Banner, Button, ButtonLink, Chip, Icon, Panel } from '@/shared/ui';
 import { WORK_FLOW_STEPS, WORK_FLOW_TEXT, type WorkFlowStep } from '../../content';
 import { useWorkFlowHidden } from '../../model/useWorkFlowHidden';
+import { DemoEntry } from '../DemoEntry/DemoEntry';
 import styles from './WorkFlowCard.module.css';
 
 export interface WorkFlowCardProps {
@@ -23,6 +24,7 @@ function stepTitle(step: WorkFlowStep): string {
  * '작업 흐름' 카드(D-29, 화면시안_명세 §8): ① 키워드 → … → 승인 → ⑨ 등록. 단계는 가로 탭(`role="tablist"`,
  * ←→·Home·End로 옮기면 바로 고른다)이고, 고른 단계의 하는 일·앱이 하는 것·사람이 확인할 것과 그 화면 링크를 보인다.
  * '다시 보지 않기'는 이 브라우저에만 기억한다(localStorage, 못 쓰면 이번 화면에서만 숨김).
+ * 대시보드 카드 머리에는 체험 입구 [체험해 보기](`/demo` 새 탭, D-31)도 둔다(체험 안에서는 없음).
  * 누른 버튼이 사라지는 두 곳('다시 보지 않기'·'대시보드에 다시 보이기')은 초점을 그 자리에 새로 보이는 안내 글로 옮긴다(tabIndex -1).
  */
 export function WorkFlowCard({ variant, id }: WorkFlowCardProps) {
@@ -94,15 +96,18 @@ export function WorkFlowCard({ variant, id }: WorkFlowCardProps) {
       caption={WORK_FLOW_TEXT.caption}
       actions={
         variant === 'dashboard' ? (
-          <Button
-            size="sm"
-            onClick={() => {
-              setHidden(true);
-              setJustHidden(true);
-            }}
-          >
-            {WORK_FLOW_TEXT.dismiss}
-          </Button>
+          <>
+            <DemoEntry inDemo="hidden" />
+            <Button
+              size="sm"
+              onClick={() => {
+                setHidden(true);
+                setJustHidden(true);
+              }}
+            >
+              {WORK_FLOW_TEXT.dismiss}
+            </Button>
+          </>
         ) : undefined
       }
     >

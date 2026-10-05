@@ -1,5 +1,5 @@
 import { useCallback, useId, useRef, useState, type ReactNode } from 'react';
-import { documentTitle } from '@/shared/lib/appName';
+import { useDocumentTitle } from '@/shared/lib/appName';
 import { HelpButton, HelpPanel } from '../HelpToggle/HelpToggle';
 import styles from './PageHeader.module.css';
 
@@ -18,10 +18,11 @@ export interface PageHeaderProps {
 }
 
 /**
- * 화면 머리(공통부품_마크업.md §B). 화면마다 하나만 둔다. 문서 제목도 함께 정한다.
+ * 화면 머리(공통부품_마크업.md §B). 화면마다 하나만 둔다. 문서 제목도 함께 정한다(체험 `/demo`이면 끝에 '(체험)', D-31).
  * 화면 ID(SCR-xx)는 설계 문서에만 쓰고 화면에는 그리지 않는다(D-27).
  */
 export function PageHeader({ title, description, breadcrumb, actions, help }: PageHeaderProps) {
+  const pageTitle = useDocumentTitle(title);
   const helpId = `page-help-${useId()}`;
   const [helpOpen, setHelpOpen] = useState(false);
   const helpButton = useRef<HTMLButtonElement>(null);
@@ -33,7 +34,7 @@ export function PageHeader({ title, description, breadcrumb, actions, help }: Pa
   return (
     <>
       <header className={styles.header}>
-        <title>{documentTitle(title)}</title>
+        <title>{pageTitle}</title>
         <div className={styles.text}>
           {breadcrumb ? <div className={styles.breadcrumb}>{breadcrumb}</div> : null}
           <div className={styles.titleRow}>

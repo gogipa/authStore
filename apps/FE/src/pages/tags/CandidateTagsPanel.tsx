@@ -17,7 +17,7 @@ import styles from './TagsPage.module.css';
 
 export interface CandidateTagsPanelProps {
   set: TagSetOutput | undefined;
-  /** 후보의 지금 리프(요약의 카테고리 이름) */
+  /** 여정의 지금 리프(요약의 카테고리 이름) */
   candidateLeaf: { leafCategoryId: string | null; wholeCategoryName: string | null } | null;
 }
 

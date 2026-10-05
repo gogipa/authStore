@@ -17,7 +17,7 @@ vi.mock('@/pages/dashboard/DashboardPage', async () => {
       if (control.fail) {
         throw new ApiRequestError({
           code: 'CANDIDATE_NOT_FOUND',
-          message: '후보를 찾을 수 없습니다.',
+          message: '여정을 찾을 수 없습니다.',
           status: 404,
           timestamp: '2026-09-27T14:02:11+09:00',
           path: '/api/v1/candidates/7',
@@ -43,7 +43,7 @@ describe('RouteErrorBoundary', () => {
   it('화면이 오류를 던져도 주 메뉴는 남고, 본문에 오류 message와 다시 시도 버튼을 보인다', async () => {
     const { container } = renderRoute('/');
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('후보를 찾을 수 없습니다.');
+    expect(alert).toHaveTextContent('여정을 찾을 수 없습니다.');
     expect(alert).toHaveTextContent('CANDIDATE_NOT_FOUND');
     expect(container.querySelector('nav[aria-label="주 메뉴"]')).not.toBeNull();
     expect(within(screen.getByRole('main')).getByRole('alert')).toBe(alert);

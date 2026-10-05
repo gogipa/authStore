@@ -54,7 +54,7 @@ describe('이어 하기 경로(model/resume)', () => {
   });
 });
 
-describe('후보 id(model/candidateId)', () => {
+describe('여정 id(model/candidateId)', () => {
   it('1 이상 int4 정수만', () => {
     expect(parseCandidateId('12')).toBe(12);
     for (const raw of ['0', 'abc', '1.5', '-1', '012', '', null, undefined, '99999999999']) {
@@ -92,8 +92,8 @@ describe('단계 점(model/stepDots)', () => {
   });
 });
 
-describe('표시명·후보 머리(model/displayName, CandidateDetailHeader)', () => {
-  it('표시명 → 型番 · 색상 → 후보 #id', () => {
+describe('표시명·여정 머리(model/displayName, CandidateDetailHeader)', () => {
+  it('표시명 → 型番 · 색상 → 여정 #id', () => {
     expect(
       candidateDisplayName(
         candidateSummary({ id: 3, displayName: '아식스 젤카야노 14 · 크림/블랙' }),
@@ -109,7 +109,7 @@ describe('표시명·후보 머리(model/displayName, CandidateDetailHeader)', (
         }),
       ),
     ).toBe('1201A019108 · 크림/블랙');
-    expect(candidateDisplayName(candidateSummary({ id: 3, displayName: null }))).toBe('후보 #3');
+    expect(candidateDisplayName(candidateSummary({ id: 3, displayName: null }))).toBe('여정 #3');
     expect(anchorKeyLabel(candidateDetail({ id: 1 }))).toBe('MR530SG · 화이트/실버');
     expect(
       anchorKeyLabel(candidateDetail({ id: 1, anchorModelCode: null, anchorItemCode: null })),

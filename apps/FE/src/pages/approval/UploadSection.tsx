@@ -18,13 +18,16 @@ import {
   useUploadResultQuery,
 } from '@/features/registration';
 import type { ReactNode } from 'react';
+import { NowMark, STEP_GUIDE_COMMON } from '@/features/guide';
 import { Button, Chip, DisabledReason } from '@/shared/ui';
 import styles from './UploadSection.module.css';
 
 export interface UploadSectionProps {
   candidateId: number;
-  /** 상태 줄 오른쪽(버튼 앞)에 붙일 것 — P4-02: '후보 상태 승인대기'·'G4 최종 승인' 배지(시안 ⑧ 줄) */
+  /** 상태 줄 오른쪽(버튼 앞)에 붙일 것 — P4-02: '여정 상태 승인대기'·'G4 최종 승인' 배지(시안 ⑧ 줄) */
   statusExtra?: ReactNode;
+  /** 맨 위 안내의 '지금 할 일'이 ⑧ [실행]·[다시 실행]을 가리키는가('지금 여기' 표시, D-41) */
+  nowActive?: boolean;
 }
 
 /**
@@ -37,7 +40,7 @@ export interface UploadSectionProps {
  * 결과는 폴링하지 않고 SSE `step-run.status-changed`(UPLOAD)·`candidate-step.changed`가 산출물·단계 레일을 다시 읽힌다. ⑧이 실행
  * 중이면(새 버전 산출물이 아직 없어 404) 마지막으로 받은 값을 그대로 보인다. 전체 미리보기·사전 검증·⑨는 P4-02·P4-03이 채운다.
  */
-export function UploadSection({ candidateId, statusExtra }: UploadSectionProps) {
+export function UploadSection({ candidateId, statusExtra, nowActive = false }: UploadSectionProps) {
   const rail = useCandidateSteps(candidateId);
   const start = useStartStepRun();
   const item = railByCode(rail.data?.items).UPLOAD;
@@ -68,14 +71,16 @@ export function UploadSection({ candidateId, statusExtra }: UploadSectionProps) 
               actions={
                 <>
                   {statusExtra}
-                  <Button
-                    variant="secondary"
-                    disabled={start.isPending || runReason !== null}
-                    aria-describedby={runReason ? 'upload-run-why' : undefined}
-                    onClick={run}
-                  >
-                    {runButtonLabel(item.status)}
-                  </Button>
+                  <NowMark inline label={STEP_GUIDE_COMMON.nowMark} active={nowActive}>
+                    <Button
+                      variant="secondary"
+                      disabled={start.isPending || runReason !== null}
+                      aria-describedby={runReason ? 'upload-run-why' : undefined}
+                      onClick={run}
+                    >
+                      {runButtonLabel(item.status)}
+                    </Button>
+                  </NowMark>
                 </>
               }
             />

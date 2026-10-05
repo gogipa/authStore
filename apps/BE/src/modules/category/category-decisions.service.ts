@@ -132,7 +132,7 @@ export class CategoryDecisionsService {
     const run = await this.prisma.stepRun.findUnique({ where: { id: runId } });
     if (!run) throw new ApiException('STEP_RUN_NOT_FOUND');
     if (run.candidateId !== candidateId || run.stepCode !== 'CATEGORY') {
-      throw invalidQuery('stepRunId', '이 후보의 ④ 카테고리 실행이 아닙니다.');
+      throw invalidQuery('stepRunId', '이 여정의 ④ 카테고리 실행이 아닙니다.');
     }
     const decision = await this.decisions.findByStepRun(this.prisma, run.id);
     if (!decision) throw categoryOutputNotFound();

@@ -56,3 +56,23 @@
   font: var(--type-caption);
   color: var(--color-ink-faint);
 }
+
+/* 키워드에서 만든 여정: 한국어 원문 → 일본어 검색어(칸 위)를 한 줄로 */
+.origin {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+}
+
+.originLabel {
+  font: var(--type-label);
+  letter-spacing: var(--type-label-letter-spacing);
+  color: var(--color-ink-muted);
+}
+
+.originText {
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+}

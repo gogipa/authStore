@@ -27,7 +27,7 @@ describe('StepRail 자리(칩·게이트)', () => {
     expect(rail.queryByText(/· 통과|· 잠김|· 확인 필요/)).toBeNull();
   });
 
-  it('후보 A(공통부품 §E): ②~⑧ 완료, ⑨ 미실행, G2·G3 통과, G4 확인 필요', () => {
+  it('여정 A(공통부품 §E): ②~⑧ 완료, ⑨ 미실행, G2·G3 통과, G4 확인 필요', () => {
     const done = { status: 'COMPLETED' } as const;
     const rail = renderRail({
       statuses: {
@@ -76,7 +76,7 @@ describe('StepRail 자리(칩·게이트)', () => {
     expect(rail.getByRole('button', { name: '재실행 필요 단계 모두 실행' })).toBeDisabled();
   });
 
-  it('재실행 필요 행 아래에 바뀐 입력 이름, URL 후보는 맨 위에 수동·비교 안 함(P1-05)', () => {
+  it('재실행 필요 행 아래에 바뀐 입력 이름, URL 여정은 맨 위에 수동·비교 안 함(P1-05)', () => {
     const rail = renderRail({
       statuses: { THUMBNAIL: { status: 'RERUN_REQUIRED' } },
       staleInputs: { THUMBNAIL: ['owner.referenceSelection'] },
@@ -102,7 +102,7 @@ describe('StepRail 자리(칩·게이트)', () => {
 });
 
 describe('CandidateHeader', () => {
-  it('오른쪽 버튼은 슬롯이다(단계 화면 틀은 후보 목록, SCR-12는 후보 제외)', () => {
+  it('오른쪽 버튼은 슬롯이다(단계 화면 틀은 여정 목록, SCR-12는 삭제)', () => {
     render(
       <CandidateHeader
         title="아식스 젤카야노 14 · 크림/블랙"
@@ -111,19 +111,19 @@ describe('CandidateHeader', () => {
           { gate: 'G4', state: 'pending' },
         ]}
         caption="라쿠텐 페이지 14:02 받음 · 20:02까지 유효"
-        actions={<Button variant="danger">후보 제외</Button>}
+        actions={<Button variant="danger">삭제</Button>}
       />,
     );
-    const header = within(screen.getByRole('region', { name: '후보 정보' }));
+    const header = within(screen.getByRole('region', { name: '여정 정보' }));
     expect(header.getByText('아식스 젤카야노 14 · 크림/블랙')).toBeInTheDocument();
     expect(header.getByText('G2 판정 확정 · 통과')).toBeInTheDocument();
     expect(header.getByText('G4 최종 승인 · 확인 필요')).toBeInTheDocument();
-    expect(header.getByRole('button', { name: '후보 제외' })).toBeInTheDocument();
+    expect(header.getByRole('button', { name: '삭제' })).toBeInTheDocument();
   });
 
   it('게이트 값이 없으면 게이트 줄을 그리지 않는다', () => {
-    render(<CandidateHeader title="후보 7" />);
-    const header = within(screen.getByRole('region', { name: '후보 정보' }));
+    render(<CandidateHeader title="여정 7" />);
+    const header = within(screen.getByRole('region', { name: '여정 정보' }));
     expect(header.queryByText(/G\d/)).toBeNull();
     expect(header.queryByRole('button')).toBeNull();
   });

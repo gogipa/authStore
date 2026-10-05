@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { jsonResponse, stubApi } from '@/test/apiStub';
 import { callUsageList } from '@/test/fixtures/callUsage';
-import { candidateDetail, gateList, stepRail } from '@/test/fixtures/stepEngine';
+import { candidateDetail, disabled, gateList, stepRail } from '@/test/fixtures/stepEngine';
 import {
   generationSummary,
   promptPreview,
@@ -91,8 +91,8 @@ function setup(
   return api;
 }
 
-async function renderThumbnail() {
-  const view = renderRoute(`/candidates/${CANDIDATE_ID}/thumbnail`);
+async function renderThumbnail(options: { demo?: boolean } = {}) {
+  const view = renderRoute(`/candidates/${CANDIDATE_ID}/thumbnail`, options);
   await screen.findByRole('heading', { level: 1, name: '썸네일 스튜디오' });
   return view;
 }
@@ -206,5 +206,208 @@ describe('⑤ 썸네일 화면(SCR-05, P3-01)', () => {
       additionalImageAssetIds: [901],
     });
     expect(Object.values(body.checklist as Record<string, boolean>).every(Boolean)).toBe(true);
+  });
+});
+
+/** '지금 여기' 이름표가 붙은 칸(NowMark 껍데기) 목록 */
+async function nowMarks() {
+  const marks = await screen.findAllByText('지금 여기');
+  return marks.map((mark) => mark.parentElement!);
+}
+
+describe('⑤ 맨 위 안내(D-41): 하는 일 · 지금 할 일 · 낯선 말 풀이', () => {
+  it('하는 일 한 문장과 지금 할 일이 보이고, 풀이는 접혀 있다가 펼치면 용어가 나온다', async () => {
+    setup();
+    await renderThumbnail({ demo: true });
+    const intro = within(await screen.findByRole('region', { name: '⑤ 썸네일 안내' }));
+    expect(
+      intro.getByText(
+        '라쿠텐 상품 이미지를 견본(레퍼런스)으로 삼아 AI가 썸네일 후보를 만들고, 그중 쓸 이미지를 골라 확인하는 단계입니다.',
+      ),
+    ).toBeInTheDocument();
+    // 레퍼런스를 아직 안 골랐으면 그것부터 말한다
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(
+        /^지금 할 일 '원본 이미지' 칸에서 신발만 나온 이미지를 1~3장 골라 '레퍼런스'를 체크하고/,
+      ),
+    );
+    const toggle = intro.getByRole('button', { name: /펼치기/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.setup().click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    for (const term of [
+      '실행 · 다시 실행',
+      '여기부터 연속 실행',
+      '레퍼런스 · 참조 전용',
+      '레퍼런스에 사람·얼굴 없음',
+      '얼굴 노출 · 생성 거부',
+      '프롬프트 · 실존 인물 이름 없음',
+      '만들기 · 다시 만들기',
+      '대표 · 추가',
+      '선택 전 확인 · 썸네일 선택(G3)',
+    ]) {
+      expect(intro.getByText(term)).toBeVisible();
+    }
+  });
+
+  it('⑤ 미실행이면 [실행]을 누르라고 하고 표시는 [실행] 버튼에만 붙는다', async () => {
+    setup('NOT_RUN');
+    await renderThumbnail({ demo: true });
+    const intro = within(await screen.findByRole('region', { name: '⑤ 썸네일 안내' }));
+    expect(intro.getByRole('status')).toHaveTextContent(/^지금 할 일 \[실행\]을 누르세요\./);
+    const marks = await nowMarks();
+    expect(marks).toHaveLength(1);
+    expect(within(marks[0]!).getByRole('button', { name: '실행' })).toBeInTheDocument();
+    expect(within(marks[0]!).queryByRole('region')).toBeNull();
+  });
+
+  it('실행 버튼이 꺼져 있으면 버튼 아래 이유를 먼저 보라고 말한다', async () => {
+    const api = setup('NOT_RUN');
+    const reason = disabled('STEP_START_CONDITION_UNMET', '② 소싱을 먼저 마쳐 주세요.');
+    api.on(`GET /candidates/${CANDIDATE_ID}/steps`, () =>
+      jsonResponse(
+        stepRail({
+          THUMBNAIL: {
+            status: 'NOT_RUN',
+            actions: { run: reason, continuousRun: reason, edit: reason },
+          },
+        }),
+      ),
+    );
+    await renderThumbnail({ demo: true });
+    const intro = within(await screen.findByRole('region', { name: '⑤ 썸네일 안내' }));
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(
+        /^지금 할 일 지금은 실행할 수 없습니다\./,
+      ),
+    );
+    expect((await screen.findAllByText('② 소싱을 먼저 마쳐 주세요.')).length).toBeGreaterThan(0);
+    const marks = await nowMarks();
+    expect(marks).toHaveLength(1);
+    expect(within(marks[0]!).getByRole('button', { name: '실행' })).toBeDisabled();
+  });
+
+  it("'지금 여기'가 레퍼런스 고르기 → 만들기 순서로 옮겨 간다", async () => {
+    setup();
+    await renderThumbnail({ demo: true });
+    const user = userEvent.setup();
+    const intro = within(await screen.findByRole('region', { name: '⑤ 썸네일 안내' }));
+    // 레퍼런스를 고르기 전: 표시는 '원본 이미지' 칸 하나
+    const first = await nowMarks();
+    expect(first).toHaveLength(1);
+    expect(within(first[0]!).getByRole('region', { name: '원본 이미지' })).toBeInTheDocument();
+    // 레퍼런스 + '사람·얼굴 없음'을 저장하면 [만들기] 차례: 표시는 '생성 옵션' 칸
+    await user.click(await screen.findByRole('checkbox', { name: '원본 2 레퍼런스' }));
+    await user.click(screen.getByRole('checkbox', { name: '레퍼런스에 사람·얼굴 없음' }));
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(/^지금 할 일 \[만들기\]를 누르세요\./),
+    );
+    const second = await nowMarks();
+    expect(second).toHaveLength(1);
+    expect(within(second[0]!).getByRole('region', { name: '생성 옵션' })).toBeInTheDocument();
+    expect(within(second[0]!).getByRole('button', { name: '만들기' })).toBeEnabled();
+  });
+
+  it("후보가 생기면 표시가 '썸네일 후보' → '선택 전 확인'으로 옮겨 간다", async () => {
+    setup(
+      'WAITING_INPUT',
+      thumbnailOutput({
+        generationRuns: [generationSummary({ slotNo: 1 }), generationSummary({ slotNo: 2 })],
+      }),
+    );
+    await renderThumbnail({ demo: true });
+    const user = userEvent.setup();
+    const intro = within(await screen.findByRole('region', { name: '⑤ 썸네일 안내' }));
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(/^지금 할 일 후보 중 대표로 쓸 이미지를/),
+    );
+    const first = await nowMarks();
+    expect(first).toHaveLength(1);
+    expect(within(first[0]!).getByRole('region', { name: '썸네일 후보' })).toBeInTheDocument();
+    expect(within(first[0]!).queryByRole('region', { name: '선택 전 확인' })).toBeNull();
+
+    await user.click(await screen.findByRole('radio', { name: '후보 2 대표' }));
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(
+        /^지금 할 일 '레퍼런스와 나란히 보기'로 대표 후보를/,
+      ),
+    );
+    const second = await nowMarks();
+    expect(second).toHaveLength(1);
+    expect(within(second[0]!).getByRole('region', { name: '선택 전 확인' })).toBeInTheDocument();
+  });
+
+  it('생성이 모두 거부됐으면 다시 만들라고 말하고 표시는 후보 칸에 붙는다', async () => {
+    setup(
+      'WAITING_INPUT',
+      thumbnailOutput({
+        generationRuns: [
+          generationSummary({ slotNo: 1, status: 'REFUSED', refusalReason: '인물 생성 제한' }),
+          generationSummary({ slotNo: 2, status: 'REFUSED', refusalReason: '인물 생성 제한' }),
+        ],
+      }),
+    );
+    await renderThumbnail({ demo: true });
+    const user = userEvent.setup();
+    const intro = within(await screen.findByRole('region', { name: '⑤ 썸네일 안내' }));
+    // 이 화면에서 레퍼런스를 다시 확인하기 전에는 그것부터
+    await user.click(await screen.findByRole('checkbox', { name: '레퍼런스에 사람·얼굴 없음' }));
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(
+        /^지금 할 일 쓸 수 있는 후보가 없습니다\./,
+      ),
+    );
+    const marks = await nowMarks();
+    expect(marks).toHaveLength(1);
+    expect(within(marks[0]!).getByRole('region', { name: '썸네일 후보' })).toBeInTheDocument();
+  });
+
+  it("G3 통과 뒤에는 끝났다고 알리고 아래 [다음: ⑥ 상세 콘텐츠]에 '지금 여기'를 붙인다", async () => {
+    setup(
+      'COMPLETED',
+      thumbnailOutput({
+        stepRunStatus: 'COMPLETED',
+        generationRuns: [generationSummary({ slotNo: 1 }), generationSummary({ slotNo: 2 })],
+        selection: {
+          thumbnailSelectionId: 9,
+          selectedAt: '2026-09-28T05:24:00.000Z',
+          checklist: {
+            version: '1',
+            shoeRatioOver70: true,
+            detailMatch: true,
+            colorMatchesSelectedColor: true,
+            referenceNoPerson: true,
+            noRealPersonResemblance: true,
+            noTextOrPrice: true,
+            singleProductSingleModel: true,
+          },
+          images: [
+            { imageAssetId: 901, role: 'REPRESENTATIVE', sortOrder: 1, fileUrl: '' },
+            { imageAssetId: 902, role: 'ADDITIONAL', sortOrder: 2, fileUrl: '' },
+          ],
+        },
+        g3: {
+          gatePassId: 5,
+          passedAt: '2026-09-28T05:24:00.000Z',
+          basisStepRunId: RUN_ID,
+          valid: true,
+          changedBasisKeys: [],
+        },
+      }),
+    );
+    await renderThumbnail({ demo: true });
+    const intro = within(await screen.findByRole('region', { name: '⑤ 썸네일 안내' }));
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(
+        '⑤ 썸네일을 마쳤습니다. [다음: ⑥ 상세 콘텐츠]를 눌러 상품 카피와 상세 설명을 만들러 가세요.',
+      ),
+    );
+    // 맨 위에는 이동 링크를 두지 않고, '선택 전 확인' 패널의 [다음: ⑥ 상세 콘텐츠]에 표시가 붙는다(D-42)
+    expect(intro.queryByRole('link')).toBeNull();
+    const marks = screen.getAllByText('지금 여기');
+    expect(marks).toHaveLength(1);
+    expect(
+      within(marks[0]!.parentElement!).getByRole('link', { name: /다음: ⑥ 상세 콘텐츠/ }),
+    ).toHaveAttribute('href', `/candidates/${CANDIDATE_ID}/content`);
   });
 });

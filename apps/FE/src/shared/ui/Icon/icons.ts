@@ -27,7 +27,7 @@ export const ICONS = {
   ],
   /** 키워드 */
   search: [{ tag: 'circle', cx: 11, cy: 11, r: 6.5 }, path('M20 20l-4.3-4.3')],
-  /** 후보 작업 */
+  /** 여정 */
   list: [path('M9 6h11M9 12h11M9 18h11'), path('M4 6h.01M4 12h.01M4 18h.01')],
   /** 등록 상품 */
   package: [
@@ -76,6 +76,8 @@ export const ICONS = {
   'pause-circle': [{ tag: 'circle', cx: 12, cy: 12, r: 8.5 }, path('M9.5 9v6M14.5 9v6')],
   /** 다시 감지(AiEngine 보드 머리 보조 버튼, P1-11) */
   refresh: [path('M20 5v5h-5'), path('M19 15a7.5 7.5 0 1 1-1.2-7.4L20 10')],
+  /** 되돌아가기(여정 머리 '여정 목록', D-36) */
+  'arrow-left': [path('M19 12H5M11 6l-6 6 6 6')],
   /** 이동(Settings 보드 'AI 엔진 설정' 링크) */
   'arrow-right': [path('M5 12h14M13 6l6 6-6 6')],
   /** 잠금(Settings 보드 '더할 수만 있고 뺄 수 없습니다' 안내 띠) */
@@ -97,7 +99,7 @@ export const ICONS = {
     path('M9.6 9.4a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2.2-2.4 3.6'),
     path('M12 16.8v.4'),
   ],
-  /** 신발(후보 머리 썸네일 자리, 공통부품 §F) */
+  /** 신발(여정 머리 썸네일 자리, 공통부품 §F) */
   shoe: [
     path('M3 16.5V13l3-1 3.5-4 2 .5 1 2.5 5 1.5c2 .6 3.5 1.8 3.5 3.5v.5H3z'),
     path('M3 16.5h18v1.5H3z'),

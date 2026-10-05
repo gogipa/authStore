@@ -111,19 +111,24 @@ export class KeywordSnapshotsService {
     );
   }
 
-  /** 묶음 한 건: 구조 변경 의심(ABORTED + 앞 5종)·24시간 쉼(call_log DATALAB, 지금 기준) */
+  /**
+   * 묶음 한 건: 구조 변경 의심(ABORTED + 앞 5종)·24시간 쉼(call_log DATALAB, 지금 기준)·지금 고른 키워드(D-33 —
+   * 묶음에서 selected_at이 가장 늦은 키워드, 없으면 null. 표가 쪽으로 나뉘어 줄만으로는 알 수 없어 함께 준다).
+   */
   async get(id: number): Promise<KeywordSnapshotDetailDto> {
     const row = await this.repo.findSnapshot(id);
     if (!row) throw new ApiException('KEYWORD_SNAPSHOT_NOT_FOUND');
-    const [dto, cooldown] = await Promise.all([
+    const [dto, cooldown, selected] = await Promise.all([
       this.repo.toDto(row),
       this.usage.activeCooldown('DATALAB', this.clock.now()),
+      this.repo.findCurrentSelected(id),
     ]);
     return {
       ...dto,
       structureChangeSuspected:
         row.status === 'ABORTED' && isStructureChangeReason(row.abortReason),
       blockedUntil: cooldown ? cooldown.blockedUntil.toISOString() : null,
+      selectedKeyword: selected ? toRankedKeywordDto(selected) : null,
     };
   }
 

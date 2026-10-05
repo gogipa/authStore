@@ -21,6 +21,7 @@ import {
   type PreValidationResult,
   type RegistrationOptionType,
 } from '@/features/registration';
+import { NowMark, STEP_GUIDE_COMMON } from '@/features/guide';
 import { STEP_NAME, useCandidateGates, useCandidateSteps } from '@/features/step-engine';
 import { stepPath } from '@/shared/lib/steps';
 import {
@@ -32,6 +33,7 @@ import {
   StatusChip,
   stepStatusLabel,
 } from '@/shared/ui';
+import type { ApprovalNowPlace } from './approvalNow';
 import { ApproveSection } from './ApproveSection';
 import styles from './RegisterSection.module.css';
 
@@ -45,6 +47,8 @@ export interface RegisterSectionProps {
   summaryText: string | null;
   enabled: boolean;
   reason: string | null;
+  /** 맨 위 안내의 '지금 할 일'이 있는 자리('지금 여기' 표시, D-41). 이 영역에서는 직전 결과·승인 바·기존 상품 보기만 쓴다 */
+  nowPlace?: ApprovalNowPlace | null;
 }
 
 /** 직전 결과 칩 색(Chip tone) */
@@ -77,6 +81,7 @@ export function RegisterSection({
   summaryText,
   enabled,
   reason,
+  nowPlace = null,
 }: RegisterSectionProps) {
   const registrations = useCandidateRegistrations(candidateId);
   const latest = registrations.data?.content[0] ?? null;
@@ -137,41 +142,43 @@ export function RegisterSection({
           </span>
           <span className={styles.caption}>{mode.note}</span>
         </div>
-        <div className={styles.cell}>
-          <span className={styles.label}>{LAST_RESULT_LABEL}</span>
-          <span className={styles.value}>
-            {last.status ?? NO_APPROVAL_TEXT}
-            {last.canCheck && latest ? (
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={check.isPending}
-                onClick={() => {
-                  check.reset();
-                  check.mutate(latest.registrationId);
-                }}
-              >
-                {RESULT_CHECK_LABEL}
-              </Button>
+        <NowMark label={STEP_GUIDE_COMMON.nowMark} active={nowPlace === 'result'}>
+          <div className={styles.cell}>
+            <span className={styles.label}>{LAST_RESULT_LABEL}</span>
+            <span className={styles.value}>
+              {last.status ?? NO_APPROVAL_TEXT}
+              {last.canCheck && latest ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={check.isPending}
+                  onClick={() => {
+                    check.reset();
+                    check.mutate(latest.registrationId);
+                  }}
+                >
+                  {RESULT_CHECK_LABEL}
+                </Button>
+              ) : null}
+            </span>
+            {last.message ? (
+              <span className={last.tone === 'failed' ? styles.errorText : styles.caption}>
+                {last.message}
+              </span>
             ) : null}
-          </span>
-          {last.message ? (
-            <span className={last.tone === 'failed' ? styles.errorText : styles.caption}>
-              {last.message}
-            </span>
-          ) : null}
-          {last.traceId ? (
-            <span className={styles.caption}>
-              추적 번호 <span className={styles.mono}>{last.traceId}</span>
-            </span>
-          ) : null}
-          {check.error ? (
-            <span role="alert" className={styles.errorText}>
-              {check.error.message}
-            </span>
-          ) : null}
-          <span className={styles.caption}>{REGISTER_GUIDE}</span>
-        </div>
+            {last.traceId ? (
+              <span className={styles.caption}>
+                추적 번호 <span className={styles.mono}>{last.traceId}</span>
+              </span>
+            ) : null}
+            {check.error ? (
+              <span role="alert" className={styles.errorText}>
+                {check.error.message}
+              </span>
+            ) : null}
+            <span className={styles.caption}>{REGISTER_GUIDE}</span>
+          </div>
+        </NowMark>
       </div>
       {preview ? (
         <div className={styles.json}>
@@ -185,42 +192,47 @@ export function RegisterSection({
           </Disclosure>
         </div>
       ) : null}
-      {duplicate ? (
-        <div className={styles.existing}>
-          <div className={styles.existingText}>
-            <span className={styles.value}>같은 상품·색상이 이미 등록돼 있습니다</span>
-            <span className={styles.caption}>{existingProductText(duplicate)}</span>
-            {!duplicate.smartstoreProductUrl ? (
-              <DisabledReason id="existing-why">
-                상품 번호를 몰라 스마트스토어센터 상품 화면을 열 수 없습니다.
-              </DisabledReason>
-            ) : null}
+      <NowMark
+        label={STEP_GUIDE_COMMON.nowMark}
+        active={nowPlace === 'approve' || nowPlace === 'existing'}
+      >
+        {duplicate ? (
+          <div className={styles.existing}>
+            <div className={styles.existingText}>
+              <span className={styles.value}>같은 상품·색상이 이미 등록돼 있습니다</span>
+              <span className={styles.caption}>{existingProductText(duplicate)}</span>
+              {!duplicate.smartstoreProductUrl ? (
+                <DisabledReason id="existing-why">
+                  상품 번호를 몰라 스마트스토어센터 상품 화면을 열 수 없습니다.
+                </DisabledReason>
+              ) : null}
+            </div>
+            <Button
+              variant="primary"
+              disabled={!duplicate.smartstoreProductUrl}
+              aria-describedby={!duplicate.smartstoreProductUrl ? 'existing-why' : undefined}
+              onClick={() => {
+                if (duplicate.smartstoreProductUrl) {
+                  window.open(duplicate.smartstoreProductUrl, '_blank', 'noopener,noreferrer');
+                }
+              }}
+            >
+              {EXISTING_PRODUCT_LABEL}
+            </Button>
           </div>
-          <Button
-            variant="primary"
-            disabled={!duplicate.smartstoreProductUrl}
-            aria-describedby={!duplicate.smartstoreProductUrl ? 'existing-why' : undefined}
-            onClick={() => {
-              if (duplicate.smartstoreProductUrl) {
-                window.open(duplicate.smartstoreProductUrl, '_blank', 'noopener,noreferrer');
-              }
-            }}
-          >
-            {EXISTING_PRODUCT_LABEL}
-          </Button>
-        </div>
-      ) : (
-        <ApproveSection
-          preview={preview}
-          summaryText={summaryText}
-          enabled={enabled && preview !== undefined}
-          reason={reason}
-          onApprove={onApprove}
-          pending={create.isPending}
-          error={create.error}
-          blockers={blockers}
-        />
-      )}
+        ) : (
+          <ApproveSection
+            preview={preview}
+            summaryText={summaryText}
+            enabled={enabled && preview !== undefined}
+            reason={reason}
+            onApprove={onApprove}
+            pending={create.isPending}
+            error={create.error}
+            blockers={blockers}
+          />
+        )}
+      </NowMark>
     </section>
   );
 }

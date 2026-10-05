@@ -5,3 +5,9 @@
 .reason {
   margin-top: calc(-1 * var(--space-4));
 }
+
+/* 마친 뒤 맨 아래 [다음: ③ 판정] — 오른쪽 끝(③ 카테고리 칸의 '다음' 버튼과 같은 자리) */
+.next {
+  display: flex;
+  justify-content: flex-end;
+}

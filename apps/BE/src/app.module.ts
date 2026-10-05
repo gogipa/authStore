@@ -1,11 +1,9 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { CommonModule } from './common/common.module.js';
 import { AppConfigModule } from './common/config/app-config.module.js';
 import { AppConfigService } from './common/config/app-config.service.js';
-import { FE_DIST_DIR } from './common/config/paths.js';
+import { feStaticOptions } from './common/config/fe-static.js';
 import { LoggingModule } from './common/logging/logging.module.js';
 import { SecretsModule } from './common/secrets/secrets.module.js';
 import { CategoryModule } from './modules/category/category.module.js';
@@ -32,13 +30,10 @@ import { PrismaModule } from './prisma/prisma.module.js';
     CommonModule,
     // 공통: 비밀정보 저장소 SECRET_STORE(키체인, 전역, P1-07)
     SecretsModule,
-    // 운영에서 FE 빌드(apps/FE/dist)가 있으면 BE가 화면도 내보낸다. /api 밖은 SPA 대체(index.html)
+    // 운영에서 FE 빌드(apps/FE/dist)가 있으면 BE가 화면도 내보낸다. /api 밖은 SPA 대체(index.html, 체험 /demo/… 포함)
     ServeStaticModule.forRootAsync({
       inject: [AppConfigService],
-      useFactory: (config: AppConfigService) =>
-        config.isProduction && existsSync(join(FE_DIST_DIR, 'index.html'))
-          ? [{ rootPath: FE_DIST_DIR, exclude: ['/api/{*path}'] }]
-          : [],
+      useFactory: (config: AppConfigService) => feStaticOptions(config.isProduction),
     }),
     // 핵심
     StepEngineModule,

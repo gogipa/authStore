@@ -8,7 +8,7 @@ export interface ScreenHelpProps {
 
 /**
  * 화면 도움말 내용(F-GD-02, D-29): 이 화면에서 할 일 · 다음 단계 · 자주 막히는 곳. `PageHeader`의 `help`나
- * 후보 작업 틀의 도움말 판 안에 넣는다. 글은 content.ts `SCREEN_HELP`(= 안내문구.md §5).
+ * 여정 화면 틀의 도움말 판 안에 넣는다. 글은 content.ts `SCREEN_HELP`(= 안내문구.md §5).
  */
 export function ScreenHelp({ screen }: ScreenHelpProps) {
   const help = SCREEN_HELP[screen];

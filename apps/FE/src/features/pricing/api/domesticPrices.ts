@@ -25,7 +25,7 @@ export function useDomesticPricesQuery(
 
 /**
  * 국내 기준가 입력(`POST …/domestic-prices`, 201 + `pricingStepStatus`). ③이 기다리면 서버가 이어 계산하고(RUNNING), 완료였으면
- * 값이 바뀔 때 재실행 필요가 된다. 성공하면 판정·입력 이력과 단계 레일·후보·게이트를 다시 읽는다. 실패(409·422)는
+ * 값이 바뀔 때 재실행 필요가 된다. 성공하면 판정·입력 이력과 단계 레일·여정·게이트를 다시 읽는다. 실패(409·422)는
  * `ApiRequestError`(fieldErrors는 칸 옆에).
  */
 export function useCreateDomesticPriceMutation() {

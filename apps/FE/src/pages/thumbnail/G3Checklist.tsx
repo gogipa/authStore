@@ -28,7 +28,7 @@ export interface G3ChecklistProps {
   candidateId: number;
   /** ⑤ 현재 버전 산출물(없으면 고를 수 없다) */
   output: ThumbnailOutput | undefined;
-  /** 후보 선택 색상(체크리스트 '색상이 {선택 색상}과 같음') */
+  /** 여정의 선택 색상(체크리스트 '색상이 {선택 색상}과 같음') */
   selectedColor: string | null | undefined;
   pick: ThumbnailPick;
   /** 대표 후보의 번호('후보 4 기준') */

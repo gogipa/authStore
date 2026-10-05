@@ -10,14 +10,14 @@ import type { SourcingComparisonDetail } from '../model/sourcing';
 export const SOURCING_TAG_KEY = ['sourcing'] as const;
 
 /**
- * queryKey(03-2 §6.2 `['sourcing', operationId, params]`). 후보 한 건 키의 파라미터는 `{ candidateId }`로 고정한다 —
+ * queryKey(03-2 §6.2 `['sourcing', operationId, params]`). 여정 한 건 키의 파라미터는 `{ candidateId }`로 고정한다 —
  * SSE `sourcing.*`·`step-run.status-changed`의 무효화 표(shared/api/events.ts)와 같은 모양이다.
  */
 export const sourcingKeys = {
   validation: (rakutenQuery: string) => qk('sourcing', 'validateRakutenQuery', { rakutenQuery }),
   rakutenItem: (rakutenItemId: number) => qk('sourcing', 'getRakutenItem', { rakutenItemId }),
   comparisonAll: qk('sourcing', 'getSourcingComparison'),
-  /** 후보 한 건의 모든 비교표 조회(무효화용 — 아래 `comparisonOf`와 부분 일치) */
+  /** 여정 한 건의 모든 비교표 조회(무효화용 — 아래 `comparisonOf`와 부분 일치) */
   comparison: (candidateId: number) => qk('sourcing', 'getSourcingComparison', { candidateId }),
   /** P2-03: 조회 조건까지(`['sourcing','getSourcingComparison',{ candidateId, stepRunId, includeNoMatch, sort }]`) */
   comparisonOf: (candidateId: number, options: Required<ComparisonQueryOptions>) =>
@@ -118,7 +118,7 @@ export function useFetchRakutenItem() {
 
 /**
  * '성인용 상품 확인'(`PUT /sourcing-comparisons/{id}/adult-product-confirmation`, 본문 없음, 멱등 — F-SO-06). 웹 화면만
- * 부른다. 성공하면 비교표·단계 레일·후보를 다시 읽는다(멈춘 ②가 이어진다). 409 CONFIRMATION_NOT_APPLICABLE·
+ * 부른다. 성공하면 비교표·단계 레일·여정을 다시 읽는다(멈춘 ②가 이어진다). 409 CONFIRMATION_NOT_APPLICABLE·
  * STEP_RUN_NOT_WAITING_INPUT
  */
 export function useConfirmAdultProduct() {
@@ -146,7 +146,7 @@ export function useInvalidateSourcing() {
   return () => queryClient.invalidateQueries({ queryKey: SOURCING_TAG_KEY });
 }
 
-/** 비교표·단계 레일·후보를 다시 읽는다(앵커·선택·수동 행 뒤) */
+/** 비교표·단계 레일·여정을 다시 읽는다(앵커·선택·수동 행 뒤) */
 function useInvalidateComparison() {
   const queryClient = useQueryClient();
   return () =>
@@ -178,6 +178,26 @@ export function useFixSourcingAnchor() {
         api.PUT('/sourcing-comparisons/{sourcingComparisonId}/anchor', {
           params: { path: { sourcingComparisonId } },
           body,
+        }),
+      ),
+    onSuccess: invalidate,
+  });
+}
+
+export type SourcingSearchMoreResult = components['schemas']['SourcingSearchMoreResult'];
+
+/**
+ * 상품 고르기 목록 '더 보기'(`POST /sourcing-comparisons/{id}/search-more`, 200 — D-47). 기준 상품을 정하기 전(탐색 모드)에만.
+ * 서버가 다음 30건(관련도 순)을 행에 더한다 — 성공하면 비교표를 다시 읽는다. 응답 `hasMore`가 false면 더 없다.
+ * 409 ANCHOR_ALREADY_FIXED·STEP_RUN_NOT_WAITING_INPUT·EXTERNAL_CALL_COOLDOWN, 422 RAKUTEN_QUERY_INVALID
+ */
+export function useLoadMoreSourcingSearchRows() {
+  const invalidate = useInvalidateSourcing();
+  return useMutation({
+    mutationFn: (sourcingComparisonId: number) =>
+      request(() =>
+        api.POST('/sourcing-comparisons/{sourcingComparisonId}/search-more', {
+          params: { path: { sourcingComparisonId } },
         }),
       ),
     onSuccess: invalidate,

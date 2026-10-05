@@ -527,7 +527,7 @@ describe('후보 API(step-engine, P1-04) e2e — autostore_test', () => {
         expect(res.status).toBe(404);
         expect(errorOf(res)).toMatchObject({
           code: 'CANDIDATE_NOT_FOUND',
-          message: '후보를 찾을 수 없습니다.',
+          message: '여정을 찾을 수 없습니다.',
         });
       }
     });
@@ -638,7 +638,7 @@ describe('후보 API(step-engine, P1-04) e2e — autostore_test', () => {
       expect(r2.status).toBe(409);
       expect(errorOf(r2)).toMatchObject({
         code: 'CANDIDATE_STATUS_INVALID',
-        message: '지금 후보 상태(검증완료)에서는 할 수 없습니다.',
+        message: '지금 여정 상태(검증완료)에서는 할 수 없습니다.',
         details: { status: 'VALIDATED', allowed: ['TEMP', 'WORKING', 'AWAITING_APPROVAL'] },
       });
 

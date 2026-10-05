@@ -13,11 +13,30 @@ export const ITEM_INFO_ROOTS = [
   ['api', 'data', 'itemInfoSku'],
 ] as const;
 
-/** 구매 정보(재고) 루트 후보(PRD: `newApi.purchaseInfo`). 대체 루트는 가정(Proposed) */
+/**
+ * 구매 정보(재고) 루트 후보. 실제 상품 페이지(2026-10-05 실측)에서는 `itemInfoSku` 안에 있다(`newApi.itemInfoSku.purchaseInfo`) —
+ * 이 경로를 못 읽으면 모든 SKU 재고가 비어('재고 없음') 후보가 재고 부족으로 제외된다. 아래 두 줄은 M0 S2 전 가정(Proposed)이라
+ * 합성 fixture용으로 뒤에 남긴다.
+ */
 export const PURCHASE_INFO_ROOTS = [
+  ['newApi', 'itemInfoSku', 'purchaseInfo'],
+  ['api', 'data', 'itemInfoSku', 'purchaseInfo'],
   ['newApi', 'purchaseInfo'],
   ['api', 'data', 'purchaseInfo'],
 ] as const;
+
+/**
+ * 실측(2026-10-05, 실제 라쿠텐 상품 페이지)에서 확인한 `itemInfoSku` 안의 경로. 같은 값의 가정 경로(`ITEM_PATHS`)보다 먼저 본다.
+ * 실제 페이지에는 `itemManageNumber`·`productDescription`·`identicalVariants.unlimitedInventoryFlag`가 없고 아래 경로에 있다.
+ */
+export const ITEM_PATHS_MEASURED = {
+  /** 상품 관리 번호(예: `38s12600034`) */
+  itemManageNumber: 'manageNumber',
+  /** 설명 HTML(PC용) */
+  descriptionHtml: 'pcFields.productDescription',
+  /** 무제한 재고 여부 */
+  unlimitedInventoryFlag: 'unlimitedInventoryFlag',
+} as const;
 
 /** itemInfoSku 안의 경로(PRD 표) */
 export const ITEM_PATHS = {

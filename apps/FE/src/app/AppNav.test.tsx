@@ -8,7 +8,7 @@ import { renderRoute } from '@/test/renderRoute';
 const NAV_LABELS = [
   '대시보드',
   '키워드',
-  '후보 작업',
+  '여정',
   '등록 상품',
   '설정',
   'AI 엔진',
@@ -22,7 +22,7 @@ function mainNav() {
 
 /**
  * 가짜 API가 받은 요청 중 내비 상태 상자가 부른 `/call-usage`만 `'<METHOD> <경로>'`로 돌려준다.
- * '/'(대시보드, lazy 청크)도 후보·설정 API를 부르므로 전체 요청 수를 세면 화면 청크가 언제 붙는지에 따라 흔들린다.
+ * '/'(대시보드, lazy 청크)도 여정·설정 API를 부르므로 전체 요청 수를 세면 화면 청크가 언제 붙는지에 따라 흔들린다.
  */
 function callUsageRequests(requests: readonly Request[]) {
   return requests
@@ -84,10 +84,10 @@ describe('왼쪽 내비', () => {
     expect(nav.getByRole('link', { name: '설정' })).not.toHaveAttribute('aria-current');
   });
 
-  it('단계 화면에서는 후보 작업이 현재 항목이다', () => {
+  it('단계 화면에서는 여정이 현재 항목이다', () => {
     renderRoute('/candidates/7/judgement');
     const nav = within(mainNav());
-    expect(nav.getByRole('link', { name: '후보 작업' })).toHaveAttribute('aria-current', 'page');
+    expect(nav.getByRole('link', { name: '여정' })).toHaveAttribute('aria-current', 'page');
     expect(nav.getByRole('link', { name: '대시보드' })).not.toHaveAttribute('aria-current');
   });
 

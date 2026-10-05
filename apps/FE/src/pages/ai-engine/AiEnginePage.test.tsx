@@ -143,6 +143,66 @@ describe('AI 엔진 화면(SCR-13, P1-11 규칙 11)', () => {
     });
   });
 
+  it("[연결 테스트]를 누르면 결과(SSE)가 올 때까지 그 카드 버튼이 '연결 테스트 중…'으로 돌고, 다른 점검 버튼은 잠긴다", async () => {
+    const { api, state } = setup();
+    await renderPage();
+    const es = FakeEventSource.latest();
+    act(() => es.open());
+    await waitFor(() => expect(checkPosts(api)).toHaveLength(1));
+    await userEvent.click(within(card('AGY')).getByRole('button', { name: '연결 테스트' }));
+    await waitFor(() => expect(checkPosts(api)).toHaveLength(2));
+
+    // 요청(202)이 끝나도 결과가 올 때까지 계속 '테스트 중'이다
+    const testing = await within(card('AGY')).findByRole('button', { name: '연결 테스트 중…' });
+    expect(testing).toBeDisabled();
+    expect(testing).toHaveAttribute('aria-busy', 'true');
+    expect(within(card('AGY')).getByText(/^테스트 중입니다/)).toBeInTheDocument();
+    expect(within(card('CLAUDE')).getByRole('button', { name: '연결 테스트' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '다시 감지' })).toBeDisabled();
+
+    // 서버: AGY 연결 테스트 행이 생기고 SSE가 온다
+    state.latest = aiCliCheckLatestList({
+      ...boardChecks(),
+      AGY: aiCliCheck({
+        id: 950,
+        engineCode: 'AGY',
+        trigger: 'MANUAL',
+        model: AGY_TEXT,
+        authStatus: 'UNKNOWN',
+        checkedAt: new Date().toISOString(),
+      }),
+    });
+    act(() =>
+      es.emit('ai-cli-check.completed', {
+        engineCode: 'AGY',
+        installed: true,
+        cliVersion: '1.2.9',
+        authStatus: 'UNKNOWN',
+        smokeStatus: 'PASSED',
+        latencyMs: 9800,
+        errorCode: null,
+      }),
+    );
+    expect(await within(card('AGY')).findByRole('button', { name: '연결 테스트' })).toBeEnabled();
+    expect(within(card('AGY')).queryByRole('button', { name: '연결 테스트 중…' })).toBeNull();
+    expect(screen.getByRole('button', { name: '다시 감지' })).toBeEnabled();
+  });
+
+  it('[연결 테스트] 요청이 거절되면(409 등) 테스트 중 표시를 끄고 message를 보인다', async () => {
+    const { api } = setup();
+    await renderPage();
+    await waitFor(() => expect(checkPosts(api)).toHaveLength(1));
+    api.on('POST /ai-cli-checks', () =>
+      errorResponse(409, 'ALREADY_IN_PROGRESS', '이미 점검이 진행 중입니다.'),
+    );
+    await userEvent.click(within(card('AGY')).getByRole('button', { name: '연결 테스트' }));
+    expect(await within(saveBar()).findByRole('alert')).toHaveTextContent(
+      '이미 점검이 진행 중입니다.',
+    );
+    expect(within(card('AGY')).getByRole('button', { name: '연결 테스트' })).toBeEnabled();
+    expect(within(card('AGY')).queryByText(/^테스트 중입니다/)).toBeNull();
+  });
+
   it('첫 실행 점검에서 오면(?from=first-run) 감지·연결 테스트 계기가 FIRST_RUN', async () => {
     const { api } = setup();
     await renderPage('/settings/ai-engine?from=first-run');

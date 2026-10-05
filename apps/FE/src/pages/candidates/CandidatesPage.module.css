@@ -1,4 +1,4 @@
-/* SCR-12 후보 작업 목록(CandidateWork.dc.html). 왼쪽 목록 320px · 오른쪽 후보 머리·단계. 폭은 보드 값. */
+/* SCR-12 여정 목록(CandidateWork.dc.html). 왼쪽 목록 320px · 오른쪽 여정 머리·단계. 폭은 보드 값. */
 .layout {
   display: flex;
   align-items: flex-start;
@@ -68,11 +68,23 @@
   background: var(--color-accent-soft);
 }
 
+.itemTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
 .itemName {
+  min-width: 0;
   font: var(--type-body-strong);
   color: var(--color-ink);
   text-decoration: none;
   overflow-wrap: anywhere;
+}
+
+.deleteButton {
+  flex: none;
 }
 
 .itemNameSelected {

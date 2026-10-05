@@ -132,22 +132,22 @@ describe('대시보드(SCR-01, P1-04)', () => {
   it('이어 할 곳이 없으면(204) 배너가 없다', async () => {
     stubDashboard({ resume: 'none' });
     await renderDashboard();
-    await screen.findByRole('table', { name: '진행 중 후보' });
-    await waitFor(() => expect(table('진행 중 후보').getAllByRole('row')).toHaveLength(5));
+    await screen.findByRole('table', { name: '진행 중 여정' });
+    await waitFor(() => expect(table('진행 중 여정').getAllByRole('row')).toHaveLength(5));
     expect(screen.queryByText(/이어서 할 곳/)).toBeNull();
     expect(screen.queryByRole('link', { name: '이어 하기' })).toBeNull();
   });
 
-  it("재실행 필요·멈춘 후보 표: 후보·단계·상태·사유, '단계 열기'는 stepPath 경로, 안내 문구", async () => {
+  it("재실행 필요·멈춘 여정 표: 여정·단계·상태·사유, '단계 열기'는 stepPath 경로, 안내 문구", async () => {
     stubDashboard();
     await renderDashboard();
-    const stuck = within(await screen.findByRole('region', { name: /재실행 필요·멈춘 후보/ }));
+    const stuck = within(await screen.findByRole('region', { name: /재실행 필요·멈춘 여정/ }));
     expect(
       stuck.getByText(
         '재실행 필요 단계는 자동으로 다시 돌지 않습니다. 단계를 열어 다시 실행하세요.',
       ),
     ).toBeInTheDocument();
-    const t = table('재실행 필요·멈춘 후보');
+    const t = table('재실행 필요·멈춘 여정');
     await t.findByText('아디다스 삼바 OG · 블랙');
     const rows = t.getAllByRole('row').slice(1);
     expect(rows).toHaveLength(3);
@@ -170,15 +170,15 @@ describe('대시보드(SCR-01, P1-04)', () => {
     );
   });
 
-  it("진행 중 후보 표: 후보 상태 칩, ②~⑨ 점(⑥ 묶음 규칙), '{단계} 열기'", async () => {
+  it("진행 중 여정 표: 여정 상태 칩, ②~⑨ 점(⑥ 묶음 규칙), '{단계} 열기'", async () => {
     stubDashboard();
     await renderDashboard();
-    const t = table('진행 중 후보');
+    const t = table('진행 중 여정');
     await t.findByText('아식스 젤카야노 14');
     const headers = t.getAllByRole('columnheader').map((h) => h.textContent);
     expect(headers).toEqual([
-      '후보',
-      '후보 상태',
+      '여정',
+      '여정 상태',
       '②',
       '③',
       '④',
@@ -233,7 +233,7 @@ describe('대시보드(SCR-01, P1-04)', () => {
       '단계별 대기 건수',
       '조치 필요',
       '등록 한도·판매 비중',
-      '고른 후보 일괄 실행',
+      '고른 여정 일괄 실행',
       '밤에 실행',
     ]) {
       expect(screen.queryByText(text)).toBeNull();

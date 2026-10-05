@@ -89,7 +89,7 @@ export function sourcingFailureOf(error: unknown): Extract<StepOutcome, { kind: 
  * ② 소싱 실행기(`stepCode='SOURCING'`, F-BS-15 규약, P2-02). SourcingModule이 providers에 넣으면 step-engine 레지스트리가
  * 앱 시작 때 찾는다(엔진 → 단계 방향만). 앞 단계 값·설정은 엔진이 넘긴 입력(ctx)만 읽는다.
  * 세 동작(PRD §5.3):
- * - 검색·비교(`run`): 검색어 검사 → Item Search(6시간 캐시) → 상품명 아동 단어 행 빼기 → `sourcing_comparison` + API 행 →
+ * - 검색·비교(`run`): 검색어 검사 → Item Search(관련도 순, 6시간 캐시) → 상품명 아동 단어 행 빼기 → `sourcing_comparison` + API 행 →
  *   SSE `sourcing.search-completed` → 앵커 입력 대기(앵커가 이미 있으면 선택 대기 + 커밋 뒤 앵커 뒤 작업 — P2-03
  *   `AnchorService`: 분류·page 2·페이지 조회·재고·실질가. 선택은 `SelectionService`가 ②를 완료로 닫는다)
  * - URL로 만들기: 후보 만들기 트랜잭션 안에서 `UrlCandidateExtension`이 `StepEngineApi.recordInlineRun`으로 버전을 쓴다
@@ -224,8 +224,9 @@ export class SourcingStepRunner implements StepRunner {
     }
     let result;
     try {
+      // 첫 검색은 관련도 순(상품 고르기 목록, D-47). 장르·최저가·제외어·재고·이미지 조건은 그대로 붙는다
       result = await this.search.search(
-        { keyword: query, page: 1 },
+        { keyword: query, page: 1, sort: 'standard' },
         { candidateId: ctx.candidateId, stepRunId: ctx.stepRunId },
       );
     } catch (error) {

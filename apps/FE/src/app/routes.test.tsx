@@ -18,12 +18,14 @@ describe('경로', () => {
     expect(main.getByRole('link', { name: '설정' })).toHaveAttribute('href', '/settings');
   });
 
-  // lazy로 나눈 뒤에도 14개 화면 경로가 모두 그려진다(SCR-13은 위 테스트). SCR-14 사용 안내는 D-29로 더했다.
+  // lazy로 나눈 뒤에도 15개 화면 경로가 모두 그려진다(SCR-13은 위 테스트). SCR-14 사용 안내는 D-29로,
+  // SCR-15 설정 마법사는 D-29 5번·D-30으로 더했다(예전 주소 /welcome은 /setup으로 보낸다 — app/setupWizard.test.tsx).
+  // SCR-16 체험(/demo)은 같은 경로표를 basename '/demo' 아래에 그린다(app/demo/demo.test.tsx).
   it.each([
     ['/', '대시보드', 'SCR-01'],
     ['/keywords', '키워드', 'SCR-02'],
-    ['/candidates', '후보 작업', 'SCR-12'],
-    ['/candidates/7/sourcing', '라쿠텐 후보 비교', 'SCR-03'],
+    ['/candidates', '여정', 'SCR-12'],
+    ['/candidates/7/sourcing', '같은 상품을 파는 샵 비교', 'SCR-03'],
     ['/candidates/7/judgement', '판정 · 소싱 확정 · 카테고리', 'SCR-04'],
     ['/candidates/7/thumbnail', '썸네일 스튜디오', 'SCR-05'],
     ['/candidates/7/content', '상세 콘텐츠', 'SCR-06'],
@@ -33,6 +35,7 @@ describe('경로', () => {
     ['/settings', '설정', 'SCR-10'],
     ['/system', '시스템 상태', 'SCR-11'],
     ['/guide', '사용 안내', 'SCR-14'],
+    ['/setup', '설정 마법사', 'SCR-15'],
   ])('%s → %s (%s 칩은 그리지 않는다, D-27)', async (path, title) => {
     renderRoute(path);
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
@@ -48,7 +51,7 @@ describe('경로', () => {
     });
     const { router } = renderRoute('/candidates/7');
     expect(
-      await screen.findByRole('heading', { level: 1, name: '라쿠텐 후보 비교' }),
+      await screen.findByRole('heading', { level: 1, name: '같은 상품을 파는 샵 비교' }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/candidates/7/sourcing');
   });
@@ -67,17 +70,17 @@ describe('경로', () => {
     );
   });
 
-  it('단계 화면끼리 오가도 후보 작업 틀(후보 머리·레일)은 그대로 남는다(eager)', async () => {
+  it('단계 화면끼리 오가도 여정 화면 틀(여정 머리·레일)은 그대로 남는다(eager)', async () => {
     const { router } = renderRoute('/candidates/7/sourcing');
-    await screen.findByRole('heading', { level: 1, name: '라쿠텐 후보 비교' });
+    await screen.findByRole('heading', { level: 1, name: '같은 상품을 파는 샵 비교' });
     const rail = screen.getByRole('navigation', { name: '단계' });
-    const header = screen.getByRole('region', { name: '후보 정보' });
+    const header = screen.getByRole('region', { name: '여정 정보' });
 
     await router.navigate('/candidates/7/tags');
     expect(await screen.findByRole('heading', { level: 1, name: '태그' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: '단계' })).toBe(rail);
-    expect(screen.getByRole('region', { name: '후보 정보' })).toBe(header);
-    expect(within(header).getByRole('link', { name: '후보 목록' })).toHaveAttribute(
+    expect(screen.getByRole('region', { name: '여정 정보' })).toBe(header);
+    expect(within(header).getByRole('link', { name: '여정 목록' })).toHaveAttribute(
       'href',
       '/candidates',
     );
@@ -113,6 +116,7 @@ describe('경로', () => {
       'settings/ai-engine',
       'system',
       'guide',
+      'setup',
     ]) {
       expect(typeof byPath.get(key)?.lazy, key).toBe('function');
     }
@@ -125,5 +129,8 @@ describe('경로', () => {
     }
     expect(byPath.get('*')?.lazy).toBeUndefined();
     expect(byPath.get('*')?.element).toBeDefined();
+    // 예전 주소 /welcome은 화면 청크 없이 /setup으로 보낸다(eager)
+    expect(byPath.get('welcome')?.lazy).toBeUndefined();
+    expect(byPath.get('welcome')?.element).toBeDefined();
   });
 });

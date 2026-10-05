@@ -48,7 +48,7 @@ export interface SourcingJobAccepted {
   rowId: number | null;
 }
 
-/** '일치가 20개보다 적으면 page=2까지'(RK-03 4) */
+/** '같은 상품 검색: 일치가 20개보다 적으면 2페이지까지'(RK-03 4, D-47 — 모델 번호 검색에 적용) */
 export const PAGE2_MATCH_THRESHOLD = 20;
 
 type AnchorColumns = Pick<
@@ -89,7 +89,8 @@ export function comparisonLocation(candidateId: number): string {
  * 앵커 풀기(SEARCH_PICK은 그 행의 상품명에서 型番·색상 코드, 없으면 422) → 후보에 확정된 앵커와 다름 409 ANCHOR_KEY_MISMATCH
  * → 이 버전에 이미 앵커가 있으면 같은 앵커는 같은 202(작업을 다시 돌리지 않는다), 다른 앵커는 409 ANCHOR_KEY_MISMATCH(Proposed —
  * 한 버전의 앵커는 한 번, 바꾸려면 ② 다시 실행) → 머리 행 앵커 + 행 분류 + 성별 신호.
- * 백그라운드(커밋 뒤): MATCH < 20이면 검색 page=2(6시간 캐시) → AI 동일 상품 판정 보조(NEEDS_REVIEW) → 성별을 모르면 멈춤
+ * 백그라운드(커밋 뒤): 기준 상품에 모델 번호가 있으면 그 모델 번호로 가격순 검색(D-47 '같은 상품 검색', 6시간 캐시 —
+ * MATCH < 20이고 1페이지가 가득이면 2페이지까지, 모델 번호가 없으면 새 검색 없음) → AI 동일 상품 판정 보조(NEEDS_REVIEW) → 성별을 모르면 멈춤
  * (성별 입력 대기) → P2-02 페이지 조회 반복(앵커 상품 먼저, 행마다 재고·실질가·재대조 + SSE sourcing.row-updated, 끝나면
  * sourcing.page-fetch-finished) → JAN 재대조 다시·AI(어긋난 행) → 제외 판단(Proposed, `exclusionAfterFetch`: 반복이
  * PAGE_CAP·NO_MORE_ROWS로 끝났을 때만 — 같은 상품일 수 있는 행 0 → ANCHOR_NO_MATCH, 읽은 행이 있는데 재고 통과 0 →
@@ -237,7 +238,7 @@ export class AnchorService {
         return;
       const candidateId = head.stepRun.candidateId;
       const settings = this.settings.current();
-      await this.searchPage2(head, settings);
+      await this.searchSameProduct(head, settings);
       const budget = { left: AI_MATCH_MAX_ROWS, stopped: false };
       await this.judgeUncertainRows(head, budget, { onlyUnverified: true });
 
@@ -287,36 +288,56 @@ export class AnchorService {
     return this.repo.contextOf(this.prisma, head, head.stepRun.candidate, settings);
   }
 
-  /** '일치가 20개보다 적으면 page=2'(RK-03 4). 이미 2페이지 행이 있거나 검색어가 없으면 하지 않는다. 검색 실패는 넘어간다 */
-  private async searchPage2(head: HeadWithRun, settings: Readonly<AppSettings>): Promise<void> {
-    const rows = await this.prisma.sourcingComparisonRow.findMany({
-      where: { sourcingComparisonId: head.id },
-      select: { anchorMatch: true, searchRank: true },
-    });
+  /**
+   * 같은 상품 검색(D-47, 지금까지의 'page 2' 대체): 기준 상품에 모델 번호(`anchorModelCode`)가 **있을 때만** 그 모델 번호를 검색어로
+   * 가격 낮은 순(`+itemPrice`) 검색을 page 1로 한다(6시간 캐시). 결과 행을 더하고(`item_code`가 겹치면 기존 행을 둔다 — 검색 순위 NULL)
+   * 분류한 뒤, 일치(MATCH)가 `PAGE2_MATCH_THRESHOLD`(20)개보다 적고 page 1이 `hits`건으로 가득 찼으면 page 2까지 한다.
+   * 모델 번호가 없으면 새 검색을 하지 않는다(AI 보조가 지금 행으로 이어 간다). 검색이 실패하면 로그만 남기고 넘어간다.
+   */
+  private async searchSameProduct(
+    head: HeadWithRun,
+    settings: Readonly<AppSettings>,
+  ): Promise<void> {
+    const modelCode = head.anchorModelCode?.trim();
+    if (!modelCode) return;
     const hits = settings.sourcing.rakutenApi.hits;
-    const matchCount = rows.filter((r) => r.anchorMatch === 'MATCH').length;
-    const hasPage2 = rows.some((r) => (r.searchRank ?? 0) > hits);
-    if (matchCount >= PAGE2_MATCH_THRESHOLD || hasPage2 || !head.searchKeyword) return;
+    const received = await this.addSameProductRows(head, settings, modelCode, 1);
+    if (received === null || received < hits) return;
+    const matchCount = await this.prisma.sourcingComparisonRow.count({
+      where: { sourcingComparisonId: head.id, anchorMatch: 'MATCH' },
+    });
+    if (matchCount >= PAGE2_MATCH_THRESHOLD) return;
+    await this.addSameProductRows(head, settings, modelCode, 2);
+  }
+
+  /** 모델 번호 검색 한 페이지를 받아 행에 더하고 분류·성별 신호를 갱신한다. 받은 원본 항목 수(실패면 null) */
+  private async addSameProductRows(
+    head: HeadWithRun,
+    settings: Readonly<AppSettings>,
+    modelCode: string,
+    page: number,
+  ): Promise<number | null> {
     let result;
     try {
       result = await this.search.search(
-        { keyword: head.searchKeyword, page: 2 },
+        { keyword: modelCode, page, sort: '+itemPrice' },
         { candidateId: head.stepRun.candidateId, stepRunId: head.stepRunId },
       );
     } catch (error) {
       const code = error instanceof ApiException ? error.code : (error as Error)?.name;
-      this.logger.warn(`비교표 #${head.id}: 검색 2페이지를 받지 못했습니다(${code ?? 'Error'})`);
-      return;
+      this.logger.warn(
+        `비교표 #${head.id}: 모델 번호 검색 ${page}페이지를 받지 못했습니다(${code ?? 'Error'})`,
+      );
+      return null;
     }
     const { rows: drafts } = filterSearchRows(result.items, settings, result.fetchedAt);
-    if (drafts.length === 0) return;
+    if (drafts.length === 0) return result.items.length;
     await this.scope.forJob(head.stepRun.candidateId, head.stepRunId, async (scope, c) => {
-      await scope.tx.sourcingComparisonRow.createMany({
-        data: drafts.map((d) =>
-          apiRowCreateData(head.id, { ...d, searchRank: d.searchRank + hits }),
-        ),
+      const { count } = await scope.tx.sourcingComparisonRow.createMany({
+        data: drafts.map((d) => apiRowCreateData(head.id, { ...d, searchRank: null })),
         skipDuplicates: true,
       });
+      if (count === 0) return;
       const fresh = await scope.tx.sourcingComparison.findUniqueOrThrow({ where: { id: head.id } });
       await this.repo.classifyRows(scope.tx, fresh);
       if (fresh.detectedGender === null) {
@@ -329,6 +350,7 @@ export class AnchorService {
         }
       }
     });
+    return result.items.length;
   }
 
   /** P2-02 페이지 조회 반복에 재고 판정·행 갱신을 넣어 돈다. 멈춤 사유를 돌려준다 */

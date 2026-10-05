@@ -60,7 +60,7 @@ import { StaleInputs } from '../StaleInputs/StaleInputs';
 import styles from './StepTable.module.css';
 
 export interface StepTableProps {
-  /** 후보 상세(게이트·페이지 데이터 수집 시각·생성 경로) */
+  /** 여정 상세(게이트·페이지 데이터 수집 시각·생성 경로) */
   detail: CandidateDetail;
 }
 

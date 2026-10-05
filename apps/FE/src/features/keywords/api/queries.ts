@@ -3,7 +3,7 @@ import { api } from '@/shared/api/client';
 import { request } from '@/shared/api/errors';
 import { qk } from '@/shared/api/queryKeys';
 import type { operations } from '@/shared/api/schema';
-import type { KeywordSnapshotCreateRequest } from '../model/keywords';
+import type { KeywordSnapshotCreateRequest, KeywordSnapshotDetail } from '../model/keywords';
 
 /** listKeywordSnapshots 쿼리(page·size·sort·method·status) */
 export type KeywordSnapshotsParams = NonNullable<
@@ -106,7 +106,11 @@ export function useCreateKeywordSnapshotMutation() {
   });
 }
 
-/** G1 키워드 고르기(`PUT /keywords/{id}/selection`, 멱등). 409 KEYWORD_EXCLUDED */
+/**
+ * G1 키워드 고르기(`PUT /keywords/{id}/selection`, D-33 — 이 키워드를 '지금 고른 키워드'로 한다). 이미 지금 고른 키워드면 그대로(멱등).
+ * 성공하면 응답 키워드를 그 묶음 조회(`getKeywordSnapshot`)의 `selectedKeyword`에 바로 넣어 표·검색어 확인이 다시 읽기를 기다리지 않고
+ * 바뀌게 하고, keywords 태그를 다시 읽어 서버 값과 맞춘다. 409 KEYWORD_EXCLUDED
+ */
 export function useSelectKeywordMutation() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -114,11 +118,20 @@ export function useSelectKeywordMutation() {
       request(() =>
         api.PUT('/keywords/{keywordId}/selection', { params: { path: { keywordId } } }),
       ),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keywordsKeys.allKeywords() }),
+    onSuccess: (keyword) => {
+      queryClient.setQueryData<KeywordSnapshotDetail>(
+        keywordsKeys.snapshot(keyword.keywordSnapshotId),
+        (detail) => (detail ? { ...detail, selectedKeyword: keyword } : detail),
+      );
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: KEYWORDS_TAG_KEY }),
   });
 }
 
-/** G1 고르기 취소(`DELETE /keywords/{id}/selection`, 204). 409 KEYWORD_IN_USE(이 키워드로 만든 후보가 있음) */
+/**
+ * G1 고르기 취소(`DELETE /keywords/{id}/selection`, 204). 409 KEYWORD_IN_USE(이 키워드로 만든 여정이 있음).
+ * D-33: 키워드를 하나만 고르는 화면(M1)은 부르지 않는다 — 다른 키워드를 고르면 바뀌므로 취소가 필요 없다(남겨 둔 API).
+ */
 export function useUnselectKeywordMutation() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -126,7 +139,23 @@ export function useUnselectKeywordMutation() {
       request(() =>
         api.DELETE('/keywords/{keywordId}/selection', { params: { path: { keywordId } } }),
       ),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keywordsKeys.allKeywords() }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: KEYWORDS_TAG_KEY }),
+  });
+}
+
+/**
+ * 키워드 한 개를 라쿠텐 검색어(일본어·영문)로 바꾸기(`POST /keywords/{id}/rakuten-query-conversions`, F-BS-70). 고른 AI 엔진을 한 번
+ * 불러 10초~2분 걸린다. 결과는 어디에도 저장하지 않으므로 다시 읽을 것이 없다 — 칸에 넣는 것은 부른 화면이 한다.
+ * 409 KEYWORD_EXCLUDED·AI_ENGINE_UNAVAILABLE, 502 AI_CALL_FAILED
+ */
+export function useConvertKeywordToRakutenQueryMutation() {
+  return useMutation({
+    mutationFn: (keywordId: number) =>
+      request(() =>
+        api.POST('/keywords/{keywordId}/rakuten-query-conversions', {
+          params: { path: { keywordId } },
+        }),
+      ),
   });
 }
 

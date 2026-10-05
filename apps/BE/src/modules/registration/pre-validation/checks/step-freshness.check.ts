@@ -58,7 +58,7 @@ export function stepFreshnessCheck(ctx: PreValidationContext): PreValidationChec
     !candidate.noComparisonConfirmedAt
   ) {
     problems.push({
-      message: "URL로 만든 후보인데 비교를 하지 않았고 '비교 없이 확정' 기록도 없습니다",
+      message: "URL로 만든 여정인데 비교를 하지 않았고 '비교 없이 확정' 기록도 없습니다",
       stepCode: 'PRICING',
       gateCode: 'G2',
     });

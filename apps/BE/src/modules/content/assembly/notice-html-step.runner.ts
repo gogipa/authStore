@@ -239,7 +239,7 @@ export class NoticeHtmlStepRunner implements StepRunner {
       );
     }
     if (gender !== 'MALE' && gender !== 'FEMALE') {
-      return failed('GENDER_REQUIRED', '후보 성별이 없어 고시를 만들 수 없습니다.');
+      return failed('GENDER_REQUIRED', '여정 성별이 없어 고시를 만들 수 없습니다.');
     }
     const settings = ctx.settings;
     const profile = assemblyProfileOf(profileFromInputs(ctx));

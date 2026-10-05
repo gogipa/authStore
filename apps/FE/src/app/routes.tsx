@@ -5,10 +5,11 @@ import { CandidateLayout } from '@/pages/candidate/CandidateLayout';
 import { NotFoundPage } from '@/pages/not-found/NotFoundPage';
 import { AppLayout } from './AppLayout';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
+import { WelcomeRedirect } from './WelcomeRedirect';
 
 /**
  * 화면 하나 = lazy 청크 하나(05-4 §1). 페이지는 이름 있는 export를 유지하고 `pick`이 이름을 고른다.
- * 앱 틀(AppLayout·AppNav)·후보 작업 틀(CandidateLayout·StepRail)·NotFoundPage·shared는 나누지 않는다(eager).
+ * 앱 틀(AppLayout·AppNav)·여정 화면 틀(CandidateLayout·StepRail)·NotFoundPage·shared는 나누지 않는다(eager).
  */
 function page<M>(load: () => Promise<M>, pick: (module: M) => ComponentType) {
   return async () => ({ Component: pick(await load()) });
@@ -17,6 +18,7 @@ function page<M>(load: () => Promise<M>, pick: (module: M) => ComponentType) {
 /**
  * 경로표. FE 설계 문서 docs/dev/FE/05_라우팅/ 과 06-3_FE스캐폴딩.md의 경로표와 같아야 한다.
  * 단계 화면 경로 조각(sourcing…approval)은 shared/lib/steps.ts의 StepScreen과 같다.
+ * 체험(`/demo`, D-31)도 이 경로표를 그대로 basename '/demo' 아래에 그린다(app/demo).
  *
  * `AppLayout` 아래 경로 없는 layout route 하나에 `ErrorBoundary`를 둔다(05-2 §4-2 옵션 B).
  * 화면이 오류를 던져도 왼쪽 내비는 남고 본문에만 오류가 보인다. URL은 바뀌지 않는다.
@@ -138,6 +140,17 @@ export const routes: RouteObject[] = [
               (m) => m.GuidePage,
             ),
           },
+          {
+            // SCR-15 설정 마법사(D-30). 보드 없음 — 화면시안_명세 §9. 내비 항목은 없다(대시보드가 세션마다 한 번 열고,
+            // 대시보드 '시작 준비'·설정·사용 안내에서 다시 연다)
+            path: 'setup',
+            lazy: page(
+              () => import('@/pages/setup/SetupWizardPage'),
+              (m) => m.SetupWizardPage,
+            ),
+          },
+          // 예전 주소(D-29 5번 '첫 실행 안내') → /setup
+          { path: 'welcome', element: <WelcomeRedirect /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

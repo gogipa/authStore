@@ -91,7 +91,7 @@ export function preValidationResult(
 
 const SALE_SIZES = [250, 255, 260, 265, 275];
 
-/** G4 승인 미리보기(05-2 ApprovalPreview — 화면시안 후보 A, 합성 값. 주소는 scheme 없이 — FE 규칙 15) */
+/** G4 승인 미리보기(05-2 ApprovalPreview — 화면시안 여정 A, 합성 값. 주소는 scheme 없이 — FE 규칙 15) */
 export function approvalPreview(
   candidateId: number,
   patch: Partial<ApprovalPreview> = {},

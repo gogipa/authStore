@@ -95,7 +95,7 @@ export function assertCreateShape(body: CreateCandidateDto): void {
       fieldErrors: [
         {
           field: 'creationPath',
-          message: '직접 입력으로 후보 만들기는 아직 쓸 수 없습니다(M2).',
+          message: '직접 입력으로 여정 만들기는 아직 쓸 수 없습니다(M2).',
           rejectedValue: body.creationPath,
         },
       ],
@@ -135,7 +135,7 @@ export class ListCandidatesQueryDto extends PageQueryDto {
   })
   @IsOptional()
   @Transform(toArray)
-  @IsIn(CANDIDATE_STATUSES, { each: true, message: '알 수 없는 후보 상태입니다.' })
+  @IsIn(CANDIDATE_STATUSES, { each: true, message: '알 수 없는 여정 상태입니다.' })
   status?: string[];
 
   @ApiPropertyOptional({ enum: STEP_FLOW, description: '이 단계를 지금 실행할 수 있는 후보만' })

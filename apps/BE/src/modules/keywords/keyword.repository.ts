@@ -187,4 +187,17 @@ export class KeywordRepository {
   findKeyword(id: number, db: Db = this.prisma) {
     return db.keyword.findUnique({ where: { id }, include: KEYWORD_WITH_CANDIDATES });
   }
+
+  /**
+   * 지금 고른 키워드(D-33): 한 묶음에서 `selected_at`이 가장 늦은 키워드(같으면 id가 큰 쪽).
+   * 분야(cid)·쪽과 관계없이 묶음 전체에서 하나다. 고른 키워드가 없으면 null.
+   * 앞서 고른 키워드의 `selected_at`은 지우지 않으므로(후보 G1 통과 시각) 여러 줄에 값이 있어도 이 한 줄만 '지금' 것이다.
+   */
+  findCurrentSelected(snapshotId: number, db: Db = this.prisma) {
+    return db.keyword.findFirst({
+      where: { keywordSnapshotId: snapshotId, selectedAt: { not: null } },
+      orderBy: [{ selectedAt: 'desc' }, { id: 'desc' }],
+      include: KEYWORD_WITH_CANDIDATES,
+    });
+  }
 }

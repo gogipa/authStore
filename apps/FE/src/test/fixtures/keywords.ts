@@ -44,6 +44,8 @@ export function keywordSnapshotDetail(
     excludedCount: 3,
     structureChangeSuspected: false,
     blockedUntil: null,
+    // 지금 고른 키워드(D-33): 이 묶음에서 selectedAt이 가장 늦은 키워드. 고른 것이 없으면 null
+    selectedKeyword: null,
     ...overrides,
   };
 }

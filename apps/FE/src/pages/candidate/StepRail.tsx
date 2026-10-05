@@ -40,7 +40,7 @@ export interface StepRailProps {
   footer?: ReactNode;
   /** 재실행 필요 사유(바뀐 입력 이름, candidate_step.stale_inputs). 행 아래 '바뀐 입력: …'으로 보인다(F-CW-11) */
   staleInputs?: Partial<Record<StepCode, readonly string[]>>;
-  /** 레일 맨 위 배지 자리: URL로 만든 후보의 '수동'·'비교 안 함'(F-CW-12) */
+  /** 레일 맨 위 배지 자리: URL로 만든 여정의 '수동'·'비교 안 함'(F-CW-12) */
   badges?: ReactNode;
 }
 
@@ -74,7 +74,7 @@ function UnknownGate({ gate }: { gate: GateCode }) {
  * 단계 레일(공통부품_마크업.md §G). 행과 순서는 shared/lib/steps.ts의 STEP_RAIL에서 만든다.
  * 현재 화면을 맡는 첫 행에 aria-current="step"을 단다(판정 화면이면 ③, 콘텐츠면 ⑥, 최종 승인이면 ⑧).
  * 행 오른쪽에 StatusChip, 게이트 줄에 GateBadge를 그린다. 값이 없으면 칩을 그리지 않는다.
- * 재실행 필요 행 아래에 바뀐 입력 이름(P1-05), 맨 위에 URL 후보 배지를 둔다.
+ * 재실행 필요 행 아래에 바뀐 입력 이름(P1-05), 맨 위에 URL 여정 배지를 둔다.
  */
 export function StepRail({
   candidateId,

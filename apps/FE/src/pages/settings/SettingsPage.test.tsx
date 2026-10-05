@@ -84,14 +84,18 @@ describe('설정 화면(SCR-10, P1-03)', () => {
     // 머리의 '되돌리기'·'저장'은 구매대행 프로필 탭의 것이다(P1-09)
     expect(await screen.findByRole('button', { name: '저장' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '되돌리기' })).toBeInTheDocument();
+    // D-30: 머리 오른쪽 [설정 마법사](시작 준비가 다 끝나도 늘 있다)
+    expect(screen.getByRole('link', { name: '설정 마법사' })).toHaveAttribute('href', '/setup');
   });
 
-  it('탭을 고르면 그 패널을 보인다(프로필 탭이 아니면 머리 버튼이 없다)', async () => {
+  it('탭을 고르면 그 패널을 보인다(프로필 탭이 아니면 저장 버튼이 없고 [설정 마법사]는 남는다)', async () => {
     stubSettings();
-    await renderSettings();
+    const { router } = await renderSettings();
     await userEvent.click(screen.getByRole('tab', { name: /^환율/ }));
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName(/^환율/);
     expect(screen.queryByRole('button', { name: '저장' })).toBeNull();
+    await userEvent.click(screen.getByRole('link', { name: '설정 마법사' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/setup'));
   });
 
   it("valid:true → '오류 없음'", async () => {
@@ -163,7 +167,7 @@ describe('설정 화면(SCR-10, P1-03)', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        '아동 단어·실존 인물 차단어·고지 필수 블록은 더할 수만 있고 뺄 수 없습니다.',
+        '아동용 단어·실존 인물 차단어·고지 필수 블록은 더할 수만 있고 뺄 수 없습니다.',
       ),
     ).toBeInTheDocument();
   });

@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useParams } from 'react-router';
+import { NowMark, ScreenGuidePanel, STEP_GUIDE_COMMON, THUMBNAIL_GUIDE } from '@/features/guide';
 import {
   parseCandidateId,
   railByCode,
@@ -30,13 +31,14 @@ import {
   type ThumbnailPick,
 } from '@/features/thumbnails';
 import { isApiRequestError } from '@/shared/api/errors';
-import { documentTitle } from '@/shared/lib/appName';
+import { useDocumentTitle } from '@/shared/lib/appName';
 import { Banner, Button, DisabledReason } from '@/shared/ui';
 import { CandidateGrid } from './CandidateGrid';
 import { G3Checklist } from './G3Checklist';
 import { GenerationOptionsPanel, type GenerateOptions } from './GenerationOptionsPanel';
 import { SideBySide } from './SideBySide';
 import { SourceImagesPanel } from './SourceImagesPanel';
+import { thumbnailNowKey, type ThumbnailNowKey } from './thumbnailNow';
 import styles from './ThumbnailPage.module.css';
 
 const TITLE = '썸네일 스튜디오';
@@ -51,15 +53,17 @@ interface GenerateState {
 }
 
 /**
- * SCR-05 ⑤ 썸네일(Thumbnail.dc.html, P3-01 준비 + P3-02 생성·비교·선택). 후보 작업 틀(CandidateLayout) 안 단계 본문:
+ * SCR-05 ⑤ 썸네일(Thumbnail.dc.html, P3-01 준비 + P3-02 생성·비교·선택). 여정 틀(CandidateLayout) 안 단계 본문:
  * - ⑤ 머리: 제목 + 상태 줄(StepStatusBar — '실행'/'다시 실행', 입력 출처 '② 원본 이미지 · 레퍼런스 선택')
  * - '원본 이미지'(`SourceImagesPanel`) — 저장된 레퍼런스를 미리 체크해 보인다(`getCandidateThumbnail`)
  * - [생성 옵션(`GenerationOptionsPanel` — '만들기'/'다시 만들기' = 번호 1..N 생성) | 썸네일 후보(`CandidateGrid`)]
  * - [레퍼런스와 나란히 보기(`SideBySide`) | 선택 전 확인(`G3Checklist` — G3 통과 = `usePassGate`)]
+ * - 맨 위 안내(`ScreenGuidePanel` — 하는 일 · 지금 할 일 · 낯선 말 풀이, D-41)와 지금 할 일이 있는 자리의 '지금 여기' 표시(`NowMark`)
  * 생성 진행·G3 결과는 폴링하지 않고 SSE(generation-run.updated·gate.*·step-run.status-changed)가 ⑤ 산출물을 다시 읽힌다.
  * '생성 순서와 비용'·신발 비중·디테일 검사·'AI 생성' 표시는 M2라 만들지 않는다.
  */
 export function ThumbnailPage() {
+  const pageTitle = useDocumentTitle(TITLE);
   const { candidateId: rawId = '' } = useParams();
   const candidateId = parseCandidateId(rawId);
   const queryClient = useQueryClient();
@@ -150,7 +154,8 @@ export function ThumbnailPage() {
     );
   };
 
-  const busyReason = create.isPending || running ? G3_GENERATING_REASON : null;
+  const generating = create.isPending || running;
+  const busyReason = generating ? G3_GENERATING_REASON : null;
   const regenerateReason = genState?.disabledReason ?? busyReason;
   const createError = create.error
     ? isApiRequestError(create.error)
@@ -158,10 +163,23 @@ export function ThumbnailPage() {
       : '요청을 처리하지 못했습니다.'
     : null;
 
+  // 맨 위 안내(D-41): 화면에 이미 있는 값만 읽어 위에서부터 첫 번째로 막힌 일을 말하고, 그 일이 있는 자리에 '지금 여기'를 붙인다
+  const nowKey = thumbnailNowKey({
+    stepStatus: item?.status,
+    runBlocked: runReason !== null,
+    output,
+    referencesConfirmed,
+    generating,
+    representative: pick.representative,
+    passedSame,
+  });
+  const marked = (...keys: ThumbnailNowKey[]) => nowKey !== null && keys.includes(nowKey);
+
   return (
     <>
-      <title>{documentTitle(TITLE)}</title>
+      <title>{pageTitle}</title>
       <h1 className={styles.srOnly}>{TITLE}</h1>
+      <ScreenGuidePanel guide={THUMBNAIL_GUIDE} nowKey={nowKey} />
       <section aria-labelledby="step5-title" className={styles.step}>
         <div className={styles.stepHead}>
           <h2 id="step5-title" className={styles.stepTitle}>
@@ -175,13 +193,19 @@ export function ThumbnailPage() {
                 candidateId={candidateId ?? undefined}
                 error={start.error ?? undefined}
                 actions={
-                  <Button
-                    disabled={start.isPending || runReason !== null}
-                    aria-describedby={runReason ? 'thumbnail-run-why' : undefined}
-                    onClick={run}
+                  <NowMark
+                    inline
+                    label={STEP_GUIDE_COMMON.nowMark}
+                    active={marked('start', 'blocked', 'rerun', 'failed')}
                   >
-                    {runButtonLabel(item.status)}
-                  </Button>
+                    <Button
+                      disabled={start.isPending || runReason !== null}
+                      aria-describedby={runReason ? 'thumbnail-run-why' : undefined}
+                      onClick={run}
+                    >
+                      {runButtonLabel(item.status)}
+                    </Button>
+                  </NowMark>
                 }
               />
             ) : null}
@@ -192,43 +216,53 @@ export function ThumbnailPage() {
             {runReason}
           </DisabledReason>
         ) : null}
-        {candidateId !== null ? (
-          <SourceImagesPanel
-            key={waitingRunId ?? 'none'}
-            candidateId={candidateId}
-            stepRunId={waitingRunId}
-            savedSelection={savedReferences}
-            onConfirmedChange={(ok) =>
-              setConfirmed((prev) => ({
-                runId: waitingRunId ?? 0,
-                ok,
-                version: prev.version + (ok ? 1 : 0),
-              }))
-            }
-          />
-        ) : null}
+        <NowMark label={STEP_GUIDE_COMMON.nowMark} active={marked('pickReferences')}>
+          {candidateId !== null ? (
+            <SourceImagesPanel
+              key={waitingRunId ?? 'none'}
+              candidateId={candidateId}
+              stepRunId={waitingRunId}
+              savedSelection={savedReferences}
+              onConfirmedChange={(ok) =>
+                setConfirmed((prev) => ({
+                  runId: waitingRunId ?? 0,
+                  ok,
+                  version: prev.version + (ok ? 1 : 0),
+                }))
+              }
+            />
+          ) : null}
+        </NowMark>
         <div className={styles.columns}>
-          <GenerationOptionsPanel
-            stepRunId={currentRunId}
-            waiting={waitingRunId !== null}
-            referencesConfirmed={referencesConfirmed}
-            referencesVersion={confirmed.version}
-            hasCandidates={runs.length > 0}
-            busyReason={busyReason}
-            onStateChange={onGenState}
-            onGenerate={(options) => generate(allSlots(candidateCount), options)}
-          />
-          <CandidateGrid
-            runs={runs}
-            candidateCount={candidateCount}
-            selectable={selectable}
-            pick={pick}
-            onChooseRepresentative={(id) => setPick(chooseRepresentative(pick, id))}
-            onToggleAdditional={(id) => setPick(toggleAdditional(pick, id))}
-            canRegenerate={waitingRunId !== null}
-            regenerateDisabledReason={regenerateReason}
-            onRegenerate={regenerate}
-          />
+          <div className={styles.optionsSlot}>
+            <NowMark label={STEP_GUIDE_COMMON.nowMark} active={marked('generate')}>
+              <GenerationOptionsPanel
+                stepRunId={currentRunId}
+                waiting={waitingRunId !== null}
+                referencesConfirmed={referencesConfirmed}
+                referencesVersion={confirmed.version}
+                hasCandidates={runs.length > 0}
+                busyReason={busyReason}
+                onStateChange={onGenState}
+                onGenerate={(options) => generate(allSlots(candidateCount), options)}
+              />
+            </NowMark>
+          </div>
+          <div className={styles.growSlot}>
+            <NowMark label={STEP_GUIDE_COMMON.nowMark} active={marked('pickCandidate', 'retry')}>
+              <CandidateGrid
+                runs={runs}
+                candidateCount={candidateCount}
+                selectable={selectable}
+                pick={pick}
+                onChooseRepresentative={(id) => setPick(chooseRepresentative(pick, id))}
+                onToggleAdditional={(id) => setPick(toggleAdditional(pick, id))}
+                canRegenerate={waitingRunId !== null}
+                regenerateDisabledReason={regenerateReason}
+                onRegenerate={regenerate}
+              />
+            </NowMark>
+          </div>
         </div>
         {createError ? (
           <Banner tone="blocked" role="alert">
@@ -245,20 +279,24 @@ export function ThumbnailPage() {
                 : null
             }
           />
-          {candidateId !== null ? (
-            <G3Checklist
-              candidateId={candidateId}
-              output={output}
-              selectedColor={candidate.data?.selectedColor}
-              pick={pick}
-              representativeSlotNo={representativeRun?.slotNo ?? null}
-              running={running}
-              passedSame={passedSame}
-              pending={pass.isPending}
-              error={pass.error}
-              onPass={passG3}
-            />
-          ) : null}
+          <div className={styles.growSlot}>
+            <NowMark label={STEP_GUIDE_COMMON.nowMark} active={marked('passG3', 'done')}>
+              {candidateId !== null ? (
+                <G3Checklist
+                  candidateId={candidateId}
+                  output={output}
+                  selectedColor={candidate.data?.selectedColor}
+                  pick={pick}
+                  representativeSlotNo={representativeRun?.slotNo ?? null}
+                  running={running}
+                  passedSame={passedSame}
+                  pending={pass.isPending}
+                  error={pass.error}
+                  onPass={passG3}
+                />
+              ) : null}
+            </NowMark>
+          </div>
         </div>
       </section>
     </>

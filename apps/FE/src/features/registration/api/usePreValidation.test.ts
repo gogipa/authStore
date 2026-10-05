@@ -34,7 +34,7 @@ describe('사전 검증 한 번에 하나(P4-02 — SSE로 연달아 다시 불�
     expect(maxInFlight).toBe(1);
   });
 
-  it('다른 키(후보·옵션 방식)는 따로 돈다', async () => {
+  it('다른 키(여정·옵션 방식)는 따로 돈다', async () => {
     await expect(
       Promise.all([
         serializedRun('1:COMBINATION', async () => 1),

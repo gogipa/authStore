@@ -13,7 +13,7 @@ import {
 } from './support/flow-steps';
 
 /**
- * 실패 경로(P5-01 규칙 4 — US-20 AC4, US-19 AC2, US-33 AC3·AC6). 키워드 경로로 ⑧까지 간 후보에서:
+ * 실패 경로(P5-01 규칙 4 — US-20 AC4, US-19 AC2, US-33 AC3·AC6). 키워드 경로로 ⑧까지 간 여정에서:
  * - 등록 5xx → '결과확인필요' → '결과 확인'(판매자관리코드로 찾음) → '등록됨', 등록 호출은 1번뿐(자동 재시도 없음)
  * - 등록 4xx → 한국어 오류·추적 번호 → ⑦ 태그 수정 → 재승인 '등록됨', 이미지는 다시 올리지 않는다
  * - ⑤ 다시 고르기 → ⑧만 '재실행 필요'(카피·태그는 '완료'), 승인 버튼 꺼짐 + 이유 글 + ⑧ 링크
@@ -39,7 +39,7 @@ test.describe('실패 경로', () => {
     await register.getByRole('button', { name: '결과 확인' }).click();
     await expect(register).toContainText(`상품 번호 ${PRODUCT_NO}`);
     await expectCandidateStatus(page, '등록됨');
-    // 닫힌 ⑨ 실행(5xx로 실패)은 바꾸지 않는다 — 결과는 등록 기록·후보 상태로 본다(P4-03 결정, ERD 대응 ⑤)
+    // 닫힌 ⑨ 실행(5xx로 실패)은 바꾸지 않는다 — 결과는 등록 기록·여정 상태로 본다(P4-03 결정, ERD 대응 ⑤)
     await expectStep(page, '⑨ 등록', '실패');
     // 같은 상품을 두 번 등록 요청하지 않는다
     expect((await flow.state()).commerce.productCreates).toBe(1);
@@ -105,13 +105,13 @@ test.describe('실패 경로', () => {
       await expectStep(page, label, '완료');
     }
 
-    // 승인 화면: 후보가 작업중이라 승인 버튼이 꺼지고, 이유 글과 ⑧로 가는 링크가 보인다(US-33 AC6)
+    // 승인 화면: 상태가 작업중이라 승인 버튼이 꺼지고, 이유 글과 ⑧로 가는 링크가 보인다(US-33 AC6)
     await railStep(page, '⑧ 이미지 업로드').click();
     await page.waitForURL(new RegExp(`/candidates/${candidateId}/approval$`));
     await expectCandidateStatus(page, '작업중');
     const register = registerRegion(page);
     await expect(register.getByRole('button', { name: '승인·등록' })).toBeDisabled();
-    await expect(register).toContainText('지금 후보 상태(작업중)에서는 할 수 없습니다.');
+    await expect(register).toContainText('지금 여정 상태(작업중)에서는 할 수 없습니다.');
     const blockers = register.getByRole('list', { name: '승인 전에 끝낼 곳' });
     await expect(blockers.getByRole('link')).toHaveCount(1);
     const toUpload = blockers.getByRole('link', { name: '⑧ 이미지 업로드 · 재실행 필요' });

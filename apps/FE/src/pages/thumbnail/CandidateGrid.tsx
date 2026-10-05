@@ -17,6 +17,7 @@ import {
   type ThumbnailGenerationSummary,
   type ThumbnailPick,
 } from '@/features/thumbnails';
+import { imageAssetFileUrl } from '@/shared/api/client';
 import { cx } from '@/shared/lib/cx';
 import { Button, Checkbox, Chip, DisabledReason, Disclosure, Panel, Radio } from '@/shared/ui';
 import { RefusalNotice } from './RefusalNotice';
@@ -38,11 +39,6 @@ export interface CandidateGridProps {
   regenerateDisabledReason: string | null;
   /** 번호 하나 다시 만들기(얼굴 노출을 주면 그 수준으로 — 거부 뒤 낮춘 재시도) */
   onRegenerate: (slotNo: number, faceOption?: ThumbnailFaceOption) => void;
-}
-
-/** 결과 이미지 파일 경로(05-2 getImageAssetFile) */
-function imageUrl(imageAssetId: number): string {
-  return `/api/v1/image-assets/${imageAssetId}/file`;
 }
 
 /** 칸의 '프롬프트' 펼치기 — 열 때만 시도 한 건(프롬프트 전문)을 읽는다 */
@@ -97,7 +93,11 @@ function CandidateCell({
     <li className={cx(styles.candidateCard, isRep && styles.candidateCardSelected)}>
       <div className={styles.candidateFrame}>
         {imageId !== null ? (
-          <img className={styles.image} src={imageUrl(imageId)} alt={`${label} 생성 이미지`} />
+          <img
+            className={styles.image}
+            src={imageAssetFileUrl(imageId)}
+            alt={`${label} 생성 이미지`}
+          />
         ) : run?.status === 'RUNNING' ? (
           <Chip tone="running">{SLOT_RUNNING_TEXT}</Chip>
         ) : run ? null : (

@@ -12,17 +12,19 @@ import {
   entryCheckNotice,
   excludedWordsText,
   existingCandidateIdOf,
+  hasHangul,
+  HANGUL_QUERY_HINT,
   queryCheckSummary,
   queryViolationText,
 } from './sourcing';
 
 describe('sourcing 모델(P2-02)', () => {
-  it("검사 요약: '반각 n/128자 · 형식 맞음' 조각, 위반은 첫 위반 요약, 검사 전은 null", () => {
+  it("검사 요약: '길이 n/128 · 사용 가능' 조각, 위반은 첫 위반 요약, 검사 전은 null", () => {
     expect(queryCheckSummary(undefined)).toBeNull();
     expect(queryCheckSummary(queryValidation('靴', { halfWidthLength: 2 }))).toEqual({
       valid: true,
       count: '2/128',
-      text: '형식 맞음',
+      text: '사용 가능',
     });
     const tooLong = queryValidation('x', {
       valid: false,
@@ -51,7 +53,7 @@ describe('sourcing 모델(P2-02)', () => {
       entryCheckNotice(
         entryChecks({ genreScope: 'OUT_OF_SCOPE', adultConfirmationRequired: true }),
       ),
-    ).toBe("대상 외 장르 상품입니다. 후보를 만든 뒤 '성인용 상품 확인'을 체크해야 ②가 끝납니다.");
+    ).toBe("대상 외 장르 상품입니다. 여정을 만든 뒤 '성인용 상품 확인'을 체크해야 ②가 끝납니다.");
   });
 
   it('색상 목록: SKU 색상 라벨(순서·중복 없이), 없으면 variantSelectors 색상 축', () => {
@@ -109,12 +111,12 @@ describe('sourcing 모델(P2-02)', () => {
     });
   });
 
-  it('비교 칸 요약·중복 후보 id', () => {
+  it('비교 칸 요약·중복 여정 id', () => {
     expect(comparisonSummaryText(undefined)).toBe(
       '② 소싱을 실행하면 라쿠텐 검색 결과가 여기에 나옵니다.',
     );
     expect(comparisonSummaryText(sourcingComparison({ candidateId: 1 }))).toMatch(
-      /^URL로 만든 후보라/,
+      /^URL로 만든 여정이라/,
     );
     expect(
       comparisonSummaryText(
@@ -126,7 +128,7 @@ describe('sourcing 모델(P2-02)', () => {
         }),
       ),
     ).toBe(
-      '검색 결과 0건 · 상품명에 아동 단어가 있는 상품은 뺐습니다. 앵커(型番·색상)를 정하면 같은 상품만 모아 비교합니다.',
+      '검색 결과 0건 · 상품명에 아동용 단어가 있는 상품은 뺐습니다. 기준 상품을 정하면 같은 상품을 파는 샵을 모아 비교한 표가 여기에 나옵니다.',
     );
     expect(
       existingCandidateIdOf({
@@ -136,5 +138,15 @@ describe('sourcing 모델(P2-02)', () => {
     ).toBe(9);
     expect(existingCandidateIdOf({ code: 'RAKUTEN_ITEM_EXCLUDED_WORD', envelope: {} })).toBeNull();
     expect(existingCandidateIdOf(null)).toBeNull();
+  });
+
+  it('한글이 든 검색어를 알아본다(라쿠텐은 한글로 거의 검색되지 않는다)', () => {
+    expect(hasHangul('여성로퍼')).toBe(true);
+    expect(hasHangul('asics 젤카야노14')).toBe(true);
+    expect(hasHangul('ㅋㅋ')).toBe(true);
+    expect(hasHangul('ローファー レディース')).toBe(false);
+    expect(hasHangul('New Balance 530 靴')).toBe(false);
+    expect(hasHangul('')).toBe(false);
+    expect(HANGUL_QUERY_HINT).toContain('일본어');
   });
 });

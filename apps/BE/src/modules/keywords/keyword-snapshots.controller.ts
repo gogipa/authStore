@@ -120,7 +120,12 @@ export class KeywordSnapshotsController {
   }
 
   @Get(':keywordSnapshotId')
-  @ApiOperation({ operationId: 'getKeywordSnapshot', summary: '키워드 수집 묶음 한 건' })
+  @ApiOperation({
+    operationId: 'getKeywordSnapshot',
+    summary: '키워드 수집 묶음 한 건',
+    description:
+      '기간·range 대조·중단 사유·구조 변경 의심·24시간 쉼을 함께 준다. selectedKeyword = 지금 고른 키워드(D-33): 이 묶음에서 selected_at이 가장 늦은 키워드(같으면 id가 큰 쪽), 없으면 null.',
+  })
   @ApiParam(SNAPSHOT_ID_PARAM)
   @ApiOkResponse({ type: KeywordSnapshotDetailDto, description: '묶음 한 건' })
   @ApiForbiddenResponse(FORBIDDEN)

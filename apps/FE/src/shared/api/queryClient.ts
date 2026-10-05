@@ -15,7 +15,7 @@ declare module '@tanstack/react-query' {
 /**
  * TanStack Query 기본값.
  * - retry 1: 로컬 BE라 일시 오류는 한 번만 다시 시도한다.
- * - refetchOnWindowFocus false: 창을 오갈 때마다 다시 부르지 않는다(작업 화면이 흔들리지 않게).
+ * - refetchOnWindowFocus false: 창을 오갈 때마다 다시 부르지 않는다(여정 화면이 흔들리지 않게).
  *   서버 값이 바뀌면 SSE 알림이 쿼리를 무효화한다(shared/api/events.ts).
  */
 export function createQueryClient() {

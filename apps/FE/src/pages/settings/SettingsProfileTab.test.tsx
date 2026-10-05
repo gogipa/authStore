@@ -292,7 +292,7 @@ describe("설정 '구매대행 프로필' 탭(SCR-10, P1-09)", () => {
     await userEvent.type(importer, '다른 수입자');
     await userEvent.click(screen.getByRole('button', { name: '저장' }));
     expect(
-      await panel().findByText(/후보 단계 3개\(⑥-3·⑧·⑨\)가 '재실행 필요'가 되었습니다/),
+      await panel().findByText(/여정 단계 3개\(⑥-3·⑧·⑨\)가 '재실행 필요'가 되었습니다/),
     ).toBeInTheDocument();
     expect(panel().getByLabelText('수입자 · 필수')).toHaveValue('다른 수입자');
   });

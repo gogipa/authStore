@@ -9,6 +9,12 @@ export const BE_URL = `http://127.0.0.1:${Number(process.env.FLOW_BE_PORT ?? 310
 export const CONTROL_URL = `http://127.0.0.1:${Number(process.env.FLOW_CONTROL_PORT ?? 3101)}`;
 /** 브라우저가 부를 수 있는 호스트(앱 = Vite 127.0.0.1:FLOW_FE_PORT(기본 5173), 이미지 = /api/v1/image-assets) */
 const APP_HOST = '127.0.0.1';
+const RAKUTEN_IMAGE_HOST = 'thumbnail.image.rakuten.co.jp';
+/** 투명한 1×1 PNG */
+const TINY_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+);
 /** 가짜 키체인 값의 표식(flow-app.ts FLOW_SECRETS) — 화면에 나오면 안 된다 */
 const SECRET_MARKERS = ['TEST-SECRET-', 'TESTSECRETCOMMERCE'];
 
@@ -101,6 +107,10 @@ export const test = base.extend<FlowFixtures>({
       await context.route('**/*', async (route) => {
         const url = new URL(route.request().url());
         if (url.hostname === APP_HOST) return route.continue();
+        // ② '상품 고르기' 목록의 상품 사진(라쿠텐 썸네일 주소)은 실제로 받지 않고 1×1 그림으로 답한다(바깥 호출 0건 유지)
+        if (url.hostname === RAKUTEN_IMAGE_HOST && route.request().resourceType() === 'image') {
+          return route.fulfill({ status: 200, contentType: 'image/png', body: TINY_PNG });
+        }
         blocked.push(route.request().url());
         return route.abort('blockedbyclient');
       });

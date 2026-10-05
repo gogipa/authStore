@@ -27,7 +27,7 @@ export function useCategoryDecisionQuery(candidateId: number | null, stepRunId?:
   });
 }
 
-/** 결정·단계 레일·후보 머리(리프 카테고리)·게이트를 다시 읽는다 */
+/** 결정·단계 레일·여정 머리(리프 카테고리)·게이트를 다시 읽는다 */
 function useInvalidateCategory() {
   const queryClient = useQueryClient();
   return (candidateId: number) =>
@@ -43,7 +43,7 @@ function useInvalidateCategory() {
 
 /**
  * 리프 카테고리 고르기(`PUT /category-decisions/{id}/selection`, ④ 완료). 'KC 면제 성인용 확인'은 웹 화면에서 누른 것만
- * 보낸다(05-1 §1.2). 성공하면 결정·단계 레일·후보 머리를 다시 읽고, 409(막힘·KC 확인 없음 등)여도 결정을 다시 읽는다(캐시 예외가
+ * 보낸다(05-1 §1.2). 성공하면 결정·단계 레일·여정 머리를 다시 읽고, 409(막힘·KC 확인 없음 등)여도 결정을 다시 읽는다(캐시 예외가
  * 바뀌었을 수 있다). 실패는 `ApiRequestError`(05-3 봉투).
  */
 export function useSelectCategoryLeafMutation() {

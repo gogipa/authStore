@@ -6,7 +6,7 @@ import type {
 } from '@/features/content';
 
 /**
- * ⑥ 상세 콘텐츠 화면 테스트 fixture(P3-03). 화면시안_명세 §4 후보 A의 예시 값(아식스 젤카야노 14 · 크림/블랙). 주소는 스킴 없이
+ * ⑥ 상세 콘텐츠 화면 테스트 fixture(P3-03). 화면시안_명세 §4 여정 A의 예시 값(아식스 젤카야노 14 · 크림/블랙). 주소는 스킴 없이
  * 둔다(소스 규칙 15 — https 글자 금지).
  */
 const AT = '2026-09-28T05:21:00.000Z';
@@ -172,7 +172,7 @@ const DISCLOSURE_TEXTS: readonly [string, string, boolean][] = [
   ['BASIS_DATE', '(기준일: 2026-09-24)', false],
 ];
 
-/** ⑥-3 산출물(stepRail fixture의 ⑥-3 현재 실행 id 106, 화면시안_명세 §4 후보 A) */
+/** ⑥-3 산출물(stepRail fixture의 ⑥-3 현재 실행 id 106, 화면시안_명세 §4 여정 A) */
 export function contentAssemblyOutput(
   patch: Partial<ContentAssemblyOutput> = {},
 ): ContentAssemblyOutput {

@@ -1,0 +1,33 @@
+/* 설정 마법사 '지금 상태' 줄(D-29 5번·D-30, 화면시안_명세 §9). 새 토큰 없음. */
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-2);
+  row-gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.row:first-child {
+  border-top: none;
+}
+
+.label {
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+}
+
+.text {
+  flex-basis: 100%;
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}

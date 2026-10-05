@@ -257,7 +257,7 @@ export function domesticPriceEntry(
 }
 
 /**
- * 네이버쇼핑 링크(키워드 후보: 출처 키워드 + 型番). 주소는 스킴 없이 둔다 — 소스 전체에 외부 주소 글자를 두지 않는 규칙 15
+ * 네이버쇼핑 링크(키워드 여정: 출처 키워드 + 型番). 주소는 스킴 없이 둔다 — 소스 전체에 외부 주소 글자를 두지 않는 규칙 15
  * 검사(`app/source-rules.test.ts`, sourcing fixture의 itemUrl과 같다). 화면은 받은 url을 그대로 href에 넣는다
  */
 export function naverLinks(kinds: NaverShoppingLink['kind'][] = ['SOURCE_KEYWORD', 'MODEL_CODE']) {

@@ -6,6 +6,7 @@ import {
   type ThumbnailOutput,
   type ThumbnailSourceImage,
 } from '@/features/thumbnails';
+import { imageAssetFileUrl } from '@/shared/api/client';
 import { cx } from '@/shared/lib/cx';
 import { Panel } from '@/shared/ui';
 import styles from './ThumbnailPage.module.css';
@@ -19,10 +20,6 @@ export interface SideBySideProps {
   sourceImages: readonly ThumbnailSourceImage[];
   /** 대표로 고른 후보(없으면 null) */
   selected: { imageAssetId: number; slotNo: number } | null;
-}
-
-function imageUrl(imageAssetId: number): string {
-  return `/api/v1/image-assets/${imageAssetId}/file`;
 }
 
 /**
@@ -44,7 +41,7 @@ export function SideBySide({ references, sourceImages, selected }: SideBySidePro
             {reference ? (
               <img
                 className={styles.image}
-                src={imageUrl(reference.imageAssetId)}
+                src={imageAssetFileUrl(reference.imageAssetId)}
                 alt="레퍼런스 원본"
               />
             ) : null}
@@ -61,7 +58,7 @@ export function SideBySide({ references, sourceImages, selected }: SideBySidePro
             {selected ? (
               <img
                 className={styles.image}
-                src={imageUrl(selected.imageAssetId)}
+                src={imageAssetFileUrl(selected.imageAssetId)}
                 alt={`선택본 후보 ${selected.slotNo}`}
               />
             ) : (

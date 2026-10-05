@@ -59,7 +59,7 @@ function storedDetection(head: {
 function colorCodeMissing(rowId: number): ApiException {
   return new ApiException('ANCHOR_KEY_MISMATCH', {
     message:
-      '색상 코드를 얻지 못해 이 후보의 기준 모델·색상을 정할 수 없습니다. 색상 코드가 있는 상품을 골라 주세요.',
+      '색상 번호를 알 수 없어 이 여정의 기준 모델·색상을 정할 수 없습니다. 상품 이름이나 상품 페이지에 색상 번호가 있는 다른 샵 상품을 골라 주세요.',
     details: { rowId, reason: 'COLOR_CODE_MISSING' },
   });
 }

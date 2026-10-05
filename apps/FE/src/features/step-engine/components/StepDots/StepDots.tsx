@@ -23,7 +23,7 @@ const DOT_TONE: Record<StepStatus, string> = {
 };
 
 /**
- * 단계 점 하나(Main.dc.html '진행 중 후보'의 ②~⑨ 칸): 22px 네모 + 상태 아이콘. 색만으로 구분하지 않도록
+ * 단계 점 하나(Main.dc.html '진행 중 여정'의 ②~⑨ 칸): 22px 네모 + 상태 아이콘. 색만으로 구분하지 않도록
  * `role="img"`와 이름('② 완료')을 단다.
  */
 export function StepDot({ no, status }: StepDotValue) {
@@ -39,7 +39,7 @@ export function StepDot({ no, status }: StepDotValue) {
   );
 }
 
-/** 후보 하나의 단계 점 8개(⑥은 ⑥-1~⑥-3 묶음, model/stepDots.ts의 규칙) */
+/** 여정 하나의 단계 점 8개(⑥은 ⑥-1~⑥-3 묶음, model/stepDots.ts의 규칙) */
 export function StepDots({ steps }: { steps: readonly CandidateStepBrief[] }) {
   return (
     <span className={styles.row}>

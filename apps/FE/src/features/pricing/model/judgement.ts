@@ -89,13 +89,13 @@ export function targetMarginPct(j: PriceJudgementDetail): number {
   return Math.round(j.targetMarginRate * 10000) / 100;
 }
 
-/** 요약 '판매가 · 국내가 −1%' 등(가격 책정 규칙) */
+/** 요약 '판매가 · 국내 기준가 −1%' 등(가격 책정 규칙) */
 export function priceRuleLabel(j: Pick<PriceJudgementDetail, 'pricingRule' | 'params'>): string {
   switch (j.pricingRule) {
     case 'REF_MINUS_1PCT':
-      return `국내가 −${num(j.params, 'refDiscountPct') ?? 1}%`;
+      return `국내 기준가 −${num(j.params, 'refDiscountPct') ?? 1}%`;
     case 'REF_MINUS_100':
-      return '국내가 −100원';
+      return '국내 기준가 −100원';
     case 'MAX_SKU_SINGLE':
       return '가장 비싼 사이즈 기준';
     case 'OPTION_PRICE':
@@ -126,7 +126,7 @@ export function dutyFreeLine(j: PriceJudgementDetail): string {
     const limitYen = j.dutyFreeLimitYen ?? null;
     const limit =
       limitYen !== null
-        ? `(${j.shippingYen > 0 ? '송료 포함 ' : ''}${formatYen(limitYen)}까지 면세)`
+        ? `(${j.shippingYen > 0 ? '일본 내 배송비 포함 ' : ''}${formatYen(limitYen)}까지 면세)`
         : '';
     parts.push(`1켤레 ${amount}${limit}`);
     const two = j.sizes.filter((s) => s.twoPairTaxable).length;
@@ -151,7 +151,7 @@ const STOCK_LABEL: Record<PriceJudgementUnjudgedSize['stockStatus'], StockLabel>
 
 const UNSELLABLE_TEXT: Record<NonNullable<PriceJudgementSize['unsellableReason']>, string> = {
   TAXABLE: '제외 · 과세',
-  P_MIN_OVER_REF: '제외 · 국내가 초과',
+  P_MIN_OVER_REF: '제외 · 국내 기준가 초과',
   MODE_B_NEGATIVE: '제외 · 모드 B 음수',
 };
 
@@ -241,7 +241,7 @@ export function breakdownLines(
   const vat = j.vatMode === 'A' ? (size.vatAKrw ?? 0) : j.vatMode === 'B' ? (size.vatBKrw ?? 0) : 0;
   const goodsNote = [
     formatYen(size.skuPriceYen),
-    j.shippingYen > 0 ? ` + 송료 ${formatYen(j.shippingYen)}` : '',
+    j.shippingYen > 0 ? ` + 일본 내 배송비 ${formatYen(j.shippingYen)}` : '',
     j.couponYen > 0 ? ` − 쿠폰 ${formatYen(j.couponYen)}` : '',
   ].join('');
   return [

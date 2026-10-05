@@ -21,6 +21,8 @@ export interface SecretKeysPanelProps {
   onEditingKeyChange?: (key: SecretKey | null) => void;
   /** 값을 늘리면 열린 키의 입력칸으로 초점을 다시 옮긴다(인증 상태의 'client_secret 다시 넣기') */
   focusRequest?: number;
+  /** 보일 키(순서 그대로). 기본은 6개 모두. 설정 마법사(D-29 5번·D-30)는 커머스API·라쿠텐 키 4개만 */
+  keys?: readonly SecretKey[];
 }
 
 /**
@@ -32,6 +34,7 @@ export function SecretKeysPanel({
   editingKey,
   onEditingKeyChange,
   focusRequest = 0,
+  keys = SECRET_KEYS,
 }: SecretKeysPanelProps) {
   const secrets = useSecretsQuery();
   const [open, setOpen] = useControllableState<SecretKey | null>(
@@ -54,7 +57,7 @@ export function SecretKeysPanel({
       <p className={styles.caption}>값은 보여 주지 않습니다 · macOS 키체인에만 저장합니다</p>
       {secrets.isError ? <Banner tone="blocked">{secrets.error.message}</Banner> : null}
       <ul className={styles.list}>
-        {SECRET_KEYS.map((key) => (
+        {keys.map((key) => (
           <SecretRow
             key={key}
             secretKey={key}

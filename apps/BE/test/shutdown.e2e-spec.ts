@@ -3,6 +3,7 @@ import { connect } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import {
   DEFAULT_SSE_HEARTBEAT_INTERVAL_MS,
+  EventsController,
   SSE_HEARTBEAT_INTERVAL_MS,
 } from '../src/common/events/events.controller.js';
 import { ProgressEventsService } from '../src/common/events/progress-events.service.js';
@@ -17,6 +18,8 @@ interface OpenSse {
   res: IncomingMessage;
   /** 서버가 연결을 닫으면 풀린다 */
   closed: Promise<void>;
+  /** 응답이 끝 표시까지 정상으로 끝났는지(소켓만 끊기면 false) */
+  ended: () => boolean;
 }
 
 function openSse(port: number): Promise<OpenSse> {
@@ -24,9 +27,13 @@ function openSse(port: number): Promise<OpenSse> {
     const req = get(
       { host: '127.0.0.1', port, path: '/api/v1/events', headers: { Accept: 'text/event-stream' } },
       (res) => {
+        let ended = false;
+        res.once('end', () => {
+          ended = true;
+        });
         res.resume();
         const closed = new Promise<void>((done) => res.once('close', () => done()));
-        resolve({ req, res, closed });
+        resolve({ req, res, closed, ended: () => ended });
       },
     );
     req.on('error', reject);
@@ -104,5 +111,53 @@ describe('앱 종료(e2e) — SSE 연결이 열려 있어도 곧바로 닫힌다
     await Promise.all(sseClients.map((c) => c.closed));
     expect(events.subscriberCount).toBe(0);
     await expect(isListening(port)).resolves.toBe(false);
+  });
+
+  it('닫을 때 SSE 응답을 끝 표시까지 보내고 끊는다 — Vite 프록시를 거친 브라우저 쪽 연결도 닫혀 다시 붙는다', async () => {
+    t = await createTestApp({
+      overrides: [
+        { provide: SSE_HEARTBEAT_INTERVAL_MS, useValue: DEFAULT_SSE_HEARTBEAT_INTERVAL_MS },
+      ],
+    });
+    const { app, port } = t;
+    const events = app.get(ProgressEventsService);
+    sseClients.push(await openSse(port));
+    await waitFor(() => events.subscriberCount === 1, 'SSE 구독 1개');
+
+    closing = app.close();
+    await closing;
+    await Promise.all(sseClients.map((c) => c.closed));
+    // 끝 표시 없이 소켓만 끊기면 프록시(http-proxy)는 브라우저 쪽 응답을 닫지 않아 EventSource가 다시 붙지 않는다
+    expect(sseClients.map((c) => c.ended())).toEqual([true]);
+  });
+
+  it('닫기 시작한 뒤에 붙은 SSE도 끝 표시까지 받고 끝난다 — Nest는 닫는 훅(+ 50ms)이 도는 동안에도 새 연결을 받는다', async () => {
+    t = await createTestApp({
+      overrides: [
+        { provide: SSE_HEARTBEAT_INTERVAL_MS, useValue: DEFAULT_SSE_HEARTBEAT_INTERVAL_MS },
+      ],
+    });
+    const { app, port } = t;
+    const events = app.get(ProgressEventsService);
+    const controller = app.get(EventsController);
+    const original = controller.beforeApplicationShutdown.bind(controller);
+    let late: OpenSse | undefined;
+    // 닫는 훅이 끝내기 신호를 보낸 뒤, 끝 표시가 나가길 기다리는 동안(HTTP 서버는 아직 연다) 화면이 다시 붙는다.
+    // ESM Jest라 jest.spyOn 대신 이 인스턴스의 훅을 감싼다(Nest는 인스턴스의 메서드를 부른다)
+    controller.beforeApplicationShutdown = async () => {
+      const flushing = original();
+      late = await openSse(port);
+      sseClients.push(late);
+      await flushing;
+    };
+
+    closing = app.close();
+    await closing;
+    expect(late).toBeDefined();
+    await late!.closed;
+    // 끝내기 신호가 지나간 뒤 붙은 스트림도 곧바로 끝 표시를 받는다(그냥 Subject였을 때는 끝 표시 없이 소켓만 끊겼다)
+    expect(late!.ended()).toBe(true);
+    expect(late!.res.statusCode).toBe(200);
+    expect(events.subscriberCount).toBe(0);
   });
 });

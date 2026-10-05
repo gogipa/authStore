@@ -2,12 +2,18 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DemoContext } from '@/shared/lib/demo';
+import { fakeDemoInfo } from '@/test/demoInfo';
 import { WORK_FLOW_HIDDEN_KEY } from '../../model/useWorkFlowHidden';
 import { WorkFlowCard, type WorkFlowCardProps } from './WorkFlowCard';
 
-function renderCard(variant: WorkFlowCardProps['variant']) {
+function renderCard(variant: WorkFlowCardProps['variant'], options: { demo?: boolean } = {}) {
   const router = createMemoryRouter([{ path: '/', element: <WorkFlowCard variant={variant} /> }]);
-  return render(<RouterProvider router={router} />);
+  return render(
+    <DemoContext value={options.demo ? fakeDemoInfo() : null}>
+      <RouterProvider router={router} />
+    </DemoContext>,
+  );
 }
 
 const card = () => within(screen.getByRole('region', { name: '작업 흐름' }));
@@ -47,10 +53,7 @@ describe("'작업 흐름' 카드(F-DB-11·F-GD-01, D-29)", () => {
     const panel = within(card().getByRole('tabpanel', { name: '승인' }));
     expect(panel.getByText('G4 최종 승인')).toBeInTheDocument();
     expect(panel.getByText(/이 승인은 건너뛸 수 없습니다/)).toBeInTheDocument();
-    expect(panel.getByRole('link', { name: '후보 작업 열기' })).toHaveAttribute(
-      'href',
-      '/candidates',
-    );
+    expect(panel.getByRole('link', { name: '여정 열기' })).toHaveAttribute('href', '/candidates');
   });
 
   it('←→·Home·End로 단계를 옮기면 바로 고르고 초점이 따라간다(roving tabindex)', async () => {
@@ -117,5 +120,23 @@ describe("'작업 흐름' 카드(F-DB-11·F-GD-01, D-29)", () => {
     await userEvent.click(card().getByRole('button', { name: '다시 보지 않기' }));
     expect(screen.queryByRole('region', { name: '작업 흐름' })).toBeNull();
     expect(screen.getByRole('status')).toBeInTheDocument();
+  });
+
+  it('대시보드 카드 머리에 [체험해 보기](/demo 새 탭, D-31). 사용 안내 카드와 체험 안에는 없다', () => {
+    const { unmount } = renderCard('dashboard');
+    const entry = card().getByRole('link', { name: '체험해 보기 (새 탭에서 열림)' });
+    expect(entry).toHaveAttribute('href', '/demo/keywords');
+    expect(entry).toHaveAttribute('target', '_blank');
+    expect(entry).toHaveAttribute('rel', 'noopener noreferrer');
+    unmount();
+
+    const guide = renderCard('guide');
+    expect(card().queryByRole('link', { name: /체험해 보기/ })).toBeNull();
+    guide.unmount();
+
+    renderCard('dashboard', { demo: true });
+    expect(card().queryByRole('link', { name: /체험해 보기/ })).toBeNull();
+    expect(card().queryByText(/지금 체험 중입니다/)).toBeNull();
+    expect(card().getByRole('button', { name: '다시 보지 않기' })).toBeInTheDocument();
   });
 });

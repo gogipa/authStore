@@ -5,7 +5,7 @@ import { callUsageList } from '@/test/fixtures/callUsage';
 import { candidateDetail, stepRail } from '@/test/fixtures/stepEngine';
 import { renderRoute } from '@/test/renderRoute';
 
-describe('후보 작업 틀(/candidates/:candidateId, P1-04)', () => {
+describe('여정 틀(/candidates/:candidateId, P1-04)', () => {
   it('/candidates/12 → 이어 할 단계 화면으로 replace 이동(resumeStepCode = PRICING → judgement)', async () => {
     stubApi({
       'GET /call-usage': () => jsonResponse(callUsageList()),
@@ -18,9 +18,9 @@ describe('후보 작업 틀(/candidates/:candidateId, P1-04)', () => {
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/candidates/12/judgement');
     expect(router.state.historyAction).toBe('REPLACE');
-    const header = within(screen.getByRole('region', { name: '후보 정보' }));
+    const header = within(screen.getByRole('region', { name: '여정 정보' }));
     expect(header.getByText('뉴발란스 530 · 화이트/실버')).toBeInTheDocument();
-    expect(header.getByRole('link', { name: '후보 목록' })).toHaveAttribute('href', '/candidates');
+    expect(header.getByRole('link', { name: '여정 목록' })).toHaveAttribute('href', '/candidates');
   });
 
   it('이어 할 단계가 없으면(모두 완료) 최종 승인 화면', async () => {
@@ -33,30 +33,68 @@ describe('후보 작업 틀(/candidates/:candidateId, P1-04)', () => {
     expect(router.state.location.pathname).toBe('/candidates/12/approval');
   });
 
-  it("404면 '후보를 찾을 수 없습니다' + '후보 목록'", async () => {
+  it("404면 '여정을 찾을 수 없습니다' + '여정 목록'", async () => {
     stubApi({
       'GET /call-usage': () => jsonResponse(callUsageList()),
       'GET /candidates/999': () =>
-        errorResponse(404, 'CANDIDATE_NOT_FOUND', '후보를 찾을 수 없습니다.'),
+        errorResponse(404, 'CANDIDATE_NOT_FOUND', '여정을 찾을 수 없습니다.'),
     });
     renderRoute('/candidates/999/sourcing');
     expect(
-      await screen.findByRole('heading', { level: 1, name: '후보를 찾을 수 없습니다' }),
+      await screen.findByRole('heading', { level: 1, name: '여정을 찾을 수 없습니다' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '후보 목록' })).toHaveAttribute('href', '/candidates');
+    expect(screen.getByRole('link', { name: '여정 목록' })).toHaveAttribute('href', '/candidates');
     expect(screen.queryByRole('navigation', { name: '단계' })).toBeNull();
   });
 
-  it('정수가 아닌 id는 부르지 않고 없는 후보로 본다', async () => {
+  it('정수가 아닌 id는 부르지 않고 없는 여정으로 본다', async () => {
     const api = stubApi({ 'GET /call-usage': () => jsonResponse(callUsageList()) });
     renderRoute('/candidates/abc');
     expect(
-      await screen.findByRole('heading', { level: 1, name: '후보를 찾을 수 없습니다' }),
+      await screen.findByRole('heading', { level: 1, name: '여정을 찾을 수 없습니다' }),
     ).toBeInTheDocument();
     expect(api.requests.some((r) => r.url.includes('/candidates/abc'))).toBe(false);
   });
 
-  it('레일: 단계 상태·실패(중단됨)·재실행 사유·⑥ 묶음·URL 후보 배지(listCandidateSteps, P1-05)', async () => {
+  it('제외된 여정은 단계 화면 맨 위에 제외된 까닭과 다시 하는 곳을 말한다(재고 부족 등)', async () => {
+    stubApi({
+      'GET /call-usage': () => jsonResponse(callUsageList()),
+      'GET /candidates/12': () =>
+        jsonResponse(
+          candidateDetail({
+            id: 12,
+            resumeStepCode: 'SOURCING',
+            status: 'EXCLUDED',
+            excludedReason: 'INSUFFICIENT_STOCK',
+          }),
+        ),
+    });
+    renderRoute('/candidates/12/sourcing');
+    const banner = within(await screen.findByRole('status'));
+    expect(
+      await banner.findByText(
+        /재고가 모자라 제외된 여정입니다\. 기준 상품의 목표 사이즈 중 재고 있는 사이즈가 기준 개수에 못 미쳤습니다\./,
+      ),
+    ).toBeInTheDocument();
+    expect(banner.getByText(/여정 목록에서 \[다시 작업\]을 누르세요\./)).toBeInTheDocument();
+    expect(banner.getByRole('link', { name: '여정 목록에서 다시 작업' })).toHaveAttribute(
+      'href',
+      '/candidates?status=EXCLUDED&candidateId=12',
+    );
+  });
+
+  it('제외되지 않은 여정에는 제외 안내가 없다', async () => {
+    stubApi({
+      'GET /call-usage': () => jsonResponse(callUsageList()),
+      'GET /candidates/12': () =>
+        jsonResponse(candidateDetail({ id: 12, resumeStepCode: 'PRICING' })),
+    });
+    renderRoute('/candidates/12/judgement');
+    await screen.findByRole('region', { name: '여정 정보' });
+    expect(screen.queryByRole('link', { name: '여정 목록에서 다시 작업' })).not.toBeInTheDocument();
+  });
+
+  it('레일: 단계 상태·실패(중단됨)·재실행 사유·⑥ 묶음·URL 여정 배지(listCandidateSteps, P1-05)', async () => {
     stubApi({
       'GET /call-usage': () => jsonResponse(callUsageList()),
       'GET /candidates/12': () =>

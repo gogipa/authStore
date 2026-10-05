@@ -136,3 +136,20 @@
   font: var(--type-caption);
   color: var(--color-ink-faint);
 }
+
+/* [연결 테스트] 중 돌아가는 표시. 움직임을 줄이는 설정이면 멈추고 글('연결 테스트 중…')만 남는다 */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}

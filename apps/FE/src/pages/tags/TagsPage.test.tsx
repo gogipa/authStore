@@ -3,13 +3,22 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { jsonResponse, stubApi } from '@/test/apiStub';
 import { callUsageList } from '@/test/fixtures/callUsage';
-import { candidateDetail, gateList, stepRail } from '@/test/fixtures/stepEngine';
+import { candidateDetail, disabled, ENABLED, gateList, stepRail } from '@/test/fixtures/stepEngine';
 import { boardCandidates, competitorInput, tagCandidate, tagSetOutput } from '@/test/fixtures/tags';
 import { renderRoute } from '@/test/renderRoute';
 
 const CANDIDATE_ID = 1;
 
-function setup(set = tagSetOutput()) {
+type TagsRail = NonNullable<NonNullable<Parameters<typeof stepRail>[0]>['TAGS']>;
+
+/** `rail`: ⑦ 레일 칸을 덮어쓴다(기본 완료). `inputs`: 읽어 둔 경쟁 태그 입력(기본 1건) */
+function setup(
+  set = tagSetOutput(),
+  {
+    rail = {},
+    inputs = [competitorInput({ id: 31 })],
+  }: { rail?: TagsRail; inputs?: ReturnType<typeof competitorInput>[] } = {},
+) {
   return stubApi({
     'GET /call-usage': () => jsonResponse(callUsageList(38)),
     [`GET /candidates/${CANDIDATE_ID}`]: () =>
@@ -26,13 +35,13 @@ function setup(set = tagSetOutput()) {
         stepRail({
           SOURCING: { status: 'COMPLETED' },
           CATEGORY: { status: 'COMPLETED' },
-          TAGS: { status: 'COMPLETED', currentStepRunId: set.stepRunId },
+          TAGS: { status: 'COMPLETED', currentStepRunId: set.stepRunId, ...rail },
         }),
       ),
     [`GET /candidates/${CANDIDATE_ID}/gates`]: () => jsonResponse(gateList({ G2: true })),
     [`GET /candidates/${CANDIDATE_ID}/tag-set`]: () => jsonResponse(set),
     [`GET /candidates/${CANDIDATE_ID}/tag-competitor-inputs`]: () =>
-      jsonResponse({ items: [competitorInput({ id: 31 })] }),
+      jsonResponse({ items: inputs }),
     [`POST /candidates/${CANDIDATE_ID}/steps/TAGS/owner-edits`]: () =>
       jsonResponse({ stepRunId: 121, candidateId: CANDIDATE_ID, status: 'RUNNING' }, 202),
   });
@@ -130,5 +139,172 @@ describe('⑦ 태그 화면(SCR-07, P3-05)', () => {
     renderRoute(`/candidates/${CANDIDATE_ID}/tags`);
     expect(await screen.findByText('카테고리 미확정')).toBeInTheDocument();
     expect(screen.getByText(/카테고리 미확정 · 카테고리 필터 없이 뽑음/)).toBeInTheDocument();
+  });
+});
+
+describe('⑦ 맨 위 안내(D-41): 하는 일 · 지금 할 일 · 낯선 말 풀이', () => {
+  it('하는 일 한 문장과 지금 할 일(최종 태그 수)이 보이고, 풀이는 접혀 있다가 펼치면 용어가 나온다', async () => {
+    setup();
+    renderRoute(`/candidates/${CANDIDATE_ID}/tags`, { demo: true });
+    const intro = within(await screen.findByRole('region', { name: '⑦ 태그 안내' }));
+    expect(
+      intro.getByText(
+        '추천 태그(네이버가 알려 주는 태그)와 경쟁 태그(경쟁 상품에 달린 태그)를 모아, 상품에 붙일 검색 태그를 최대 10개 고르는 단계입니다.',
+      ),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(
+        /^지금 할 일 최종 태그 10개가 정해졌습니다\. 빼거나 더할 태그가 있으면 고치고, 괜찮으면 \[다음: 최종 승인\]을 누르세요\./,
+      ),
+    );
+    expect(intro.queryByText(/\{count\}/)).toBeNull();
+    // 다음 화면으로 가는 길은 '최종 태그' 패널의 버튼 하나뿐이다(안내 쪽에 같은 이름의 링크를 더하지 않는다)
+    expect(screen.getAllByRole('link', { name: /최종 승인/ })).toHaveLength(1);
+
+    const toggle = intro.getByRole('button', { name: /펼치기/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    for (const term of [
+      "'카테고리 미확정' 표시",
+      '시드 키워드',
+      '실행 · 다시 실행',
+      '여기부터 연속 실행',
+      '최종 태그 · 태그 추가',
+      '후보 태그',
+      '경쟁 태그(manu태그)',
+      '경쟁 태그 넣는 방법',
+      '뺀 태그와 사유 · 제한 태그',
+    ]) {
+      expect(intro.getByText(term)).toBeVisible();
+    }
+  });
+
+  it.each([
+    [
+      '미실행·경쟁 태그 없음',
+      { status: 'NOT_RUN' as const, currentStepRunId: null },
+      [],
+      /^지금 할 일 \[실행\]을 누르세요\. 추천 태그로 최종 태그를 고릅니다\. 경쟁 태그가 있으면 \[실행\] 전에 아래 '경쟁 태그 입력'에 넣어 두세요\./,
+    ],
+    [
+      '미실행·경쟁 태그 있음',
+      { status: 'NOT_RUN' as const, currentStepRunId: null },
+      [competitorInput({ id: 31 })],
+      /^지금 할 일 \[실행\]을 누르세요\. 읽어 둔 경쟁 태그와 추천 태그를 합쳐 최종 태그를 고릅니다\./,
+    ],
+  ])(
+    '%s: 실행할 차례 — 글이 갈리고 [실행] 자리에만 표시가 붙는다',
+    async (_name, rail, inputs, text) => {
+      setup(tagSetOutput(), { rail, inputs });
+      renderRoute(`/candidates/${CANDIDATE_ID}/tags`, { demo: true });
+      const intro = within(await screen.findByRole('region', { name: '⑦ 태그 안내' }));
+      await waitFor(() => expect(intro.getByRole('status')).toHaveTextContent(text));
+      const marks = await screen.findAllByText('지금 여기');
+      expect(marks).toHaveLength(1);
+      const holder = marks[0]!.parentElement!;
+      expect(within(holder).getByRole('button', { name: '실행' })).toBeInTheDocument();
+      expect(within(holder).queryByRole('list')).toBeNull();
+    },
+  );
+
+  it('재실행 필요·실패는 [다시 실행] 자리에 표시가 붙는다', async () => {
+    setup(tagSetOutput(), { rail: { status: 'RERUN_REQUIRED' } });
+    const first = renderRoute(`/candidates/${CANDIDATE_ID}/tags`, { demo: true });
+    let intro = within(await screen.findByRole('region', { name: '⑦ 태그 안내' }));
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(
+        /^지금 할 일 앞 단계 결과나 입력이 바뀌었습니다\. \[다시 실행\]을 눌러 최신 내용으로 다시 고르세요\. 직접 더하거나 뺀 태그는 그대로 남습니다\./,
+      ),
+    );
+    let marks = await screen.findAllByText('지금 여기');
+    expect(marks).toHaveLength(1);
+    expect(
+      within(marks[0]!.parentElement!).getByRole('button', { name: '다시 실행' }),
+    ).toBeInTheDocument();
+    first.unmount();
+
+    setup(tagSetOutput(), { rail: { status: 'FAILED' } });
+    renderRoute(`/candidates/${CANDIDATE_ID}/tags`, { demo: true });
+    intro = within(await screen.findByRole('region', { name: '⑦ 태그 안내' }));
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(
+        /^지금 할 일 실행하지 못했습니다\. 아래 오류를 확인하고 \[다시 실행\]을 누르세요\./,
+      ),
+    );
+    marks = await screen.findAllByText('지금 여기');
+    expect(marks).toHaveLength(1);
+    expect(
+      within(marks[0]!.parentElement!).getByRole('button', { name: '다시 실행' }),
+    ).toBeInTheDocument();
+  });
+
+  it('[실행]이 서버 이유로 꺼져 있으면 그 이유를 읽으라고 말하고 표시는 [실행] 자리에 붙는다', async () => {
+    const WHY = '② 소싱이 완료가 아닙니다.';
+    setup(tagSetOutput(), {
+      rail: {
+        status: 'NOT_RUN',
+        currentStepRunId: null,
+        actions: {
+          run: disabled('STEP_START_CONDITION_UNMET', WHY),
+          continuousRun: ENABLED,
+          edit: disabled('INVALID_STEP_CODE', '이 단계는 값을 직접 고칠 수 없습니다.'),
+        },
+      },
+    });
+    renderRoute(`/candidates/${CANDIDATE_ID}/tags`, { demo: true });
+    const intro = within(await screen.findByRole('region', { name: '⑦ 태그 안내' }));
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(
+        /^지금 할 일 \[실행\] 또는 \[다시 실행\]이 꺼져 있습니다\. 그 아래에 적힌 이유를 읽고 먼저 그 일을 끝내세요\./,
+      ),
+    );
+    // 서버 이유는 [실행] 아래에 그대로 보인다
+    expect(await screen.findByText(WHY)).toBeInTheDocument();
+    const marks = await screen.findAllByText('지금 여기');
+    expect(marks).toHaveLength(1);
+    expect(within(marks[0]!.parentElement!).getByRole('button', { name: '실행' })).toBeDisabled();
+  });
+
+  it('실행 중에는 기다리라고 말하고 표시는 없다', async () => {
+    setup(tagSetOutput(), { rail: { status: 'RUNNING', currentStepRunId: 121 } });
+    renderRoute(`/candidates/${CANDIDATE_ID}/tags`, { demo: true });
+    const intro = within(await screen.findByRole('region', { name: '⑦ 태그 안내' }));
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(
+        /^지금 할 일 태그를 고르는 중입니다\. 끝날 때까지 경쟁 태그를 넣거나 최종 태그를 고칠 수 없으니 잠시 기다려 주세요\./,
+      ),
+    );
+    expect(screen.queryByText('지금 여기')).toBeNull();
+  });
+
+  it("최종 태그를 확인할 차례에는 표시가 '최종 태그' 패널에 붙는다(완료)", async () => {
+    setup();
+    renderRoute(`/candidates/${CANDIDATE_ID}/tags`, { demo: true });
+    await screen.findByRole('list', { name: '최종 태그 10개' });
+    const marks = await screen.findAllByText('지금 여기');
+    expect(marks).toHaveLength(1);
+    const holder = marks[0]!.parentElement!;
+    expect(within(holder).getByRole('list', { name: '최종 태그 10개' })).toBeInTheDocument();
+    expect(within(holder).getByRole('link', { name: '다음: 최종 승인' })).toBeInTheDocument();
+    // 위쪽 [다시 실행]과 경쟁 태그 입력에는 붙지 않는다
+    expect(within(holder).queryByRole('button', { name: '다시 실행' })).toBeNull();
+    expect(within(holder).queryByRole('heading', { name: '경쟁 태그 입력' })).toBeNull();
+  });
+
+  it('완료인데 최종 태그가 하나도 없으면 넣으라고 말하고 표시는 같은 패널에 붙는다', async () => {
+    setup(tagSetOutput({ candidates: [], finalTags: [] }));
+    renderRoute(`/candidates/${CANDIDATE_ID}/tags`, { demo: true });
+    const intro = within(await screen.findByRole('region', { name: '⑦ 태그 안내' }));
+    await waitFor(() =>
+      expect(intro.getByRole('status')).toHaveTextContent(
+        /^지금 할 일 최종 태그가 하나도 없습니다\. 아래 '경쟁 태그 입력'에 경쟁 태그를 넣고 \[다시 실행\]하거나, '태그 추가'로 직접 넣으세요\./,
+      ),
+    );
+    const marks = await screen.findAllByText('지금 여기');
+    expect(marks).toHaveLength(1);
+    expect(
+      within(marks[0]!.parentElement!).getByRole('heading', { name: '최종 태그' }),
+    ).toBeInTheDocument();
   });
 });

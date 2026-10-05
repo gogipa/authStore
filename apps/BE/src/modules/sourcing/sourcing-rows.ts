@@ -19,6 +19,7 @@ export function toRowDraft(item: RakutenSearchItem, rank: number, fetchedAt: Dat
     shopName: item.shopName,
     itemName: item.itemName,
     itemUrl: item.itemUrl,
+    imageUrl: item.imageUrl,
     apiItemPriceYen: item.itemPrice,
     apiItemPriceMin3Yen: item.itemPriceMin3,
     apiPointRate: item.pointRate,

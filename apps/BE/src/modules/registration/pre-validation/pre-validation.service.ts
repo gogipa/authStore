@@ -156,7 +156,7 @@ export class PreValidationService {
       return { ok: true, restrictedTags: restricted };
     } catch (error) {
       if (error instanceof ApiException) return { ok: false, reason: error.message };
-      this.logger.error(`restricted-tags 재조회 실패(후보 ${candidateId}): ${String(error)}`);
+      this.logger.error(`restricted-tags 재조회 실패(여정 ${candidateId}): ${String(error)}`);
       return { ok: false, reason: '커머스API 제한 태그 조회 중 알 수 없는 오류가 났습니다' };
     }
   }

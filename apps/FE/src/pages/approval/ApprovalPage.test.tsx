@@ -61,7 +61,7 @@ describe('SCR-08 최종 승인 — 미리보기·사전 검증·승인 버튼(P4
     const button = await screen.findByRole('button', { name: '승인·등록' });
     await waitFor(() => expect(button).toBeEnabled());
     expect(screen.getByText('사전 검증 13개 모두 통과')).toBeInTheDocument();
-    // ⑧ 줄의 '후보 상태 승인대기'·'G4 최종 승인 · 확인 필요'(시안)
+    // ⑧ 줄의 '여정 상태 승인대기'·'G4 최종 승인 · 확인 필요'(시안)
     const upload = within(screen.getByRole('region', { name: '⑧ 이미지 업로드' }));
     expect(await upload.findByText('승인대기')).toBeInTheDocument();
     expect(upload.getByText(/G4 최종 승인 · 확인 필요/)).toBeInTheDocument();
@@ -200,7 +200,7 @@ describe('SCR-08 최종 승인 — 미리보기·사전 검증·승인 버튼(P4
       preview: errorResponse(
         409,
         'CANDIDATE_STATUS_INVALID',
-        '지금 후보 상태(작업중)에서는 할 수 없습니다.',
+        '지금 여정 상태(작업중)에서는 할 수 없습니다.',
         {
           details: { status: 'WORKING', allowed: ['AWAITING_APPROVAL'] },
         },
@@ -209,7 +209,7 @@ describe('SCR-08 최종 승인 — 미리보기·사전 검증·승인 버튼(P4
     open();
     const banner = await screen.findByRole('status', {
       name: (_name, el) =>
-        el.textContent?.includes('지금 후보 상태(작업중)에서는 할 수 없습니다.') ?? false,
+        el.textContent?.includes('지금 여정 상태(작업중)에서는 할 수 없습니다.') ?? false,
     });
     expect(banner).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '승인·등록' })).toBeDisabled();
@@ -221,7 +221,7 @@ describe('SCR-08 최종 승인 — 미리보기·사전 검증·승인 버튼(P4
       preview: errorResponse(
         409,
         'CANDIDATE_STATUS_INVALID',
-        '지금 후보 상태(작업중)에서는 할 수 없습니다.',
+        '지금 여정 상태(작업중)에서는 할 수 없습니다.',
         { details: { status: 'WORKING', allowed: ['AWAITING_APPROVAL'] } },
       ),
     });

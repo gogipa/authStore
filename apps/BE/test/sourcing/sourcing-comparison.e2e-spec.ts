@@ -18,12 +18,14 @@ import {
   PAGE_URLS,
   RakutenFixtureServer,
   type RakutenPageFixture,
+  rakutenSearchFixture,
 } from '../support/rakuten-fixture.adapters.js';
 
 /**
  * ② 소싱 비교표 e2e(P2-03 §6, autostore_test). 가짜 라쿠텐(가짜 fetch 뒤 — 실제 어댑터·외부 호출 관문을 지난다)과 가짜 AI
  * 어댑터(F-BS-38 고정 결과), 가짜 ③ 실행기·G2 공급자를 쓴다. 실제 라쿠텐·AI CLI는 부르지 않는다.
- * 검색 fixture: anchor-match12-p1(MATCH 12 + NEEDS_REVIEW 1 + NO_MATCH 16 + 아동 1) → page 2 anchor-match12-p2(MATCH 2).
+ * 검색 fixture: anchor-match12-p1(MATCH 12 + NEEDS_REVIEW 1 + NO_MATCH 16 + 아동 1) → 둘째 답 anchor-match12-p2(MATCH 2)는
+ * 검색 결과 더 보기(관련도 page 2) 또는 앵커 뒤 같은 상품 검색(모델 번호 가격순 page 1 — D-47)이 받는다.
  * 페이지 조회 순서(앵커 샵 A 먼저): 샵 A ✓ → 재고 2/9 ✗ → JAN 불일치 ✗ → 폭 2E ✓ → hidden ✓ = K=3 → ENOUGH_CANDIDATES.
  */
 const CLIENT = { 'X-AutoStore-Client': '1' };
@@ -64,6 +66,8 @@ interface RowBody {
   id: number;
   itemCode: string;
   rowSource: string;
+  searchRank: number | null;
+  imageUrl: string | null;
   anchorMatch: string | null;
   isVerified: boolean;
   inStockSizeCount: number | null;
@@ -226,6 +230,13 @@ describe('② 소싱 비교표 API(e2e, 가짜 라쿠텐·AI, P2-03)', () => {
     expect(head.creditText).toBe('Supported by Rakuten Developers');
     expect(head.rows).toHaveLength(29);
     expect(head.rows.every((r) => r.anchorMatch === null && !r.isVerified)).toBe(true);
+    // 행마다 사진 주소(D-47): Item Search mediumImageUrls의 첫 값
+    expect(
+      head.rows.every((r) => r.imageUrl?.startsWith('https://thumbnail.image.rakuten.co.jp/')),
+    ).toBe(true);
+    expect(rowOf(head, SHOP_A).imageUrl).toBe(
+      'https://thumbnail.image.rakuten.co.jp/@0_mall/shop-a/cabinet/shop-a_1.jpg?_ex=128x128',
+    );
     expect(head.params).toMatchObject({
       kRank: 0.5,
       spuMultiplier: 0,
@@ -247,14 +258,17 @@ describe('② 소싱 비교표 API(e2e, 가짜 라쿠텐·AI, P2-03)', () => {
     const { candidateId, head } = await anchoredCandidate();
     // 어느 정렬이든 미검증 행은 뒤(검증 행 안·미검증 행 안에서 각각 정렬)
     const byRank = await comparison(candidateId, '?includeNoMatch=true&sort=searchRank,asc');
-    const sorted = (xs: number[]) => [...xs].sort((a, b) => a - b);
+    // 검색 순위가 없는 행(앵커 뒤 같은 상품 검색으로 더한 행·수동 행)은 가장 뒤
+    const sorted = (xs: (number | null)[]) =>
+      [...xs].sort((a, b) => (a === b ? 0 : a === null ? 1 : b === null ? -1 : a - b));
     const ranksOf = (verified: boolean) =>
-      byRank.rows.filter((r) => r.isVerified === verified).map((r) => r.searchRank as number);
+      byRank.rows.filter((r) => r.isVerified === verified).map((r) => r.searchRank);
+    expect(byRank.rows.some((r) => r.searchRank === null)).toBe(true);
     expect(ranksOf(true)).toEqual(sorted(ranksOf(true)));
     expect(ranksOf(false)).toEqual(sorted(ranksOf(false)));
     expect(byRank.rows.findIndex((r) => !r.isVerified)).toBe(ranksOf(true).length);
     const desc = await comparison(candidateId, '?includeNoMatch=true&sort=searchRank,desc');
-    expect(desc.rows[0]!.searchRank).toBe(Math.max(...ranksOf(true)));
+    expect(desc.rows[0]!.searchRank).toBe(Math.max(...ranksOf(true).map((r) => r ?? 0)));
     const byFetch = await comparison(candidateId, '?sort=fetchOrder,asc');
     const fetched = byFetch.rows.filter((r) => r.isVerified).map((r) => r.fetchOrder as number);
     expect(fetched).toEqual([1, 2, 3, 4, 5]);
@@ -282,9 +296,181 @@ describe('② 소싱 비교표 API(e2e, 가짜 라쿠텐·AI, P2-03)', () => {
     expect(await t.prisma.stepRun.count({ where: { candidateId } })).toBe(0);
   });
 
+  // ── 검색 결과 더 보기(D-47) ────────────────────────────────────────────────
+
+  it('POST search-more: 관련도 순 다음 페이지를 받아 새 행만 더한다(검색 순위 이어붙임·분류 없음·페이지 조회 없음), 거듭하면 page 3', async () => {
+    const { candidateId, head } = await sourcedCandidate();
+    expect(head.rows).toHaveLength(29);
+    const res = await post(`/sourcing-comparisons/${head.id}/search-more`);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ addedRowCount: 30, hasMore: true });
+    const calls = server.callsOf('SEARCH');
+    expect(calls).toHaveLength(2);
+    expect(calls[1]!.params).toMatchObject({
+      keyword: QUERY,
+      page: '2',
+      sort: 'standard',
+      hits: '30',
+      genreId: '558885',
+      imageFlag: '1',
+    });
+    const after = await comparison(candidateId);
+    expect(after.exploreMode).toBe(true);
+    expect(after.rows).toHaveLength(59);
+    const added = after.rows.filter((r) => (r.searchRank ?? 0) > 30);
+    expect(added).toHaveLength(30);
+    // 검색 순위 = (page − 1) × hits + 그 페이지 안 순번(첫 검색 page 1 뒤로 이어 붙는다)
+    expect(added.map((r) => r.searchRank).sort((a, b) => a! - b!)).toEqual(
+      Array.from({ length: 30 }, (_, i) => 31 + i),
+    );
+    expect(rowOf(after, 'shop-d:40005')).toMatchObject({ searchRank: 35, rowSource: 'API' });
+    // 탐색 모드라 분류·재고·AI·페이지 조회는 하지 않는다
+    expect(added.every((r) => r.anchorMatch === null && !r.isVerified && r.aiMatch === null)).toBe(
+      true,
+    );
+    expect(added.every((r) => r.imageUrl?.startsWith('https://'))).toBe(true);
+    expect(server.callsOf('PAGE')).toHaveLength(0);
+
+    // 거듭하면 page 3(순위 최댓값 60 → ceil(60/30)+1). 빈 페이지면 0건·hasMore=false
+    server.answerSearch({
+      status: 200,
+      body: JSON.stringify({ count: 60, page: 3, hits: 30, Items: [] }),
+    });
+    const third = await post(`/sourcing-comparisons/${head.id}/search-more`);
+    expect(third.status).toBe(200);
+    expect(third.body).toEqual({ addedRowCount: 0, hasMore: false });
+    expect(server.callsOf('SEARCH')[2]!.params.page).toBe('3');
+    // 같은 페이지를 되풀이해도 6시간 캐시라 다시 부르지 않는다
+    expect((await post(`/sourcing-comparisons/${head.id}/search-more`)).body).toEqual({
+      addedRowCount: 0,
+      hasMore: false,
+    });
+    expect(server.callsOf('SEARCH')).toHaveLength(3);
+  });
+
+  it('POST search-more: 받은 행이 모두 이미 있는 상품이면 0건·hasMore=false(같은 페이지를 되풀이 요청하지 않게)', async () => {
+    const candidateId = await searchCandidate();
+    server.answerSearch(
+      { status: 200, file: 'anchor-match12-p1.json' },
+      { status: 200, file: 'anchor-match12-p1.json' },
+    );
+    await post(`/candidates/${candidateId}/steps/SOURCING/runs`).expect(202);
+    await settle();
+    const head = await comparison(candidateId);
+    const res = await post(`/sourcing-comparisons/${head.id}/search-more`);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ addedRowCount: 0, hasMore: false });
+    expect((await comparison(candidateId)).rows).toHaveLength(29);
+  });
+
+  it('POST search-more: 받은 페이지가 hits건보다 적으면 hasMore=false', async () => {
+    const { head } = await sourcedCandidate();
+    const body = JSON.parse(rakutenSearchFixture('anchor-match12-p2.json')) as {
+      Items: unknown[];
+    };
+    body.Items = body.Items.slice(0, 7);
+    server.reset();
+    server.answerSearch({ status: 200, body: JSON.stringify(body) });
+    const res = await post(`/sourcing-comparisons/${head.id}/search-more`);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ addedRowCount: 7, hasMore: false });
+  });
+
+  it('POST search-more 막힘: 없는 비교표 404 · 기준 상품을 정한 뒤 409 ANCHOR_ALREADY_FIXED(검색 안 함) · 완료된 버전 409 STEP_RUN_NOT_WAITING_INPUT · 검색어 없음 422', async () => {
+    const noHead = await post('/sourcing-comparisons/99999/search-more');
+    expect(noHead.status).toBe(404);
+    expect(errorOf(noHead).code).toBe('SOURCING_COMPARISON_NOT_FOUND');
+    expect((await post('/sourcing-comparisons/abc/search-more')).status).toBe(404);
+
+    const { head: anchored } = await anchoredCandidate();
+    const searches = server.callsOf('SEARCH').length;
+    const fixed = await post(`/sourcing-comparisons/${anchored.id}/search-more`);
+    expect(fixed.status).toBe(409);
+    expect(errorOf(fixed)).toMatchObject({
+      code: 'ANCHOR_ALREADY_FIXED',
+      message:
+        '기준 상품을 이미 정했습니다. 상품을 더 찾으려면 ② 다시 실행으로 새로 검색해 주세요.',
+    });
+    expect(server.callsOf('SEARCH')).toHaveLength(searches);
+    // 클라이언트 표시 없는 요청은 403(로컬 보안 검사)
+    expect(
+      (await http().post(`/api/v1/sourcing-comparisons/${anchored.id}/search-more`)).status,
+    ).toBe(403);
+
+    await put(`/sourcing-comparisons/${anchored.id}/selection`, {
+      rowId: rowOf(anchored, SHOP_A).id,
+    }).expect(200);
+    const done = await post(`/sourcing-comparisons/${anchored.id}/search-more`);
+    expect(done.status).toBe(409);
+    expect(errorOf(done).code).toBe('STEP_RUN_NOT_WAITING_INPUT');
+
+    // 검색어가 비었거나(공백뿐) 형식에 맞지 않으면(단어가 너무 짧음) 422. 검색은 하지 않는다
+    const { head } = await sourcedCandidate();
+    const searchesBefore = server.callsOf('SEARCH').length;
+    for (const searchKeyword of ['  ', 'あ']) {
+      await t.prisma.sourcingComparison.update({ where: { id: head.id }, data: { searchKeyword } });
+      const invalid = await post(`/sourcing-comparisons/${head.id}/search-more`);
+      expect(invalid.status).toBe(422);
+      expect(errorOf(invalid)).toMatchObject({
+        code: 'RAKUTEN_QUERY_INVALID',
+        fieldErrors: [{ field: 'searchKeyword' }],
+      });
+    }
+    expect(server.callsOf('SEARCH')).toHaveLength(searchesBefore);
+  });
+
+  it('POST search-more: 여정이 제외된 뒤 409 CANDIDATE_EXCLUDED, 라쿠텐 오류는 502 EXTERNAL_API_ERROR(키 값 없음)', async () => {
+    const { candidateId, head } = await sourcedCandidate();
+    server.reset();
+    server.answerSearch({ status: 403, file: 'err-403-invalid-access-key.json' });
+    const failed = await post(`/sourcing-comparisons/${head.id}/search-more`);
+    expect(failed.status).toBe(502);
+    expect(errorOf(failed)).toMatchObject({
+      code: 'EXTERNAL_API_ERROR',
+      details: { target: 'RAKUTEN_API', reason: 'RAKUTEN_INVALID_ACCESS_KEY' },
+    });
+    expect(JSON.stringify(failed.body)).not.toContain(KEYS.RAKUTEN_ACCESS_KEY);
+    expect((await comparison(candidateId)).rows).toHaveLength(29);
+
+    await t.prisma.candidate.update({
+      where: { id: candidateId },
+      data: { status: 'EXCLUDED', excludedReason: 'ANCHOR_NO_MATCH' },
+    });
+    const excluded = await post(`/sourcing-comparisons/${head.id}/search-more`);
+    expect(excluded.status).toBe(409);
+    expect(errorOf(excluded).code).toBe('CANDIDATE_EXCLUDED');
+  });
+
   // ── 앵커 ──────────────────────────────────────────────────────────────────
 
-  it('PUT anchor(SEARCH_PICK): 202 → 분류·page 2 한 번·K=3에서 멈춤(ENOUGH_CANDIDATES)·재고·실질가·AI 보조', async () => {
+  it('앵커 상품에 모델 번호가 없으면 같은 상품 검색을 하지 않는다(새 검색 없음 — 키워드 page 2도 없다)', async () => {
+    const candidateId = await searchCandidate();
+    const body = JSON.parse(rakutenSearchFixture('anchor-match12-p1.json')) as {
+      Items: { itemCode: string; itemName: string }[];
+    };
+    body.Items = body.Items.slice(0, 30).map((item, i) => ({
+      ...item,
+      itemName: i === 0 ? 'アシックス ゲルカヤノ クリーム メンズ' : item.itemName,
+    }));
+    server.answerSearch({ status: 200, body: JSON.stringify(body) });
+    await post(`/candidates/${candidateId}/steps/SOURCING/runs`).expect(202);
+    await settle();
+    const head = await comparison(candidateId);
+    const first = head.rows.find((r) => r.itemName === 'アシックス ゲルカヤノ クリーム メンズ')!;
+    await put(`/sourcing-comparisons/${head.id}/anchor`, {
+      anchorInputMethod: 'SEARCH_PICK',
+      anchorItemCode: first.itemCode,
+      anchorColorCode: '108',
+    }).expect(202);
+    await settle();
+    expect(await comparison(candidateId)).toMatchObject({
+      anchorInputMethod: 'SEARCH_PICK',
+      anchorModelCode: null,
+    });
+    expect(server.callsOf('SEARCH')).toHaveLength(1);
+  });
+
+  it('PUT anchor(SEARCH_PICK): 202 → 분류·같은 상품 검색(모델 번호 가격순 page 1·2)·K=3에서 멈춤(ENOUGH_CANDIDATES)·재고·실질가·AI 보조', async () => {
     const { candidateId, head } = await sourcedCandidate();
     const res = await put(`/sourcing-comparisons/${head.id}/anchor`, {
       anchorInputMethod: 'SEARCH_PICK',
@@ -313,8 +499,22 @@ describe('② 소싱 비교표 API(e2e, 가짜 라쿠텐·AI, P2-03)', () => {
     const count = (m: string) => after.rows.filter((r) => r.anchorMatch === m).length;
     expect(count('MATCH')).toBe(14);
     expect(count('NEEDS_REVIEW')).toBe(1);
-    // 검색 page 2는 한 번(6시간 캐시 전 첫 호출)
-    expect(server.callsOf('SEARCH').filter((c) => c.params.page === '2')).toHaveLength(1);
+    // 검색은 세 번(D-47): ② 첫 검색(관련도 순) → 기준 상품의 모델 번호로 같은 상품 검색 page 1 → 일치 14 < 20이고 1페이지가
+    // 가득(30건)이라 page 2(둘 다 가격순). 같은 상품 검색 행은 검색 순위가 없고, item_code가 겹친 행은 기존 행이 남는다
+    expect(
+      server
+        .callsOf('SEARCH')
+        .map((c) => ({ q: c.params.keyword, p: c.params.page, s: c.params.sort })),
+    ).toEqual([
+      { q: QUERY, p: '1', s: 'standard' },
+      { q: '1201A019', p: '1', s: '+itemPrice' },
+      { q: '1201A019', p: '2', s: '+itemPrice' },
+    ]);
+    const unranked = after.rows.filter((r) => r.searchRank === null);
+    expect(unranked).toHaveLength(30);
+    expect(unranked.every((r) => r.rowSource === 'API')).toBe(true);
+    expect(rowOf(after, 'shop-d:40005')).toMatchObject({ searchRank: null, anchorMatch: 'MATCH' });
+    expect(after.rows.filter((r) => r.searchRank !== null)).toHaveLength(29);
     const finished = events.filter((e) => e.name === 'sourcing.page-fetch-finished');
     expect(finished.map((e) => e.data)).toEqual([
       {
@@ -399,7 +599,7 @@ describe('② 소싱 비교표 API(e2e, 가짜 라쿠텐·AI, P2-03)', () => {
     expect(noHead.status).toBe(404);
   });
 
-  it('MATCH ≥ 20이면 page 2를 부르지 않는다', async () => {
+  it('MATCH ≥ 20이면 같은 상품 검색 page 2를 부르지 않는다(page 1은 한다)', async () => {
     const candidateId = await searchCandidate();
     server.answerSearch({ status: 200, file: 'anchor-match20-p1.json' });
     await post(`/candidates/${candidateId}/steps/SOURCING/runs`).expect(202);
@@ -411,9 +611,13 @@ describe('② 소싱 비교표 API(e2e, 가짜 라쿠텐·AI, P2-03)', () => {
       anchorColorCode: '108',
     }).expect(202);
     await settle();
-    expect(server.callsOf('SEARCH').filter((c) => c.params.page === '2')).toHaveLength(0);
+    // ② 첫 검색 + 같은 상품 검색 page 1뿐(일치가 이미 20개 이상이라 page 2 없음)
+    expect(server.callsOf('SEARCH').map((c) => `${c.params.keyword}|${c.params.page}`)).toEqual([
+      `${QUERY}|1`,
+      '1201a019|1',
+    ]);
     const after = await comparison(candidateId);
-    expect(after.rows.filter((r) => r.anchorMatch === 'MATCH')).toHaveLength(22);
+    expect(after.rows.filter((r) => r.anchorMatch === 'MATCH').length).toBeGreaterThanOrEqual(22);
   });
 
   it('후보 앵커가 확정된 뒤 새 ② 버전에 다른 型番·색상을 PUT anchor → 409 ANCHOR_KEY_MISMATCH(후보 앵커 키), 같은 키는 202', async () => {
@@ -665,6 +869,7 @@ describe('② 소싱 비교표 API(e2e, 가짜 라쿠텐·AI, P2-03)', () => {
     expect(created.body).toMatchObject({
       rowSource: 'MANUAL',
       searchRank: null,
+      imageUrl: null,
       isVerified: true,
       anchorMatch: 'MATCH',
       inStockSizeCount: 5,

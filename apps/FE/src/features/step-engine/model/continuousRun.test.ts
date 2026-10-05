@@ -39,7 +39,7 @@ describe('연속 실행 글(P1-06 Proposed)', () => {
 describe('게이트 배지(게이트 목록으로)', () => {
   const detail = candidateDetail({ id: 1 });
 
-  it('G2·G3 통과는 목록의 passed(지문 일치), G3은 G2 전이면 잠김, G4는 후보 상태로 확인 필요', () => {
+  it('G2·G3 통과는 목록의 passed(지문 일치), G3은 G2 전이면 잠김, G4는 여정 상태로 확인 필요', () => {
     expect(gateViewsFromList(gateList().items, detail)).toEqual([
       { gate: 'G2', state: 'pending' },
       { gate: 'G3', state: 'locked' },
@@ -61,7 +61,7 @@ describe('게이트 배지(게이트 목록으로)', () => {
     });
   });
 
-  it('목록을 받기 전에는 후보 상세 gates로 그린다', () => {
+  it('목록을 받기 전에는 여정 상세 gates로 그린다', () => {
     const valid = candidateDetail({
       id: 1,
       gates: [

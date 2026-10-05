@@ -508,7 +508,7 @@ describe('StepTable — 연속 실행·게이트(P1-06)', () => {
     expect(table.getByText('G3 썸네일 선택 · 잠김')).toBeInTheDocument();
     unmount();
 
-    // 후보 상세의 gates는 무효인 채여도 게이트 목록(지문 비교)이 통과면 통과로 그린다
+    // 여정 상세의 gates는 무효인 채여도 게이트 목록(지문 비교)이 통과면 통과로 그린다
     api.on(`GET /candidates/${ID}/gates`, () => jsonResponse(gateList({ G2: true })));
     const again = await renderTable();
     expect(await again.table.findByText('G2 판정 확정 · 통과')).toBeInTheDocument();

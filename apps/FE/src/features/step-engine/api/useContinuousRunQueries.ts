@@ -6,7 +6,7 @@ import { stepEngineKeys } from './queryKeys';
 
 /**
  * 연속 실행·게이트 훅(P1-06, 05-2 step-engine). 202 연속 실행은 폴링하지 않는다 — SSE `step-run.status-changed`
- * (stepChainId)·`continuous-run.stopped`·`gate.passed`·`gate.invalidated`(shared/api/events.ts)가 묶음·게이트·레일·후보를
+ * (stepChainId)·`continuous-run.stopped`·`gate.passed`·`gate.invalidated`(shared/api/events.ts)가 묶음·게이트·레일·여정을
  * 무효화하면 다시 읽는다.
  */
 
@@ -40,7 +40,7 @@ export function useContinuousRun(stepChainId: number | null) {
   });
 }
 
-/** 이 후보의 레일·상세·게이트·목록을 다시 읽는다(요청이 받아들여진 직후 바로 보이게) */
+/** 이 여정의 레일·상세·게이트·목록을 다시 읽는다(요청이 받아들여진 직후 바로 보이게) */
 function useInvalidateCandidate() {
   const queryClient = useQueryClient();
   return (candidateId: number) =>

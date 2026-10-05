@@ -51,9 +51,9 @@ describe('④ 카테고리 표시 규칙(P2-06)', () => {
         waiting: true,
         option: kc,
         kcConfirmed: true,
-        blockedReason: '잠긴 후보',
+        blockedReason: '잠긴 여정',
       }),
-    ).toBe('잠긴 후보');
+    ).toBe('잠긴 여정');
     expect(selectDisabledReason({ waiting: true, option: null, kcConfirmed: false })).toBe(
       PICK_LEAF_REASON,
     );

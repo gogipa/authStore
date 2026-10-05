@@ -6,7 +6,7 @@ export const INPUT_KEY_LABEL: Readonly<Record<string, string>> = {
   'candidate.gender': '성별',
   'candidate.rakutenQuery': '검색어',
   'candidate.sourceUrl': '상품 URL',
-  'candidate.anchorKey': '앵커 키',
+  'candidate.anchorKey': '기준 상품',
   'candidate.seedKeyword': '시드 키워드',
   'sourcing.targetSkus': '② 목표 사이즈 SKU가·재고',
   'sourcing.genre': '② 장르·상품유형',

@@ -3,15 +3,14 @@ import {
   type KeywordCollectionAccepted,
   type KeywordSnapshot,
   type RankedKeyword,
-  type RankLimit,
   useCreateKeywordSnapshotMutation,
   useKeywordCollectionEvents,
   useKeywordCollectionStatusQuery,
   useKeywordSnapshotQuery,
   useKeywordSnapshotsQuery,
   useSelectKeywordMutation,
+  snapshotOrigin,
   useSnapshotKeywordsQuery,
-  useUnselectKeywordMutation,
 } from '@/features/keywords';
 import { ScreenHelp } from '@/features/guide';
 import { PageHeader } from '@/shared/ui';
@@ -23,24 +22,28 @@ import { RakutenQueryPanel } from './RakutenQueryPanel';
 import styles from './KeywordsPage.module.css';
 
 const DESCRIPTION =
-  '데이터랩 인기 검색어를 모아 소싱할 키워드를 고르고, 라쿠텐 검색어를 확인합니다.';
+  '데이터랩 인기 검색어를 모아 소싱할 키워드를 하나 고르고, 라쿠텐 검색어를 확인합니다.';
 
 /**
  * SCR-02 키워드(Keywords.dc.html, P2-01). 패널을 배치만 한다:
  * - 위 줄: 데이터랩 수집(분야·기간·범위·진행률·'수집') | 순위 붙여넣기(열고 닫는다 — 수집이 중단되거나 쉬는 중이면 저절로 연다)
- * - 아래 줄: 키워드 표(G1 체크·'검색어로 쓰기') | 라쿠텐 검색어 확인(G1 → '이 검색어로 소싱') · 아동 단어
+ * - 아래 줄: 키워드 표(라디오로 하나 고르기 = G1) | 라쿠텐 검색어 확인(고른 키워드 → '이 검색어로 소싱') · 아동 단어
  * 보이는 묶음은 방금 만든 묶음, 없으면 가장 최근 묶음(`listKeywordSnapshots` size=1). M2(세부 분류·기기·성별·연령·분류 열·
  * 우선 브랜드·'우선·제외 목록' 패널·사전 제안)는 그리지 않는다.
+ *
+ * D-33 — 키워드는 하나만 고른다. '지금 고른 키워드'는 묶음 조회(`getKeywordSnapshot`)의 `selectedKeyword`(묶음에서 `selectedAt`이
+ * 가장 늦은 키워드)이고, 표의 선택 줄과 오른쪽 검색어 확인이 모두 이 값을 따른다 — 새로고침해도 같은 줄이 고른 줄이다. 보드의
+ * '검색어로 쓰기' 버튼은 고르기와 뜻이 같아 합쳤다(고르면 바로 오른쪽에 나온다). 고르기 취소는 부르지 않는다.
  */
 export function KeywordsPage() {
   const [viewSnapshotId, setViewSnapshotId] = useState<number | null>(null);
   const [fieldChoice, setFieldChoice] = useState<string | null | undefined>(undefined);
   const [filter, setFilter] = useState<KeywordFilter>('ALL');
   const [page, setPage] = useState(0);
-  const [rankLimit, setRankLimit] = useState<RankLimit>(100);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [autoOpenedFor, setAutoOpenedFor] = useState<string | null>(null);
-  const [activeKeyword, setActiveKeyword] = useState<RankedKeyword | null>(null);
+  // 방금 고른 줄(응답이 오기 전). 라디오가 눌린 그 자리에서 바로 바뀌어 보이게 화면 상태로 둔다 — 응답이 오면 서버 값이 되고, 실패하면 앞 줄로 돌아온다
+  const [pickedKeywordId, setPickedKeywordId] = useState<number | null>(null);
 
   const latest = useKeywordSnapshotsQuery({ page: 0, size: 1 });
   const status = useKeywordCollectionStatusQuery();
@@ -48,7 +51,6 @@ export function KeywordsPage() {
   const collect = useCreateKeywordSnapshotMutation();
   const pasteMutation = useCreateKeywordSnapshotMutation();
   const select = useSelectKeywordMutation();
-  const unselect = useUnselectKeywordMutation();
 
   const latestSnapshot = latest.data?.content[0];
   const snapshotId = viewSnapshotId ?? latestSnapshot?.id ?? null;
@@ -79,13 +81,13 @@ export function KeywordsPage() {
     ...cidQuery,
   });
   const rows = keywords.data?.content ?? [];
+  // 처음 열면 가장 최근 묶음(= 지난번에 받아 둔 순위). 이 화면에서 [수집]·붙여넣기로 만든 묶음만 '방금 받은 순위'다
+  const origin = snapshot
+    ? snapshotOrigin(snapshot, viewSnapshotId !== null && viewSnapshotId === snapshot.id)
+    : null;
 
-  // 오른쪽 검색어 확인에 보일 키워드: '검색어로 쓰기'로 고른 것(표에 있으면 새 값), 없으면 이 페이지에서 고른 첫 줄
-  const active =
-    (activeKeyword && rows.find((r) => r.id === activeKeyword.id)) ??
-    activeKeyword ??
-    rows.find((r) => r.selectedAt !== null && r.excludedReason === null) ??
-    null;
+  // 지금 고른 키워드(D-33): 묶음에서 하나. 표가 쪽·분야로 나뉘어도 같은 값이라 새로고침 뒤에도 결정된다
+  const selectedKeyword: RankedKeyword | null = detail.data?.selectedKeyword ?? null;
 
   // 중단 경고: 이 묶음의 SSE aborted(바로) 또는 묶음 조회(다시 열었을 때)
   const abort: CollectAbortInfo | null =
@@ -115,6 +117,7 @@ export function KeywordsPage() {
   }
 
   const showSnapshot = (id: number) => {
+    select.reset();
     setViewSnapshotId(id);
     setFieldChoice(undefined);
     setFilter('ALL');
@@ -123,7 +126,7 @@ export function KeywordsPage() {
 
   const onCollect = () =>
     collect.mutate(
-      { method: 'BUTTON', rankLimit },
+      { method: 'BUTTON', rankLimit: 100 },
       {
         onSuccess: (res) => {
           const accepted = res as KeywordCollectionAccepted;
@@ -139,35 +142,15 @@ export function KeywordsPage() {
       { onSuccess: (res) => showSnapshot((res as KeywordSnapshot).id) },
     );
 
-  const onToggleSelect = (row: RankedKeyword, selected: boolean) => {
-    if (selected) {
-      unselect.reset();
-      select.mutate(row.id, { onSuccess: (updated) => setActiveKeyword(updated) });
-    } else {
-      select.reset();
-      unselect.mutate(row.id, {
-        onSuccess: () => {
-          if (activeKeyword?.id === row.id) setActiveKeyword({ ...row, selectedAt: null });
-        },
-      });
-    }
+  const onSelect = (row: RankedKeyword) => {
+    if (row.excludedReason !== null) return;
+    setPickedKeywordId(row.id);
+    select.mutate(row.id, {
+      onSettled: () => setPickedKeywordId((current) => (current === row.id ? null : current)),
+    });
   };
 
-  const onUseAsQuery = (row: RankedKeyword) => {
-    if (row.selectedAt !== null) {
-      setActiveKeyword(row);
-      return;
-    }
-    unselect.reset();
-    select.mutate(row.id, { onSuccess: (updated) => setActiveKeyword(updated) });
-  };
-
-  const pendingKeywordId = select.isPending
-    ? (select.variables ?? null)
-    : unselect.isPending
-      ? (unselect.variables ?? null)
-      : null;
-  const selectionError = select.error?.message ?? unselect.error?.message ?? null;
+  const selectionError = select.error?.message ?? null;
   const pasteError = pasteMutation.error
     ? {
         message: pasteMutation.error.message,
@@ -192,8 +175,6 @@ export function KeywordsPage() {
             setFieldChoice(cid);
             setPage(0);
           }}
-          rankLimit={rankLimit}
-          onRankLimitChange={setRankLimit}
           onCollect={onCollect}
           collecting={collect.isPending}
           collectError={collect.error?.message ?? null}
@@ -227,15 +208,15 @@ export function KeywordsPage() {
           page={page}
           onPageChange={setPage}
           loading={keywords.isPending && snapshotId !== null}
-          activeKeywordId={active?.id ?? null}
-          onToggleSelect={onToggleSelect}
-          onUseAsQuery={onUseAsQuery}
-          pendingKeywordId={pendingKeywordId}
+          selectedKeywordId={selectedKeyword?.id ?? null}
+          onSelect={onSelect}
+          pendingKeywordId={pickedKeywordId}
           selectionError={selectionError}
           hasSnapshot={snapshotId !== null}
+          origin={origin}
         />
         <div className={styles.side}>
-          <RakutenQueryPanel keyword={active} />
+          <RakutenQueryPanel keyword={selectedKeyword} />
           <ChildTermsPanel />
         </div>
       </div>

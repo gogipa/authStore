@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { SourcingSettings } from '../../settings/schema/settings.types.js';
 import { RAKUTEN_KEY_PARAM_NAMES, RAKUTEN_SEARCH_FIXED_PARAMS } from './rakuten.constants.js';
+import { apiImageUrlsOf } from './rakuten-image.port.js';
 import type { RakutenKeys } from './rakuten-keys.js';
 import type { RakutenSearchItem, RakutenSearchQuery } from './rakuten-search.port.js';
 
@@ -11,7 +12,7 @@ export type RakutenSearchParams = Record<string, string>;
  * Item Search 요청 파라미터를 만든다(PRD §8.2 RK-01, P2-02 규칙 1). 순수 함수. 키(applicationId·accessKey)는 넣지 않는다.
  * - ② 소싱 검색(기본): `keyword`, `genreId`(설정 558885), `sort=+itemPrice`, `hits`(설정 30), `availability=1`,
  *   `imageFlag=1`, `field=1`, `formatVersion=2`, `purchaseType=0`, `carrier=0`, `minPrice`(설정), `NGKeyword`(설정 제외어를
- *   공백으로 이어서), `page`
+ *   공백으로 이어서), `page`. `query.sort`가 있으면 `sort`를 그 값으로 덮어쓴다(기본은 `+itemPrice`)
  * - 보완 조회(`sourcingFilters=false`): `formatVersion=2`, `hits`, `page` + `itemCode`·`shopCode`·`keyword` 중 준 것
  */
 export function buildRakutenSearchParams(
@@ -28,6 +29,7 @@ export function buildRakutenSearchParams(
   params.formatVersion = RAKUTEN_SEARCH_FIXED_PARAMS.formatVersion;
   if (query.sourcingFilters ?? true) {
     Object.assign(params, RAKUTEN_SEARCH_FIXED_PARAMS);
+    if (query.sort) params.sort = query.sort;
     params.genreId = String(sourcing.genreId);
     params.minPrice = String(sourcing.minPriceYen);
     const ng = sourcing.ngKeywords.map((w) => w.trim()).filter((w) => w !== '');
@@ -80,6 +82,11 @@ function str(value: unknown): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value : null;
 }
 
+/** 상품 사진 주소: 응답 이미지 주소 중 http(s)로 시작하는 첫 값(없으면 null). 사진 칸은 `<img src>`에 쓰이므로 다른 모양은 버린다 */
+function firstImageUrl(raw: Record<string, unknown>): string | null {
+  return apiImageUrlsOf(raw).find((url) => /^https?:\/\//i.test(url)) ?? null;
+}
+
 /** 샵 코드: shopCode, 없으면 itemCode의 ':' 앞 */
 function shopCodeOf(raw: Record<string, unknown>, itemCode: string): string {
   return str(raw.shopCode) ?? itemCode.split(':')[0] ?? '';
@@ -114,6 +121,7 @@ export function toSearchItem(value: unknown): RakutenSearchItem | null {
     reviewAverage: num(raw.reviewAverage),
     shipOverseasFlag: num(raw.shipOverseasFlag),
     genreId: num(raw.genreId),
+    imageUrl: firstImageUrl(raw),
     raw,
   };
 }

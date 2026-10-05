@@ -41,26 +41,26 @@ describe('error-codes', () => {
 
   it('P1-04 후보 코드 12개는 05-3 §5.1 문구·상태 그대로다', () => {
     const expected: Record<string, { status: number; message: string }> = {
-      CANDIDATE_NOT_FOUND: { status: 404, message: '후보를 찾을 수 없습니다.' },
+      CANDIDATE_NOT_FOUND: { status: 404, message: '여정을 찾을 수 없습니다.' },
       CANDIDATE_DUPLICATE: {
         status: 409,
-        message: '같은 상품·색상으로 진행 중인 후보가 있습니다. 그 후보를 열어 주세요.',
+        message: '같은 상품·색상으로 진행 중인 여정이 있습니다. 그 여정을 열어 주세요.',
       },
       CANDIDATE_LOCKED: {
         status: 409,
-        message: '등록을 진행 중이거나 끝난 후보라 바꿀 수 없습니다.',
+        message: '등록을 진행 중이거나 끝난 여정이라 바꿀 수 없습니다.',
       },
       CANDIDATE_EXCLUDED: {
         status: 409,
-        message: "제외된 후보입니다. '다시 작업'을 먼저 눌러 주세요.",
+        message: "제외된 여정입니다. '다시 작업'을 먼저 눌러 주세요.",
       },
       CANDIDATE_STATUS_INVALID: {
         status: 409,
-        message: '지금 후보 상태({상태})에서는 할 수 없습니다.',
+        message: '지금 여정 상태({상태})에서는 할 수 없습니다.',
       },
       ANCHOR_KEY_MISMATCH: {
         status: 409,
-        message: '이 후보의 기준 모델·색상과 다릅니다. 다른 모델·색상은 새 후보로 만들어 주세요.',
+        message: '이 여정의 기준 모델·색상과 다릅니다. 다른 모델·색상은 새 여정으로 만들어 주세요.',
       },
       STEP_LOCKED_BY_RUNNING_STEP: {
         status: 409,
@@ -69,7 +69,7 @@ describe('error-codes', () => {
       KEYWORD_NOT_FOUND: { status: 404, message: '키워드를 찾을 수 없습니다.' },
       KEYWORD_NOT_SELECTED: {
         status: 409,
-        message: '키워드 화면에서 고른 키워드만 후보로 만들 수 있습니다.',
+        message: '키워드 화면에서 고른 키워드만 여정으로 만들 수 있습니다.',
       },
       KEYWORD_EXCLUDED: { status: 409, message: '아동화로 빠진 키워드는 고를 수 없습니다.' },
       RAKUTEN_QUERY_INVALID: {
@@ -88,7 +88,7 @@ describe('error-codes', () => {
       /^⑥-2 원산지·소재가 실행 중이라/,
     );
     expect(formatErrorMessage('CANDIDATE_STATUS_INVALID', { 상태: '검증완료' })).toBe(
-      '지금 후보 상태(검증완료)에서는 할 수 없습니다.',
+      '지금 여정 상태(검증완료)에서는 할 수 없습니다.',
     );
   });
 
@@ -99,7 +99,7 @@ describe('error-codes', () => {
       INVALID_STEP_CODE: { status: 422, message: '이 단계는 여기서 실행하거나 고칠 수 없습니다.' },
       TEMP_CANDIDATE_NOT_ALLOWED: {
         status: 409,
-        message: '임시 후보는 업로드·등록할 수 없습니다. 먼저 라쿠텐 상품에 연결해 주세요.',
+        message: '임시 여정은 업로드·등록할 수 없습니다. 먼저 라쿠텐 상품에 연결해 주세요.',
       },
       STEP_START_CONDITION_UNMET: {
         status: 409,
@@ -145,7 +145,7 @@ describe('error-codes', () => {
       CONTINUOUS_RUN_NOT_FOUND: { status: 404, message: '연속 실행 기록을 찾을 수 없습니다.' },
       CONTINUOUS_RUN_ALREADY_OPEN: {
         status: 409,
-        message: '이 후보의 연속 실행이 이미 진행 중입니다.',
+        message: '이 여정의 연속 실행이 이미 진행 중입니다.',
       },
       NO_RERUN_REQUIRED_STEPS: { status: 409, message: '다시 실행할 단계가 없습니다.' },
       INVALID_GATE_CODE: {
@@ -158,7 +158,7 @@ describe('error-codes', () => {
       },
       NO_COMPARISON_NOT_CONFIRMED: {
         status: 409,
-        message: "비교하지 않은 URL 후보입니다. '비교 없이 확정'을 체크해 주세요.",
+        message: "비교하지 않은 URL 여정입니다. '비교 없이 확정'을 체크해 주세요.",
       },
       AI_ENGINE_UNAVAILABLE: {
         status: 409,
@@ -257,6 +257,14 @@ describe('error-codes', () => {
     expect(ERROR_CODES.RETURN_DELIVERY_COMPANY_NOT_FOUND.status).toBe(404);
   });
 
+  it('D-47 검색 결과 더 보기 코드는 05-3 §5.1 문구·상태 그대로다(Proposed)', () => {
+    expect(ERROR_CODES.ANCHOR_ALREADY_FIXED).toEqual({
+      status: 409,
+      message:
+        '기준 상품을 이미 정했습니다. 상품을 더 찾으려면 ② 다시 실행으로 새로 검색해 주세요.',
+    });
+  });
+
   it("조사 '을/를'·'은/는'도 받침에 맞춘다(한글이 아니면 문구 그대로)", () => {
     expect(formatErrorMessage('GATE_NOT_PASSED', { 게이트: 'G3 썸네일 선택' })).toBe(
       'G3 썸네일 선택을 먼저 통과해 주세요.',
@@ -278,12 +286,12 @@ describe('error-codes', () => {
       KEYWORD_SNAPSHOT_NOT_FOUND: { status: 404, message: '키워드 수집 결과를 찾을 수 없습니다.' },
       KEYWORD_NOT_SELECTED: {
         status: 409,
-        message: '키워드 화면에서 고른 키워드만 후보로 만들 수 있습니다.',
+        message: '키워드 화면에서 고른 키워드만 여정으로 만들 수 있습니다.',
       },
       KEYWORD_EXCLUDED: { status: 409, message: '아동화로 빠진 키워드는 고를 수 없습니다.' },
       KEYWORD_IN_USE: {
         status: 409,
-        message: '이 키워드로 만든 후보가 있어 선택을 취소할 수 없습니다.',
+        message: '이 키워드로 만든 여정이 있어 선택을 취소할 수 없습니다.',
       },
       CHILD_TERM_ALREADY_EXISTS: { status: 409, message: '이미 있는 아동 단어입니다.' },
       IMPORT_PARSE_FAILED: {
@@ -386,7 +394,7 @@ describe('error-codes', () => {
   it('P4-02 승인 미리보기 코드 3개는 05-3 §5.1 문구·상태 그대로다', () => {
     expect(ERROR_CODES.REGISTRATION_IN_PROGRESS).toEqual({
       status: 409,
-      message: '이 후보의 등록이 진행 중이거나 결과 확인이 필요합니다.',
+      message: '이 여정의 등록이 진행 중이거나 결과 확인이 필요합니다.',
     });
     expect(ERROR_CODES.DUPLICATE_REGISTRATION).toEqual({
       status: 409,

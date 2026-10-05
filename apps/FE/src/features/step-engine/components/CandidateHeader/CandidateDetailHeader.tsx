@@ -41,13 +41,13 @@ function CandidateMeta({ detail }: { detail: CandidateDetail }) {
 
 export interface CandidateDetailHeaderProps {
   detail: CandidateDetail;
-  /** 오른쪽 버튼(단계 화면 틀: '후보 목록', 목록 화면: '후보 제외'·'다시 작업') */
+  /** 오른쪽 버튼(단계 화면 틀: '여정 목록', 목록 화면: '삭제'·'다시 작업') */
   actions?: ReactNode;
 }
 
 /**
- * 후보 상세로 채운 후보 머리(표시명·앵커 키·성별·소싱 선택·게이트·출처 키워드). 게이트 배지는 게이트 목록
- * (`listCandidateGates`, P1-06)으로 그리고, 받기 전에는 후보 상세 `gates`로 그린다.
+ * 여정 상세로 채운 여정 머리(표시명·앵커 키·성별·소싱 선택·게이트·출처 키워드). 게이트 배지는 게이트 목록
+ * (`listCandidateGates`, P1-06)으로 그리고, 받기 전에는 여정 상세 `gates`로 그린다.
  */
 export function CandidateDetailHeader({ detail, actions }: CandidateDetailHeaderProps) {
   const gateList = useCandidateGates(detail.id);

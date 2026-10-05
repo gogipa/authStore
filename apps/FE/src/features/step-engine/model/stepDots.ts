@@ -2,7 +2,7 @@ import type { StepCode } from '@/shared/lib/steps';
 import type { StepStatus } from '@/shared/ui';
 import type { CandidateStepBrief } from './types';
 
-/** 대시보드 '진행 중 후보'의 단계 점 8개(②~⑨). ⑥은 ⑥-1~⑥-3을 묶은 점 하나다(Main.dc.html) */
+/** 대시보드 '진행 중 여정'의 단계 점 8개(②~⑨). ⑥은 ⑥-1~⑥-3을 묶은 점 하나다(Main.dc.html) */
 export const STEP_DOT_GROUPS: readonly { no: string; codes: readonly StepCode[] }[] = [
   { no: '②', codes: ['SOURCING'] },
   { no: '③', codes: ['PRICING'] },
@@ -37,7 +37,7 @@ export interface StepDot {
   status: StepStatus;
 }
 
-/** 후보의 단계 10개 → 점 8개 */
+/** 여정의 단계 10개 → 점 8개 */
 export function stepDots(steps: readonly CandidateStepBrief[]): StepDot[] {
   const byCode = new Map(steps.map((s) => [s.stepCode, s.status]));
   return STEP_DOT_GROUPS.map((group) => ({

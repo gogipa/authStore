@@ -6,8 +6,8 @@ type NameSource = Pick<
 >;
 
 /**
- * 후보 이름. 서버 표시명(② 선택 상품명 · 색상, 그 전에는 검색어)이 있으면 그것, 없으면 型番 · 색상,
- * 그것도 없으면 '후보 #{id}'(P1-04 Proposed, 05-1 §7.2).
+ * 여정 이름. 서버 표시명(② 선택 상품명 · 색상, 그 전에는 검색어)이 있으면 그것, 없으면 型番 · 색상,
+ * 그것도 없으면 '여정 #{id}'(P1-04 Proposed, 05-1 §7.2).
  */
 export function candidateDisplayName(candidate: NameSource): string {
   if (candidate.displayName) return candidate.displayName;
@@ -16,7 +16,7 @@ export function candidateDisplayName(candidate: NameSource): string {
       ? `${candidate.anchorModelCode} · ${candidate.selectedColor}`
       : candidate.anchorModelCode;
   }
-  return `후보 #${candidate.id}`;
+  return `여정 #${candidate.id}`;
 }
 
 /** 앵커 키 ID 칩 글자('1201A019108 · 크림/블랙'). 앵커가 없으면 null */

@@ -7,7 +7,7 @@ import { stepEngineKeys } from './queryKeys';
 
 /**
  * 단계 실행 훅(P1-05, 05-2 step-engine). 202 작업 결과는 폴링하지 않는다 — SSE `step-run.status-changed`·
- * `candidate-step.changed`(shared/api/events.ts)가 레일·이력·실행 한 건·후보를 무효화하면 다시 읽는다.
+ * `candidate-step.changed`(shared/api/events.ts)가 레일·이력·실행 한 건·여정을 무효화하면 다시 읽는다.
  */
 
 /** 단계 레일 10칸(`GET /candidates/{candidateId}/steps`, listCandidateSteps). null이면 부르지 않는다 */
@@ -80,7 +80,7 @@ export function useStaleDiff(
   });
 }
 
-/** 이 후보의 레일·이력·상세를 다시 읽는다(요청이 받아들여진 직후 RUNNING을 바로 보이게) */
+/** 이 여정의 레일·이력·상세를 다시 읽는다(요청이 받아들여진 직후 RUNNING을 바로 보이게) */
 function useInvalidateCandidateSteps() {
   const queryClient = useQueryClient();
   return (candidateId: number) =>
@@ -148,7 +148,7 @@ export function useOwnerEdit() {
 /**
  * 고른 상품 재조회(`POST /candidates/{candidateId}/refetch`, 202 StepRunAccepted — P2-02, F-SO-17). ② 새 버전(고른 상품
  * 페이지 1건만 새로, 하루 조회 1건 차감)을 만들고 ③을 실행한 적이 있으면 이어서 다시 판정한다. 결과는 폴링하지 않고 SSE
- * `step-run.status-changed`가 레일·이력·후보를 무효화하면 다시 읽는다. 409 SOURCING_SELECTION_REQUIRED·DAILY_LIMIT_REACHED·
+ * `step-run.status-changed`가 레일·이력·여정을 무효화하면 다시 읽는다. 409 SOURCING_SELECTION_REQUIRED·DAILY_LIMIT_REACHED·
  * EXTERNAL_CALL_COOLDOWN·STEP_ALREADY_RUNNING 등은 `ApiRequestError`(message를 그대로 보인다).
  */
 export function useRefetchCandidate() {

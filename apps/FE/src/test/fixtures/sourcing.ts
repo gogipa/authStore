@@ -175,6 +175,7 @@ export function comparisonRow(
     shopName: `샵 ${id}`,
     itemName: 'アシックス ゲルカヤノ 14 1201A019-108 クリーム×ブラック メンズ',
     itemUrl: `item.rakuten.co.jp/shop-${id}/1000${id}/`,
+    imageUrl: null,
     apiItemPriceYen: 12000,
     apiItemPriceMin3Yen: 12000,
     apiPointRate: 10,

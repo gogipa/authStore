@@ -194,7 +194,7 @@ export class CategoryStepRunner implements StepRunner {
         failureKind: 'INPUT_VALIDATION',
         errorCode: 'STEP_START_CONDITION_UNMET',
         errorMessage:
-          '후보 성별이 없어 카테고리 후보를 뽑지 못했습니다. 성별을 넣고 다시 실행해 주세요.',
+          '여정 성별이 없어 카테고리 후보를 뽑지 못했습니다. 성별을 넣고 다시 실행해 주세요.',
       };
     }
     const genre = genreOf(ctx.inputs.find((i) => i.inputKey === INPUT_KEYS.sourcingGenre)?.value);

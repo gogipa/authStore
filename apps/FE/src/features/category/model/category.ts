@@ -25,7 +25,7 @@ export const GENDER_RECHECK_NOTE =
   '바꾸면 카테고리 후보를 다시 뽑고 ③·⑥-3·⑦을 다시 실행해야 합니다.';
 
 /** 전체 목록 단추 옆 캡션(보드 그대로) */
-export const GENDER_PATH_ALL_CAPTION = '장르 없는 URL 후보용';
+export const GENDER_PATH_ALL_CAPTION = '장르 없는 URL 여정용';
 
 /** 'KC 면제 성인용 확인' 캡션: 확정 뒤(보드) · 확정 전 · KC 예외가 아닌 리프 */
 export const KC_FILLED_TEXT = 'KC 면제(해외 구매대행)로 채웠습니다';
@@ -43,9 +43,9 @@ export const NOT_WAITING_REASON =
 export const GENDER_RECHECK_DISABLED_REASON =
   '④가 입력 대기일 때 바꿀 수 있습니다. ④를 다시 실행한 뒤 바꿔 주세요.';
 
-/** 완료된 ④의 성별과 후보 성별이 다를 때 경고 띠(Proposed) */
+/** 완료된 ④의 성별과 여정 성별이 다를 때 경고 띠(Proposed) */
 export const GENDER_CHANGED_AFTER_DECISION =
-  '후보 성별이 바뀌어 고른 카테고리와 맞지 않을 수 있습니다. ④를 다시 실행해 카테고리를 다시 골라 주세요.';
+  '여정 성별이 바뀌어 고른 카테고리와 맞지 않을 수 있습니다. ④를 다시 실행해 카테고리를 다시 골라 주세요.';
 
 /** 전체 경로 표시: `패션잡화>남성신발>운동화>러닝화` → `패션잡화 > 남성신발 > 운동화 > 러닝화`(보드) */
 export function formatCategoryPath(wholeCategoryName: string): string {
@@ -66,7 +66,7 @@ export function blockReasonText(reason: CategoryOptionBlockReason): string {
     case 'CON08_EXCLUDED':
       return '판매 제외 품목(바퀴 달린 운동화·고령자용 신발) 카테고리라 고를 수 없습니다.';
     case 'GENDER_MISMATCH':
-      return '후보 성별과 카테고리(남성·여성)가 맞지 않습니다.';
+      return '여정 성별과 카테고리(남성·여성)가 맞지 않습니다.';
     case 'REMOVED':
       return '네이버 카테고리 목록에서 사라졌습니다. 메타데이터를 다시 동기화해 주세요.';
   }

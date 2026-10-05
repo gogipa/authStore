@@ -26,7 +26,7 @@ describe('판정 요약·비용 분해(PRD §8.3 예시)', () => {
   it('요약 카드: 최소 판매가 153,100 · 목표 마진 10% · 판매가 규칙 · 기준 사이즈 순이익 27,418(16.4%)', () => {
     expect(minimumPriceKrw(j)).toBe(153100);
     expect(targetMarginPct(j)).toBe(10);
-    expect(priceRuleLabel(j)).toBe('국내가 −1%');
+    expect(priceRuleLabel(j)).toBe('국내 기준가 −1%');
     expect(summarySize(j)?.profitAKrw).toBe(27418);
     expect(marginText(summarySize(j)?.marginRateA)).toBe('16.4%');
     expect(marginText(null)).toBe('—');
@@ -49,10 +49,10 @@ describe('판정 요약·비용 분해(PRD §8.3 예시)', () => {
     expect(breakdownCaption(j)).toBe('판매 사이즈 5개 공통 · 1켤레');
   });
 
-  it('쿠폰·송료가 있으면 물품가 캡션에 식을 풀어 쓴다', () => {
+  it('쿠폰·일본 내 배송비가 있으면 물품가 캡션에 식을 풀어 쓴다', () => {
     const withCoupon = priceJudgement({ couponYen: 1000, shippingYen: 500 });
     const [goods] = breakdownLines(withCoupon, summarySize(withCoupon)!, '');
-    expect(goods!.note).toBe('(¥12,000 + 송료 ¥500 − 쿠폰 ¥1,000) × 8.76');
+    expect(goods!.note).toBe('(¥12,000 + 일본 내 배송비 ¥500 − 쿠폰 ¥1,000) × 8.76');
     expect(goods!.valueKrw).toBe(100740);
   });
 
@@ -137,7 +137,7 @@ describe('사이즈별 판정 표', () => {
     expect(rows.map((r) => r.verdict)).toEqual([
       '판매 가능 · 옵션 +2,200원',
       '제외 · 과세',
-      '제외 · 국내가 초과',
+      '제외 · 국내 기준가 초과',
       '제외 · 모드 B 음수',
     ]);
     expect(rows[1]).toMatchObject({ duty: '과세', boundary: true, sellable: false });
@@ -156,7 +156,7 @@ describe('사이즈별 판정 표', () => {
       ],
     });
     expect(dutyFreeLine(mixed)).toBe(
-      '면세 한도 US$145 · 1켤레 US$70.10~80.25(송료 포함 ¥22,490까지 면세) · 일부 사이즈는 2켤레면 과세',
+      '면세 한도 US$145 · 1켤레 US$70.10~80.25(일본 내 배송비 포함 ¥22,490까지 면세) · 일부 사이즈는 2켤레면 과세',
     );
   });
 });

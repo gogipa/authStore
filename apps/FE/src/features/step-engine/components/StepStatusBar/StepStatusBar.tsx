@@ -22,11 +22,16 @@ export interface StepStatusBarProps {
   /** 오른쪽 버튼 자리('다시 실행' 등과 꺼진 이유) */
   actions?: ReactNode;
   /**
-   * 후보 id. 주면 버튼 자리 끝에 '여기부터 연속 실행'(P1-06)을 그린다(⑧·⑨ 제외). 켜짐·꺼진 이유는 `item.actions.continuousRun`
+   * 여정 id. 주면 버튼 자리 끝에 '여기부터 연속 실행'(P1-06)을 그린다(⑧·⑨ 제외). 켜짐·꺼진 이유는 `item.actions.continuousRun`
    */
   candidateId?: number;
   /** '여기부터 연속 실행' 202를 받으면 */
   onContinuousRunStarted?: (accepted: ContinuousRunAccepted) => void;
+  /**
+   * '여기부터 연속 실행'이 꺼진 이유 글이 이 줄 밖에 이미 보이면 그 글의 id. 주면 같은 글을 한 번 더 그리지 않고 그 글을 가리킨다
+   * (D-34: '실행'과 같은 이유로 꺼졌을 때 주황 글이 두 번 보이던 것을 줄인다)
+   */
+  chainDescribedBy?: string;
   /**
    * 단계 화면의 실행 요청 오류(시작 409 등). 주면 문구를 보이고, code가 AI_ENGINE_UNAVAILABLE이면 'AI 엔진 설정으로'
    * 링크를 붙인다(F-BS-76, P1-10)
@@ -47,6 +52,7 @@ export function StepStatusBar({
   actions,
   candidateId,
   onContinuousRunStarted,
+  chainDescribedBy,
   error,
 }: StepStatusBarProps) {
   const at = lastRunAt(item);
@@ -85,6 +91,7 @@ export function StepStatusBar({
           candidateId={candidateId}
           stepCode={item.stepCode as ChainStartStepCode}
           action={item.actions.continuousRun}
+          describedBy={chainDescribedBy}
           onStarted={onContinuousRunStarted}
         />
       ) : null}

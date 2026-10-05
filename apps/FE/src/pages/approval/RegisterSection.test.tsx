@@ -247,7 +247,7 @@ describe('SCR-08 ⑨ 등록(P4-03)', () => {
       preview: errorResponse(
         409,
         'CANDIDATE_STATUS_INVALID',
-        '지금 후보 상태(검증완료)에서는 할 수 없습니다.',
+        '지금 여정 상태(검증완료)에서는 할 수 없습니다.',
       ),
       registrations: registrationPage([registrationSummary()]),
     });

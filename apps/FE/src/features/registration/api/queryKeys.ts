@@ -7,7 +7,7 @@ export const REGISTRATION_TAG_KEY = ['registration'] as const;
 export type RegistrationOptionType = 'COMBINATION' | 'STANDARD';
 
 /**
- * registration queryKey(03-2 §6.2 `['registration', operationId, params]`, P4-01·P4-02). 후보 한 건 키의 파라미터는 `{ candidateId }`로
+ * registration queryKey(03-2 §6.2 `['registration', operationId, params]`, P4-01·P4-02). 여정 한 건 키의 파라미터는 `{ candidateId }`로
  * 시작한다 — SSE 무효화(shared/api/events.ts)가 부분 일치로 닿는다.
  */
 export const registrationKeys = {
@@ -23,7 +23,7 @@ export const registrationKeys = {
   /** G4 사전 검증(POST지만 결과를 화면 상태로 둔다): `['registration','runCandidatePreValidation',{ candidateId, optionType }]` */
   preValidation: (candidateId: number, optionType: RegistrationOptionType) =>
     qk('registration', 'runCandidatePreValidation', { candidateId, optionType }),
-  /** 후보의 등록 기록 이력(P4-03): `['registration','listCandidateRegistrations',{ candidateId }]` */
+  /** 여정의 등록 기록 이력(P4-03): `['registration','listCandidateRegistrations',{ candidateId }]` */
   registrations: (candidateId: number) =>
     qk('registration', 'listCandidateRegistrations', { candidateId }),
   /** 등록 기록 한 건(P4-03): `['registration','getRegistration',{ registrationId }]` */

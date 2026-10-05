@@ -136,7 +136,7 @@ export class RestartRecoveryService implements OnApplicationBootstrap {
             });
           } else if (run.stepCode === 'REGISTER' && !runner?.onInterrupted) {
             this.logger.warn(
-              `⑨ 등록 실행 #${id}: 재시작 훅(P4-03)이 없어 후보 상태를 그대로 둡니다`,
+              `⑨ 등록 실행 #${id}: 재시작 훅(P4-03)이 없어 여정 상태를 그대로 둡니다`,
             );
           } else {
             await this.status.reevaluate(scope, candidate.id, { stepRunId: id });

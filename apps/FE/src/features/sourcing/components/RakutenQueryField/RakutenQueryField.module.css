@@ -41,3 +41,14 @@
   font: var(--type-caption);
   color: var(--color-failed);
 }
+
+/*
+ * 한글 검색어 안내: 오류는 아니지만 결과가 거의 없다는 경고(waiting 색).
+ * 긴 글이 칸 폭을 밀어 옆 칸(검색 분류·성별)이 밀리지 않게 한다: 폭 0 + 최소 폭 100%면 글이 줄을 바꿔 칸 폭 안에 들어간다.
+ */
+.hint {
+  width: 0;
+  min-width: 100%;
+  font: var(--type-caption);
+  color: var(--color-waiting);
+}

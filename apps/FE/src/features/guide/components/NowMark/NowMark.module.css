@@ -1,0 +1,35 @@
+/* '지금 여기' 표시(D-36). 새 토큰 없음. 테두리는 outline이라 자리를 차지하지 않는다(켜고 꺼도 배치가 안 움직인다). */
+.mark {
+  position: relative;
+  min-width: 0;
+}
+
+.mark:empty {
+  display: none;
+}
+
+.inline {
+  display: inline-flex;
+}
+
+.active {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+  border-radius: var(--radius-md);
+}
+
+.chip {
+  position: absolute;
+  top: -14px;
+  left: 12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: var(--type-label);
+  white-space: nowrap;
+}

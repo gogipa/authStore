@@ -16,7 +16,7 @@ export const GATE_SCREEN: Record<'G2' | 'G3' | 'G4', StepScreen> = {
 };
 
 /**
- * 후보 틀(`/candidates/:id`)이 옮겨 갈 상대 경로. 이어 할 단계(`resumeStepCode`, 서버가 목록·상세에 같은 흐름 순서 함수로
+ * 여정 틀(`/candidates/:id`)이 옮겨 갈 상대 경로. 이어 할 단계(`resumeStepCode`, 서버가 목록·상세에 같은 흐름 순서 함수로
  * 계산)의 화면, 없으면(모두 완료) 최종 승인(05-1 route맵 §3-2). ⑨는 최종 승인 화면이다.
  */
 export function resumeRelativePath(resumeStepCode: StepCode | null | undefined): string {

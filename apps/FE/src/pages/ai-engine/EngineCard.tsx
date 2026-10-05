@@ -19,6 +19,7 @@ import {
   DefinitionList,
   type DefinitionItem,
   DisabledReason,
+  Icon,
   Radio,
   Select,
   TextField,
@@ -27,6 +28,9 @@ import styles from './EngineCard.module.css';
 
 /** [연결 테스트] 옆 캡션(보드 문구) */
 export const SMOKE_TEST_CAPTION = "'OK' 한 단어를 받는 호출 1회 · 누를 때만 돕니다";
+/** 연결 테스트가 도는 동안 버튼에 보이는 글과 그 옆 캡션(Proposed — 결과는 SSE로 와서 몇 초~2분 걸린다) */
+export const SMOKE_TESTING_LABEL = '연결 테스트 중…';
+export const SMOKE_TESTING_CAPTION = '테스트 중입니다 · 10초쯤 걸리고 길면 2분까지 걸립니다';
 /** 설치 안 된 카드의 꺼진 이유(보드 문구) */
 export const NOT_INSTALLED_REASON = '설치되지 않아 고를 수 없습니다';
 
@@ -72,8 +76,10 @@ export interface EngineCardProps {
   onPick: () => void;
   onModelChange: (kind: keyof AiEngineModelPair, value: string) => void;
   onTest: () => void;
-  /** 점검 요청을 보내는 중(버튼을 잠시 끈다) */
+  /** 점검 요청을 보내는 중이거나 다른 엔진의 연결 테스트가 도는 중(버튼을 잠시 끈다) */
   requesting?: boolean;
+  /** 이 엔진의 연결 테스트 결과를 기다리는 중: 버튼에 돌아가는 표시와 '연결 테스트 중…'을 보인다 */
+  testing?: boolean;
   /** 저장 흐름(연결 테스트 → 저장)이 도는 중: 라디오·모델·[연결 테스트]를 잠시 끈다(테스트한 값과 저장할 값이 어긋나지 않게) */
   locked?: boolean;
 }
@@ -93,6 +99,7 @@ export function EngineCard({
   onModelChange,
   onTest,
   requesting = false,
+  testing = false,
   locked = false,
 }: EngineCardProps) {
   const engine = option.engineCode;
@@ -253,14 +260,20 @@ export function EngineCard({
       <div className={styles.test}>
         <Button
           size="sm"
-          disabled={notInstalled || requesting || locked}
+          disabled={notInstalled || requesting || testing || locked}
+          aria-busy={testing || undefined}
           aria-describedby={notInstalled ? reasonId : undefined}
           onClick={onTest}
         >
-          연결 테스트
+          {testing ? <Icon name="refresh" size={16} className={styles.spin} /> : null}
+          {testing ? SMOKE_TESTING_LABEL : '연결 테스트'}
         </Button>
         {notInstalled ? (
           <DisabledReason id={reasonId}>{NOT_INSTALLED_REASON}</DisabledReason>
+        ) : testing ? (
+          <span role="status" className={styles.caption}>
+            {SMOKE_TESTING_CAPTION}
+          </span>
         ) : engine === 'AGY' ? (
           <span className={styles.caption}>
             모델 목록은 <span className={styles.mono}>agy models</span> 결과입니다

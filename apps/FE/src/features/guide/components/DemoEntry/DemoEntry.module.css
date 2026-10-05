@@ -1,0 +1,6 @@
+/* 체험 입구(D-31, 화면시안_명세 §9). 체험 안에서 버튼 대신 보이는 글. 새 토큰 없음. */
+.inDemo {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--color-ink-muted);
+}

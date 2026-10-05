@@ -17,7 +17,7 @@ function stubNav() {
 }
 
 describe('사용 안내(SCR-14 /guide, F-GD-01)', () => {
-  it('머리·작업 흐름·하루 작업 순서·화면 안내·안전장치·학습 끄기를 보이고, API는 내비 것만 부른다', async () => {
+  it('머리·작업 흐름·하루 작업 순서·화면 안내·안전장치·학습 끄기·설정 마법사·체험해 보기를 보이고, API는 내비 것만 부른다', async () => {
     const api = stubNav();
     renderRoute('/guide');
     expect(await screen.findByRole('heading', { level: 1, name: '사용 안내' })).toBeInTheDocument();
@@ -28,6 +28,8 @@ describe('사용 안내(SCR-14 /guide, F-GD-01)', () => {
       ['screens', '화면 안내'],
       ['safety', '안전장치'],
       ['training', 'AI 계정 학습 끄기'],
+      ['setup', '설정 마법사'],
+      ['demo', '체험해 보기'],
     ]) {
       expect(screen.getByRole('region', { name })).toHaveAttribute('id', id);
     }
@@ -61,8 +63,22 @@ describe('사용 안내(SCR-14 /guide, F-GD-01)', () => {
       '/settings/ai-engine',
     );
 
-    const paths = api.requests.map((r) => new URL(r.url).pathname.replace('/api/v1', ''));
-    expect(new Set(paths)).toEqual(new Set(['/call-usage', '/registration-switch']));
+    // D-30: 설정 마법사를 여는 링크. D-31: 체험(/demo)을 새 탭으로 여는 링크(명령·포트는 없다)
+    const setup = within(screen.getByRole('region', { name: '설정 마법사' }));
+    expect(setup.getByRole('link', { name: '설정 마법사 열기' })).toHaveAttribute('href', '/setup');
+    const demo = within(screen.getByRole('region', { name: '체험해 보기' }));
+    const entry = demo.getByRole('link', { name: '체험해 보기 (새 탭에서 열림)' });
+    expect(entry).toHaveAttribute('href', '/demo/keywords');
+    expect(entry).toHaveAttribute('target', '_blank');
+    expect(demo.getByText(/서버를 부르지 않아/)).toBeInTheDocument();
+    expect(demo.queryByText('pnpm demo')).toBeNull();
+    expect(demo.queryByText(/지금 체험 중입니다/)).toBeNull();
+
+    await waitFor(() =>
+      expect(
+        new Set(api.requests.map((r) => new URL(r.url).pathname.replace('/api/v1', ''))),
+      ).toEqual(new Set(['/call-usage', '/registration-switch'])),
+    );
   });
 
   it('주소 조각(#training)으로 오면 그 패널로 옮긴다', async () => {

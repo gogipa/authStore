@@ -6,6 +6,8 @@ import {
   CandidateHeader,
   CONTENT_GROUP_CODES,
   contentGroupStatus,
+  EXCLUDED_NOTICE,
+  EXCLUDED_NOTICE_NEXT,
   gateStateMap,
   gateViewsFromList,
   parseCandidateId,
@@ -16,24 +18,30 @@ import {
   useCandidateSteps,
 } from '@/features/step-engine';
 import { isStepScreen, type StepCode } from '@/shared/lib/steps';
-import { Banner, ButtonLink, Chip, HelpButton, HelpPanel, PageHeader } from '@/shared/ui';
+import { Banner, ButtonLink, Chip, HelpButton, HelpPanel, Icon, PageHeader } from '@/shared/ui';
 import { StepRail, type RailStepStatus } from './StepRail';
 import styles from './CandidateLayout.module.css';
 
 function BackToList() {
-  return <ButtonLink to="/candidates">후보 목록</ButtonLink>;
+  // 왼쪽 화살표: 이 여정을 떠나 목록으로 나가는 버튼이지 작업 순서의 첫 단계가 아니다(D-36)
+  return (
+    <ButtonLink to="/candidates">
+      <Icon name="arrow-left" size={16} />
+      여정 목록
+    </ButtonLink>
+  );
 }
 
 /**
- * 후보 작업(SCR-12): 후보 머리 + [단계 레일 | 단계 본문(<Outlet/>)].
+ * 여정(SCR-12): 여정 머리 + [단계 레일 | 단계 본문(<Outlet/>)].
  * 단계 화면(SCR-03~08)은 자식 경로로 이 틀 안에 그려진다. 틀은 eager(05-4 §4).
- * 후보 머리는 `getCandidate`로 채운다(P1-04). 없는 후보(404 CANDIDATE_NOT_FOUND·정수 아닌 id)는 틀 안에
- * '후보를 찾을 수 없습니다' + '후보 목록'(05-1 route맵 §3-3).
- * 레일(P1-05): 단계 상태·실패(중단됨)·재실행 사유는 `listCandidateSteps`, ⑥ 줄은 하위 단계 묶음 규칙, URL 후보는
- * '수동'·'비교 안 함' 배지. 게이트는 후보 머리와 같은 표시(`listCandidateGates`, P1-06). 레일 아래
+ * 여정 머리는 `getCandidate`로 채운다(P1-04). 없는 여정(404 CANDIDATE_NOT_FOUND·정수 아닌 id)은 틀 안에
+ * '여정을 찾을 수 없습니다' + '여정 목록'(05-1 route맵 §3-3).
+ * 레일(P1-05): 단계 상태·실패(중단됨)·재실행 사유는 `listCandidateSteps`, ⑥ 줄은 하위 단계 묶음 규칙, URL 여정은
+ * '수동'·'비교 안 함' 배지. 게이트는 여정 머리와 같은 표시(`listCandidateGates`, P1-06). 레일 아래
  * '재실행 필요 단계 모두 실행'은 RERUN_STALE 연속 실행(P1-06)이다.
- * D-29(F-GD-02): 단계 화면은 제목이 후보 머리라 '?' 도움말 버튼을 후보 머리 오른쪽('후보 목록' 앞)에 두고, 도움말 판은
- * 후보 머리 바로 아래에 연다. 내용은 지금 단계 화면(②·③④·⑤·⑥·⑦·⑧⑨)의 도움말이다. 이 틀은 단계를 옮겨도 그대로 있으므로
+ * D-29(F-GD-02): 단계 화면은 제목이 여정 머리라 '?' 도움말 버튼을 여정 머리 오른쪽('여정 목록' 앞)에 두고, 도움말 판은
+ * 여정 머리 바로 아래에 연다. 내용은 지금 단계 화면(②·③④·⑤·⑥·⑦·⑧⑨)의 도움말이다. 이 틀은 단계를 옮겨도 그대로 있으므로
  * 주소(경로)가 바뀌면 판을 닫는다 — 열림 상태는 기억하지 않고 화면을 옮기면 닫힌 채로 연다(화면시안_명세 §8.5).
  */
 export function CandidateLayout() {
@@ -48,7 +56,7 @@ export function CandidateLayout() {
   const { pathname } = useLocation();
   const helpId = `step-help-${useId()}`;
   const [helpOpen, setHelpOpen] = useState(false);
-  // 다른 단계·다른 후보로 옮기면 닫는다(그리는 중에 맞추는 React 방식 — effect 뒤 한 번 더 그리지 않는다)
+  // 다른 단계·다른 여정으로 옮기면 닫는다(그리는 중에 맞추는 React 방식 — effect 뒤 한 번 더 그리지 않는다)
   const [helpPath, setHelpPath] = useState(pathname);
   if (helpPath !== pathname) {
     setHelpPath(pathname);
@@ -64,8 +72,8 @@ export function CandidateLayout() {
   if (notFound) {
     return (
       <PageHeader
-        title="후보를 찾을 수 없습니다"
-        description="지워졌거나 주소가 잘못되었습니다. 후보 목록에서 다시 고르세요."
+        title="여정을 찾을 수 없습니다"
+        description="지워졌거나 주소가 잘못되었습니다. 여정 목록에서 다시 고르세요."
         actions={<BackToList />}
       />
     );
@@ -109,12 +117,27 @@ export function CandidateLayout() {
         <CandidateDetailHeader detail={candidate.data} actions={headerActions} />
       ) : (
         <CandidateHeader
-          title={`후보 #${candidateId}`}
-          caption={candidate.isError ? undefined : '후보 정보를 불러오는 중입니다.'}
+          title={`여정 #${candidateId}`}
+          caption={candidate.isError ? undefined : '여정 정보를 불러오는 중입니다.'}
           actions={headerActions}
         />
       )}
       {candidate.isError ? <Banner tone="warning">{candidate.error.message}</Banner> : null}
+      {candidate.data?.status === 'EXCLUDED' ? (
+        <Banner
+          tone="blocked"
+          actions={
+            <ButtonLink to={`/candidates?status=EXCLUDED&candidateId=${candidateId}`} size="sm">
+              여정 목록에서 다시 작업
+            </ButtonLink>
+          }
+        >
+          {candidate.data.excludedReason
+            ? `${EXCLUDED_NOTICE[candidate.data.excludedReason]} `
+            : ''}
+          {EXCLUDED_NOTICE_NEXT}
+        </Banner>
+      ) : null}
       {currentScreen ? (
         <HelpPanel id={helpId} open={helpOpen} onClose={closeHelp}>
           <ScreenHelp screen={currentScreen} />

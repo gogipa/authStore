@@ -37,8 +37,8 @@ export function CostBreakdownPanel({ judgement, forwarderNote }: CostBreakdownPa
       </div>
       {judgement.shippingEstimated ? (
         <p className={styles.chips}>
-          <Chip tone="outline">송료 추정</Chip>
-          <span className={styles.caption}>일본 내 송료를 모를 때 기본 송료로 계산했습니다.</span>
+          <Chip tone="outline">일본 내 배송비 추정</Chip>
+          <span className={styles.caption}>일본 내 배송비를 모를 때 기본값으로 계산했습니다.</span>
         </p>
       ) : null}
       {size ? (

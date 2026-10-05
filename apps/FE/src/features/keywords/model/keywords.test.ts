@@ -8,7 +8,11 @@ import {
   expectedCollectionPeriod,
   isStructureChangeReason,
   pagesPerCidFor,
+  snapshotOrigin,
 } from './keywords';
+
+/** 수집 상태 fixture(2026-09-24 13:30 KST) 기준의 같은 날 */
+const SAME_DAY = new Date('2026-09-24T07:00:00.000Z');
 
 describe('키워드 화면 모델(P2-01)', () => {
   it('기간: 종료일 = 어제(KST), 시작일 = 1개월 전(월말은 그 달 마지막 날) — 서버 규칙과 같다', () => {
@@ -35,14 +39,19 @@ describe('키워드 화면 모델(P2-01)', () => {
   });
 
   it("머리 줄: '마지막 수집 13:30 · 출처 데이터랩 · 2초 간격 · 이상 없음'(보드), 중단·수집 중·처음", () => {
-    expect(collectionStatusLine(collectionStatus())).toBe(
+    expect(collectionStatusLine(collectionStatus(), SAME_DAY)).toBe(
       '마지막 수집 13:30 · 출처 데이터랩 · 2초 간격 · 이상 없음',
     );
     expect(
       collectionStatusLine(
         collectionStatus({ lastStatus: 'ABORTED', lastAbortReason: 'HTTP_429' }),
+        SAME_DAY,
       ),
     ).toBe('마지막 수집 13:30 · 출처 데이터랩 · 2초 간격 · 중단: 요청 과다(429)');
+    // 오늘이 아니면 날짜를 붙인다(며칠 전 수집이 방금 것처럼 보이지 않게)
+    expect(collectionStatusLine(collectionStatus(), new Date('2026-09-26T03:00:00.000Z'))).toBe(
+      '마지막 수집 09-24 13:30 · 출처 데이터랩 · 2초 간격 · 이상 없음',
+    );
     expect(collectionStatusLine(collectionStatus({ collecting: true }))).toBe(
       '수집 중 · 출처 데이터랩 · 2초 간격',
     );
@@ -84,5 +93,39 @@ describe('키워드 화면 모델(P2-01)', () => {
     expect(abortMessage('NETWORK_ERROR')).toMatch(/응답을 받지 못해/);
     expect(abortMessage('APP_RESTART')).toMatch(/앱이 다시 시작되어/);
     expect(abortMessage('INTERRUPTED')).toMatch(/도중에 멈췄습니다/);
+  });
+
+  it('표 출처 줄: 처음 연 표는 지난번에 받아 둔 순위, 이 화면에서 만든 묶음만 방금 받은 순위', () => {
+    const base = {
+      collectedAt: '2026-09-24T04:30:00.000Z',
+      method: 'BUTTON',
+      status: 'COMPLETED',
+    } as const;
+    expect(snapshotOrigin(base, false, SAME_DAY)).toEqual({
+      label: '지난번에 받아 둔 순위',
+      detail: '오늘 13:30에 데이터랩에서 받음 · 새 순위가 필요하면 위 [수집]을 누르세요',
+      tone: 'outline',
+    });
+    expect(snapshotOrigin(base, false, new Date('2026-09-26T03:00:00.000Z'))).toMatchObject({
+      label: '지난번에 받아 둔 순위',
+      detail: '09-24 13:30에 데이터랩에서 받음 · 새 순위가 필요하면 위 [수집]을 누르세요',
+    });
+    expect(snapshotOrigin(base, true, SAME_DAY)).toEqual({
+      label: '방금 새로 받은 순위',
+      detail: '오늘 13:30에 데이터랩에서 받음',
+      tone: 'accent',
+    });
+    expect(snapshotOrigin({ ...base, method: 'PASTE' }, true, SAME_DAY).label).toBe(
+      '방금 붙여넣은 순위',
+    );
+    expect(snapshotOrigin({ ...base, method: 'PASTE' }, false, SAME_DAY).label).toBe(
+      '지난번에 붙여넣은 순위',
+    );
+    expect(snapshotOrigin({ ...base, status: 'RUNNING' }, true, SAME_DAY).label).toBe(
+      '지금 받는 중',
+    );
+    expect(snapshotOrigin({ ...base, status: 'ABORTED' }, false, SAME_DAY).label).toBe(
+      '중간에 멈춘 수집',
+    );
   });
 });

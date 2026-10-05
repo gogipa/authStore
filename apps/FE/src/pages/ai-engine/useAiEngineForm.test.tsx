@@ -13,6 +13,7 @@ import { createTestQueryClient } from '@/test/renderRoute';
 import {
   BEFORE_SAVE_TIMEOUT_MESSAGE,
   BEFORE_SAVE_TIMEOUT_MS,
+  SMOKE_TEST_TIMEOUT_MESSAGE,
   type UseAiEngineFormInput,
   useAiEngineForm,
 } from './useAiEngineForm';
@@ -111,5 +112,45 @@ describe('useAiEngineForm 저장 흐름(P1-11 규칙 11, Proposed 보강)', () =
         CODEX: { text: null, vision: null },
       },
     });
+  });
+});
+
+describe('useAiEngineForm 카드 [연결 테스트](Proposed)', () => {
+  it('보내면 결과 행이 올 때까지 testingEngine이 켜져 있고, 그 사이 다른 [연결 테스트]는 보내지 않는다', async () => {
+    const { api, view, initialProps } = setup();
+    const posts = () => api.requests.filter((r) => r.method === 'POST');
+    act(() => view.result.current.testEngine('AGY'));
+    expect(view.result.current.testingEngine).toBe('AGY');
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    // 요청(202)이 끝나도 결과가 오기 전까지는 계속 테스트 중
+    await waitFor(() => expect(view.result.current.requesting).toBe(false));
+    expect(view.result.current.testingEngine).toBe('AGY');
+    act(() => view.result.current.testEngine('CLAUDE'));
+    expect(posts()).toHaveLength(1);
+
+    view.rerender({
+      ...initialProps,
+      latest: aiCliCheckLatestList({
+        ...boardChecks(),
+        AGY: aiCliCheck({
+          id: 9_100,
+          engineCode: 'AGY',
+          trigger: 'MANUAL',
+          model: AGY_TEXT,
+          authStatus: 'UNKNOWN',
+          checkedAt: new Date().toISOString(),
+        }),
+      }),
+    });
+    await waitFor(() => expect(view.result.current.testingEngine).toBeNull());
+    expect(view.result.current.message).toBeNull();
+  });
+
+  it('결과(SSE)가 제한 시간 안에 오지 않으면 testingEngine을 끄고 안내한다', async () => {
+    const { view } = setup(30);
+    act(() => view.result.current.testEngine('AGY'));
+    expect(view.result.current.testingEngine).toBe('AGY');
+    await waitFor(() => expect(view.result.current.testingEngine).toBeNull());
+    expect(view.result.current.message).toBe(SMOKE_TEST_TIMEOUT_MESSAGE);
   });
 });

@@ -513,6 +513,14 @@ describe('② 라쿠텐 연동 API(e2e, 가짜 라쿠텐, P2-02)', () => {
       });
       const id = (comparison.body as { id: number }).id;
 
+      // 비교를 하지 않은 URL 버전은 입력 대기여도 검색 결과 더 보기를 받지 않는다(D-47)
+      const noMore = await http()
+        .post(`/api/v1/sourcing-comparisons/${id}/search-more`)
+        .set(CLIENT);
+      expect(noMore.status).toBe(409);
+      expect((noMore.body as { code: string }).code).toBe('STEP_RUN_NOT_WAITING_INPUT');
+      expect(server.callsOf('SEARCH')).toHaveLength(0);
+
       // 웹 화면 요청만 받는다
       const noHeader = await http().put(
         `/api/v1/sourcing-comparisons/${id}/adult-product-confirmation`,
@@ -627,13 +635,13 @@ describe('② 라쿠텐 연동 API(e2e, 가짜 라쿠텐, P2-02)', () => {
       });
       expect(completed?.candidateId).toBe(candidateId);
 
-      // 요청: 규칙 1 파라미터 + 키(URL에만), 호스트 openapi.rakuten.co.jp
+      // 요청: 규칙 1 파라미터 + 키(URL에만), 호스트 openapi.rakuten.co.jp. ② 첫 검색은 관련도 순(D-47 — 상품 고르기 목록)
       const call = server.callsOf('SEARCH')[0]!;
       expect(new URL(call.url).host).toBe('openapi.rakuten.co.jp');
       expect(call.params).toMatchObject({
         keyword: QUERY,
         genreId: '558885',
-        sort: '+itemPrice',
+        sort: 'standard',
         hits: '30',
         availability: '1',
         imageFlag: '1',
@@ -865,6 +873,11 @@ describe('② 라쿠텐 연동 API(e2e, 가짜 라쿠텐, P2-02)', () => {
         couponYen: 300,
         isVerified: true,
       });
+      // 사진 주소(D-47)도 행 복사에 따라온다
+      expect(selected.imageUrl).toContain('/shop-a/cabinet/asics-1201a019-108_1.jpg');
+      expect(rows.every((r) => r.imageUrl !== null && r.imageUrl.startsWith('https://'))).toBe(
+        true,
+      );
       expect(selected.shopEventMultiplier.toNumber()).toBe(2);
       expect(selected.rakutenItemId).not.toBe(rakutenItem.id);
       const refetched = await t.prisma.rakutenItem.findUniqueOrThrow({

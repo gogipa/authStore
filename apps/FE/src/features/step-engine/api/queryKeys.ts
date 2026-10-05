@@ -7,12 +7,12 @@ import type {
   ListStepRunsParams,
 } from '../model/types';
 
-/** step-engine 태그 전체. 후보를 바꾸는 요청(만들기·제외·다시 작업·성별)이 끝나면 이 키로 무효화한다. */
+/** step-engine 태그 전체. 여정을 바꾸는 요청(만들기·제외·다시 작업·성별)이 끝나면 이 키로 무효화한다. */
 export const STEP_ENGINE_TAG_KEY = ['step-engine'] as const;
 
 /**
  * step-engine queryKey(03-2 §6.2: `['step-engine', operationId, params]`). 파라미터 없는 키는 그 연산 전체다
- * (SSE 무효화가 쓴다). 후보 한 건 키의 파라미터는 `{ candidateId }` 하나로 고정한다.
+ * (SSE 무효화가 쓴다). 여정 한 건 키의 파라미터는 `{ candidateId }` 하나로 고정한다.
  */
 export const stepEngineKeys = {
   candidatesAll: qk('step-engine', 'listCandidates'),

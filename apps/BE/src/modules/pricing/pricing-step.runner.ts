@@ -100,7 +100,7 @@ export class PricingStepRunner implements StepRunner {
         fieldErrors: [
           {
             field: 'ownerInputs.couponYen',
-            message: '비교표가 있는 후보는 비교표 행에서 쿠폰을 넣어 주세요.',
+            message: '비교표가 있는 여정은 비교표 행에서 쿠폰을 넣어 주세요.',
             rejectedValue: coupon,
           },
         ],

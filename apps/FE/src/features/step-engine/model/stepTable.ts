@@ -47,13 +47,13 @@ export const STEP_TABLE_ROWS: readonly StepTableRow[] = [
   {
     kind: 'gate',
     gate: 'G3',
-    text: '⑤에서 대표 썸네일을 고르면 통과합니다. 선택본·레퍼런스·앵커 키가 바뀌면 다시 골라야 합니다.',
+    text: '⑤에서 대표 썸네일을 고르면 통과합니다. 선택본·레퍼런스·기준 상품이 바뀌면 다시 골라야 합니다.',
   },
   { kind: 'step', code: 'UPLOAD', no: '⑧', label: '이미지 업로드', source: '⑤ 선택본 · ⑥-3' },
   {
     kind: 'gate',
     gate: 'G4',
-    text: '필수 단계가 모두 끝나고 G2·G3을 통과하면 후보가 승인대기로 바뀝니다. 등록을 요청한 뒤에는 단계 실행과 값 수정이 잠깁니다.',
+    text: '필수 단계가 모두 끝나고 G2·G3을 통과하면 여정이 승인대기로 바뀝니다. 등록을 요청한 뒤에는 단계 실행과 값 수정이 잠깁니다.',
   },
   { kind: 'step', code: 'REGISTER', no: '⑨', label: '등록', source: '②~⑧ 현재 버전' },
 ];

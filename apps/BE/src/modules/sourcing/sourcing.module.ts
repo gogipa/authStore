@@ -17,6 +17,7 @@ import { RakutenItemsController } from './rakuten-items.controller.js';
 import { RakutenItemsService } from './rakuten-items.service.js';
 import { RakutenQueryValidationsController } from './rakuten-query-validations.controller.js';
 import { RowUpdateService } from './row-update.service.js';
+import { SearchMoreService } from './search-more.service.js';
 import { SelectionService } from './selection.service.js';
 import { SourcingComparisonRowsController } from './sourcing-comparison-rows.controller.js';
 import { SourcingComparisonRepository } from './sourcing-comparison.repository.js';
@@ -41,6 +42,7 @@ import { UrlCandidateExtension } from './url-candidate.extension.js';
  * - P2-03: 순수 규칙(anchor-match·gender-detection·stock-judgement·effective-price·ranking·row-calculation), 비교표 읽기·쓰기
  *   (`SourcingComparisonRepository`·`ComparisonScope`), 앵커 + 백그라운드(`AnchorService` — page 2·페이지 조회 반복·AI 보조·
  *   제외 판단), 재고 확인·수동 행·행 수정·선택 서비스
+ * - D-47: 검색 결과 더 보기(`SearchMoreService`) — 기준 상품 전 목록을 다음 페이지로 늘린다
  */
 @Module({
   imports: [IntegrationsModule, SettingsModule, StepEngineModule],
@@ -65,6 +67,7 @@ import { UrlCandidateExtension } from './url-candidate.extension.js';
     AnchorService,
     StockCheckService,
     ManualRowService,
+    SearchMoreService,
     RowUpdateService,
     SelectionService,
     SourcingGenderListener,

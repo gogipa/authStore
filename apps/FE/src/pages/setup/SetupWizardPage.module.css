@@ -1,0 +1,162 @@
+/* SCR-15 설정 마법사(보드 없음, 화면시안_명세 §9, D-30). 2열: 단계 목록 240px · 단계 판(최대 760px). 900px보다 좁으면 1열. 새 토큰 없음. */
+.layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 760px);
+  align-items: start;
+  gap: var(--space-6);
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.nav {
+  min-width: 0;
+}
+
+.stepList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 단계 버튼: 36px. 지금 단계는 accent-soft 바탕 + accent 글자(내비 현재 항목과 같은 결) */
+.stepButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink);
+  font: var(--type-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.stepButton:hover {
+  background: var(--color-surface);
+}
+
+.stepButton[aria-current='step'] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: var(--type-body-strong-weight);
+}
+
+.stepNo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font: var(--type-label);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-6);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.progress {
+  font: var(--type-label);
+  color: var(--color-ink-faint);
+}
+
+/* 단계 제목(h2): 패널·섹션 제목 크기(화면 제목 h1의 title 크기는 화면당 하나) */
+.title {
+  font: var(--type-heading);
+  color: var(--color-ink);
+}
+
+.lead {
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: var(--space-4);
+  font: var(--type-body);
+  color: var(--color-ink);
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.statusTitle {
+  font: var(--type-label);
+  color: var(--color-ink-muted);
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  font: var(--type-body);
+}
+
+.facts dt {
+  font: var(--type-body-strong);
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--color-ink-muted);
+}
+
+.note {
+  font: var(--type-body);
+  color: var(--color-ink-muted);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.hint {
+  font: var(--type-caption);
+  color: var(--color-ink-faint);
+}

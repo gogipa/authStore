@@ -89,6 +89,21 @@ export class SourcingSelectionResultDto {
   staleDownstreamSteps!: string[];
 }
 
+/** 05-2 SourcingSearchMoreResult(검색 결과 더 보기 `loadMoreSourcingSearchRows`) */
+export class SourcingSearchMoreResultDto {
+  @ApiProperty({
+    type: 'integer',
+    minimum: 0,
+    description: '새로 더한 행 수(이미 있는 상품·아동용 단어 행은 뺀 수)',
+  })
+  addedRowCount!: number;
+  @ApiProperty({
+    type: Boolean,
+    description: '다음 페이지가 더 있을 수 있는가(받은 페이지가 가득 찼고 새 행이 있었으면 true)',
+  })
+  hasMore!: boolean;
+}
+
 /** 05-2 SourcingComparisonRow.aiMatch(AI 보조 판정 참고값) */
 export class SourcingAiMatchDto {
   @ApiPropertyOptional({ type: Boolean })
@@ -119,6 +134,14 @@ export class SourcingComparisonRowViewDto {
   itemName!: string;
   @ApiProperty({ type: String, maxLength: 2048 })
   itemUrl!: string;
+  @ApiPropertyOptional({
+    type: String,
+    maxLength: 2048,
+    nullable: true,
+    description:
+      '검색 결과의 대표 사진 주소(Item Search mediumImageUrls[0]). 없거나 수동 행이면 null',
+  })
+  imageUrl?: string | null;
   @ApiPropertyOptional({ type: 'integer', nullable: true })
   apiItemPriceYen?: number | null;
   @ApiPropertyOptional({ type: 'integer', nullable: true })

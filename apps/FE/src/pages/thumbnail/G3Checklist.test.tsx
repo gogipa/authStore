@@ -70,7 +70,7 @@ describe('G3Checklist(SCR-05 선택 전 확인, P3-02)', () => {
     expect(screen.queryByRole('checkbox', { name: /같은 상품·색상 확인/ })).not.toBeInTheDocument();
     expect(
       screen.getByText(
-        "레퍼런스가 이 후보의 라쿠텐 상품(같은 앵커 키) 이미지라서 '같은 상품·색상' 확인은 따로 받지 않습니다.",
+        "레퍼런스가 이 여정의 라쿠텐 상품(같은 기준 상품) 이미지라서 '같은 상품·색상' 확인은 따로 받지 않습니다.",
       ),
     ).toBeInTheDocument();
   });
@@ -108,7 +108,7 @@ describe('G3Checklist(SCR-05 선택 전 확인, P3-02)', () => {
     expect(screen.getByText('G3 썸네일 선택 · 통과')).toBeInTheDocument();
     expect(screen.getByText('14:24')).toBeInTheDocument();
     expect(
-      screen.getByText('레퍼런스·선택본·앵커 키가 바뀌면 다시 골라야 합니다.'),
+      screen.getByText('레퍼런스·선택본·기준 상품이 바뀌면 다시 골라야 합니다.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '다음: ⑥ 상세 콘텐츠' })).toHaveAttribute(
       'href',

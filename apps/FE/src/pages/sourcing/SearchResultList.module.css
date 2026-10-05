@@ -1,0 +1,118 @@
+/* ② '상품 고르기' 목록(D-47): 쇼핑몰 목록 — 사진 · 상품명(2줄) · 가격·샵·모델 번호 · 버튼. 토큰만 쓴다. */
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.note {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--color-ink-muted);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+
+.item:first-child {
+  border-top: none;
+}
+
+.info {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* 일본어 상품명은 길다 — 2줄까지 보이고 나머지는 말줄임(전체는 마우스를 올리면 title) */
+.name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font: var(--type-body-strong);
+  color: var(--color-ink);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  font: var(--type-body);
+  color: var(--color-ink-muted);
+}
+
+.meta > * + *::before {
+  content: '·';
+  margin: 0 var(--space-2);
+  color: var(--color-ink-faint);
+}
+
+.price {
+  font: var(--type-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+}
+
+.item > button {
+  flex-shrink: 0;
+}
+
+.more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hint {
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
+/* 글자만 있는 작은 단추(링크처럼 보인다) */
+.toggle {
+  align-self: center;
+  padding: var(--space-1);
+  border: none;
+  background: transparent;
+  font: var(--type-caption);
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.entry {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.code {
+  width: 160px;
+}
+
+.error {
+  font: var(--type-caption);
+  color: var(--color-failed);
+}

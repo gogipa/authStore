@@ -40,7 +40,7 @@ import {
 import { RAKUTEN_URL_PANEL_ID, SOURCING_ENTRY_PATH, SourcingEntry } from './SourcingEntry';
 import styles from './CandidatesPage.module.css';
 
-/** 목록 필터(CandidateWork.dc.html '후보 거르기'): 전체(진행 중) · 작업중 · 승인대기 · 제외 */
+/** 목록 필터(CandidateWork.dc.html '여정 거르기'): 전체(진행 중) · 작업중 · 승인대기 · 제외 */
 type StatusFilter = 'ALL' | 'WORKING' | 'AWAITING_APPROVAL' | 'EXCLUDED';
 const FILTERS: readonly { value: StatusFilter; label: string }[] = [
   { value: 'ALL', label: '전체' },
@@ -64,7 +64,7 @@ function parseFilter(value: string | null): StatusFilter {
   return FILTERS.some((f) => f.value === value) ? (value as StatusFilter) : 'ALL';
 }
 
-/** 후보 한 줄의 상태 줄: '작업중 · ③ 판정' + 단계 상태 칩, 승인대기면 'G4 최종 승인 · 확인 필요', 제외면 사유 */
+/** 여정 한 줄의 상태 줄: '작업중 · ③ 판정' + 단계 상태 칩, 승인대기면 'G4 최종 승인 · 확인 필요', 제외면 사유 */
 function StatusLine({ candidate }: { candidate: CandidateSummary }) {
   const label = CANDIDATE_STATUS_LABEL[candidate.status];
   if (candidate.status === 'AWAITING_APPROVAL' || candidate.status === 'VALIDATED') {
@@ -95,24 +95,49 @@ function StatusLine({ candidate }: { candidate: CandidateSummary }) {
   );
 }
 
+/** [삭제]에 마우스를 올리면 보이는 설명 — 지우는 게 아니라 '제외'로 돌려 되살릴 수 있다 */
+export const DELETE_TIP =
+  "목록에서 치웁니다. 데이터는 남아 있어서, 위 '제외' 필터에서 열어 [다시 작업]으로 되살릴 수 있습니다.";
+
 function CandidateListItem({
   candidate,
   selected,
   href,
+  deleting,
+  onDelete,
 }: {
   candidate: CandidateSummary;
   selected: boolean;
   href: string;
+  deleting: boolean;
+  onDelete: () => void;
 }) {
+  // 이미 제외했거나 등록을 진행 중·끝낸 여정은 지울 수 없다(여정 머리의 [삭제]는 같은 까닭을 보여 준다)
+  const deletable = candidate.status !== 'EXCLUDED' && !LOCKED.includes(candidate.status);
   return (
     <li className={cx(styles.item, selected && styles.itemSelected)}>
-      <Link
-        to={href}
-        aria-current={selected ? 'true' : undefined}
-        className={cx(styles.itemName, selected && styles.itemNameSelected)}
-      >
-        {candidateDisplayName(candidate)}
-      </Link>
+      <div className={styles.itemTop}>
+        <Link
+          to={href}
+          aria-current={selected ? 'true' : undefined}
+          className={cx(styles.itemName, selected && styles.itemNameSelected)}
+        >
+          {candidateDisplayName(candidate)}
+        </Link>
+        {deletable ? (
+          <Button
+            variant="danger"
+            size="sm"
+            className={styles.deleteButton}
+            title={DELETE_TIP}
+            disabled={deleting}
+            aria-label={`${candidateDisplayName(candidate)} 삭제`}
+            onClick={onDelete}
+          >
+            {deleting ? '삭제 중…' : '삭제'}
+          </Button>
+        ) : null}
+      </div>
       <StatusLine candidate={candidate} />
       {candidate.creationPath === 'RAKUTEN_URL' ? (
         <div className={styles.badges}>
@@ -124,14 +149,14 @@ function CandidateListItem({
   );
 }
 
-/** '입력 고르기'(F-CW-22): 단계 화면을 후보 없이 열었을 때 그 단계를 지금 실행할 수 있는 후보를 고른다 */
+/** '입력 고르기'(F-CW-22): 단계 화면을 여정 없이 열었을 때 그 단계를 지금 실행할 수 있는 여정을 고른다 */
 function InputPicker({ stepCode }: { stepCode: StepCode }) {
   const runnable = useCandidates({ runnableStep: stepCode, size: LIST_SIZE });
   const rows = runnable.data?.content ?? [];
   return (
     <>
       {stepCode === 'SOURCING' ? <SourcingEntry /> : null}
-      <Panel title="입력 고르기" caption={`${STEP_NAME[stepCode]} 화면에서 작업할 후보를 고릅니다`}>
+      <Panel title="입력 고르기" caption={`${STEP_NAME[stepCode]} 화면에서 할 여정을 고릅니다`}>
         {runnable.isError ? <Banner tone="warning">{runnable.error.message}</Banner> : null}
         {rows.length === 0 && !runnable.isPending ? (
           // 빈 상태 안내(F-GD-03, D-29)
@@ -146,7 +171,7 @@ function InputPicker({ stepCode }: { stepCode: StepCode }) {
             {EMPTY_STATE.inputPicker.text}
           </EmptyState>
         ) : (
-          <ul className={styles.pickList} aria-label="실행할 수 있는 후보">
+          <ul className={styles.pickList} aria-label="실행할 수 있는 여정">
             {rows.map((candidate) => (
               <li key={candidate.id} className={styles.pickItem}>
                 <span className={styles.pickName}>{candidateDisplayName(candidate)}</span>
@@ -162,7 +187,7 @@ function InputPicker({ stepCode }: { stepCode: StepCode }) {
   );
 }
 
-/** 고른 후보: 후보 머리(제외·다시 작업) + 단계 표(P1-05) */
+/** 고른 여정: 여정 머리(삭제·다시 작업) + 단계 표(P1-05) */
 function SelectedCandidate({ candidateId }: { candidateId: number }) {
   const candidate = useCandidate(candidateId);
   const exclude = useExcludeCandidate();
@@ -175,12 +200,12 @@ function SelectedCandidate({ candidateId }: { candidateId: number }) {
     return (
       <Banner tone="warning">
         {candidate.error.code === 'CANDIDATE_NOT_FOUND'
-          ? '후보를 찾을 수 없습니다.'
+          ? '여정을 찾을 수 없습니다.'
           : candidate.error.message}
       </Banner>
     );
   }
-  if (!detail) return <p className={styles.hint}>후보 정보를 불러오는 중입니다.</p>;
+  if (!detail) return <p className={styles.hint}>여정 정보를 불러오는 중입니다.</p>;
 
   return (
     <>
@@ -230,9 +255,9 @@ function CandidateActions({
     return (
       <>
         <Button variant="danger" disabled aria-describedby="exclude-locked">
-          후보 제외
+          삭제
         </Button>
-        <DisabledReason id="exclude-locked">등록을 진행 중이거나 끝난 후보입니다</DisabledReason>
+        <DisabledReason id="exclude-locked">등록을 진행 중이거나 끝난 여정입니다</DisabledReason>
       </>
     );
   }
@@ -245,18 +270,22 @@ function CandidateActions({
         exclude.mutate(detail.id);
       }}
     >
-      후보 제외
+      삭제
     </Button>
   );
 }
 
+/** [URL로 만들기]에 마우스를 올리면 보이는 설명(누르면 '입력 고르기'의 URL 붙여넣기로 간다) */
+export const URL_CREATE_TIP =
+  "라쿠텐 상품 주소(URL)로 키워드 없이 바로 여정을 만듭니다. 비교표 없이 ②를 마치고 '비교 안 함' 배지가 붙습니다.";
+
 /**
- * SCR-12 후보 작업 목록(CandidateWork.dc.html)의 M1 부분.
- * - 왼쪽: '후보' 목록과 필터(전체·작업중·승인대기·제외 + 수, URL `?status=`). 줄마다 표시명·상태·이어 할 단계와 그 상태 칩,
- *   URL 후보는 '수동'·'비교 안 함'. 'URL로 만들기'는 '입력 고르기'(② 소싱)의 URL 붙여넣기로 간다(P2-02).
- * - 오른쪽: `?candidateId=`의 후보 머리(후보 제외·다시 작업)와 단계 표(StepTable, P1-05), `?runnableStep=`이면 '입력 고르기'.
- *   ② 소싱이면 그 위에 '검색어로 시작'·'URL로 바로 후보 만들기'(키워드 없이 시작, P2-02 Proposed).
- * 임시 후보 줄·여러 후보 같은 단계 실행은 M2라 만들지 않는다.
+ * SCR-12 여정 목록(CandidateWork.dc.html)의 M1 부분.
+ * - 왼쪽: '여정' 목록과 필터(전체·작업중·승인대기·제외 + 수, URL `?status=`). 줄마다 표시명·상태·이어 할 단계와 그 상태 칩,
+ *   URL 여정은 '수동'·'비교 안 함'. 'URL로 만들기'는 '입력 고르기'(② 소싱)의 URL 붙여넣기로 간다(P2-02).
+ * - 오른쪽: `?candidateId=`의 여정 머리(삭제·다시 작업)와 단계 표(StepTable, P1-05), `?runnableStep=`이면 '입력 고르기'.
+ *   ② 소싱이면 그 위에 '검색어로 시작'·'URL로 바로 여정 만들기'(키워드 없이 시작, P2-02 Proposed).
+ * 임시 여정 줄·여러 여정 같은 단계 실행은 M2라 만들지 않는다.
  */
 export function CandidatesPage() {
   const [params, setParams] = useSearchParams();
@@ -294,12 +323,14 @@ export function CandidatesPage() {
     return `/candidates?${next.toString()}`;
   };
   const rows = list.data?.content ?? [];
+  // 목록 줄의 [삭제](= 제외). 여정 머리의 [삭제]와 같은 요청이다
+  const remove = useExcludeCandidate();
 
   return (
     <>
       <PageHeader
-        title="후보 작업"
-        description="후보마다 단계 상태를 보고, 멈춘 단계만 골라 실행합니다"
+        title="여정"
+        description="여정마다 단계 상태를 보고, 멈춘 단계만 골라 실행합니다"
         help={<ScreenHelp screen="candidates" />}
       />
       <div className={styles.layout}>
@@ -307,29 +338,37 @@ export function CandidatesPage() {
           <div className={styles.listHead}>
             <div className={styles.titleRow}>
               <h2 id="list-title" className={styles.sectionTitle}>
-                후보
+                여정
               </h2>
               {list.data ? (
                 <span className={styles.count}>{formatCount(list.data.page.totalElements)}</span>
               ) : null}
             </div>
             <div className={styles.urlCreate}>
-              <ButtonLink to={`${SOURCING_ENTRY_PATH}#${RAKUTEN_URL_PANEL_ID}`}>
+              <ButtonLink
+                to={`${SOURCING_ENTRY_PATH}#${RAKUTEN_URL_PANEL_ID}`}
+                title={URL_CREATE_TIP}
+              >
                 URL로 만들기
               </ButtonLink>
             </div>
           </div>
           <FilterToggleGroup
-            aria-label="후보 거르기"
+            aria-label="여정 거르기"
             look="soft"
             items={filterItems}
             value={filter}
             onValueChange={(value) => updateParams({ status: value === 'ALL' ? null : value })}
           />
           {list.isError ? <Banner tone="warning">{list.error.message}</Banner> : null}
+          {remove.error ? (
+            <Banner tone="blocked" role="alert">
+              {isApiRequestError(remove.error) ? remove.error.message : '삭제하지 못했습니다.'}
+            </Banner>
+          ) : null}
           {rows.length === 0 && !list.isPending ? (
             filter === 'ALL' && !list.isError ? (
-              // 빈 상태 안내(F-GD-03, D-29): 진행 중 후보가 하나도 없을 때 다음 행동
+              // 빈 상태 안내(F-GD-03, D-29): 진행 중인 여정이 하나도 없을 때 다음 행동
               <EmptyState
                 title={EMPTY_STATE.candidatesList.title}
                 actions={
@@ -349,13 +388,15 @@ export function CandidatesPage() {
               <p className={styles.hint}>{EMPTY_STATE.candidatesFiltered.title}</p>
             )
           ) : (
-            <ul className={styles.list} aria-label="후보 목록">
+            <ul className={styles.list} aria-label="여정 목록">
               {rows.map((candidate) => (
                 <CandidateListItem
                   key={candidate.id}
                   candidate={candidate}
                   selected={candidate.id === selectedId}
                   href={hrefFor(candidate.id)}
+                  deleting={remove.isPending && remove.variables === candidate.id}
+                  onDelete={() => remove.mutate(candidate.id)}
                 />
               ))}
             </ul>
@@ -366,8 +407,8 @@ export function CandidatesPage() {
           {selectedId !== null ? (
             <SelectedCandidate key={selectedId} candidateId={selectedId} />
           ) : runnableStep ? null : (
-            <Panel aria-label="고른 후보 없음">
-              <p className={styles.hint}>왼쪽 목록에서 후보를 고르면 게이트와 단계를 봅니다.</p>
+            <Panel aria-label="고른 여정 없음">
+              <p className={styles.hint}>왼쪽 목록에서 여정을 고르면 게이트와 단계를 봅니다.</p>
             </Panel>
           )}
         </div>

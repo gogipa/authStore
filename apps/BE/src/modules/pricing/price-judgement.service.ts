@@ -89,7 +89,7 @@ export class PriceJudgementService {
     const run = await this.prisma.stepRun.findUnique({ where: { id: runId } });
     if (!run) throw new ApiException('STEP_RUN_NOT_FOUND');
     if (run.candidateId !== candidateId || run.stepCode !== 'PRICING') {
-      throw invalidQuery('stepRunId', '이 후보의 ③ 판정 실행이 아닙니다.');
+      throw invalidQuery('stepRunId', '이 여정의 ③ 판정 실행이 아닙니다.');
     }
     const pj = await this.snapshots.findByStepRun(run.id);
     if (!pj) throw outputNotFound();

@@ -71,6 +71,7 @@ class FakeSearchPort implements RakutenSearchPort {
           reviewAverage: null,
           shipOverseasFlag: null,
           genreId: null,
+          imageUrl: null,
           raw,
         },
       ],

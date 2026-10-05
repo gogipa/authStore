@@ -62,7 +62,7 @@ export function candidateSummary(
   };
 }
 
-/** 후보 상세(05-2 CandidateDetail) */
+/** 여정 상세(05-2 CandidateDetail) */
 export function candidateDetail(patch: Partial<CandidateDetail> & { id: number }): CandidateDetail {
   return {
     creationPath: 'SEARCH_QUERY',
@@ -109,7 +109,7 @@ export function page<T>(content: T[], totalElements = content.length) {
   };
 }
 
-/** 상태별 후보 수(상태 8개) */
+/** 상태별 여정 수(상태 8개) */
 export function statusCounts(counts: Partial<Record<CandidateStatus, number>> = {}) {
   const statuses: CandidateStatus[] = [
     'TEMP',

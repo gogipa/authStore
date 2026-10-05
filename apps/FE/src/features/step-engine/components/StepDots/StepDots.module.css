@@ -1,4 +1,4 @@
-/* 단계 점(Main.dc.html '진행 중 후보'): 22px 네모, radius 4, 상태 soft 바탕 + 상태 색 아이콘. 크기 토큰 없음(04-2 §5). */
+/* 단계 점(Main.dc.html '진행 중 여정'): 22px 네모, radius 4, 상태 soft 바탕 + 상태 색 아이콘. 크기 토큰 없음(04-2 §5). */
 .row {
   display: inline-flex;
   align-items: center;

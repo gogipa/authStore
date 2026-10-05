@@ -26,6 +26,8 @@ export interface SearchRowDraft {
   shopName: string | null;
   itemName: string;
   itemUrl: string;
+  /** 상품 사진 주소(Item Search `mediumImageUrls` 첫 값, D-47). 없으면 null */
+  imageUrl: string | null;
   apiItemPriceYen: number | null;
   apiItemPriceMin3Yen: number | null;
   apiPointRate: number | null;

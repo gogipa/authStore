@@ -17,7 +17,7 @@ export function categoryCheck(ctx: PreValidationContext): PreValidationCheck {
   }
   const problems: CheckProblem[] = [];
   if (candidate.leafCategoryId !== category.leafCategoryId) {
-    problems.push({ message: '후보의 카테고리가 ④ 결정과 다릅니다', stepCode: 'CATEGORY' });
+    problems.push({ message: '여정의 카테고리가 ④ 결정과 다릅니다', stepCode: 'CATEGORY' });
   }
   if (!categoryLeaf.exists || categoryLeaf.removed) {
     problems.push({
@@ -31,7 +31,7 @@ export function categoryCheck(ctx: PreValidationContext): PreValidationCheck {
   const whole = category.wholeCategoryName ?? '';
   if (category.genderPathMatch !== true || !gender || !genderPathMatches(gender, whole)) {
     problems.push({
-      message: `후보 성별(${gender === 'MALE' ? '남성' : gender === 'FEMALE' ? '여성' : '정보 없음'})과 카테고리 경로가 맞지 않습니다`,
+      message: `여정 성별(${gender === 'MALE' ? '남성' : gender === 'FEMALE' ? '여성' : '정보 없음'})과 카테고리 경로가 맞지 않습니다`,
       stepCode: 'CATEGORY',
     });
   }

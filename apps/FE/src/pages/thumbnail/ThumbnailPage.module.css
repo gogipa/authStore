@@ -142,6 +142,17 @@
   flex-shrink: 0;
 }
 
+/* '지금 여기' 표시(NowMark)로 감싼 칸이 감싸기 전과 같은 가로 자리를 차지하게 한다(D-41) */
+.optionsSlot {
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.growSlot {
+  flex-grow: 1;
+  min-width: 0;
+}
+
 .faceGroup {
   display: flex;
   flex-direction: column;

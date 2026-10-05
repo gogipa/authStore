@@ -15,19 +15,28 @@ export const RAKUTEN_QUERY_MAX_HALF_WIDTH = 128;
 
 /** 장르 기본값(설정 sourcing.genreId — 검사 결과가 오기 전에 보인다) */
 export const DEFAULT_RAKUTEN_GENRE_ID = 558885;
-/** 장르 이름(Sourcing 보드 '장르 · 고정 靴 558885') */
-export const RAKUTEN_GENRE_NAME = '靴';
+/** 장르 이름('검색 분류 · 고정 신발(靴) 558885', D-34: 처음 쓰는 사람이 읽을 수 있게 한국어를 앞에 둔다) */
+export const RAKUTEN_GENRE_NAME = '신발(靴)';
 
 /** 아동화 필터 안내(Sourcing 보드 검색 조건 아래 문구 그대로, F-SO-04) */
 export const CHILD_FILTER_NOTE =
-  '모든 검색에 장르 靴와 제외어(中古·キッズ·ジュニア·ベビー 등)를 붙이고, 상품명에 아동 단어가 있으면 한 번 더 뺍니다. 검색이 막히면 이유를 한국어로 알립니다.';
+  '신발(靴)만 검색하고, 중고(中古)·아동용(キッズ·ジュニア·ベビー) 상품은 빼고 찾습니다. 상품명에 아동용 단어가 있으면 한 번 더 거릅니다. 검색이 막히면 이유를 한국어로 알립니다.';
 
 /** URL 붙여넣기 머리 캡션(보드 그대로) */
 export const URL_PASTE_CAPTION = '건당 페이지 1회 조회 · 하루 조회에 포함';
 
 /** URL 붙여넣기 안내(보드 그대로, F-SO-31·33·35) */
 export const URL_PASTE_NOTE =
-  "'수동' 행도 재고·실질가·선택을 다른 행과 같은 방식으로 다룹니다. 바로 만든 후보는 비교표 없이 ②를 마치고 '비교 안 함' 배지가 붙습니다. 제외어(中古·インソール·キッズ 등)가 든 상품은 넣지 않고, 같은 상품·색상의 진행 중 후보가 있으면 그 후보를 엽니다.";
+  "검색 결과에 없는 상품을 주소로 직접 넣는 곳입니다. 보통은 쓰지 않아도 됩니다. '수동' 행도 재고·실질가·선택을 다른 행과 같은 방식으로 다룹니다. 바로 만든 여정은 비교표 없이 ②를 마치고 '비교 안 함' 배지가 붙습니다. 제외어(中古·インソール·キッズ 등)가 든 상품은 넣지 않고, 같은 상품·색상의 진행 중 여정이 있으면 그 여정을 엽니다.";
+
+/** 한글이 든 검색어인가(라쿠텐은 일본 쇼핑몰이라 한글로는 거의 결과가 없다) */
+export function hasHangul(text: string): boolean {
+  return /[\u3131-\u318E\uAC00-\uD7A3]/.test(text);
+}
+
+/** 라쿠텐 검색어에 한글이 있을 때 칸 아래 안내(Proposed — '결과 0건'의 가장 흔한 까닭) */
+export const HANGUL_QUERY_HINT =
+  '한글이 들어 있습니다. 라쿠텐은 일본 쇼핑몰이라 한글로는 거의 검색되지 않습니다. 일본어(예: ローファー)나 영문 브랜드·모델로 바꿔 주세요.';
 
 /** URL 입력칸 자리 글(소스에 https 주소를 두지 않는다 — FE 규칙 15) */
 export const URL_PLACEHOLDER = 'item.rakuten.co.jp/{샵}/{상품}/';
@@ -35,7 +44,7 @@ export const URL_PLACEHOLDER = 'item.rakuten.co.jp/{샵}/{상품}/';
 /** '비교표에 넣기'가 꺼진 이유(비교표가 없음 — 검색·비교 ②를 먼저 실행) */
 export const TABLE_MODE_NOT_READY = '② 소싱 검색·비교를 먼저 실행해 주세요';
 /** '비교표에 넣기'가 꺼진 이유(앵커 전 — P2-03 409 ANCHOR_NOT_FIXED) */
-export const TABLE_MODE_NEEDS_ANCHOR = '기준 모델·색상(앵커)을 정한 뒤 넣을 수 있습니다';
+export const TABLE_MODE_NEEDS_ANCHOR = '기준 상품을 정한 뒤 넣을 수 있습니다';
 /** '비교표에 넣기'가 꺼진 이유(② 버전이 입력 대기가 아님) */
 export const TABLE_MODE_CLOSED = '입력을 기다리는 ② 버전에만 넣을 수 있습니다';
 
@@ -47,18 +56,18 @@ export function adultConfirmDescription(maxMm = 235): string {
   return `아동화 의심(최대 ${maxMm}mm 이하)·대상 외 장르로 멈춘 상품만 체크합니다`;
 }
 
-/** 넣는 방법(보드 라디오): 비교표에 넣기(수동 행, P2-03) · 바로 후보 만들기(URL_CREATE) */
+/** 넣는 방법(보드 라디오): 비교표에 넣기(수동 행, P2-03) · 바로 여정 만들기(URL_CREATE) */
 export type UrlPasteMode = 'TABLE' | 'CREATE';
 
 /**
- * 검사 결과 한 줄(보드 '반각 32/128자 · 형식 맞음'). 위반이면 가장 앞 위반의 요약. 검사 전이면 null
+ * 검사 결과 한 줄('길이 32/128 · 사용 가능', D-34: 보드의 '반각 32/128자 · 형식 맞음'을 풀어 썼다). 위반이면 가장 앞 위반의 요약. 검사 전이면 null
  */
 export function queryCheckSummary(
   result: Pick<RakutenQueryValidation, 'valid' | 'halfWidthLength' | 'violations'> | undefined,
 ): { valid: boolean; count: string; text: string } | null {
   if (!result) return null;
   const count = `${result.halfWidthLength}/${RAKUTEN_QUERY_MAX_HALF_WIDTH}`;
-  if (result.valid) return { valid: true, count, text: '형식 맞음' };
+  if (result.valid) return { valid: true, count, text: '사용 가능' };
   const first = result.violations[0];
   const text =
     first?.rule === 'TOO_LONG'
@@ -82,14 +91,14 @@ export function excludedWordsText(words: readonly string[]): string {
   return `상품명에 제외어(${words.join('·')})가 있어 쓸 수 없습니다.`;
 }
 
-/** 입구 검사로 성인용 확인이 필요하다는 안내(후보를 만든 뒤 ②가 입력 대기로 멈춘다) */
+/** 입구 검사로 성인용 확인이 필요하다는 안내(여정을 만든 뒤 ②가 입력 대기로 멈춘다) */
 export function entryCheckNotice(checks: RakutenItemEntryChecks): string | null {
   if (!checks.adultConfirmationRequired) return null;
   const reasons: string[] = [];
   if (checks.childSizeSuspect) reasons.push('아동화 의심(사이즈)');
   if (checks.genreScope === 'OUT_OF_SCOPE') reasons.push('대상 외 장르');
   if (checks.genreScope === 'NOT_FOUND') reasons.push('장르 확인 안 됨');
-  return `${reasons.join('·')} 상품입니다. 후보를 만든 뒤 '${ADULT_CONFIRM_LABEL}'을 체크해야 ②가 끝납니다.`;
+  return `${reasons.join('·')} 상품입니다. 여정을 만든 뒤 '${ADULT_CONFIRM_LABEL}'을 체크해야 ②가 끝납니다.`;
 }
 
 const COLOR_AXIS_WORDS = ['カラー', '色'];
@@ -165,22 +174,36 @@ export function adultConfirmationOf(
   return { required, confirmedAt, canConfirm, maxMm };
 }
 
-/** 비교 칸 요약 글(행이 없을 때·URL 후보 — 비교표 행은 ComparisonTable이 그린다, P2-03) */
+/** 상품 고르기 목록(D-47) 앞 설명 한 줄 */
+export const SEARCH_LIST_NOTE =
+  '라쿠텐 검색 결과입니다. 팔고 싶은 상품 하나를 고르면 그 상품을 파는 샵을 모아 비교해 줍니다.';
+
+/** 검색 결과가 0건일 때 목록 자리 글 — 모델 번호 입력으로 시작한다 */
+export const SEARCH_LIST_EMPTY =
+  '검색 결과가 없어 고를 상품이 없습니다. 모델 번호(型番)를 직접 넣어 주세요.';
+
+/** 목록 아래, 모델 번호로 직접 찾는 칸을 펼치는 링크 글 */
+export const MODEL_ENTRY_TOGGLE = '찾는 상품이 없나요? 모델 번호로 직접 찾기';
+
+/** 상품 고르기 목록의 [더 보기]를 눌렀는데 새로 더한 상품이 없을 때 */
+export const SEARCH_MORE_NOTHING_ADDED = '새로 더한 상품이 없습니다.';
+
+/** 비교 칸 요약 글(행이 없을 때·URL 여정 — 비교표 행은 ComparisonTable이 그린다, P2-03) */
 export function comparisonSummaryText(
   head: Pick<SourcingComparisonDetail, 'comparisonPerformed' | 'exploreMode' | 'rows'> | undefined,
 ): string {
   if (!head) return '② 소싱을 실행하면 라쿠텐 검색 결과가 여기에 나옵니다.';
   if (!head.comparisonPerformed) {
-    return 'URL로 만든 후보라 비교표 없이 ②를 마쳤습니다. 다시 실행하면 이 상품을 앵커로 검색·비교합니다.';
+    return 'URL로 만든 여정이라 비교표 없이 ②를 마쳤습니다. 다시 실행하면 이 상품을 기준 상품으로 검색·비교합니다.';
   }
-  const count = `검색 결과 ${head.rows.length}건 · 상품명에 아동 단어가 있는 상품은 뺐습니다.`;
+  const count = `검색 결과 ${head.rows.length}건 · 상품명에 아동용 단어가 있는 상품은 뺐습니다.`;
   return head.exploreMode
-    ? `${count} 앵커(型番·색상)를 정하면 같은 상품만 모아 비교합니다.`
+    ? `${count} 기준 상품을 정하면 같은 상품을 파는 샵을 모아 비교한 표가 여기에 나옵니다.`
     : count;
 }
 
 /**
- * 409 CANDIDATE_DUPLICATE의 `details.existingCandidateId`(진행 중인 같은 상품·색상 후보 — 화면이 그 후보를 연다, F-SO-35).
+ * 409 CANDIDATE_DUPLICATE의 `details.existingCandidateId`(진행 중인 같은 상품·색상 여정 — 화면이 그 여정을 연다, F-SO-35).
  * 그 밖 오류면 null
  */
 export function existingCandidateIdOf(error: unknown): number | null {

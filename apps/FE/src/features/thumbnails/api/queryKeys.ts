@@ -4,7 +4,7 @@ import { qk } from '@/shared/api/queryKeys';
 export const THUMBNAILS_TAG_KEY = ['thumbnails'] as const;
 
 /**
- * ⑤ 썸네일 queryKey(03-2 §6.2 `['thumbnails', operationId, params]`, P3-01). 후보 한 건 키의 파라미터는 `{ candidateId }`로
+ * ⑤ 썸네일 queryKey(03-2 §6.2 `['thumbnails', operationId, params]`, P3-01). 여정 한 건 키의 파라미터는 `{ candidateId }`로
  * 시작한다 — SSE 무효화(`step-run.status-changed`(THUMBNAIL), shared/api/events.ts)가 부분 일치로 닿는다.
  */
 export const thumbnailKeys = {

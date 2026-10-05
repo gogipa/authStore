@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { ScreenHelp } from '@/features/guide';
+import { ScreenHelp, SETUP_WIZARD_PATH, SETUP_WIZARD_TEXT } from '@/features/guide';
 import {
   formatRecordRate,
   fxAutoCaption,
@@ -76,7 +76,7 @@ const TAB_ID_PREFIX = 'settings';
 const RATE_DIGITS: FractionDigits = { minFractionDigits: 1, maxFractionDigits: 3 };
 
 /**
- * SCR-10 설정(Settings.dc.html)의 M1 부분: 화면 머리, 탭 틀 3개, 'AI 엔진' 링크 카드, '설정 파일 검사'(+ 다시 읽기),
+ * SCR-10 설정(Settings.dc.html)의 M1 부분: 화면 머리(D-30 [설정 마법사] 입구 — 늘), 탭 틀 3개, 'AI 엔진' 링크 카드, '설정 파일 검사'(+ 다시 읽기),
  * '적용 중인 기본값'(비용·부가세 모드·과세 사이즈 판매), 안내 줄. 값은 `GET /settings`의 `content`에서 읽는다.
  * 통과한 설정이 하나도 없으면(503 SETTINGS_INVALID) 차단 띠에 봉투 message를 보인다.
  * P1-09: '구매대행 프로필' 탭 본문과 머리의 '되돌리기'·'저장'(프로필 탭을 볼 때만, Proposed — 다른 탭의 저장은
@@ -106,20 +106,24 @@ export function SettingsPage() {
         description="모든 상품에 공통으로 쓰는 값입니다. 저장할 때 형식을 검사하고, 안전장치를 끄거나 기준을 낮추는 값은 저장하지 않습니다."
         help={<ScreenHelp screen="settings" />}
         actions={
-          tab === 'profile' ? (
-            <>
-              <Button onClick={profileForm.reset} disabled={!profileReady || profileForm.saving}>
-                되돌리기
-              </Button>
-              <Button
-                variant="primary"
-                onClick={profileForm.save}
-                disabled={!profileReady || profileForm.saving}
-              >
-                {profileForm.saving ? '저장 중…' : '저장'}
-              </Button>
-            </>
-          ) : undefined
+          <>
+            {/* D-30: 설정 마법사 입구(늘 보인다) */}
+            <ButtonLink to={SETUP_WIZARD_PATH}>{SETUP_WIZARD_TEXT.open}</ButtonLink>
+            {tab === 'profile' ? (
+              <>
+                <Button onClick={profileForm.reset} disabled={!profileReady || profileForm.saving}>
+                  되돌리기
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={profileForm.save}
+                  disabled={!profileReady || profileForm.saving}
+                >
+                  {profileForm.saving ? '저장 중…' : '저장'}
+                </Button>
+              </>
+            ) : null}
+          </>
         }
       />
       {unavailable ? <Banner tone="blocked">{unavailable.message}</Banner> : null}
@@ -171,7 +175,7 @@ export function SettingsPage() {
             }}
           />
           <Banner tone="info" icon="lock">
-            아동 단어·실존 인물 차단어·고지 필수 블록은 더할 수만 있고 뺄 수 없습니다.
+            아동용 단어·실존 인물 차단어·고지 필수 블록은 더할 수만 있고 뺄 수 없습니다.
           </Banner>
         </aside>
       </div>

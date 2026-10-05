@@ -5,7 +5,7 @@ import type { CandidateCreateRequest, CandidateGender } from '../model/types';
 import { STEP_ENGINE_TAG_KEY } from './queryKeys';
 
 /**
- * 후보를 바꾸는 요청. 성공하면 step-engine 태그 전체(목록·상세·상태별 수·이어서 할 곳·이력)를 무효화한다.
+ * 여정을 바꾸는 요청. 성공하면 step-engine 태그 전체(목록·상세·상태별 수·이어서 할 곳·이력)를 무효화한다.
  * 실패는 `ApiRequestError`(05-3 봉투) — 화면은 `message`를 그대로 보인다(409 CANDIDATE_LOCKED 등).
  */
 function useInvalidateStepEngine() {
@@ -13,7 +13,7 @@ function useInvalidateStepEngine() {
   return () => queryClient.invalidateQueries({ queryKey: STEP_ENGINE_TAG_KEY });
 }
 
-/** 후보 만들기(`POST /candidates`). 201 CandidateDetail. 진행 중 중복은 409 `CANDIDATE_DUPLICATE`(`details.existingCandidateId`) */
+/** 여정 만들기(`POST /candidates`). 201 CandidateDetail. 진행 중 중복은 409 `CANDIDATE_DUPLICATE`(`details.existingCandidateId`) */
 export function useCreateCandidate() {
   const invalidate = useInvalidateStepEngine();
   return useMutation({
@@ -22,7 +22,7 @@ export function useCreateCandidate() {
   });
 }
 
-/** 후보 제외(`POST /candidates/{candidateId}/exclude`) */
+/** 여정 삭제 = 제외로 돌리기(`POST /candidates/{candidateId}/exclude`). 데이터는 남고 [다시 작업]으로 되살릴 수 있다 */
 export function useExcludeCandidate() {
   const invalidate = useInvalidateStepEngine();
   return useMutation({
@@ -34,7 +34,7 @@ export function useExcludeCandidate() {
   });
 }
 
-/** 제외된 후보 다시 작업(`POST /candidates/{candidateId}/reopen`). 앵커 키만 같으면 `warnings`에 ANCHOR_KEY_DUPLICATE */
+/** 제외된 여정 다시 작업(`POST /candidates/{candidateId}/reopen`). 앵커 키만 같으면 `warnings`에 ANCHOR_KEY_DUPLICATE */
 export function useReopenCandidate() {
   const invalidate = useInvalidateStepEngine();
   return useMutation({
@@ -46,7 +46,7 @@ export function useReopenCandidate() {
   });
 }
 
-/** 후보 성별 직접 입력(`PUT /candidates/{candidateId}/gender`). 바뀌면 `affectedSteps`가 재실행 필요가 된다 */
+/** 여정 성별 직접 입력(`PUT /candidates/{candidateId}/gender`). 바뀌면 `affectedSteps`가 재실행 필요가 된다 */
 export function useSetCandidateGender() {
   const invalidate = useInvalidateStepEngine();
   return useMutation({

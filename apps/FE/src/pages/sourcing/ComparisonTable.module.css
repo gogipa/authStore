@@ -1,5 +1,5 @@
 /*
- * SCR-03 '라쿠텐 후보 비교'(Sourcing.dc.html). 제목은 16px h1(후보 작업 틀 안 — 후보 머리가 위에 있다). 화면 ID 칩은 없다(D-27).
+ * SCR-03 ② 비교 칸(Sourcing.dc.html): '상품 고르기' 목록 또는 '같은 상품을 파는 샵 비교' 표. 제목은 16px h1(여정 틀 안 — 여정 머리가 위에 있다). 화면 ID 칩은 없다(D-27).
  * 표: 머리 36px(surface-sunk), 행 40px, 셀 좌우 12, 묶음 머리 28px(bg), 선택 행 accent-soft(화면시안_명세 §3 표).
  * DataTable은 묶음 머리·펼친 행이 없어 같은 규칙으로 표를 직접 그린다(P2-03 Proposed).
  */
@@ -64,6 +64,7 @@
   font: var(--type-label);
   color: var(--color-ink-muted);
   text-align: left;
+  word-break: keep-all;
 }
 
 .right {
@@ -106,6 +107,19 @@
   white-space: normal;
 }
 
+/* 접어 둔 '같은 상품인지 확실하지 않은 N개' 묶음 머리(D-47): 묶음 머리와 같은 바탕, 안의 펼침 단추가 높이를 정한다 */
+.fold {
+  padding: 0 var(--space-3);
+  border-top: 1px solid var(--color-line);
+  background: var(--color-bg);
+}
+
+.foldNote {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+}
+
 .detailCell {
   padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--color-line);
@@ -146,6 +160,12 @@
   color: var(--color-accent);
 }
 
+/* 체험: 바깥 사이트를 열지 않는 꺼진 링크(href 없음, 마우스를 올리면 안내 — shared/lib/demo `externalLinkProps`) */
+.link[aria-disabled='true'] {
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
+
 .match {
   display: flex;
   flex-direction: column;
@@ -157,6 +177,14 @@
   font: var(--type-caption);
   color: var(--color-ink-muted);
   white-space: nowrap;
+}
+
+/* 칸이 좁아도 잘리지 않고 줄을 바꾼다(재고 부족 까닭 같은 긴 설명) */
+.noteWrap {
+  font: var(--type-caption);
+  color: var(--color-ink-muted);
+  white-space: normal;
+  word-break: keep-all; /* 한글은 낱말 사이에서만 줄을 바꾼다 */
 }
 
 .estimate {

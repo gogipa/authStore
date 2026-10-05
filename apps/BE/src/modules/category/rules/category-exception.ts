@@ -102,7 +102,7 @@ export function blockReasonText(
         : null;
       const candidate = input.gender ? GENDER_LABEL[input.gender] : '없음';
       const path = pathGender ? `${GENDER_LABEL[pathGender]}신발` : '성별 신발 경로 아님';
-      return `후보 성별(${candidate})과 카테고리 경로(${path})가 맞지 않습니다(F-CA-06).`;
+      return `여정 성별(${candidate})과 카테고리 경로(${path})가 맞지 않습니다(F-CA-06).`;
     }
   }
 }

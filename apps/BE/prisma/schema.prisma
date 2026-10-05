@@ -378,6 +378,7 @@ model SourcingComparisonRow {
   shopName                   String?            @map("shop_name") @db.VarChar(255)
   itemName                   String             @map("item_name") @db.Text
   itemUrl                    String             @map("item_url") @db.VarChar(2048)
+  imageUrl                   String?            @map("image_url") @db.VarChar(2048)
   apiItemPriceYen            Int?               @map("api_item_price_yen")
   apiItemPriceMin3Yen        Int?               @map("api_item_price_min3_yen")
   apiPointRate               Int?               @map("api_point_rate") @db.SmallInt

@@ -46,7 +46,7 @@ export class StepModulePorts {
   readonly genderInputListeners: GenderInputListener[] = [];
 
   registerCandidateCreationExtension(extension: CandidateCreationExtension): void {
-    if (this.creation) throw new Error('후보 만들기 확장이 이미 등록되어 있습니다');
+    if (this.creation) throw new Error('여정 만들기 확장이 이미 등록되어 있습니다');
     this.creation = extension;
   }
 

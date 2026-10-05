@@ -127,26 +127,26 @@ export const ERROR_CODES = {
   },
   // ── step-engine 후보(P1-04, 05-3 §5.1 문구 그대로) ──
   /** 05-3 §5.1: 후보 id 없음 */
-  CANDIDATE_NOT_FOUND: { status: 404, message: '후보를 찾을 수 없습니다.' },
+  CANDIDATE_NOT_FOUND: { status: 404, message: '여정을 찾을 수 없습니다.' },
   /** 05-3 §5.1: 진행 중 후보에 같은 itemCode+색상(uq_candidate_active_item_color, details.existingCandidateId) */
   CANDIDATE_DUPLICATE: {
     status: 409,
-    message: '같은 상품·색상으로 진행 중인 후보가 있습니다. 그 후보를 열어 주세요.',
+    message: '같은 상품·색상으로 진행 중인 여정이 있습니다. 그 여정을 열어 주세요.',
   },
   /** 05-3 §5.1: 등록요청중·결과확인필요·등록됨(F-CW-07, details.status) */
   CANDIDATE_LOCKED: {
     status: 409,
-    message: '등록을 진행 중이거나 끝난 후보라 바꿀 수 없습니다.',
+    message: '등록을 진행 중이거나 끝난 여정이라 바꿀 수 없습니다.',
   },
   /** 05-3 §5.1: 후보 상태 EXCLUDED */
   CANDIDATE_EXCLUDED: {
     status: 409,
-    message: "제외된 후보입니다. '다시 작업'을 먼저 눌러 주세요.",
+    message: "제외된 여정입니다. '다시 작업'을 먼저 눌러 주세요.",
   },
   /** 05-3 §5.1: 그 동작에 맞지 않는 상태(details.allowed[]) */
   CANDIDATE_STATUS_INVALID: {
     status: 409,
-    message: '지금 후보 상태({상태})에서는 할 수 없습니다.',
+    message: '지금 여정 상태({상태})에서는 할 수 없습니다.',
   },
   /** 05-3 §5.1: 이 단계가 읽거나 이 단계를 읽는 단계가 실행 중(F-CW-18), 실행 중 제외·성별 변경(details.stepCode) */
   STEP_LOCKED_BY_RUNNING_STEP: {
@@ -156,7 +156,7 @@ export const ERROR_CODES = {
   /** 05-3 §5.1: 확정된 앵커 키와 다른 앵커·행·② 버전(F-CW-03) */
   ANCHOR_KEY_MISMATCH: {
     status: 409,
-    message: '이 후보의 기준 모델·색상과 다릅니다. 다른 모델·색상은 새 후보로 만들어 주세요.',
+    message: '이 여정의 기준 모델·색상과 다릅니다. 다른 모델·색상은 새 여정으로 만들어 주세요.',
   },
   // ── step-engine 단계 실행(P1-05, 05-3 §5.1 문구 그대로) ──
   /** 05-3 §5.1: 실행 id 없음 */
@@ -171,7 +171,7 @@ export const ERROR_CODES = {
   /** 05-3 §5.1: (M2) TEMP 후보의 ⑧·⑨·승인 */
   TEMP_CANDIDATE_NOT_ALLOWED: {
     status: 409,
-    message: '임시 후보는 업로드·등록할 수 없습니다. 먼저 라쿠텐 상품에 연결해 주세요.',
+    message: '임시 여정은 업로드·등록할 수 없습니다. 먼저 라쿠텐 상품에 연결해 주세요.',
   },
   /** 05-3 §5.1: 시작 조건 미충족(fieldErrors에 입력 키, details.stepCode) */
   STEP_START_CONDITION_UNMET: { status: 409, message: '시작에 필요한 값이 없습니다: {빠진 입력}.' },
@@ -220,7 +220,7 @@ export const ERROR_CODES = {
   /** 05-3 §5.1: 후보에 열린 step_chain(details.stepChainId) */
   CONTINUOUS_RUN_ALREADY_OPEN: {
     status: 409,
-    message: '이 후보의 연속 실행이 이미 진행 중입니다.',
+    message: '이 여정의 연속 실행이 이미 진행 중입니다.',
   },
   /** 05-3 §5.1: RERUN_STALE인데 재실행 필요 단계 없음 */
   NO_RERUN_REQUIRED_STEPS: { status: 409, message: '다시 실행할 단계가 없습니다.' },
@@ -237,7 +237,7 @@ export const ERROR_CODES = {
   /** 05-3 §5.1: G2 조건 — 비교하지 않은 URL 후보인데 '비교 없이 확정' 없음(F-PJ-02) */
   NO_COMPARISON_NOT_CONFIRMED: {
     status: 409,
-    message: "비교하지 않은 URL 후보입니다. '비교 없이 확정'을 체크해 주세요.",
+    message: "비교하지 않은 URL 여정입니다. '비교 없이 확정'을 체크해 주세요.",
   },
   /** 05-3 §5.1: AI 엔진을 쓰는 단계·연속 실행 시작 때 선택 엔진을 쓸 수 없음(details.engineCode·reason·settingsPath, P1-10 훅) */
   AI_ENGINE_UNAVAILABLE: {
@@ -245,12 +245,20 @@ export const ERROR_CODES = {
     message:
       "선택한 AI 엔진({엔진})을 지금 쓸 수 없습니다({사유}). 'AI 엔진' 설정에서 확인해 주세요.",
   },
+  /**
+   * Proposed(05-3 §5.1에 더함, 2026-10-05): 단계 실행이 아닌 동기 AI 호출(키워드 → 일본어 검색어)이 시간 제한·CLI 오류·형식 오류로
+   * 끝남. 문구는 AI 실행 오류의 한국어 문구(`userMessage`)를 그대로 쓴다. details.errorCode·engineCode
+   */
+  AI_CALL_FAILED: {
+    status: 502,
+    message: 'AI 호출이 끝나지 않았습니다. 잠시 뒤 다시 해 주세요.',
+  },
   /** 05-3 §5.1: 키워드 id 없음 */
   KEYWORD_NOT_FOUND: { status: 404, message: '키워드를 찾을 수 없습니다.' },
   /** 05-3 §5.1: keyword.selected_at 없음 */
   KEYWORD_NOT_SELECTED: {
     status: 409,
-    message: '키워드 화면에서 고른 키워드만 후보로 만들 수 있습니다.',
+    message: '키워드 화면에서 고른 키워드만 여정으로 만들 수 있습니다.',
   },
   /** 05-3 §5.1: keyword.excluded_reason 있음 */
   KEYWORD_EXCLUDED: { status: 409, message: '아동화로 빠진 키워드는 고를 수 없습니다.' },
@@ -260,7 +268,7 @@ export const ERROR_CODES = {
   /** 05-3 §5.1: 이 키워드를 출처로 만든 후보가 있어 G1 취소 불가(candidate.source_keyword_id, details.candidateIds) */
   KEYWORD_IN_USE: {
     status: 409,
-    message: '이 키워드로 만든 후보가 있어 선택을 취소할 수 없습니다.',
+    message: '이 키워드로 만든 여정이 있어 선택을 취소할 수 없습니다.',
   },
   /** 05-3 §5.1: 같은 아동 단어(NFKC·소문자 정규화 비교, Proposed) */
   CHILD_TERM_ALREADY_EXISTS: { status: 409, message: '이미 있는 아동 단어입니다.' },
@@ -300,7 +308,7 @@ export const ERROR_CODES = {
     message: "아동화로 의심되거나 대상 밖 장르인 상품입니다. '성인용 상품 확인'을 체크해 주세요.",
   },
   /** 05-3 §5.1: 아동화 의심이 아닌데 성인용 확인, 비교한 후보인데 '비교 없이 확정' */
-  CONFIRMATION_NOT_APPLICABLE: { status: 409, message: '이 후보에는 필요 없는 확인입니다.' },
+  CONFIRMATION_NOT_APPLICABLE: { status: 409, message: '이 여정에는 필요 없는 확인입니다.' },
   /** 05-3 §5.1: 경로의 비교표 id 없음 */
   SOURCING_COMPARISON_NOT_FOUND: { status: 404, message: '비교표를 찾을 수 없습니다.' },
   /** 05-3 §5.1: 소싱 선택(itemCode) 없음 */
@@ -318,14 +326,19 @@ export const ERROR_CODES = {
   /** 05-3 §5.1: 같은 itemCode 행(UNIQUE(sourcing_comparison_id, item_code)) */
   ROW_ALREADY_EXISTS: { status: 409, message: '같은 상품이 비교표에 이미 있습니다.' },
   /** 05-3 §5.1: 성별 없이 소싱 선택 */
-  GENDER_REQUIRED: { status: 409, message: '후보 성별을 먼저 골라 주세요.' },
+  GENDER_REQUIRED: { status: 409, message: '여정 성별을 먼저 골라 주세요.' },
   /** 05-3 §5.1: 앵커가 없는데 수동 행 추가·재고 확인·선택(P2-03 — 선택·재고 확인은 05-2에 더함) */
   ANCHOR_NOT_FIXED: { status: 409, message: '기준 모델·색상을 먼저 정해 주세요.' },
+  /** 05-3 §5.1: 기준 상품을 이미 정한 비교표에 검색 결과 더 보기(D-47 Proposed — 탐색 모드에서만 목록을 늘린다) */
+  ANCHOR_ALREADY_FIXED: {
+    status: 409,
+    message: '기준 상품을 이미 정했습니다. 상품을 더 찾으려면 ② 다시 실행으로 새로 검색해 주세요.',
+  },
   // ── pricing ③ 판정·step-engine 비교 없이 확정(P2-05, 05-3 §5.1 문구 그대로) ──
   /** 05-3 §5.1: 비교표 행이 있는 후보(② 비교를 한 버전)에 판정 쿠폰 칸(`ownerInputs.couponYen`) */
   COUPON_NOT_ALLOWED: {
     status: 422,
-    message: '비교표가 있는 후보는 비교표 행에서 쿠폰을 넣어 주세요.',
+    message: '비교표가 있는 여정은 비교표 행에서 쿠폰을 넣어 주세요.',
   },
   /** 05-3 §5.1: G2를 통과한 뒤 '비교 없이 확정' 해제(P2-05 Proposed — G2가 지금 유효할 때만) */
   GATE_ALREADY_PASSED: {
@@ -350,7 +363,7 @@ export const ERROR_CODES = {
   /** 05-3 §5.1: 후보 성별과 카테고리 경로의 성별이 다름(F-CA-06) */
   CATEGORY_GENDER_MISMATCH: {
     status: 409,
-    message: '후보 성별과 카테고리(남성·여성)가 맞지 않습니다.',
+    message: '여정 성별과 카테고리(남성·여성)가 맞지 않습니다.',
   },
   /** 05-3 §5.1: CHILD_CERTIFICATION·아동 카테고리(F-CA-07) */
   CATEGORY_CHILD_BLOCKED: { status: 409, message: '아동 카테고리는 고를 수 없습니다.' },
@@ -423,7 +436,7 @@ export const ERROR_CODES = {
   /** 05-3 §5.1: 등록요청중·결과확인필요 기록 있음(failed_at 없음) */
   REGISTRATION_IN_PROGRESS: {
     status: 409,
-    message: '이 후보의 등록이 진행 중이거나 결과 확인이 필요합니다.',
+    message: '이 여정의 등록이 진행 중이거나 결과 확인이 필요합니다.',
   },
   /** 05-3 §5.1: 로컬 등록 기록 또는 SELLER_CODE 조회로 같은 상품·색상이 있음 */
   DUPLICATE_REGISTRATION: {

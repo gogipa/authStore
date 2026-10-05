@@ -7,6 +7,7 @@ import {
 } from '@/test/fixtures/aiEngine';
 import { emptyProfile, filledProfile } from '@/test/fixtures/purchaseAgencyProfile';
 import { secretStatusList } from '@/test/fixtures/system';
+import { READINESS_ITEMS } from '../content';
 import {
   readinessItems,
   readinessProgress,
@@ -80,6 +81,7 @@ describe("'시작 준비' 항목(F-DB-10)", () => {
     const items = byKey(readinessItems(input()));
     expect(items.COMMERCE_KEYS).toMatchObject({
       state: 'done',
+      text: READINESS_ITEMS.COMMERCE_KEYS.done,
       link: { label: '시스템 상태', to: '/system#keys' },
     });
   });

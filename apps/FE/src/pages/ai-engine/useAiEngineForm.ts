@@ -42,6 +42,10 @@ export const BEFORE_SAVE_TIMEOUT_MS = 180_000;
 export const BEFORE_SAVE_TIMEOUT_MESSAGE =
   '연결 테스트 결과를 받지 못했습니다. 최근 점검 이력을 확인한 뒤 다시 저장해 주세요.';
 
+/** 카드 [연결 테스트] 결과가 제한 시간 안에 오지 않았을 때(Proposed) */
+export const SMOKE_TEST_TIMEOUT_MESSAGE =
+  '연결 테스트 결과를 받지 못했습니다. 최근 점검 이력을 확인해 주세요.';
+
 /**
  * 저장된 값을 화면 값으로(Proposed): 정하지 않은(null) 모델 칸은 그 엔진의 기본 모델(`defaultModels`)로 먼저 채운다.
  * 바뀐 것 판정도 이 값과 비교한다 — 빈 칸을 기본값으로 보여 준 것만으로 '바뀜'이 되지 않는다.
@@ -83,7 +87,7 @@ export interface UseAiEngineFormInput {
   trigger: Extract<AiCliCheckTrigger, 'MANUAL' | 'FIRST_RUN'>;
   /** 테스트: 지금 시각 */
   now?: () => number;
-  /** 테스트: 저장 전 연결 테스트를 기다리는 최대 시간(기본 BEFORE_SAVE_TIMEOUT_MS) */
+  /** 테스트: 연결 테스트(저장 전·카드 [연결 테스트]) 결과를 기다리는 최대 시간(기본 BEFORE_SAVE_TIMEOUT_MS) */
   beforeSaveTimeoutMs?: number;
 }
 
@@ -94,6 +98,8 @@ export interface UseAiEngineFormInput {
  * 최종 판정은 BE(409 AI_ENGINE_NOT_VERIFIED)다 — 그 `message`를 그대로 보인다.
  * 저장 흐름이 도는 동안(`phase` ≠ idle)은 고른 값을 바꾸지 않는다(카드도 잠긴다). PUT은 [저장]을 누른 때의 값으로 보낸다.
  * 결과가 `beforeSaveTimeoutMs` 안에 오지 않으면 기다림을 멈추고 안내한다(Proposed).
+ * 카드 [연결 테스트]도 같은 방식으로 결과 행이 올 때까지 `testingEngine`을 켜 둔다 — POST는 202로 바로 끝나므로
+ * `requesting`만으로는 테스트가 도는 동안(수 초~2분) 버튼이 눌린 모습이 남지 않는다(Proposed).
  * 연결 테스트는 사용자가 누를 때(카드 [연결 테스트]·[저장])만 보낸다. 모델을 바꿀 때 스스로 보내지 않는다(R7).
  */
 export function useAiEngineForm({
@@ -115,6 +121,9 @@ export function useAiEngineForm({
     model: string;
     baselineId: number;
   } | null>(null);
+  /** 카드 [연결 테스트]를 보낸 엔진과 그때의 최신 행 id(그 엔진의 새 행이 오면 결과가 온 것이다) */
+  const [testingEngine, setTestingEngine] = useState<AiEngineCode | null>(null);
+  const manualTest = useRef<{ engine: AiEngineCode; baselineId: number } | null>(null);
   const createCheck = useCreateAiCliCheckMutation();
   const update = useUpdateAiEngineSettingsMutation();
 
@@ -242,12 +251,37 @@ export function useAiEngineForm({
     return () => clearTimeout(timer);
   }, [phase, beforeSaveTimeoutMs]);
 
-  /** 카드 [연결 테스트]: 그 엔진만, 지금 고른 텍스트 모델로(저장 흐름 중에는 보내지 않는다) */
+  // 카드 [연결 테스트]의 새 행이 오면(SSE → 최신 점검 다시 읽기) 테스트 중 표시를 끈다
+  useEffect(() => {
+    const wait = manualTest.current;
+    if (!wait) return;
+    const row = latest?.items.find((i) => i.engineCode === wait.engine)?.latest;
+    if (!row || row.id <= wait.baselineId) return;
+    manualTest.current = null;
+    setTestingEngine(null);
+  }, [latest]);
+
+  // 결과가 제한 시간 안에 오지 않으면 테스트 중 표시를 끄고 안내한다
+  useEffect(() => {
+    if (!testingEngine) return;
+    const timer = setTimeout(() => {
+      if (!manualTest.current) return;
+      manualTest.current = null;
+      setTestingEngine(null);
+      setMessage(SMOKE_TEST_TIMEOUT_MESSAGE);
+    }, beforeSaveTimeoutMs);
+    return () => clearTimeout(timer);
+  }, [testingEngine, beforeSaveTimeoutMs]);
+
+  /** 카드 [연결 테스트]: 그 엔진만, 지금 고른 텍스트 모델로(저장 흐름·다른 테스트가 도는 중에는 보내지 않는다) */
   const testEngine = useCallback(
     (engine: AiEngineCode) => {
-      if (busy) return;
+      if (busy || testingEngine) return;
       const model = values?.models[engine].text;
+      const baselineId = latest?.items.find((i) => i.engineCode === engine)?.latest?.id ?? 0;
       setMessage(null);
+      manualTest.current = { engine, baselineId };
+      setTestingEngine(engine);
       createCheck.mutate(
         {
           engineCodes: [engine],
@@ -255,10 +289,16 @@ export function useAiEngineForm({
           ...(model ? { models: { [engine]: model } } : {}),
           trigger,
         },
-        { onError: (error) => setMessage(error.message) },
+        {
+          onError: (error) => {
+            manualTest.current = null;
+            setTestingEngine(null);
+            setMessage(error.message);
+          },
+        },
       );
     },
-    [busy, values, createCheck, trigger],
+    [busy, testingEngine, values, latest, createCheck, trigger],
   );
 
   /** [다시 감지]·화면을 열 때: 세 엔진 감지만(호출 비용 없음) */
@@ -285,6 +325,8 @@ export function useAiEngineForm({
     busy,
     message,
     requesting: createCheck.isPending,
+    /** 카드 [연결 테스트] 결과를 기다리는 엔진(없으면 null) — 그 카드 버튼에 '테스트 중'을 보이고 다른 점검 버튼은 잠근다 */
+    testingEngine,
     pickEngine,
     setModel,
     revert,

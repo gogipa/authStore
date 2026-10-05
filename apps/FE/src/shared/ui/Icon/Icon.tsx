@@ -1,7 +1,7 @@
 import { ICONS, type IconName, type IconShape } from './icons';
 import styles from './Icon.module.css';
 
-/** 시안에 쓰인 크기(px). 12 칩 · 14 태그 삭제·펼침 · 16 기본 · 18 내비 · 20 안내 띠 · 28 후보 머리 */
+/** 시안에 쓰인 크기(px). 12 칩 · 14 태그 삭제·펼침 · 16 기본 · 18 내비 · 20 안내 띠 · 28 여정 머리 */
 export type IconSize = 12 | 14 | 16 | 18 | 20 | 28;
 
 export interface IconProps {

@@ -2,7 +2,7 @@ import type { components } from '@/shared/api/schema';
 
 /**
  * 단계 코드(ERD §4.2, OpenAPI StepCode)와 화면 경로의 대응표.
- * 후보 작업 화면(/candidates/:candidateId/<화면>)의 단계 레일과 "현재 단계로 이동"이 이 표를 쓴다.
+ * 여정 화면(/candidates/:candidateId/<화면>)의 단계 레일과 "현재 단계로 이동"이 이 표를 쓴다.
  */
 export type StepCode = components['schemas']['StepCode'];
 
@@ -93,7 +93,7 @@ export function isStepScreen(value: unknown): value is StepScreen {
   return typeof value === 'string' && (STEP_SCREENS as readonly string[]).includes(value);
 }
 
-/** 후보 안에서 단계 화면으로 가는 상대 경로(예: 'judgement#category'). */
+/** 여정 안에서 단계 화면으로 가는 상대 경로(예: 'judgement#category'). */
 export function stepRelativePath(code: StepCode): string {
   const hash = STEP_HASH[code];
   return hash ? `${STEP_SCREEN[code]}#${hash}` : STEP_SCREEN[code];

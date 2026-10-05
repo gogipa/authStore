@@ -11,6 +11,6 @@ export interface CandidateWarning {
 export function anchorKeyDuplicateWarning(candidateIds: readonly number[]): CandidateWarning {
   return {
     code: 'ANCHOR_KEY_DUPLICATE',
-    message: `모델·색상이 같은 진행 중 후보가 있습니다(후보 ${candidateIds.map((id) => `#${id}`).join(', ')}).`,
+    message: `모델·색상이 같은 진행 중 여정이 있습니다(여정 ${candidateIds.map((id) => `#${id}`).join(', ')}).`,
   };
 }

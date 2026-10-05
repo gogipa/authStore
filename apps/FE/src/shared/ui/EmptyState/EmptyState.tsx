@@ -3,7 +3,7 @@ import { cx } from '@/shared/lib/cx';
 import styles from './EmptyState.module.css';
 
 export interface EmptyStateProps {
-  /** 무엇이 비었는지 한 문장(예: '진행 중인 후보가 없습니다.'). */
+  /** 무엇이 비었는지 한 문장(예: '진행 중인 여정이 없습니다.'). */
   title: ReactNode;
   /** 다음에 할 일 설명. */
   children?: ReactNode;

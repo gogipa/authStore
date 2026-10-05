@@ -13,7 +13,7 @@ import type { PriceJudgementDetail } from '@/features/pricing';
 
 const CANDIDATE_ID = 1;
 
-/** 가짜 서버: 후보 1(② 완료, ③ 완료 — PRD §8.3 예시 판정) */
+/** 가짜 서버: 여정 1(② 완료, ③ 완료 — PRD §8.3 예시 판정) */
 function setup({
   judgement = priceJudgement(),
   compared = true,
@@ -23,6 +23,9 @@ function setup({
   categoryStatus = 'NOT_RUN',
   gender = 'MALE',
   genderSource = 'STEP2',
+  g2Passed = false,
+  domesticSaved = judgement !== null,
+  candidatePatch = {},
 }: {
   judgement?: PriceJudgementDetail | null;
   compared?: boolean;
@@ -33,6 +36,12 @@ function setup({
   categoryStatus?: 'COMPLETED' | 'WAITING_INPUT' | 'NOT_RUN';
   gender?: 'MALE' | 'FEMALE';
   genderSource?: 'STEP2' | 'OWNER';
+  /** 소싱 확정(G2)을 이미 통과했는가 */
+  g2Passed?: boolean;
+  /** 국내 기준가를 한 번이라도 저장했는가(기본: 판정이 있으면 저장함) */
+  domesticSaved?: boolean;
+  /** 여정 상세에 덮어쓸 값(잠금·상태 등) */
+  candidatePatch?: Partial<ReturnType<typeof candidateDetail>>;
 } = {}) {
   const api = stubApi({
     'GET /call-usage': () => jsonResponse(callUsageList(38)),
@@ -46,6 +55,7 @@ function setup({
           resumeStepCode: 'PRICING',
           gender,
           genderSource,
+          ...candidatePatch,
         }),
       ),
     [`GET /candidates/${CANDIDATE_ID}/steps`]: () =>
@@ -60,7 +70,7 @@ function setup({
       category
         ? jsonResponse(category)
         : errorResponse(404, 'STEP_OUTPUT_NOT_FOUND', '아직 ④ 카테고리를 실행하지 않았습니다.'),
-    [`GET /candidates/${CANDIDATE_ID}/gates`]: () => jsonResponse(gateList()),
+    [`GET /candidates/${CANDIDATE_ID}/gates`]: () => jsonResponse(gateList({ G2: g2Passed })),
     [`GET /candidates/${CANDIDATE_ID}/price-judgement`]: () =>
       judgement
         ? jsonResponse(judgement)
@@ -76,7 +86,7 @@ function setup({
     'GET /fx-rates/latest': () => jsonResponse(fxLatest()),
     [`GET /candidates/${CANDIDATE_ID}/naver-shopping-links`]: () => jsonResponse(links),
     [`GET /candidates/${CANDIDATE_ID}/domestic-prices`]: () =>
-      jsonResponse(page(judgement ? [domesticPriceEntry()] : [])),
+      jsonResponse(page(domesticSaved ? [domesticPriceEntry()] : [])),
     [`POST /candidates/${CANDIDATE_ID}/domestic-prices`]: () =>
       jsonResponse(
         { ...domesticPriceEntry({ id: 2, pRefKrw: 175000 }), pricingStepStatus: 'RERUN_REQUIRED' },
@@ -93,8 +103,8 @@ function setup({
   return api;
 }
 
-async function renderJudgement() {
-  const view = renderRoute(`/candidates/${CANDIDATE_ID}/judgement`);
+async function renderJudgement(options: { demo?: boolean } = {}) {
+  const view = renderRoute(`/candidates/${CANDIDATE_ID}/judgement`, options);
   await screen.findByRole('heading', { level: 1, name: '판정 · 소싱 확정 · 카테고리' });
   return view;
 }
@@ -109,7 +119,7 @@ describe('③ 판정 화면(SCR-04, P2-05)', () => {
     const summary = within(await screen.findByRole('region', { name: '가격 요약' }));
     expect(await summary.findByText('153,100원')).toBeInTheDocument();
     expect(summary.getByText('최소 판매가 · 마진 10%')).toBeInTheDocument();
-    expect(summary.getByText('판매가 · 국내가 −1%')).toBeInTheDocument();
+    expect(summary.getByText('판매가 · 국내 기준가 −1%')).toBeInTheDocument();
     expect(summary.getByText('167,300원')).toBeInTheDocument();
     expect(summary.getByText('27,418원')).toBeInTheDocument();
     expect(summary.getByText('16.4%')).toBeInTheDocument();
@@ -195,17 +205,17 @@ describe('③ 판정 화면(SCR-04, P2-05)', () => {
     ).toBeInTheDocument();
   });
 
-  it("비교한 후보: '비교 없이 확정'이 없고 쿠폰 칸은 비교표 값(잠김)", async () => {
+  it("비교한 여정: '비교 없이 확정'이 없고 쿠폰 칸은 비교표 값(잠김)", async () => {
     setup({ compared: true });
     await renderJudgement();
     const confirm = within(await screen.findByRole('region', { name: '소싱 확정' }));
     expect(confirm.queryByRole('checkbox', { name: /비교 없이 확정/ })).not.toBeInTheDocument();
-    const coupon = await screen.findByLabelText('쿠폰 · URL 후보만 입력');
+    const coupon = await screen.findByLabelText('쿠폰 · URL 여정만 입력');
     await waitFor(() => expect(coupon).toBeDisabled());
     expect(screen.getByText('비교표 값')).toBeInTheDocument();
   });
 
-  it("URL 후보(비교 안 함): '비교 없이 확정' 체크 → PUT, 쿠폰 칸 값이 '다시 실행'의 ownerInputs.couponYen", async () => {
+  it("URL 여정(비교 안 함): '비교 없이 확정' 체크 → PUT, 쿠폰 칸 값이 '다시 실행'의 ownerInputs.couponYen", async () => {
     const api = setup({
       compared: false,
       judgement: priceJudgement({
@@ -216,7 +226,7 @@ describe('③ 판정 화면(SCR-04, P2-05)', () => {
     await renderJudgement();
     const confirm = within(await screen.findByRole('region', { name: '소싱 확정' }));
     const box = await confirm.findByRole('checkbox', { name: /비교 없이 확정/ });
-    expect(confirm.getByText('URL 후보만 체크합니다')).toBeInTheDocument();
+    expect(confirm.getByText('URL 여정만 체크합니다')).toBeInTheDocument();
     await userEvent.click(box);
     await waitFor(() =>
       expect(
@@ -224,7 +234,7 @@ describe('③ 판정 화면(SCR-04, P2-05)', () => {
       ).toHaveLength(1),
     );
 
-    const coupon = await screen.findByLabelText('쿠폰 · URL 후보만 입력');
+    const coupon = await screen.findByLabelText('쿠폰 · URL 여정만 입력');
     await waitFor(() => expect(coupon).toBeEnabled());
     await userEvent.clear(coupon);
     await userEvent.type(coupon, '1000');
@@ -340,7 +350,7 @@ describe('④ 카테고리 구역(SCR-04 #category, P2-06)', () => {
     );
   });
 
-  it("완료: 성별 재확인은 꺼지고 이유를 보이며 '다음: ⑤ 썸네일' 링크, 후보 성별이 바뀌었으면 경고 띠", async () => {
+  it("완료: 성별 재확인은 꺼지고 이유를 보이며 '다음: ⑤ 썸네일' 링크, 여정 성별이 바뀌었으면 경고 띠", async () => {
     setup({
       category: categoryDecision({
         stepStatus: 'COMPLETED',
@@ -364,8 +374,201 @@ describe('④ 카테고리 구역(SCR-04 #category, P2-06)', () => {
     ).toBeInTheDocument();
     expect(
       section.getByText(
-        '후보 성별이 바뀌어 고른 카테고리와 맞지 않을 수 있습니다. ④를 다시 실행해 카테고리를 다시 골라 주세요.',
+        '여정 성별이 바뀌어 고른 카테고리와 맞지 않을 수 있습니다. ④를 다시 실행해 카테고리를 다시 골라 주세요.',
       ),
     ).toBeInTheDocument();
+  });
+});
+
+describe('③·④ 맨 위 안내(D-41): 하는 일 · 지금 할 일 · 낯선 말 풀이 · 지금 여기', () => {
+  const MARK = '지금 여기';
+  const intro = async () =>
+    within(await screen.findByRole('region', { name: '③·④ 판정·카테고리 안내' }));
+  const nowText = async () => (await intro()).getByRole('status');
+  /** '지금 여기' 이름표가 붙은 칸(이름표의 부모) */
+  const markHolders = async () => (await screen.findAllByText(MARK)).map((m) => m.parentElement!);
+
+  it('하는 일 한 문장과 지금 할 일이 보이고, 풀이는 접혀 있다가 펼치면 용어가 나온다', async () => {
+    setup();
+    await renderJudgement({ demo: true });
+    const panel = await intro();
+    expect(
+      panel.getByText(
+        '국내 기준가로 사이즈마다 팔아도 남는지 판정하고, 판매가를 확인해 소싱 확정(G2)을 한 뒤, 스마트스토어에 올릴 카테고리를 고르는 단계입니다.',
+      ),
+    ).toBeInTheDocument();
+    // ③ 완료 · G2 전 → [소싱 확정(G2)]
+    expect(await nowText()).toHaveTextContent(
+      /^지금 할 일 사이즈별 판정과 판매가를 확인한 뒤 \[소싱 확정\(G2\)\]을 누르세요\./,
+    );
+    const toggle = panel.getByRole('button', { name: /펼치기/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    for (const term of [
+      '실행 · 다시 실행',
+      '여기부터 연속 실행',
+      '국내 기준가',
+      '최소 판매가 · 판매가',
+      '순이익 · 마진율',
+      '사이즈별 판정(상품 가격·면세)',
+      '비용 분해(배대지·관부가세)',
+      '소싱 확정(G2)',
+      '리프 카테고리',
+      '성별 재확인',
+      'KC 면제 성인용 확인',
+    ]) {
+      expect(panel.getByText(term)).toBeVisible();
+    }
+    // 화면에 없는 말('앵커')은 쓰지 않는다
+    expect(panel.queryByText(/앵커/)).toBeNull();
+  });
+
+  it('국내 기준가가 없고 ③이 입력을 기다리면 입력하라고 말하고, 표시는 국내 기준가 칸에만 붙는다', async () => {
+    setup({ judgement: null, pricingStatus: 'WAITING_INPUT' });
+    const view = await renderJudgement({ demo: true });
+    expect(await nowText()).toHaveTextContent(/^지금 할 일 ③이 국내 기준가를 기다리는 중입니다\./);
+    const holders = await markHolders();
+    expect(holders).toHaveLength(1);
+    expect(within(holders[0]!).getByRole('region', { name: '국내 기준가' })).toBeInTheDocument();
+    expect(within(holders[0]!).queryByRole('region', { name: '소싱 확정' })).toBeNull();
+    view.unmount();
+  });
+
+  it('③ 실행 전: 저장한 국내 기준가가 없으면 입력부터, 있으면 [실행]에 표시가 붙는다', async () => {
+    setup({ judgement: null, pricingStatus: 'NOT_RUN', domesticSaved: false });
+    const first = await renderJudgement({ demo: true });
+    expect(await nowText()).toHaveTextContent(
+      /^지금 할 일 '국내 기준가'에 .*\[저장\]을 누른 뒤 \[실행\]을 누르세요\./,
+    );
+    const [price] = await markHolders();
+    expect(within(price!).getByRole('region', { name: '국내 기준가' })).toBeInTheDocument();
+    first.unmount();
+
+    setup({ judgement: null, pricingStatus: 'NOT_RUN', domesticSaved: true });
+    await renderJudgement({ demo: true });
+    await waitFor(async () =>
+      expect(await nowText()).toHaveTextContent(
+        /^지금 할 일 \[실행\]을 누르세요\. 저장해 둔 국내 기준가로/,
+      ),
+    );
+    const holders = await markHolders();
+    expect(holders).toHaveLength(1);
+    // ③ 상태 줄의 [실행] 옆이다(아래 ④ [실행]이 아니다)
+    expect(within(holders[0]!).getByRole('button', { name: '실행' })).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: '④ 카테고리' })).queryByText(MARK)).toBeNull();
+  });
+
+  it('③ 완료 · G2 전: 표시가 소싱 확정 칸에 붙고, ④에는 없다', async () => {
+    setup();
+    await renderJudgement({ demo: true });
+    const holders = await markHolders();
+    expect(holders).toHaveLength(1);
+    expect(within(holders[0]!).getByRole('region', { name: '소싱 확정' })).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: '④ 카테고리' })).queryByText(MARK)).toBeNull();
+  });
+
+  it("비교하지 않은 URL 여정은 '비교 없이 확정'을 먼저 체크하라고 말한다", async () => {
+    setup({
+      compared: false,
+      judgement: priceJudgement({
+        params: { ...priceJudgement().params, sourcing: { comparisonPerformed: false } },
+      }),
+      links: naverLinks(['MODEL_CODE']),
+    });
+    await renderJudgement({ demo: true });
+    await waitFor(async () =>
+      expect(await nowText()).toHaveTextContent(/^지금 할 일 아래 '비교 없이 확정'을 체크하세요\./),
+    );
+    const holders = await markHolders();
+    expect(holders).toHaveLength(1);
+    expect(
+      within(holders[0]!).getByRole('checkbox', { name: /비교 없이 확정/ }),
+    ).toBeInTheDocument();
+  });
+
+  it('판매 후보가 아니면 이유를 말하고 표시는 이유 띠에 붙는다', async () => {
+    setup({
+      judgement: priceJudgement({
+        isSaleCandidate: false,
+        salePriceKrw: null,
+        exclusionReason: '판매 가능한 사이즈가 없습니다',
+      }),
+    });
+    await renderJudgement({ demo: true });
+    await waitFor(async () =>
+      expect(await nowText()).toHaveTextContent(/^지금 할 일 이 상품은 판매 후보가 아닙니다\./),
+    );
+    const holders = await markHolders();
+    expect(holders).toHaveLength(1);
+    expect(
+      within(holders[0]!).getByText(/판매 후보 아님 · 판매 가능한 사이즈가 없습니다/),
+    ).toBeInTheDocument();
+  });
+
+  it('G2 뒤 ④ 실행 전: [실행]을 누르라고 말하고 표시는 ④의 [실행]에 붙는다', async () => {
+    setup({ g2Passed: true });
+    await renderJudgement({ demo: true });
+    await waitFor(async () =>
+      expect(await nowText()).toHaveTextContent(
+        /^지금 할 일 \[실행\]을 눌러 카테고리 후보를 받으세요\./,
+      ),
+    );
+    const holders = await markHolders();
+    expect(holders).toHaveLength(1);
+    const category = within(screen.getByRole('region', { name: '④ 카테고리' }));
+    expect(category.getByText(MARK)).toBeInTheDocument();
+    expect(within(holders[0]!).getByRole('button', { name: '실행' })).toBeInTheDocument();
+  });
+
+  it('④ 입력 대기: 리프 카테고리 칸에 표시가 붙고 지금 할 일이 고르는 순서를 말한다', async () => {
+    setup({ g2Passed: true, category: categoryDecision(), categoryStatus: 'WAITING_INPUT' });
+    await renderJudgement({ demo: true });
+    await waitFor(async () =>
+      expect(await nowText()).toHaveTextContent(
+        /^지금 할 일 여정 성별이 맞는지 '성별 재확인'에서 확인한 뒤, 리프 카테고리를 하나 골라 \[이 카테고리로 확정\]을 누르세요\./,
+      ),
+    );
+    const holders = await markHolders();
+    expect(holders).toHaveLength(1);
+    expect(
+      within(holders[0]!).getByRole('radio', { name: '패션잡화 > 남성신발 > 운동화 > 러닝화' }),
+    ).toBeInTheDocument();
+    expect(
+      within(holders[0]!).getByRole('radiogroup', { name: '성별 재확인' }),
+    ).toBeInTheDocument();
+  });
+
+  it("③·④를 모두 마치면 끝났다고 알리고 아래 [다음: ⑤ 썸네일]에 '지금 여기'를 붙인다", async () => {
+    setup({
+      g2Passed: true,
+      category: categoryDecision({
+        stepStatus: 'COMPLETED',
+        leafCategoryId: '50000830',
+        wholeCategoryName: '패션잡화>남성신발>운동화>러닝화',
+        genderPathMatch: true,
+        exceptionDecision: 'PASS',
+        decidedAt: '2026-09-28T05:07:00.000Z',
+      }),
+      categoryStatus: 'COMPLETED',
+    });
+    await renderJudgement({ demo: true });
+    await waitFor(async () =>
+      expect(await nowText()).toHaveTextContent(/^지금 할 일 ③ 판정과 ④ 카테고리를 마쳤습니다\./),
+    );
+    // 다음으로 넘어가는 버튼은 아래 카테고리 칸에 있고(맨 위에는 링크를 두지 않는다) '지금 여기'가 거기 붙는다(D-42)
+    expect((await intro()).queryByRole('link')).toBeNull();
+    const marks = screen.getAllByText(MARK);
+    expect(marks).toHaveLength(1);
+    expect(
+      within(marks[0]!.parentElement!).getByRole('link', { name: /다음: ⑤ 썸네일/ }),
+    ).toHaveAttribute('href', `/candidates/${CANDIDATE_ID}/thumbnail`);
+  });
+
+  it('등록 진행 중인 여정은 지금 할 일을 말하지 않는다(줄을 감춘다)', async () => {
+    setup({ candidatePatch: { locked: true } });
+    await renderJudgement({ demo: true });
+    expect((await intro()).getByRole('status')).toBeEmptyDOMElement();
+    expect(screen.queryByText(MARK)).toBeNull();
   });
 });

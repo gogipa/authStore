@@ -47,6 +47,15 @@
   flex-grow: 1;
 }
 
+/* 맨 위 [실행]·[여기부터 연속 실행]을 '지금 여기' 표시 하나로 묶는다(D-41) */
+.runGroup {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
 .failed {
   display: inline-flex;
   align-items: center;

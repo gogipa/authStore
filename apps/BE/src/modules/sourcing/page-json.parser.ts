@@ -7,6 +7,7 @@ import {
   COLOR_CODE_ATTRIBUTE_NAMES,
   ITEM_INFO_ROOTS,
   ITEM_PATHS,
+  ITEM_PATHS_MEASURED,
   MODEL_CODE_ATTRIBUTE_NAMES,
   PAGE_JSON_SCRIPT_ID,
   PURCHASE_INFO_ROOTS,
@@ -117,6 +118,15 @@ function date(value: unknown): Date | null {
   if (typeof value !== 'string' && typeof value !== 'number') return null;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** 여러 경로 가운데 값이 있는 첫 것(실측 경로를 먼저, 가정 경로를 뒤에) */
+function atFirst(root: unknown, ...paths: string[]): unknown {
+  for (const path of paths) {
+    const value = at(root, path);
+    if (value !== undefined && value !== null) return value;
+  }
+  return undefined;
 }
 
 /** 型番 정규화(RK-03 2): NFKC → 대문자 → 공백·하이픈 제거 */
@@ -255,7 +265,9 @@ function readPage(info: Json, purchase: Json | null, itemName: string): ParsedIt
   if (!Array.isArray(imagesRaw)) missing.add('itemInfoSku.media.images');
   const genreId = int(at(info, ITEM_PATHS.genreId));
   if (genreId === null) missing.add('itemInfoSku.genreId');
-  const descriptionHtml = str(at(info, ITEM_PATHS.descriptionHtml));
+  const descriptionHtml = str(
+    atFirst(info, ITEM_PATHS_MEASURED.descriptionHtml, ITEM_PATHS.descriptionHtml),
+  );
   if (descriptionHtml === null) missing.add('itemInfoSku.productDescription');
   const inventoriesRaw = purchase ? at(purchase, PURCHASE_PATHS.inventories) : undefined;
   if (!Array.isArray(inventoriesRaw)) missing.add('purchaseInfo.variantMappedInventories');
@@ -313,7 +325,9 @@ function readPage(info: Json, purchase: Json | null, itemName: string): ParsedIt
   }
 
   const shopCode = str(at(info, ITEM_PATHS.shopCode));
-  const itemManageNumber = str(at(info, ITEM_PATHS.itemManageNumber));
+  const itemManageNumber = str(
+    atFirst(info, ITEM_PATHS_MEASURED.itemManageNumber, ITEM_PATHS.itemManageNumber),
+  );
   const attributes = at(info, ITEM_PATHS.attributes) ?? null;
   const modelCode =
     attributeValue(attributes, MODEL_CODE_ATTRIBUTE_NAMES) ??
@@ -344,7 +358,9 @@ function readPage(info: Json, purchase: Json | null, itemName: string): ParsedIt
     saleStartsAt: date(at(info, ITEM_PATHS.saleStart)),
     saleEndsAt: date(at(info, ITEM_PATHS.saleEnd)),
     backOrderFlag,
-    unlimitedInventory: bool(at(info, ITEM_PATHS.unlimitedInventoryFlag)),
+    unlimitedInventory: bool(
+      atFirst(info, ITEM_PATHS_MEASURED.unlimitedInventoryFlag, ITEM_PATHS.unlimitedInventoryFlag),
+    ),
     allSkuSamePrice: bool(at(info, ITEM_PATHS.standardPriceIdentical)),
     skus,
     missingKeys,

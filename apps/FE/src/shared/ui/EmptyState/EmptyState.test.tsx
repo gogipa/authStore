@@ -9,14 +9,14 @@ describe('EmptyState(빈 상태 안내, D-29)', () => {
     render(
       <MemoryRouter>
         <EmptyState
-          title="진행 중인 후보가 없습니다."
+          title="진행 중인 여정이 없습니다."
           actions={<ButtonLink to="/keywords">키워드 열기</ButtonLink>}
         >
           키워드에서 고르세요.
         </EmptyState>
       </MemoryRouter>,
     );
-    expect(screen.getByText('진행 중인 후보가 없습니다.')).toBeInTheDocument();
+    expect(screen.getByText('진행 중인 여정이 없습니다.')).toBeInTheDocument();
     expect(screen.getByText('키워드에서 고르세요.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '키워드 열기' })).toHaveAttribute('href', '/keywords');
   });

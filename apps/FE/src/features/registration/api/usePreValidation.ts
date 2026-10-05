@@ -38,7 +38,7 @@ export async function serializedRun<T>(key: string, run: () => Promise<T>): Prom
 /**
  * G4 사전 검증(`POST /candidates/{candidateId}/pre-validations`, runCandidatePreValidation — P4-02 규칙 1·2). 처리 리소스(POST)지만
  * 상태를 바꾸지 않아 화면 상태로 쓰려고 query로 둔다: 화면을 열 때 한 번 돌고, SSE `candidate-step.changed`·`gate.invalidated`·
- * `candidate.status-changed`를 받으면 다시 돈다(shared/api/events.ts). 서버로는 같은 후보·옵션 방식의 요청을 한 번에 하나만
+ * `candidate.status-changed`를 받으면 다시 돈다(shared/api/events.ts). 서버로는 같은 여정·옵션 방식의 요청을 한 번에 하나만
  * 보낸다(`serializedRun`). 창을 다시 볼 때 저절로 다시 돌지 않는다(restricted-tags 조회를 아낀다). 승인 직전 재검증은 P4-03
  * 승인 API가 서버에서 한다.
  */

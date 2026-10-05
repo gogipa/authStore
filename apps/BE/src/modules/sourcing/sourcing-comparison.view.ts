@@ -27,6 +27,7 @@ export function toComparisonRow(row: RowWithItem) {
     shopName: row.shopName,
     itemName: row.itemName,
     itemUrl: row.itemUrl,
+    imageUrl: row.imageUrl,
     apiItemPriceYen: row.apiItemPriceYen,
     apiItemPriceMin3Yen: row.apiItemPriceMin3Yen,
     apiPointRate: row.apiPointRate,

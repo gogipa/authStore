@@ -166,7 +166,7 @@ export function leafName(wholeCategoryName: string | null | undefined): string |
 }
 
 /**
- * 후보 표 아래 요약(시안 '추천 7(14:40 받음) · 경쟁 13 · 직접 1 · 카테고리 러닝화 기준 필터'). 카테고리 이름은 후보의 지금 리프가
+ * 후보 표 아래 요약(시안 '추천 7(14:40 받음) · 경쟁 13 · 직접 1 · 카테고리 러닝화 기준 필터'). 카테고리 이름은 여정의 지금 리프가
  * 이 버전의 리프와 같을 때만 쓴다(아니면 리프 id)
  */
 export function candidatesSummaryText(

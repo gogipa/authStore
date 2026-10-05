@@ -11,9 +11,9 @@ export interface GenderRecheckProps {
   candidateId: number;
   /** 지금 성별(④ 결정의 성별 — 재확인 반영 뒤 값) */
   gender: CategoryGender | null;
-  /** 성별 출처(후보 `genderSource`): STEP2 = '② 자동 판단', OWNER = '오너 입력' */
+  /** 성별 출처(여정 `genderSource`): STEP2 = '② 자동 판단', OWNER = '오너 입력' */
   genderSource: 'STEP2' | 'OWNER' | null;
-  /** 바꿀 수 없는 이유(④ 입력 대기가 아님·잠긴 후보). 있으면 라디오를 끈다 */
+  /** 바꿀 수 없는 이유(④ 입력 대기가 아님·잠긴 여정). 있으면 라디오를 끈다 */
   disabledReason?: string | null;
 }
 

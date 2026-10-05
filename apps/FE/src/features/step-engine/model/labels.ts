@@ -2,7 +2,7 @@ import type { StepCode } from '@/shared/lib/steps';
 import type { StepFailureKind } from '@/shared/ui';
 import type { CandidateExcludedReason, CandidateStatus } from './types';
 
-/** 후보 상태 글자(PRD §5.2) */
+/** 여정 상태 글자(PRD §5.2) */
 export const CANDIDATE_STATUS_LABEL: Record<CandidateStatus, string> = {
   TEMP: '임시',
   WORKING: '작업중',
@@ -16,11 +16,22 @@ export const CANDIDATE_STATUS_LABEL: Record<CandidateStatus, string> = {
 
 /** 제외 사유 글자(ERD candidate.excluded_reason) */
 export const EXCLUDED_REASON_LABEL: Record<CandidateExcludedReason, string> = {
-  ANCHOR_NO_MATCH: '앵커 일치 없음',
+  ANCHOR_NO_MATCH: '기준 상품과 일치 없음',
   INSUFFICIENT_STOCK: '재고 부족',
   NOT_SALE_CANDIDATE: '판매 후보 아님',
-  OWNER_EXCLUDED: '직접 제외',
+  OWNER_EXCLUDED: '직접 삭제',
 };
+
+/** 제외된 여정 안내(단계 화면 맨 위 띠) — 왜 제외됐는지. 뒤에 '다시 하는 법'이 붙는다 */
+export const EXCLUDED_NOTICE: Record<CandidateExcludedReason, string> = {
+  ANCHOR_NO_MATCH: '기준 상품과 같은 상품이 하나도 없어 제외된 여정입니다.',
+  INSUFFICIENT_STOCK:
+    '재고가 모자라 제외된 여정입니다. 기준 상품의 목표 사이즈 중 재고 있는 사이즈가 기준 개수에 못 미쳤습니다.',
+  NOT_SALE_CANDIDATE: '③ 판정에서 팔 수 없는 상품으로 나와 제외된 여정입니다.',
+  OWNER_EXCLUDED: '직접 삭제한 여정입니다.',
+};
+export const EXCLUDED_NOTICE_NEXT =
+  '다른 상품으로 다시 하려면 여정 목록에서 [다시 작업]을 누르세요.';
 
 /** 단계 이름(단계 레일과 같은 번호·이름, 공통부품 §G) */
 export const STEP_NAME: Record<StepCode, string> = {

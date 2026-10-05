@@ -22,7 +22,7 @@ import {
  * ④ → ⑤ 레퍼런스·생성(가짜 ImageGenProvider) → G3 → ⑥-1·⑥-2(AI fixture 어댑터) → ⑥-3 → ⑦ → ⑧ → G4 사전 검증 15항목 →
  * 차단 켬 승인 = 검증완료(등록 호출 0) → 스위치 끔 → 다시 승인 = 등록됨·상품 번호·전시중지(처음 10건).
  */
-test('후보 1건이 ①부터 ⑨까지 끝까지 간다(차단 켬 드라이런 → 끔 → 등록됨)', async ({
+test('여정 1건이 ①부터 ⑨까지 끝까지 간다(차단 켬 드라이런 → 끔 → 등록됨)', async ({
   page,
   flow,
   api,
@@ -66,7 +66,7 @@ test('후보 1건이 ①부터 ⑨까지 끝까지 간다(차단 켬 드라이�
   await approve(page);
   await expect(registerRegion(page)).toContainText('검증완료(드라이런)로 저장했습니다');
   await expectCandidateStatus(page, '검증완료');
-  await expect(page.getByRole('region', { name: '후보 정보' })).toContainText(
+  await expect(page.getByRole('region', { name: '여정 정보' })).toContainText(
     'G4 최종 승인 · 통과',
   );
   expect((await flow.state()).commerce.productCreates).toBe(0);

@@ -654,6 +654,7 @@ export interface paths {
          * 키워드 수집 묶음 한 건
          * @description 기간·range 대조·중단 사유·구조 변경 의심·24시간 쉼을 함께 준다.
          *     `structureChangeSuspected` = ABORTED이고 사유가 NO_RANKS_KEY·HTTP_404·NOT_JSON·RETURN_CODE·COUNT_MISMATCH. `blockedUntil`은 `call_log`(DATALAB)로 계산한다.
+         *     `selectedKeyword` = 지금 고른 키워드(D-33): 이 묶음에서 `selected_at`이 가장 늦은 키워드(같으면 id가 큰 쪽), 없으면 null.
          *     경로 id가 1 이상 정수가 아니면 404 `KEYWORD_SNAPSHOT_NOT_FOUND`(P2-01, P1-01·P1-04와 같다).
          */
         get: operations["getKeywordSnapshot"];
@@ -697,15 +698,16 @@ export interface paths {
         get?: never;
         /**
          * G1 키워드 고르기
-         * @description G1 기록 = `keyword.selected_at`. 체크박스 토글을 멱등하게 하려고 하위 리소스 PUT·DELETE로 둔다. 이미 골랐으면 `selectedAt`을 유지한다.
+         * @description G1 기록 = `keyword.selected_at`. 하위 리소스 PUT으로 둔다. 화면은 한 묶음에서 키워드를 하나만 고르며(D-33), 고르는 일이 곧 G1 통과다.
+         *     한 묶음에서 `selected_at`이 가장 늦은 키워드가 '지금 고른 키워드'다(`KeywordSnapshotDetail.selectedKeyword`). 이미 지금 고른 키워드면 그대로 둔다(멱등, 기록 없음). 앞서 골랐지만 지금 고른 것이 아닌 키워드를 다시 고르거나 아직 안 고른 키워드를 고르면 `selected_at`을 이 묶음의 가장 늦은 값보다 늦게(지금 시각, 같거나 앞서면 1ms 뒤) 정하고 감사 기록을 남긴다. 다른 키워드의 `selected_at`은 지우지 않는다(후보의 G1 통과 시각과 승인 이력이 남는다).
          *     아동화로 빠진 키워드는 고를 수 없다(`ck_keyword_excluded_not_selected`).
-         *     새로 고를 때만 감사 기록 `user_action_log`(GATE_PASSED, gate=G1, candidate_id NULL, detail keywordId·keywordSnapshotId)을 같은 트랜잭션에 남긴다(P2-01). 경로 id가 1 이상 정수가 아니면 404.
+         *     새로 고를 때마다 감사 기록 `user_action_log`(GATE_PASSED, gate=G1, candidate_id NULL, detail keywordId·keywordSnapshotId)을 같은 트랜잭션에 남긴다(P2-01). 경로 id가 1 이상 정수가 아니면 404.
          */
         put: operations["selectKeyword"];
         post?: never;
         /**
          * G1 키워드 고르기 취소
-         * @description `selected_at`을 비운다. 이미 비어 있으면 그대로 204.
+         * @description `selected_at`을 비운다. 이미 비어 있으면 그대로 204. 화면은 하나만 고르는 방식(D-33)이라 M1 화면이 부르지 않는다(남겨 둔 API). 지금 고른 키워드를 비우면 그 묶음에서 그다음으로 늦게 고른 키워드가 지금 고른 키워드가 된다.
          */
         delete: operations["unselectKeyword"];
         options?: never;
@@ -773,6 +775,29 @@ export interface paths {
         get: operations["getRakutenQuerySuggestion"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/keywords/{keywordId}/rakuten-query-conversions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 한글 키워드를 일본어 라쿠텐 검색어로 바꾸기(AI)
+         * @description 고른 한글 키워드 1개를 선택한 AI 엔진(설정 `ai.engine`)의 텍스트 모델에 보내 라쿠텐에서 찾을 수 있는 일본어(또는 영문 브랜드·모델) 검색어를 받는다. 저장하지 않는다 — 화면이 그 검색어로 후보를 만들고(`POST /candidates` creationPath=KEYWORD), 일본어 검색어와 한국어 원문(출처 키워드)을 ② 화면에 함께 보인다. 오너는 ② 칸에서 고칠 수 있다.
+         *     라쿠텐은 일본 쇼핑몰이라 한글 검색어는 거의 결과가 없다(0건). 브랜드 사전(F-KW-13, M2) 없이 AI만으로 바꾸는 최소 기능이다. `GET .../rakuten-query-suggestion`(사전 기반, M2)과 다르다.
+         *     네이버 데이터 AI 입력 제한(F-BS-14, CON-13)의 예외 `KEYWORD_QUERY_CONVERSION`을 쓴다: 오너가 고른 키워드 1개만, 한 줄로, 출처 `NAVER_DATALAB` 블록 하나로 보낸다. 실행기가 예외를 켠 사실을 기록한다(앱 로그 경고 + `call_log` 1행). 화면이 [이 검색어로 소싱]을 누를 때만, 검색어 칸이 비었거나 한글일 때만 부른다(일본어·영문을 직접 적었으면 부르지 않는다). 키워드를 고르는 것만으로는 부르지 않는다.
+         *     경로 id가 1 이상 정수가 아니면 404. 선택 엔진을 쓸 수 없으면 409 `AI_ENGINE_UNAVAILABLE`(다른 엔진으로 넘어가지 않는다). AI가 시간 제한·CLI 오류·형식 오류·한글이 남은 결과를 내면 502 `AI_CALL_FAILED`(Proposed — `details.errorCode`에 AI_TIMEOUT·AI_CLI_FAILED·AGY_ERROR·AI_OUTPUT_INVALID). 동기 호출이라 응답까지 몇 초~2분 걸린다.
+         */
+        post: operations["convertKeywordToRakutenQuery"];
         delete?: never;
         options?: never;
         head?: never;
@@ -945,10 +970,32 @@ export interface paths {
          * 앵커 상품·색상 정하기
          * @description 검색 결과에서 고르기(SEARCH_PICK) 또는 型番+색상 코드 입력(CODE_ENTRY)으로 앵커를 정한다. 입력 대기 중인 ② 버전의 산출물에 쓴다(ERD 결정 ⑧).
          *     이어서 동일 상품 분류와 페이지 조회(최대 10페이지, 재고 통과 3개면 멈춤)가 돌아 202를 돌려주고, 진행은 SSE `sourcing.row-updated`·`sourcing.page-fetch-finished`로 알린다. 같은 앵커를 다시 보내면 같은 결과다.
-         *     P2-03 구현 결정(Proposed, 05-1 §7.3): 202 전(한 트랜잭션) — 본문 422 → 404 → 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → 409 STEP_RUN_NOT_WAITING_INPUT(비교를 하지 않은 버전 포함) → SEARCH_PICK의 `anchorItemCode`가 이 비교표 행이 아니면 422 → 후보에 확정된 앵커 키와 다르면 409 `ANCHOR_KEY_MISMATCH`(색상 코드를 비우면 후보의 색상 코드) → 이 버전에 이미 앵커가 있으면 같은 앵커는 같은 202(작업을 다시 돌리지 않는다), 다른 앵커는 409 `ANCHOR_KEY_MISMATCH`(한 버전의 앵커는 한 번 — 바꾸려면 ② 다시 실행). SEARCH_PICK의 型番·색상 코드는 그 행 상품명(없으면 그 행 페이지의 メーカー型番)에서 뽑고, 요청의 `anchorColorCode`가 있으면 그 값. 행 분류와 성별 신호(cid → 장르 경로 → 상품명)는 202 전에 끝난다. 202 뒤(백그라운드): 일치 20개 미만이면 검색 page=2(6시간 캐시, 실패하면 넘어감) → AI 동일 상품 판정 보조(NEEDS_REVIEW 행, 참고만) → 성별을 모르면 페이지 조회 전에 멈춤(`PUT /candidates/{candidateId}/gender`가 이어 간다) → 페이지 조회 반복(SEARCH_PICK 앵커 상품 먼저 — 그 JAN이 재대조 기준) → 제외 판단(반복이 PAGE_CAP·NO_MORE_ROWS로 끝났을 때만: 같은 상품일 수 있는 행 — 일치·확인 필요·오너 '같은 상품' — 이 0 → ANCHOR_NO_MATCH('확인 필요' 행만 있으면 오너가 이어 가도록 제외하지 않는다), 읽은 행이 있는데 재고 통과 0 → INSUFFICIENT_STOCK, ②는 입력 대기 그대로). 하루 상한·쉼은 202 뒤 반복의 멈춤 사유(DAILY_LIMIT·BLOCKED)로 알린다.
+         *     P2-03 구현 결정(Proposed, 05-1 §7.3): 202 전(한 트랜잭션) — 본문 422 → 404 → 409 CANDIDATE_LOCKED·CANDIDATE_EXCLUDED → 409 STEP_RUN_NOT_WAITING_INPUT(비교를 하지 않은 버전 포함) → SEARCH_PICK의 `anchorItemCode`가 이 비교표 행이 아니면 422 → 후보에 확정된 앵커 키와 다르면 409 `ANCHOR_KEY_MISMATCH`(색상 코드를 비우면 후보의 색상 코드) → 이 버전에 이미 앵커가 있으면 같은 앵커는 같은 202(작업을 다시 돌리지 않는다), 다른 앵커는 409 `ANCHOR_KEY_MISMATCH`(한 버전의 앵커는 한 번 — 바꾸려면 ② 다시 실행). SEARCH_PICK의 型番·색상 코드는 그 행 상품명(없으면 그 행 페이지의 メーカー型番)에서 뽑고, 요청의 `anchorColorCode`가 있으면 그 값. 행 분류와 성별 신호(cid → 장르 경로 → 상품명)는 202 전에 끝난다. 202 뒤(백그라운드): 기준 상품에 모델 번호가 있으면 그 모델 번호로 가격순 검색(일치 20개 미만이면 2페이지까지, 모델 번호가 없으면 하지 않음, 6시간 캐시, 실패하면 넘어감) → AI 동일 상품 판정 보조(NEEDS_REVIEW 행, 참고만) → 성별을 모르면 페이지 조회 전에 멈춤(`PUT /candidates/{candidateId}/gender`가 이어 간다) → 페이지 조회 반복(SEARCH_PICK 앵커 상품 먼저 — 그 JAN이 재대조 기준) → 제외 판단(반복이 PAGE_CAP·NO_MORE_ROWS로 끝났을 때만: 같은 상품일 수 있는 행 — 일치·확인 필요·오너 '같은 상품' — 이 0 → ANCHOR_NO_MATCH('확인 필요' 행만 있으면 오너가 이어 가도록 제외하지 않는다), 읽은 행이 있는데 재고 통과 0 → INSUFFICIENT_STOCK, ②는 입력 대기 그대로). 하루 상한·쉼은 202 뒤 반복의 멈춤 사유(DAILY_LIMIT·BLOCKED)로 알린다.
          */
         put: operations["fixSourcingAnchor"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sourcing-comparisons/{sourcingComparisonId}/search-more": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 검색 결과 더 보기(다음 30건)
+         * @description 기준 상품을 정하기 전(탐색 모드)에 ② 검색 결과 목록을 다음 페이지로 늘린다(D-47, 화면시안_명세 §13). 이 비교표의 검색어로 Item Search(관련도 순, 6시간 캐시, 호출 간격 1.5초)의 다음 페이지를 받아 상품명 아동용 단어 행을 뺀 새 행을 `sourcing_comparison_row`(row_source=API)에 더한다. 이미 있는 `itemCode`는 건너뛴다. 페이지 조회(상품 페이지 읽기)는 하지 않는다.
+         *
+         *     `hasMore` — 받은 페이지가 가득 찼고(설정 `hits`건 이상) 새로 더한 행이 1건 이상이면 true. 마지막 페이지이거나 결과가 없거나 전부 이미 있는 상품·제외 행이라 0건이면 false(같은 페이지를 되풀이 요청하지 않게).
+         */
+        post: operations["loadMoreSourcingSearchRows"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4585,6 +4632,8 @@ export interface components {
              * @description call_log(DATALAB) 403·418·429 뒤 쉼이 끝나는 시각
              */
             blockedUntil?: string | null;
+            /** @description 지금 고른 키워드(D-33) — 이 묶음에서 `selected_at`이 가장 늦은 키워드(같으면 id가 큰 쪽). 고른 키워드가 없으면 null. 화면은 이 값으로 표의 선택 줄과 '라쿠텐 검색어 확인'을 그린다(표가 쪽으로 나뉘어 있어 줄만으로는 알 수 없다) */
+            selectedKeyword: components["schemas"]["RankedKeyword"] | null;
         };
         KeywordSnapshotPage: {
             content: components["schemas"]["KeywordSnapshot"][];
@@ -4649,7 +4698,7 @@ export interface components {
             excludedReason?: "CHILD" | null;
             /**
              * Format: date-time
-             * @description G1에서 고른 시각
+             * @description G1에서 고른 시각(가장 최근에 고른 시각). 한 묶음에서 이 값이 가장 늦은 키워드가 '지금 고른 키워드'다(D-33). 앞서 고른 키워드도 이 값을 그대로 둔다(승인 이력)
              */
             selectedAt?: string | null;
             /** @description 이 키워드를 출처로 만든 후보(candidate.source_keyword_id 역참조) */
@@ -4718,6 +4767,17 @@ export interface components {
             rakutenQuery: string;
             /** @description 변환에 쓴 브랜드 사전 항목 */
             brandPolicyId?: number | null;
+        };
+        /** @description AI가 바꾼 라쿠텐 검색어(F-BS-70, 저장 없음). 일본어·영문만 담고 한글은 없다(있으면 502 AI_CALL_FAILED) */
+        RakutenQueryConversion: {
+            keywordId: number;
+            /** @description 키워드 원문(한글) */
+            keyword: string;
+            /** @description 바꾼 검색어. 단어 사이 공백 하나로 정리한 값(반각 128자 검사는 `validateRakutenQuery`가 한다) */
+            rakutenQuery: string;
+            engineCode: components["schemas"]["AiEngineCode"];
+            /** @description 쓴 텍스트 모델 */
+            model: string;
         };
         /** @description (M2) 데이터랩 수집 대상 cid 트리 노드 */
         DatalabCategoryNode: {
@@ -4917,6 +4977,8 @@ export interface components {
             shopName?: string | null;
             itemName: string;
             itemUrl: string;
+            /** @description 검색 결과의 대표 사진 주소(Item Search `mediumImageUrls[0]`, 128px). 없거나 수동 행이면 null */
+            imageUrl?: string | null;
             apiItemPriceYen?: number | null;
             /** @description 구매 가능 SKU 최저가(itemPriceMin3) */
             apiItemPriceMin3Yen?: number | null;
@@ -5105,6 +5167,13 @@ export interface components {
             stepStatus: components["schemas"]["StepStatus"];
             /** @description 재고 확인한 행. 앵커 요청은 null */
             rowId?: number | null;
+        };
+        /** @description 검색 결과 더 보기(`loadMoreSourcingSearchRows`)의 결과 */
+        SourcingSearchMoreResult: {
+            /** @description 새로 더한 행 수(이미 있는 상품·아동용 단어 행은 뺀 수) */
+            addedRowCount: number;
+            /** @description 다음 페이지가 더 있을 수 있는가(받은 페이지가 가득 찼고 새 행이 있었으면 true) */
+            hasMore: boolean;
         };
         /** @description 바꾼 필드만 보낸다 */
         SourcingComparisonRowPatch: {
@@ -9419,6 +9488,40 @@ export interface operations {
             500: components["responses"]["InternalError"];
         };
     };
+    convertKeywordToRakutenQuery: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 상태를 바꾸는 요청에 필수. 다른 사이트가 localhost API를 부르지 못하게 한다(03-2 §5). */
+                "X-AutoStore-Client": components["parameters"]["ClientHeader"];
+            };
+            path: {
+                keywordId: components["parameters"]["KeywordIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 바꾼 검색어(저장 없음) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RakutenQueryConversion"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            /** @description `KEYWORD_NOT_FOUND` */
+            404: components["responses"]["NotFound"];
+            /** @description `KEYWORD_EXCLUDED` — 아동화로 빠진 키워드 · `AI_ENGINE_UNAVAILABLE`(details.engineCode·reason·settingsPath) */
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+            /** @description `AI_CALL_FAILED` — AI 호출 실패·시간 제한·형식 오류(details.errorCode) */
+            502: components["responses"]["BadGateway"];
+        };
+    };
     listDatalabCategories: {
         parameters: {
             query?: never;
@@ -9765,6 +9868,42 @@ export interface operations {
             /** @description `VALIDATION_FAILED` — anchorInputMethod별 필수값 누락 */
             422: components["responses"]["Unprocessable"];
             500: components["responses"]["InternalError"];
+        };
+    };
+    loadMoreSourcingSearchRows: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 상태를 바꾸는 요청에 필수. 다른 사이트가 localhost API를 부르지 못하게 한다(03-2 §5). */
+                "X-AutoStore-Client": components["parameters"]["ClientHeader"];
+            };
+            path: {
+                sourcingComparisonId: components["parameters"]["SourcingComparisonIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 더한 행 수와 다음 페이지가 더 있는지 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourcingSearchMoreResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            /** @description `SOURCING_COMPARISON_NOT_FOUND` */
+            404: components["responses"]["NotFound"];
+            /** @description `ANCHOR_ALREADY_FIXED` — 기준 상품을 이미 정함(탐색 모드가 아님). `STEP_RUN_NOT_WAITING_INPUT` — 닫힌·실행중 버전, 비교를 하지 않은 버전. `CANDIDATE_LOCKED`, `CANDIDATE_EXCLUDED`, `EXTERNAL_CALL_COOLDOWN`, `SECRET_NOT_CONFIGURED` — 라쿠텐 키가 없음 */
+            409: components["responses"]["Conflict"];
+            /** @description `RAKUTEN_QUERY_INVALID` — 검색어가 없거나 형식이 맞지 않음 */
+            422: components["responses"]["Unprocessable"];
+            500: components["responses"]["InternalError"];
+            /** @description `EXTERNAL_API_ERROR`(details.target=RAKUTEN_API, reason=라쿠텐 오류 코드) — 라쿠텐 API 오류·응답 없음 */
+            502: components["responses"]["BadGateway"];
         };
     };
     updateSourcingComparisonRow: {

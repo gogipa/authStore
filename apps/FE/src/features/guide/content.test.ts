@@ -20,6 +20,10 @@ const NOT_TEXT = new Set([
   'SCREEN_HELP_KEYS',
   'START_WITHOUT_KEYWORD_PATH',
   'GUIDE_PATH',
+  'SETUP_WIZARD_PATH',
+  'DEMO_PATH',
+  'DEMO_START_PATH',
+  'SCREEN_GUIDE_KEYS',
   'fillText',
 ]);
 /** 글이 아닌 속성(주소·내부 키) */
@@ -123,6 +127,21 @@ const CHECKED_BY_TABLE = [
   'HELP_TEXT',
   'SCREEN_HELP',
   'EMPTY_STATE',
+  'SETUP_WIZARD_TEXT',
+  'SETUP_WIZARD_STEPS',
+  'GUIDE_SETUP_WIZARD_TEXT',
+  'DEMO_TEXT',
+  'DEMO_GUIDE_TEXT',
+  'DEMO_ENTRY_TEXT',
+  'SOURCING_GUIDE_TEXT',
+  'SOURCING_NOW_TEXT',
+  'SOURCING_GLOSSARY',
+  'STEP_GUIDE_COMMON',
+  'JUDGEMENT_GUIDE',
+  'THUMBNAIL_GUIDE',
+  'CONTENT_GUIDE',
+  'TAGS_GUIDE',
+  'APPROVAL_GUIDE',
 ];
 
 describe('사용 안내 글 = 안내문구.md', () => {
@@ -295,5 +314,116 @@ describe('문서 표와 줄·칸까지 같다(키 → 글 짝, 링크 주소 포
       ];
     });
     expect(section('5. ').rows.map((row) => row.slice(1))).toEqual(expected);
+  });
+
+  it('7.1 설정 마법사 화면 글', () => {
+    expect(section('7.1 ').rows).toEqual(keyRows(content.SETUP_WIZARD_TEXT));
+  });
+
+  it('7.2 설정 마법사 단계별 글: 제목(번호·이름·키)과 칸', () => {
+    const actual = children('7.2 ').map(({ heading, rows }) => ({ heading, rows }));
+    const expected = content.SETUP_WIZARD_STEPS.map((step, i) => ({
+      heading: `${i + 1}단계 ${step.title} — ${code(step.key)}`,
+      rows: [
+        ['제목', step.title],
+        ['첫 문장', step.lead],
+        ...step.points.map((point) => ['줄', point]),
+        ['링크', link(step.link)],
+      ],
+    }));
+    expect(actual).toEqual(expected);
+  });
+
+  it("7.3 사용 안내 '설정 마법사' 패널", () => {
+    expect(section('7.3 ').rows).toEqual(keyRows(content.GUIDE_SETUP_WIZARD_TEXT));
+  });
+
+  it('8.1 체험 띠·체험이 답하는 글', () => {
+    expect(section('8.1 ').rows).toEqual(keyRows(content.DEMO_TEXT));
+  });
+
+  it("8.2 체험 입구 '체험해 보기'", () => {
+    const entry = content.DEMO_ENTRY_TEXT;
+    expect(section('8.2 ').rows).toEqual([
+      ['제목', entry.title],
+      ['첫 문장', entry.lead],
+      ...entry.points.map((point) => ['줄', point]),
+      ['버튼', entry.open],
+      ['새 탭', entry.newTab],
+      ['체험 중', entry.inDemo],
+    ]);
+  });
+
+  it('8.3 따라 하기 띠: 띠 글 12개와 다음에 할 일 19개(순서·단계·글)', () => {
+    const { actions, screens, ...main } = content.DEMO_GUIDE_TEXT;
+    expect(section('8.3 ').rows).toEqual([
+      ...keyRows(main),
+      ...keyRows(
+        Object.fromEntries(Object.entries(screens).map(([key, text]) => [`screens.${key}`, text])),
+      ),
+      ...Object.entries(actions).map(([key, action]) => [code(key), action.step, action.text]),
+    ]);
+  });
+
+  it('9.1 ② 소싱 안내 머리 글', () => {
+    expect(section('9.1 ').rows).toEqual(keyRows(content.SOURCING_GUIDE_TEXT));
+  });
+
+  it('9.2 ② 지금 할 일(상태별)', () => {
+    expect(section('9.2 ').rows).toEqual(keyRows(content.SOURCING_NOW_TEXT));
+  });
+
+  it('9.3 ② 낯선 말·버튼 풀이(순서·말·풀이)', () => {
+    expect(section('9.3 ').rows).toEqual(
+      Object.entries(content.SOURCING_GLOSSARY).map(([key, entry]) => [
+        code(key),
+        entry.term,
+        entry.text,
+      ]),
+    );
+  });
+});
+
+/** ③~⑨ 화면 안내(§10.1~§10.5): 화면마다 머리 글 · 지금 할 일(+이동 링크) · 풀이 세 표 */
+const SCREEN_GUIDES = [
+  ['10.1', content.JUDGEMENT_GUIDE],
+  ['10.2', content.THUMBNAIL_GUIDE],
+  ['10.3', content.CONTENT_GUIDE],
+  ['10.4', content.TAGS_GUIDE],
+  ['10.5', content.APPROVAL_GUIDE],
+] as const;
+
+describe('③~⑨ 화면 안내 글 = 안내문구.md §10 (D-41)', () => {
+  it('10.0 공통 글', () => {
+    expect(section('10.0 ').rows).toEqual(keyRows(content.STEP_GUIDE_COMMON));
+  });
+
+  it('화면 키 5개가 §10.1~§10.5 순서와 같다', () => {
+    expect(content.SCREEN_GUIDE_KEYS).toEqual([
+      'judgement',
+      'thumbnail',
+      'content',
+      'tags',
+      'approval',
+    ]);
+  });
+
+  it.each(SCREEN_GUIDES)('%s 머리 글 · 지금 할 일 · 풀이가 문서 표와 같다', (number, guide) => {
+    const filled = (entries: [string, string][]) => entries.filter(([, text]) => text !== '');
+    expect(section(`${number}.1 `).rows).toEqual(
+      filled([
+        ['region', guide.region],
+        ['purpose', guide.purpose],
+      ]).map(([key, text]) => [code(key), text]),
+    );
+    expect(section(`${number}.2 `).rows).toEqual([
+      ...Object.entries(guide.now).map(([key, text]) => [code(key), text]),
+      ...Object.entries(guide.links).map(([key, text]) => [code(`links.${key}`), text]),
+    ]);
+    expect(section(`${number}.3 `).rows).toEqual(
+      Object.entries(guide.glossary).map(([key, entry]) => [code(key), entry.term, entry.text]),
+    );
+    // 이동 링크는 지금 할 일 키에만 붙는다
+    for (const key of Object.keys(guide.links)) expect(Object.keys(guide.now)).toContain(key);
   });
 });

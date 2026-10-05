@@ -45,10 +45,13 @@ export function findComparisonByRun(db: Tx, stepRunId: number): Promise<Sourcing
   return db.sourcingComparison.findUnique({ where: { stepRunId } });
 }
 
-/** 검색 결과 한 행 → API 행 INSERT 값(P2-03 앵커 뒤 page=2 행도 같은 모양) */
+/**
+ * 검색 결과 한 행 → API 행 INSERT 값(더 보기 행·앵커 뒤 '같은 상품 검색' 행도 같은 모양).
+ * 같은 상품 검색으로 더한 행은 검색 순위가 없다(null — 순위를 쓰는 정렬은 null을 가장 뒤로 둔다)
+ */
 export function apiRowCreateData(
   sourcingComparisonId: number,
-  row: SearchRowDraft,
+  row: Omit<SearchRowDraft, 'searchRank'> & { searchRank: number | null },
 ): Prisma.SourcingComparisonRowCreateManyInput {
   return {
     sourcingComparisonId,
@@ -59,6 +62,8 @@ export function apiRowCreateData(
     shopName: row.shopName?.slice(0, 255) ?? null,
     itemName: row.itemName,
     itemUrl: row.itemUrl.slice(0, 2048),
+    // 2048자를 넘는 주소는 잘라 쓰면 깨지므로 비운다(사진 칸은 비어 있어도 된다)
+    imageUrl: row.imageUrl !== null && row.imageUrl.length <= 2048 ? row.imageUrl : null,
     apiItemPriceYen: row.apiItemPriceYen,
     apiItemPriceMin3Yen: row.apiItemPriceMin3Yen,
     apiPointRate: smallint(row.apiPointRate),

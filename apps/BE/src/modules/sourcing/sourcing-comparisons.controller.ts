@@ -1,6 +1,7 @@
 import { Body, Controller, HttpCode, Param, Post, Put, Res } from '@nestjs/common';
 import {
   ApiAcceptedResponse,
+  ApiBadGatewayResponse,
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
@@ -23,10 +24,12 @@ import {
   SourcingComparisonRowViewDto,
   SourcingJobAcceptedDto,
   SourcingManualRowRequestDto,
+  SourcingSearchMoreResultDto,
   SourcingSelectionRequestDto,
   SourcingSelectionResultDto,
 } from './dto/sourcing-comparison.dto.js';
 import { ManualRowService } from './manual-row.service.js';
+import { SearchMoreService } from './search-more.service.js';
 import { SelectionService } from './selection.service.js';
 import { NotFoundIdPipe } from './sourcing-ids.js';
 import {
@@ -48,6 +51,7 @@ const CLIENT_HEADER = {
  * - P2-02: 성인용 상품 확인(confirmSourcingAdultProduct)
  * - P2-03: 앵커 정하기(fixSourcingAnchor, 202 + 백그라운드), 수동 행 넣기(addSourcingComparisonManualRow, 201),
  *   최종 후보 고르기(selectSourcingComparisonRow, 200 — ② 완료)
+ * - D-47: 검색 결과 더 보기(loadMoreSourcingSearchRows, 200 — 기준 상품 전 탐색 모드에서 목록을 다음 페이지로 늘린다)
  */
 @ApiTags('sourcing')
 @Controller('sourcing-comparisons/:sourcingComparisonId')
@@ -56,6 +60,7 @@ export class SourcingComparisonsController {
     private readonly adult: AdultConfirmationService,
     private readonly anchors: AnchorService,
     private readonly manualRows: ManualRowService,
+    private readonly searchMore: SearchMoreService,
     private readonly selection: SelectionService,
   ) {}
 
@@ -111,6 +116,37 @@ export class SourcingComparisonsController {
     const accepted = await this.anchors.fix(sourcingComparisonId, request);
     res.setHeader('Location', comparisonLocation(accepted.candidateId));
     return accepted;
+  }
+
+  @Post('search-more')
+  @HttpCode(200)
+  @ApiOperation({
+    operationId: 'loadMoreSourcingSearchRows',
+    summary: '검색 결과 더 보기(다음 30건)',
+  })
+  @ApiParam({ name: 'sourcingComparisonId', type: 'integer', required: true })
+  @ApiHeader(CLIENT_HEADER)
+  @ApiOkResponse({
+    type: SourcingSearchMoreResultDto,
+    description: '더한 행 수와 다음 페이지가 더 있는지',
+  })
+  @ApiResponse({ status: 400, description: 'MALFORMED_REQUEST' })
+  @ApiForbiddenResponse({ description: '로컬 보안 검사 실패(Host·Origin·X-AutoStore-Client)' })
+  @ApiNotFoundResponse({ description: 'SOURCING_COMPARISON_NOT_FOUND' })
+  @ApiConflictResponse({
+    description:
+      'ANCHOR_ALREADY_FIXED · STEP_RUN_NOT_WAITING_INPUT · CANDIDATE_LOCKED · CANDIDATE_EXCLUDED · EXTERNAL_CALL_COOLDOWN · SECRET_NOT_CONFIGURED',
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'RAKUTEN_QUERY_INVALID — 검색어가 없거나 형식이 맞지 않음',
+  })
+  @ApiResponse({ status: 500, description: 'INTERNAL_ERROR' })
+  @ApiBadGatewayResponse({ description: 'EXTERNAL_API_ERROR(details.target=RAKUTEN_API·reason)' })
+  loadMoreSearchRows(
+    @Param('sourcingComparisonId', new NotFoundIdPipe('SOURCING_COMPARISON_NOT_FOUND'))
+    sourcingComparisonId: number,
+  ): Promise<SourcingSearchMoreResultDto> {
+    return this.searchMore.loadMore(sourcingComparisonId);
   }
 
   @Post('rows')

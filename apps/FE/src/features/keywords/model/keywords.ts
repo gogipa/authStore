@@ -1,5 +1,5 @@
 import type { components } from '@/shared/api/schema';
-import { formatKstMonthDayTime, formatKstTime } from '@/shared/lib/format';
+import { formatKstMonthDayTime, formatKstTime, formatKstTimeOrDate } from '@/shared/lib/format';
 
 export type KeywordSnapshot = components['schemas']['KeywordSnapshot'];
 export type KeywordSnapshotDetail = components['schemas']['KeywordSnapshotDetail'];
@@ -102,7 +102,10 @@ export function abortMessage(
  * '데이터랩 수집' 머리 오른쪽 줄(보드: '마지막 수집 13:30 · 출처 데이터랩 · 2초 간격 · 이상 없음').
  * 마지막 버튼 수집이 없으면 '아직 수집하지 않았습니다', 중단이면 '중단: {사유}'(Proposed).
  */
-export function collectionStatusLine(status: KeywordCollectionStatus): string {
+export function collectionStatusLine(
+  status: KeywordCollectionStatus,
+  now: Date = new Date(),
+): string {
   const interval = `${status.requestIntervalSeconds}초 간격`;
   if (status.collecting) return `수집 중 · 출처 데이터랩 · ${interval}`;
   if (!status.lastCollectedAt) return `아직 수집하지 않았습니다 · 출처 데이터랩 · ${interval}`;
@@ -110,7 +113,61 @@ export function collectionStatusLine(status: KeywordCollectionStatus): string {
     status.lastStatus === 'ABORTED'
       ? `중단: ${abortReasonLabel(status.lastAbortReason)}`
       : '이상 없음';
-  return `마지막 수집 ${formatKstTime(status.lastCollectedAt)} · 출처 데이터랩 · ${interval} · ${result}`;
+  // 오늘이 아니면 날짜를 붙인다 — 며칠 전 수집이 방금 것처럼 보이지 않게(Proposed)
+  return `마지막 수집 ${formatKstTimeOrDate(status.lastCollectedAt, now)} · 출처 데이터랩 · ${interval} · ${result}`;
+}
+
+/** 표가 보이는 묶음의 출처 줄 — 칩 이름표(`label`)와 옆 글(`detail`) */
+export interface SnapshotOrigin {
+  label: string;
+  detail: string;
+  tone: 'accent' | 'outline' | 'running' | 'waiting';
+}
+
+/**
+ * 키워드 표가 '방금 새로 받은 순위'인지 '지난번에 받아 둔 순위'인지 알리는 줄(Proposed). 화면을 열면 가장 최근 묶음을 먼저 보이므로
+ * 수집을 누르기 전의 표는 늘 저장해 둔 것이다 — `fresh`는 이 화면에서 방금 [수집]·붙여넣기로 만든 묶음일 때만 true.
+ * 시각은 오늘이면 '오늘 11:10', 다른 날이면 '10-03 21:16'. `now`는 테스트용.
+ */
+export function snapshotOrigin(
+  snapshot: Pick<KeywordSnapshot, 'collectedAt' | 'method' | 'status'>,
+  fresh: boolean,
+  now: Date = new Date(),
+): SnapshotOrigin {
+  const sameDay =
+    formatKstMonthDayTime(snapshot.collectedAt).slice(0, 5) ===
+    formatKstMonthDayTime(now).slice(0, 5);
+  const when = sameDay
+    ? `오늘 ${formatKstTime(snapshot.collectedAt)}`
+    : formatKstMonthDayTime(snapshot.collectedAt);
+  const pasted = snapshot.method === 'PASTE';
+  const how = pasted ? '붙여넣음' : '데이터랩에서 받음';
+  if (snapshot.status === 'RUNNING') {
+    return {
+      label: '지금 받는 중',
+      detail: `${when}에 시작 · 끝나면 순위가 채워집니다`,
+      tone: 'running',
+    };
+  }
+  if (snapshot.status === 'ABORTED') {
+    return {
+      label: '중간에 멈춘 수집',
+      detail: `${when}에 시작 · 받은 만큼만 보입니다`,
+      tone: 'waiting',
+    };
+  }
+  if (fresh) {
+    return {
+      label: pasted ? '방금 붙여넣은 순위' : '방금 새로 받은 순위',
+      detail: `${when}에 ${how}`,
+      tone: 'accent',
+    };
+  }
+  return {
+    label: pasted ? '지난번에 붙여넣은 순위' : '지난번에 받아 둔 순위',
+    detail: `${when}에 ${how} · 새 순위가 필요하면 위 [수집]을 누르세요`,
+    tone: 'outline',
+  };
 }
 
 /** '수집' 버튼이 꺼진 이유 글(05-2 disabledReasonCode). 쉼이면 끝나는 시각을 보인다 */

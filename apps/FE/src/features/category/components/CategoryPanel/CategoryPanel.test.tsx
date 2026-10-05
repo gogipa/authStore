@@ -132,7 +132,7 @@ describe('CategoryPanel(SCR-04 ④, P2-06)', () => {
   it.each([
     ['CATEGORY_CHILD_BLOCKED', '아동 카테고리는 고를 수 없습니다.'],
     ['CATEGORY_EXCLUDED_ITEM', '판매 제외 품목 카테고리입니다.'],
-    ['CATEGORY_GENDER_MISMATCH', '후보 성별과 카테고리(남성·여성)가 맞지 않습니다.'],
+    ['CATEGORY_GENDER_MISMATCH', '여정 성별과 카테고리(남성·여성)가 맞지 않습니다.'],
     [
       'KC_EXEMPT_CONFIRMATION_REQUIRED',
       "KC 인증 예외 카테고리입니다. 'KC 면제 성인용 확인'을 체크해 주세요.",
@@ -165,7 +165,7 @@ describe('CategoryPanel(SCR-04 ④, P2-06)', () => {
       categoryDecision({ candidateSource: 'GENDER_PATH_ALL', categoryOptions: all }),
     );
     const open = screen.getByRole('button', { name: '남성신발 전체 목록에서 고르기' });
-    expect(screen.getByText('장르 없는 URL 후보용')).toBeInTheDocument();
+    expect(screen.getByText('장르 없는 URL 여정용')).toBeInTheDocument();
     expect(screen.queryAllByRole('radio')).toHaveLength(0);
     expect(open).toHaveAttribute('aria-expanded', 'false');
     await userEvent.click(open);
@@ -175,7 +175,7 @@ describe('CategoryPanel(SCR-04 ④, P2-06)', () => {
 
     renderPanel(categoryDecision({ candidateSource: 'MAPPING' }));
     expect(screen.queryByRole('button', { name: /전체 목록에서 고르기/ })).toBeNull();
-    expect(screen.queryByText('장르 없는 URL 후보용')).toBeNull();
+    expect(screen.queryByText('장르 없는 URL 여정용')).toBeNull();
   });
 
   it('완료된 결정: 고른 리프가 체크된 채 꺼지고, KC 면제면 보드 캡션·확인 줄 3개 통과', () => {

@@ -36,7 +36,7 @@ export function PricingSummary({ judgement }: PricingSummaryProps) {
       </div>
       <div className={styles.cell}>
         <span className={styles.cellLabel}>
-          판매가 · {judgement ? priceRuleLabel(judgement) : '국내가 −1%'}
+          판매가 · {judgement ? priceRuleLabel(judgement) : '국내 기준가 −1%'}
         </span>
         <span className={styles.cellValue}>
           <span className={styles.big}>

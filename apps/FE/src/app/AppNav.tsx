@@ -19,11 +19,11 @@ interface NavItem {
 
 // 순서·라벨·아이콘은 docs/design/spec/공통부품_마크업.md §A 그대로다(아이콘 모양은 shared/ui/Icon/icons.ts).
 // 맨 아래 '사용 안내'는 D-29로 더했다(화면시안_명세 §8).
-// 후보 작업(/candidates)은 end가 없어 단계 화면(/candidates/:id/...)에서도 현재 항목이다.
+// 여정(/candidates)은 end가 없어 단계 화면(/candidates/:id/...)에서도 현재 항목이다.
 const NAV_ITEMS: readonly NavItem[] = [
   { to: '/', label: '대시보드', end: true, icon: 'grid' },
   { to: '/keywords', label: '키워드', icon: 'search' },
-  { to: '/candidates', label: '후보 작업', icon: 'list' },
+  { to: '/candidates', label: '여정', icon: 'list' },
   { to: '/products', label: '등록 상품', icon: 'package' },
   { to: '/settings', label: '설정', end: true, icon: 'sliders' },
   { to: '/settings/ai-engine', label: 'AI 엔진', sub: true },

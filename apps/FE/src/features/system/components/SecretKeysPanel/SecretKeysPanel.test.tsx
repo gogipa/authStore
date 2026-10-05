@@ -144,4 +144,19 @@ describe('SecretKeysPanel — 키 입력(SCR-11, P1-07)', () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it('keys를 주면 그 키 행만 그 순서로 보인다(설정 마법사 3단계, D-29 5번·D-30)', async () => {
+    stubApi({ 'GET /secrets': () => jsonResponse(secretStatusList([])) });
+    render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <SecretKeysPanel keys={['RAKUTEN_ACCESS_KEY', 'COMMERCE_CLIENT_ID']} />
+      </QueryClientProvider>,
+    );
+    await panel().findAllByText('저장 안 됨');
+    expect(
+      panel()
+        .getAllByRole('listitem')
+        .map((li) => li.getAttribute('data-secret-key')),
+    ).toEqual(['RAKUTEN_ACCESS_KEY', 'COMMERCE_CLIENT_ID']);
+  });
 });

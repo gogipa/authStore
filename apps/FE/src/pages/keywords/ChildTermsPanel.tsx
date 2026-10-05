@@ -29,9 +29,9 @@ export function ChildTermsPanel() {
   };
 
   return (
-    <Panel title="아동 단어" caption="이 단어가 든 키워드는 뺍니다">
+    <Panel title="아동용 단어" caption="이 단어가 든 키워드는 뺍니다">
       {terms.isError ? <p className={styles.error}>{terms.error.message}</p> : null}
-      <ul className={styles.chips} aria-label="아동 단어 목록">
+      <ul className={styles.chips} aria-label="아동용 단어 목록">
         {(terms.data?.items ?? []).map((t) => (
           <li key={t.term}>
             <Chip tone="neutral">{t.term}</Chip>
@@ -63,6 +63,9 @@ export function ChildTermsPanel() {
           </div>
         </form>
       ) : null}
+      <p className={styles.reason}>
+        어린이 신발은 KC 인증이 없으면 팔 수 없어서, 이 단어가 든 키워드는 미리 뺍니다.
+      </p>
       <div className={styles.foot}>
         <span className={styles.caption}>
           {added

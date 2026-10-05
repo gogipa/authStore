@@ -61,6 +61,8 @@ describe("대시보드 '시작 준비' 카드(F-DB-10, D-29)", () => {
     expect(itemsList().getAllByText('확인 중')).toHaveLength(5);
     expect(card().getByRole('button', { name: '접기' })).toHaveAttribute('aria-expanded', 'true');
     expect(card().getByText('확인 전입니다.')).toBeInTheDocument();
+    // 받는 중에는 [설정 마법사]를 아직 두지 않는다(다 끝났을 수도 있다)
+    expect(card().queryByRole('link', { name: '설정 마법사' })).toBeNull();
   });
 
   it('조회가 실패한 항목은 확인 못함과 서버 문구를 보이고 펼친 채로 둔다', async () => {
@@ -75,6 +77,8 @@ describe("대시보드 '시작 준비' 카드(F-DB-10, D-29)", () => {
     expect(within(item('COMMERCE_KEYS')).getByText('확인 못함')).toBeInTheDocument();
     expect(within(item('COMMERCE_KEYS')).getByText('키체인을 열 수 없습니다.')).toBeInTheDocument();
     expect(card().getByRole('button', { name: '접기' })).toBeInTheDocument();
+    // '확인 못함'이 남아 있어도 [설정 마법사](D-30)
+    expect(card().getByRole('link', { name: '설정 마법사' })).toHaveAttribute('href', '/setup');
   });
 
   it('일부만 됐으면 항목별 할 일과 고칠 곳 링크, 세지 않는 참고 줄 2개를 보인다', async () => {
@@ -88,6 +92,8 @@ describe("대시보드 '시작 준비' 카드(F-DB-10, D-29)", () => {
     );
     renderCard();
     expect(await screen.findByText('5개 중 2개 완료')).toBeInTheDocument();
+    // 할 일이 남아 있는 동안 카드 머리에 [설정 마법사](D-30)
+    expect(card().getByRole('link', { name: '설정 마법사' })).toHaveAttribute('href', '/setup');
     const commerce = within(item('COMMERCE_KEYS'));
     expect(commerce.getByText('할 일')).toBeInTheDocument();
     expect(
@@ -121,6 +127,7 @@ describe("대시보드 '시작 준비' 카드(F-DB-10, D-29)", () => {
     expect(await screen.findByText('5개 중 5개 완료')).toBeInTheDocument();
     const expand = await card().findByRole('button', { name: '펼치기' });
     expect(expand).toHaveAttribute('aria-expanded', 'false');
+    expect(card().queryByRole('link', { name: '설정 마법사' })).toBeNull();
     expect(
       card().getByText('준비를 모두 마쳤습니다. 펼치면 항목을 다시 봅니다.'),
     ).toBeInTheDocument();
